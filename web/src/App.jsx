@@ -255,7 +255,7 @@ function App() {
             <div className="result-amount">{formatCurrency(threshold)}</div>
             <div className="result-monthly">{formatCurrency(monthly)}/month</div>
             <div className="result-year-note">
-              Applies to {parseInt(year) - 1} income
+              Used with {parseInt(year) - 1} income (March {year} CPS ASEC)
             </div>
           </div>
 
@@ -344,8 +344,8 @@ function App() {
                   what families actually spend on essentials (food, clothing, shelter, utilities).
                 </p>
                 <p style={{ marginTop: 12 }}>
-                  BLS uses 5 years of data and calculates <strong>83% of median</strong> spending
-                  for families with children. The {year} threshold uses CE data from:
+                  BLS uses 5 rolling years of data with a 2-year lag, calculating <strong>83% of median</strong> spending
+                  for families with children. The {year} threshold uses CE data from {ceSurveyYears[0]}–{ceSurveyYears[4]}:
                 </p>
                 <div className="ce-years-grid">
                   {ceSurveyYears.map(ceYear => {
