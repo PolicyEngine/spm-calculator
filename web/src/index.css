@@ -270,6 +270,13 @@ select:focus {
   margin-top: 4px;
 }
 
+.result-year-note {
+  font-size: 12px;
+  color: var(--gray-400);
+  margin-top: 8px;
+  font-style: italic;
+}
+
 /* Visual Formula */
 .formula-visual {
   display: flex;
@@ -503,6 +510,116 @@ select:focus {
   color: var(--gray-500);
   font-size: 12px;
   margin-top: 12px;
+}
+
+/* CE Years Grid */
+.ce-years-grid {
+  display: flex;
+  gap: 8px;
+  margin: 12px 0;
+  flex-wrap: wrap;
+}
+
+.ce-year-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--gray-50);
+  border: 1px solid var(--gray-200);
+}
+
+.ce-year-item.actual {
+  background: var(--teal-50);
+  border-color: var(--teal-200);
+}
+
+.ce-year-item.forecast {
+  background: #FEF3C7;
+  border-color: #FCD34D;
+}
+
+.ce-year {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--gray-700);
+}
+
+.ce-badge {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-top: 4px;
+}
+
+.ce-badge.actual {
+  background: var(--teal-100);
+  color: var(--teal-700);
+}
+
+.ce-badge.forecast {
+  background: #FDE68A;
+  color: #92400E;
+}
+
+/* History table */
+.history-table {
+  font-size: 11px;
+}
+
+.history-table th {
+  font-weight: 500;
+  color: var(--gray-500);
+  text-align: right;
+  padding: 6px 4px;
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.history-table th:first-child {
+  text-align: left;
+}
+
+.history-table td {
+  padding: 6px 4px;
+  text-align: right;
+}
+
+.history-table .year-cell {
+  text-align: left;
+  font-weight: 500;
+}
+
+.history-table .current-row {
+  background: var(--teal-50);
+}
+
+.history-table .current-row td {
+  font-weight: 600;
+  color: var(--teal-700);
+}
+
+.table-badge {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 600;
+  width: 16px;
+  height: 16px;
+  line-height: 16px;
+  text-align: center;
+  border-radius: 4px;
+}
+
+.table-badge.actual {
+  background: var(--teal-100);
+  color: var(--teal-700);
+}
+
+.table-badge.forecast {
+  background: #FDE68A;
+  color: #92400E;
 }
 
 /* Scale visual */

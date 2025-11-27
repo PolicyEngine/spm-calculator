@@ -91,6 +91,14 @@ function App() {
   const referenceThreshold = base * 1.0 * 1.0 // Reference family, national average
   const percentOfReference = (threshold / referenceThreshold * 100).toFixed(0)
 
+  // Get CE Survey years that feed into a given threshold year
+  // BLS uses 5-year rolling data with 2-year lag (e.g., 2024 thresholds use 2018-2022 CE data)
+  const getCESurveyYears = (thresholdYear) => {
+    const endYear = parseInt(thresholdYear) - 2
+    return Array.from({ length: 5 }, (_, i) => endYear - 4 + i)
+  }
+  const ceSurveyYears = getCESurveyYears(year)
+
   // Tenure display names
   const tenureNames = {
     renter: 'Renter',
@@ -246,6 +254,9 @@ function App() {
             <div className="result-label">Your {year} SPM Threshold</div>
             <div className="result-amount">{formatCurrency(threshold)}</div>
             <div className="result-monthly">{formatCurrency(monthly)}/month</div>
+            <div className="result-year-note">
+              Applies to {parseInt(year) - 1} income
+            </div>
           </div>
 
           {/* Visual formula */}
@@ -277,17 +288,30 @@ function App() {
               Compared to reference family (2 adults, 2 children, national average):
             </div>
             <div className="comparison-bar-container">
-              <div className="comparison-bar-bg">
-                <div
-                  className="comparison-bar-fill"
-                  style={{ width: `${Math.min(percentOfReference, 150)}%` }}
-                />
-                <div className="comparison-bar-marker" style={{ left: '100%' }} />
-              </div>
-              <div className="comparison-values">
-                <span>{formatCurrency(threshold)}</span>
-                <span className="comparison-ref">Reference: {formatCurrency(referenceThreshold)}</span>
-              </div>
+              {(() => {
+                const maxValue = Math.max(threshold, referenceThreshold)
+                const thresholdPct = (threshold / maxValue) * 100
+                const refPct = (referenceThreshold / maxValue) * 100
+                return (
+                  <>
+                    <div className="comparison-bar-bg">
+                      <div
+                        className="comparison-bar-fill"
+                        style={{ width: `${thresholdPct}%` }}
+                      />
+                      <div
+                        className="comparison-bar-marker"
+                        style={{ left: `${refPct}%` }}
+                        title="Reference family threshold"
+                      />
+                    </div>
+                    <div className="comparison-values">
+                      <span>{formatCurrency(threshold)}</span>
+                      <span className="comparison-ref">Reference: {formatCurrency(referenceThreshold)}</span>
+                    </div>
+                  </>
+                )
+              })()}
             </div>
             <div className="comparison-percent">
               {percentOfReference > 100
@@ -320,19 +344,60 @@ function App() {
                   what families actually spend on essentials (food, clothing, shelter, utilities).
                 </p>
                 <p style={{ marginTop: 12 }}>
-                  BLS uses 5 years of data ({parseInt(year) - 6}–{parseInt(year) - 2}) and calculates
-                  <strong> 83% of median</strong> spending for families with children.
+                  BLS uses 5 years of data and calculates <strong>83% of median</strong> spending
+                  for families with children. The {year} threshold uses CE data from:
                 </p>
-                <table className="mini-table">
+                <div className="ce-years-grid">
+                  {ceSurveyYears.map(ceYear => {
+                    const hasData = baseThresholds[String(ceYear)]
+                    const isActual = ceYear <= LATEST_PUBLISHED_YEAR
+                    return (
+                      <div key={ceYear} className={`ce-year-item ${isActual ? 'actual' : 'forecast'}`}>
+                        <span className="ce-year">{ceYear}</span>
+                        <span className={`ce-badge ${isActual ? 'actual' : 'forecast'}`}>
+                          {isActual ? 'Actual' : 'Forecast'}
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+                <p style={{ marginTop: 16, marginBottom: 8 }}>
+                  <strong>Historical thresholds</strong> (by tenure type):
+                </p>
+                <table className="mini-table history-table">
+                  <thead>
+                    <tr>
+                      <th>Year</th>
+                      <th>Renter</th>
+                      <th>Mortgage</th>
+                      <th>No mortgage</th>
+                      <th></th>
+                    </tr>
+                  </thead>
                   <tbody>
-                    <tr><td>Renter</td><td>{formatCurrency(baseThresholds[year].renter)}</td></tr>
-                    <tr><td>Owner w/ mortgage</td><td>{formatCurrency(baseThresholds[year].owner_with_mortgage)}</td></tr>
-                    <tr><td>Owner w/o mortgage</td><td>{formatCurrency(baseThresholds[year].owner_without_mortgage)}</td></tr>
+                    {[...Array(5)].map((_, i) => {
+                      const histYear = String(parseInt(year) - i)
+                      const data = baseThresholds[histYear]
+                      const isHistForecast = parseInt(histYear) > LATEST_PUBLISHED_YEAR
+                      return data ? (
+                        <tr key={histYear} className={histYear === year ? 'current-row' : ''}>
+                          <td className="year-cell">{histYear}</td>
+                          <td>{formatCurrency(data.renter)}</td>
+                          <td>{formatCurrency(data.owner_with_mortgage)}</td>
+                          <td>{formatCurrency(data.owner_without_mortgage)}</td>
+                          <td>
+                            <span className={`table-badge ${isHistForecast ? 'forecast' : 'actual'}`}>
+                              {isHistForecast ? 'F' : 'A'}
+                            </span>
+                          </td>
+                        </tr>
+                      ) : null
+                    })}
                   </tbody>
                 </table>
                 {isForecasted && (
                   <p className="forecast-note">
-                    * {year} is forecasted using {LATEST_PUBLISHED_YEAR} data + {((forecast.cpiProjections[year] || 0.02) * 100).toFixed(1)}% projected inflation.
+                    F = Forecast. {year} is forecasted using {LATEST_PUBLISHED_YEAR} data + {((forecast.cpiProjections[year] || 0.02) * 100).toFixed(1)}% projected inflation.
                   </p>
                 )}
               </div>
