@@ -19,16 +19,20 @@ Example:
 """
 
 from .calculator import SPMCalculator
-from .ce_threshold import calculate_base_thresholds
+from .ce_threshold import calculate_base_thresholds, get_published_thresholds
 from .geoadj import get_geoadj, create_geoadj_lookup
 from .equivalence_scale import spm_equivalence_scale
+from .fcsuti_cpi import get_fcsuti_cpi, get_fcsuti_inflation_factor
 
 __version__ = "0.1.0"
 
 __all__ = [
     "SPMCalculator",
     "calculate_base_thresholds",
+    "get_published_thresholds",
     "get_geoadj",
     "create_geoadj_lookup",
     "spm_equivalence_scale",
+    "get_fcsuti_cpi",
+    "get_fcsuti_inflation_factor",
 ]

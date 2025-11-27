@@ -38,6 +38,9 @@ dev = [
     "black>=23.0",
     "ruff>=0.1",
 ]
+app = [
+    "streamlit>=1.30",
+]
 
 [project.urls]
 Homepage = "https://github.com/PolicyEngine/spm-calculator"

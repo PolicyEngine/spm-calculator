@@ -2,6 +2,19 @@
 
 Calculate [Supplemental Poverty Measure (SPM)](https://www.census.gov/topics/income-poverty/supplemental-poverty-measure.html) thresholds for any US geography and year.
 
+[![Try the Calculator](https://img.shields.io/badge/Try-Calculator-blue)](https://spm-calculator.streamlit.app)
+[![Documentation](https://img.shields.io/badge/docs-online-green)](https://policyengine.github.io/spm-calculator)
+
+## Interactive Calculator
+
+**[Try the SPM Threshold Calculator](https://spm-calculator.streamlit.app)** - An interactive web tool that walks you through calculating your SPM threshold based on your household characteristics.
+
+To run locally:
+```bash
+pip install spm-calculator[app]
+streamlit run app/streamlit_app.py
+```
+
 ## Overview
 
 The SPM threshold is calculated as:
