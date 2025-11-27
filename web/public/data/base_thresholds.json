@@ -1,0 +1,17 @@
+{
+  "2024": {
+    "renter": 39430,
+    "owner_with_mortgage": 39068,
+    "owner_without_mortgage": 32586
+  },
+  "2023": {
+    "renter": 36606,
+    "owner_with_mortgage": 36192,
+    "owner_without_mortgage": 30347
+  },
+  "2022": {
+    "renter": 33402,
+    "owner_with_mortgage": 32949,
+    "owner_without_mortgage": 27679
+  }
+}

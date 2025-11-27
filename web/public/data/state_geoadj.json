@@ -1,0 +1,206 @@
+{
+  "AL": {
+    "name": "Alabama",
+    "geoadj": 0.87
+  },
+  "AK": {
+    "name": "Alaska",
+    "geoadj": 1.15
+  },
+  "AZ": {
+    "name": "Arizona",
+    "geoadj": 0.98
+  },
+  "AR": {
+    "name": "Arkansas",
+    "geoadj": 0.85
+  },
+  "CA": {
+    "name": "California",
+    "geoadj": 1.22
+  },
+  "CO": {
+    "name": "Colorado",
+    "geoadj": 1.08
+  },
+  "CT": {
+    "name": "Connecticut",
+    "geoadj": 1.12
+  },
+  "DE": {
+    "name": "Delaware",
+    "geoadj": 1.02
+  },
+  "DC": {
+    "name": "District of Columbia",
+    "geoadj": 1.25
+  },
+  "FL": {
+    "name": "Florida",
+    "geoadj": 1.05
+  },
+  "GA": {
+    "name": "Georgia",
+    "geoadj": 0.96
+  },
+  "HI": {
+    "name": "Hawaii",
+    "geoadj": 1.27
+  },
+  "ID": {
+    "name": "Idaho",
+    "geoadj": 0.93
+  },
+  "IL": {
+    "name": "Illinois",
+    "geoadj": 0.98
+  },
+  "IN": {
+    "name": "Indiana",
+    "geoadj": 0.88
+  },
+  "IA": {
+    "name": "Iowa",
+    "geoadj": 0.86
+  },
+  "KS": {
+    "name": "Kansas",
+    "geoadj": 0.87
+  },
+  "KY": {
+    "name": "Kentucky",
+    "geoadj": 0.85
+  },
+  "LA": {
+    "name": "Louisiana",
+    "geoadj": 0.88
+  },
+  "ME": {
+    "name": "Maine",
+    "geoadj": 0.96
+  },
+  "MD": {
+    "name": "Maryland",
+    "geoadj": 1.12
+  },
+  "MA": {
+    "name": "Massachusetts",
+    "geoadj": 1.18
+  },
+  "MI": {
+    "name": "Michigan",
+    "geoadj": 0.9
+  },
+  "MN": {
+    "name": "Minnesota",
+    "geoadj": 0.96
+  },
+  "MS": {
+    "name": "Mississippi",
+    "geoadj": 0.84
+  },
+  "MO": {
+    "name": "Missouri",
+    "geoadj": 0.88
+  },
+  "MT": {
+    "name": "Montana",
+    "geoadj": 0.92
+  },
+  "NE": {
+    "name": "Nebraska",
+    "geoadj": 0.88
+  },
+  "NV": {
+    "name": "Nevada",
+    "geoadj": 1.02
+  },
+  "NH": {
+    "name": "New Hampshire",
+    "geoadj": 1.08
+  },
+  "NJ": {
+    "name": "New Jersey",
+    "geoadj": 1.16
+  },
+  "NM": {
+    "name": "New Mexico",
+    "geoadj": 0.9
+  },
+  "NY": {
+    "name": "New York",
+    "geoadj": 1.15
+  },
+  "NC": {
+    "name": "North Carolina",
+    "geoadj": 0.94
+  },
+  "ND": {
+    "name": "North Dakota",
+    "geoadj": 0.88
+  },
+  "OH": {
+    "name": "Ohio",
+    "geoadj": 0.88
+  },
+  "OK": {
+    "name": "Oklahoma",
+    "geoadj": 0.85
+  },
+  "OR": {
+    "name": "Oregon",
+    "geoadj": 1.06
+  },
+  "PA": {
+    "name": "Pennsylvania",
+    "geoadj": 0.95
+  },
+  "RI": {
+    "name": "Rhode Island",
+    "geoadj": 1.08
+  },
+  "SC": {
+    "name": "South Carolina",
+    "geoadj": 0.92
+  },
+  "SD": {
+    "name": "South Dakota",
+    "geoadj": 0.86
+  },
+  "TN": {
+    "name": "Tennessee",
+    "geoadj": 0.92
+  },
+  "TX": {
+    "name": "Texas",
+    "geoadj": 0.96
+  },
+  "UT": {
+    "name": "Utah",
+    "geoadj": 1.0
+  },
+  "VT": {
+    "name": "Vermont",
+    "geoadj": 1.02
+  },
+  "VA": {
+    "name": "Virginia",
+    "geoadj": 1.08
+  },
+  "WA": {
+    "name": "Washington",
+    "geoadj": 1.12
+  },
+  "WV": {
+    "name": "West Virginia",
+    "geoadj": 0.84
+  },
+  "WI": {
+    "name": "Wisconsin",
+    "geoadj": 0.9
+  },
+  "WY": {
+    "name": "Wyoming",
+    "geoadj": 0.88
+  }
+}

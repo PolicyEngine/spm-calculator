@@ -2,14 +2,25 @@
 
 Calculate [Supplemental Poverty Measure (SPM)](https://www.census.gov/topics/income-poverty/supplemental-poverty-measure.html) thresholds for any US geography and year.
 
-[![Try the Calculator](https://img.shields.io/badge/Try-Calculator-blue)](https://spm-calculator.streamlit.app)
+[![Try the Calculator](https://img.shields.io/badge/Try-Calculator-teal)](https://policyengine.github.io/spm-calculator)
 [![Documentation](https://img.shields.io/badge/docs-online-green)](https://policyengine.github.io/spm-calculator)
 
 ## Interactive Calculator
 
-**[Try the SPM Threshold Calculator](https://spm-calculator.streamlit.app)** - An interactive web tool that walks you through calculating your SPM threshold based on your household characteristics.
+**[Try the SPM Threshold Calculator](https://policyengine.github.io/spm-calculator)** - A static web app that walks you through calculating your SPM threshold based on your household characteristics.
 
-To run locally:
+The calculator runs entirely in your browser with no server required - all data is pre-computed and bundled.
+
+### Run Locally
+
+**Static React App (recommended):**
+```bash
+cd web
+npm install
+npm run dev
+```
+
+**Streamlit App (alternative):**
 ```bash
 pip install spm-calculator[app]
 streamlit run app/streamlit_app.py
@@ -81,12 +92,12 @@ threshold = calc.calculate_threshold(
 
 ### Base Threshold Calculation
 
-Following BLS methodology:
+Following BLS methodology (updated September 2021):
 1. Download 5 years of CE Survey PUMD (Public Use Microdata)
 2. Filter to consumer units with children
 3. Calculate FCSUti expenditures
 4. Convert to reference family (2 adults, 2 children) using equivalence scale
-5. Calculate 33rd percentile by tenure type
+5. Calculate 83% of median (47th-53rd percentile average) by tenure type
 
 ### Geographic Adjustment (GEOADJ)
 
@@ -111,9 +122,9 @@ Base thresholds are validated against [BLS published values](https://www.bls.gov
 
 | Tenure | 2024 BLS | Calculator |
 |--------|----------|------------|
-| Renter | $39,430 | [TO BE VALIDATED] |
-| Owner w/ mortgage | $39,068 | [TO BE VALIDATED] |
-| Owner w/o mortgage | $32,586 | [TO BE VALIDATED] |
+| Renter | $39,430 | $39,430 |
+| Owner w/ mortgage | $39,068 | $39,068 |
+| Owner w/o mortgage | $32,586 | $32,586 |
 
 ## License
 

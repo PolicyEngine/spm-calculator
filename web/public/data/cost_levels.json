@@ -1,0 +1,26 @@
+{
+  "national_average": {
+    "geoadj": 1.0,
+    "label": "National average"
+  },
+  "low_cost": {
+    "geoadj": 0.84,
+    "label": "Low-cost area"
+  },
+  "below_average": {
+    "geoadj": 0.92,
+    "label": "Below average"
+  },
+  "above_average": {
+    "geoadj": 1.1,
+    "label": "Above average"
+  },
+  "high_cost": {
+    "geoadj": 1.2,
+    "label": "High-cost area"
+  },
+  "very_high_cost": {
+    "geoadj": 1.27,
+    "label": "Very high-cost area"
+  }
+}
