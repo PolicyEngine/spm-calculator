@@ -14,12 +14,10 @@ const availableYears = Object.keys(baseThresholds).sort((a, b) => parseInt(b) - 
 // Calculate equivalence scale
 function calculateEquivalenceScale(adults, children) {
   if (adults === 0 && children === 0) return 0
-
   const { firstAdult, additionalAdults, children: childWeight, referenceFamily } = methodology.equivalenceScale
   const adultScale = adults >= 1 ? firstAdult + additionalAdults * Math.max(adults - 1, 0) : 0
   const childScale = childWeight * children
   const rawScale = adultScale + childScale
-
   return rawScale / referenceFamily
 }
 
@@ -32,21 +30,35 @@ function formatCurrency(value) {
   }).format(value)
 }
 
-// Get CE survey years used for a given threshold year
-function getCESurveyYears(year) {
-  const y = parseInt(year)
-  // BLS uses 5 years of data, lagged by 1 year
-  // For 2024 thresholds, they use 2018-2022 CE data
-  return [y - 6, y - 5, y - 4, y - 3, y - 2]
-}
-
 // Check if a year is forecasted
 function isForecast(year) {
   return parseInt(year) > LATEST_PUBLISHED_YEAR
 }
 
+// Component card with expandable details
+function CalculationCard({ icon, title, value, subtitle, color, details, isExpanded, onToggle }) {
+  return (
+    <div className="calc-card" style={{ borderTopColor: color }}>
+      <div className="calc-card-header">
+        <span className="calc-card-icon">{icon}</span>
+        <span className="calc-card-title">{title}</span>
+      </div>
+      <div className="calc-card-value" style={{ color }}>{value}</div>
+      <div className="calc-card-subtitle">{subtitle}</div>
+      {details && (
+        <>
+          <button className="calc-card-toggle" onClick={onToggle}>
+            {isExpanded ? '− Hide details' : '+ Show details'}
+          </button>
+          {isExpanded && <div className="calc-card-details">{details}</div>}
+        </>
+      )}
+    </div>
+  )
+}
+
 function App() {
-  // Form state - default to current year (2025)
+  // Form state
   const currentYear = new Date().getFullYear()
   const defaultYear = availableYears.includes(String(currentYear)) ? String(currentYear) : String(LATEST_PUBLISHED_YEAR)
 
@@ -59,31 +71,25 @@ function App() {
   const [selectedState, setSelectedState] = useState('CA')
   const [customGeoadj, setCustomGeoadj] = useState(1.0)
 
+  // Expanded state for detail cards
+  const [expandedCard, setExpandedCard] = useState(null)
+
   // Calculate values
   const base = baseThresholds[year][tenure]
   const equivScale = calculateEquivalenceScale(numAdults, numChildren)
   const isForecasted = isForecast(year)
-  const ceYears = getCESurveyYears(year)
+  const rawScale = equivScale * methodology.equivalenceScale.referenceFamily
 
   const geoadj = useMemo(() => {
-    if (locationType === 'preset') {
-      return costLevels[costLevel].geoadj
-    } else if (locationType === 'state') {
-      return states[selectedState]?.geoadj || 1.0
-    } else {
-      return customGeoadj
-    }
+    if (locationType === 'preset') return costLevels[costLevel].geoadj
+    if (locationType === 'state') return states[selectedState]?.geoadj || 1.0
+    return customGeoadj
   }, [locationType, costLevel, selectedState, customGeoadj])
 
   const threshold = base * equivScale * geoadj
   const monthly = threshold / 12
-
-  // Raw scale for display
-  const rawScale = equivScale * methodology.equivalenceScale.referenceFamily
-  const adultContrib = numAdults >= 1
-    ? methodology.equivalenceScale.firstAdult + methodology.equivalenceScale.additionalAdults * Math.max(numAdults - 1, 0)
-    : 0
-  const childContrib = methodology.equivalenceScale.children * numChildren
+  const referenceThreshold = base * 1.0 * 1.0 // Reference family, national average
+  const percentOfReference = (threshold / referenceThreshold * 100).toFixed(0)
 
   // Tenure display names
   const tenureNames = {
@@ -92,32 +98,18 @@ function App() {
     owner_without_mortgage: 'Owner without mortgage'
   }
 
-  // Cost level description
-  const getCostDescription = () => {
-    if (geoadj > 1) return 'above'
-    if (geoadj < 1) return 'below'
-    return 'average'
+  const tenureShortNames = {
+    renter: 'Renter',
+    owner_with_mortgage: 'Mortgage',
+    owner_without_mortgage: 'No mortgage'
   }
 
-  // Get historical thresholds for rolling 5-year display
-  const getHistoricalThresholds = () => {
-    const years = []
-    for (let i = 5; i >= 1; i--) {
-      const y = String(parseInt(year) - i)
-      if (baseThresholds[y]) {
-        years.push({
-          year: y,
-          renter: baseThresholds[y].renter,
-          owner_with_mortgage: baseThresholds[y].owner_with_mortgage,
-          owner_without_mortgage: baseThresholds[y].owner_without_mortgage,
-          isPublished: parseInt(y) <= LATEST_PUBLISHED_YEAR
-        })
-      }
-    }
-    return years
+  // Get location description
+  const getLocationName = () => {
+    if (locationType === 'preset') return costLevels[costLevel].label
+    if (locationType === 'state') return states[selectedState]?.name
+    return `Custom (${customGeoadj.toFixed(2)})`
   }
-
-  const historicalThresholds = getHistoricalThresholds()
 
   return (
     <div className="container">
@@ -127,339 +119,353 @@ function App() {
         <h1>SPM Threshold Calculator</h1>
       </header>
 
-      {/* Intro */}
-      <p style={{ marginBottom: 24 }}>
-        Calculate your <strong>Supplemental Poverty Measure (SPM) threshold</strong> based on your
-        household characteristics. The SPM is used by the U.S. Census Bureau to measure poverty
-        more comprehensively than the official poverty measure.
-      </p>
-
-      <div className="card">
-        <strong>Formula:</strong> threshold = base_threshold × equivalence_scale × geographic_adjustment
-      </div>
-
-      {/* Main content */}
-      <div className="grid grid-2" style={{ alignItems: 'start' }}>
+      {/* Two-column layout */}
+      <div className="main-grid">
         {/* Left: Inputs */}
-        <div>
-          <section className="section">
-            <h2 className="section-title">Your Household</h2>
+        <div className="inputs-panel">
+          <h2 className="panel-title">Your Household</h2>
 
-            {/* Year */}
-            <div className="form-group">
-              <label htmlFor="year">Year</label>
-              <select id="year" value={year} onChange={e => setYear(e.target.value)}>
-                {availableYears.map(y => (
-                  <option key={y} value={y}>
-                    {y} {parseInt(y) > LATEST_PUBLISHED_YEAR ? '(forecast)' : ''}
-                  </option>
-                ))}
-              </select>
-              <p className="help-text">
-                {isForecasted
-                  ? `Forecast based on ${LATEST_PUBLISHED_YEAR} thresholds + projected inflation`
-                  : 'Published BLS threshold'}
-              </p>
-            </div>
+          {/* Year */}
+          <div className="form-group">
+            <label>Year</label>
+            <select value={year} onChange={e => setYear(e.target.value)}>
+              {availableYears.map(y => (
+                <option key={y} value={y}>
+                  {y} {parseInt(y) > LATEST_PUBLISHED_YEAR ? '(forecast)' : ''}
+                </option>
+              ))}
+            </select>
+          </div>
 
-            {/* Family composition */}
-            <h3 style={{ fontSize: 16, marginBottom: 16, marginTop: 24 }}>Family Composition</h3>
-            <div className="input-row">
-              <div className="form-group">
-                <label htmlFor="adults">Adults (18+)</label>
+          {/* Family - compact inline */}
+          <div className="form-group">
+            <label>Family</label>
+            <div className="inline-inputs">
+              <div className="inline-input">
                 <input
                   type="number"
-                  id="adults"
                   min="0"
                   max="10"
                   value={numAdults}
                   onChange={e => setNumAdults(parseInt(e.target.value) || 0)}
                 />
+                <span>adults</span>
               </div>
-              <div className="form-group">
-                <label htmlFor="children">Children (under 18)</label>
+              <div className="inline-input">
                 <input
                   type="number"
-                  id="children"
                   min="0"
                   max="15"
                   value={numChildren}
                   onChange={e => setNumChildren(parseInt(e.target.value) || 0)}
                 />
+                <span>children</span>
               </div>
             </div>
+          </div>
 
-            {/* Tenure */}
-            <h3 style={{ fontSize: 16, marginBottom: 16, marginTop: 24 }}>Housing Tenure</h3>
-            <div className="radio-group">
-              {Object.entries(tenureNames).map(([key, name]) => (
-                <label key={key} className={`radio-option ${tenure === key ? 'selected' : ''}`}>
-                  <input
-                    type="radio"
-                    name="tenure"
-                    value={key}
-                    checked={tenure === key}
-                    onChange={e => setTenure(e.target.value)}
-                  />
+          {/* Tenure - horizontal chips */}
+          <div className="form-group">
+            <label>Housing</label>
+            <div className="chip-group">
+              {Object.entries(tenureShortNames).map(([key, name]) => (
+                <button
+                  key={key}
+                  className={`chip ${tenure === key ? 'selected' : ''}`}
+                  onClick={() => setTenure(key)}
+                >
                   {name}
-                </label>
+                </button>
               ))}
             </div>
+          </div>
 
-            {/* Location */}
-            <h3 style={{ fontSize: 16, marginBottom: 16, marginTop: 24 }}>Location</h3>
-            <div className="form-group">
-              <label htmlFor="locationType">Location type</label>
-              <select id="locationType" value={locationType} onChange={e => setLocationType(e.target.value)}>
-                <option value="preset">Cost level preset</option>
-                <option value="state">Select state</option>
-                <option value="custom">Custom GEOADJ</option>
-              </select>
+          {/* Location */}
+          <div className="form-group">
+            <label>Location</label>
+            <div className="chip-group" style={{ marginBottom: 12 }}>
+              <button
+                className={`chip ${locationType === 'preset' ? 'selected' : ''}`}
+                onClick={() => setLocationType('preset')}
+              >
+                Cost level
+              </button>
+              <button
+                className={`chip ${locationType === 'state' ? 'selected' : ''}`}
+                onClick={() => setLocationType('state')}
+              >
+                State
+              </button>
+              <button
+                className={`chip ${locationType === 'custom' ? 'selected' : ''}`}
+                onClick={() => setLocationType('custom')}
+              >
+                Custom
+              </button>
             </div>
 
             {locationType === 'preset' && (
-              <div className="form-group">
-                <label htmlFor="costLevel">Cost level</label>
-                <select id="costLevel" value={costLevel} onChange={e => setCostLevel(e.target.value)}>
-                  {Object.entries(costLevels).map(([key, { label, geoadj }]) => (
-                    <option key={key} value={key}>{label} ({geoadj.toFixed(2)})</option>
-                  ))}
-                </select>
-              </div>
+              <select value={costLevel} onChange={e => setCostLevel(e.target.value)}>
+                {Object.entries(costLevels).map(([key, { label }]) => (
+                  <option key={key} value={key}>{label}</option>
+                ))}
+              </select>
             )}
 
             {locationType === 'state' && (
-              <div className="form-group">
-                <label htmlFor="state">State</label>
-                <select id="state" value={selectedState} onChange={e => setSelectedState(e.target.value)}>
-                  {Object.entries(states)
-                    .sort((a, b) => a[1].name.localeCompare(b[1].name))
-                    .map(([code, { name, geoadj }]) => (
-                      <option key={code} value={code}>{name} ({geoadj.toFixed(2)})</option>
-                    ))}
-                </select>
-              </div>
+              <select value={selectedState} onChange={e => setSelectedState(e.target.value)}>
+                {Object.entries(states)
+                  .sort((a, b) => a[1].name.localeCompare(b[1].name))
+                  .map(([code, { name }]) => (
+                    <option key={code} value={code}>{name}</option>
+                  ))}
+              </select>
             )}
 
             {locationType === 'custom' && (
-              <div className="form-group">
-                <label htmlFor="customGeoadj">Custom GEOADJ ({customGeoadj.toFixed(2)})</label>
+              <div className="slider-container">
                 <input
                   type="range"
-                  id="customGeoadj"
                   min="0.70"
                   max="1.50"
                   step="0.01"
                   value={customGeoadj}
                   onChange={e => setCustomGeoadj(parseFloat(e.target.value))}
-                  style={{ width: '100%' }}
                 />
-                <p className="help-text">GEOADJ ranges from ~0.84 (low-cost) to ~1.27 (high-cost)</p>
+                <span className="slider-value">{customGeoadj.toFixed(2)}</span>
               </div>
             )}
-          </section>
+          </div>
         </div>
 
         {/* Right: Results */}
-        <div>
-          <section className="section">
-            <h2 className="section-title">Your SPM Threshold</h2>
+        <div className="results-panel">
+          {/* Main result */}
+          <div className="result-hero">
+            {isForecasted && <span className="forecast-badge">FORECAST</span>}
+            <div className="result-label">Your {year} SPM Threshold</div>
+            <div className="result-amount">{formatCurrency(threshold)}</div>
+            <div className="result-monthly">{formatCurrency(monthly)}/month</div>
+          </div>
 
-            <div className="card card-highlight">
-              <div className="result">
-                <p className="result-label">
-                  SPM Threshold ({year})
-                  {isForecasted && <span style={{
-                    marginLeft: 8,
-                    fontSize: 12,
-                    backgroundColor: 'var(--warning)',
-                    color: 'var(--gray-900)',
-                    padding: '2px 8px',
-                    borderRadius: 4
-                  }}>FORECAST</span>}
-                </p>
-                <p className="result-value">{formatCurrency(threshold)}</p>
-                <p className="result-description">
-                  For a household with <strong>{numAdults} adult{numAdults !== 1 ? 's' : ''}</strong> and{' '}
-                  <strong>{numChildren} child{numChildren !== 1 ? 'ren' : ''}</strong> who are{' '}
-                  <strong>{tenureNames[tenure].toLowerCase()}s</strong> in a{' '}
-                  <strong>{getCostDescription()}-cost area</strong>.
-                </p>
+          {/* Visual formula */}
+          <div className="formula-visual">
+            <div className="formula-component">
+              <div className="formula-value">{formatCurrency(base)}</div>
+              <div className="formula-label">Base</div>
+            </div>
+            <div className="formula-operator">×</div>
+            <div className="formula-component">
+              <div className="formula-value">{equivScale.toFixed(2)}</div>
+              <div className="formula-label">Family size</div>
+            </div>
+            <div className="formula-operator">×</div>
+            <div className="formula-component">
+              <div className="formula-value">{geoadj.toFixed(2)}</div>
+              <div className="formula-label">Location</div>
+            </div>
+            <div className="formula-operator">=</div>
+            <div className="formula-component formula-result">
+              <div className="formula-value">{formatCurrency(threshold)}</div>
+              <div className="formula-label">Threshold</div>
+            </div>
+          </div>
+
+          {/* Comparison bar */}
+          <div className="comparison-section">
+            <div className="comparison-label">
+              Compared to reference family (2 adults, 2 children, national average):
+            </div>
+            <div className="comparison-bar-container">
+              <div className="comparison-bar-bg">
+                <div
+                  className="comparison-bar-fill"
+                  style={{ width: `${Math.min(percentOfReference, 150)}%` }}
+                />
+                <div className="comparison-bar-marker" style={{ left: '100%' }} />
+              </div>
+              <div className="comparison-values">
+                <span>{formatCurrency(threshold)}</span>
+                <span className="comparison-ref">Reference: {formatCurrency(referenceThreshold)}</span>
               </div>
             </div>
-
-            <div className="monthly-card">
-              <p className="result-label">Monthly Equivalent</p>
-              <p className="monthly-value">{formatCurrency(monthly)}</p>
+            <div className="comparison-percent">
+              {percentOfReference > 100
+                ? `${percentOfReference - 100}% above reference`
+                : percentOfReference < 100
+                  ? `${100 - percentOfReference}% below reference`
+                  : 'Same as reference'}
             </div>
-
-            {isForecasted && (
-              <div className="card" style={{ marginTop: 16, backgroundColor: 'var(--teal-50)', fontSize: 14 }}>
-                <strong>Note:</strong> This is a forecast based on {LATEST_PUBLISHED_YEAR} published thresholds
-                adjusted for projected inflation ({(forecast.cpiProjections[year] * 100 || 2.0).toFixed(1)}% for {year}).
-                Official BLS thresholds typically lag by 1-2 years.
-              </div>
-            )}
-          </section>
+          </div>
         </div>
       </div>
 
-      {/* Calculation breakdown */}
-      <section className="section">
+      {/* Expandable explanation cards */}
+      <div className="explanation-section">
         <h2 className="section-title">How It's Calculated</h2>
 
-        <h3 className="step-header">Step 1: Base Threshold (Rolling 5-Year CE Survey)</h3>
-        <p>
-          The base threshold comes from the BLS Consumer Expenditure Survey. For {year} thresholds,
-          BLS uses <strong>5 years of CE Survey data</strong> ({ceYears[0]}-{ceYears[4]}), lagged by one year.
-        </p>
+        <div className="calc-cards">
+          <CalculationCard
+            icon="🏠"
+            title="Base Threshold"
+            value={formatCurrency(base)}
+            subtitle={`${tenureNames[tenure]}, ${year}${isForecasted ? ' (forecast)' : ''}`}
+            color="var(--teal-500)"
+            isExpanded={expandedCard === 'base'}
+            onToggle={() => setExpandedCard(expandedCard === 'base' ? null : 'base')}
+            details={
+              <div>
+                <p>
+                  The base comes from the <strong>Consumer Expenditure Survey</strong> —
+                  what families actually spend on essentials (food, clothing, shelter, utilities).
+                </p>
+                <p style={{ marginTop: 12 }}>
+                  BLS uses 5 years of data ({parseInt(year) - 6}–{parseInt(year) - 2}) and calculates
+                  <strong> 83% of median</strong> spending for families with children.
+                </p>
+                <table className="mini-table">
+                  <tbody>
+                    <tr><td>Renter</td><td>{formatCurrency(baseThresholds[year].renter)}</td></tr>
+                    <tr><td>Owner w/ mortgage</td><td>{formatCurrency(baseThresholds[year].owner_with_mortgage)}</td></tr>
+                    <tr><td>Owner w/o mortgage</td><td>{formatCurrency(baseThresholds[year].owner_without_mortgage)}</td></tr>
+                  </tbody>
+                </table>
+                {isForecasted && (
+                  <p className="forecast-note">
+                    * {year} is forecasted using {LATEST_PUBLISHED_YEAR} data + {((forecast.cpiProjections[year] || 0.02) * 100).toFixed(1)}% projected inflation.
+                  </p>
+                )}
+              </div>
+            }
+          />
 
-        {!isForecasted && (
-          <p style={{ marginTop: 12 }}>
-            The methodology calculates <strong>83% of the median</strong> FCSUti (Food, Clothing, Shelter,
-            Utilities, telephone, internet) expenditures for consumer units with children, adjusted to
-            a reference family of 2 adults and 2 children.
-          </p>
-        )}
+          <CalculationCard
+            icon="👨‍👩‍👧‍👦"
+            title="Family Size Adjustment"
+            value={`×${equivScale.toFixed(2)}`}
+            subtitle={`${numAdults} adult${numAdults !== 1 ? 's' : ''}, ${numChildren} child${numChildren !== 1 ? 'ren' : ''}`}
+            color="var(--blue-700)"
+            isExpanded={expandedCard === 'family'}
+            onToggle={() => setExpandedCard(expandedCard === 'family' ? null : 'family')}
+            details={
+              <div>
+                <p>
+                  Larger families need more resources. The SPM uses a <strong>three-parameter scale</strong>:
+                </p>
+                <div className="scale-visual">
+                  <div className="scale-item">
+                    <span className="scale-icon">👤</span>
+                    <span>First adult = 1.0</span>
+                  </div>
+                  <div className="scale-item">
+                    <span className="scale-icon">👤</span>
+                    <span>Each additional adult = +0.5</span>
+                  </div>
+                  <div className="scale-item">
+                    <span className="scale-icon">👶</span>
+                    <span>Each child = +0.3</span>
+                  </div>
+                </div>
+                <div className="scale-calculation">
+                  <p>Your family: {numAdults > 0 ? '1.0' : '0'}{numAdults > 1 ? ` + ${(0.5 * (numAdults - 1)).toFixed(1)}` : ''}{numChildren > 0 ? ` + ${(0.3 * numChildren).toFixed(1)}` : ''} = <strong>{rawScale.toFixed(1)}</strong></p>
+                  <p>Normalized (÷ 2.1 reference): <strong>{equivScale.toFixed(3)}</strong></p>
+                </div>
+              </div>
+            }
+          />
 
-        {isForecasted && (
-          <div className="card" style={{ margin: '16px 0', backgroundColor: 'var(--teal-50)' }}>
-            <strong>Forecast methodology:</strong> The {year} threshold is forecasted by applying
-            cumulative projected inflation to the {LATEST_PUBLISHED_YEAR} published threshold.
-          </div>
-        )}
-
-        {/* Historical thresholds table */}
-        <p style={{ marginTop: 16 }}><strong>Historical base thresholds (reference family 2A2C):</strong></p>
-        <table>
-          <thead>
-            <tr>
-              <th>Year</th>
-              <th>Renter</th>
-              <th>Owner w/ Mortgage</th>
-              <th>Owner w/o Mortgage</th>
-              <th>Source</th>
-            </tr>
-          </thead>
-          <tbody>
-            {historicalThresholds.map(h => (
-              <tr key={h.year}>
-                <td>{h.year}</td>
-                <td>{formatCurrency(h.renter)}</td>
-                <td>{formatCurrency(h.owner_with_mortgage)}</td>
-                <td>{formatCurrency(h.owner_without_mortgage)}</td>
-                <td>{h.isPublished ? 'BLS Published' : 'Forecast'}</td>
-              </tr>
-            ))}
-            <tr style={{ backgroundColor: 'var(--teal-50)', fontWeight: 600 }}>
-              <td>{year}</td>
-              <td>{formatCurrency(baseThresholds[year].renter)}</td>
-              <td>{formatCurrency(baseThresholds[year].owner_with_mortgage)}</td>
-              <td>{formatCurrency(baseThresholds[year].owner_without_mortgage)}</td>
-              <td>{isForecasted ? 'Forecast' : 'BLS Published'}</td>
-            </tr>
-          </tbody>
-        </table>
-        <p style={{ marginTop: 8 }}><strong>Your base threshold ({tenureNames[tenure]}):</strong> {formatCurrency(base)}</p>
-
-        <h3 className="step-header">Step 2: Equivalence Scale</h3>
-        <p>The equivalence scale adjusts for family size using the three-parameter formula:</p>
-        <ul style={{ marginLeft: 24, marginBottom: 16 }}>
-          <li>First adult: <strong>1.0</strong></li>
-          <li>Additional adults: <strong>+0.5 each</strong></li>
-          <li>Children: <strong>+0.3 each</strong></li>
-        </ul>
-        <p>Your household:</p>
-        <ul style={{ marginLeft: 24, marginBottom: 16 }}>
-          <li>Adults: {numAdults} → 1.0 + {(0.5 * Math.max(numAdults - 1, 0)).toFixed(1)} = <strong>{adultContrib.toFixed(1)}</strong></li>
-          <li>Children: {numChildren} × 0.3 = <strong>{childContrib.toFixed(1)}</strong></li>
-          <li><strong>Raw scale: {rawScale.toFixed(2)}</strong></li>
-        </ul>
-        <p>Normalized to reference family (2A2C = 2.1):</p>
-        <p><strong>Equivalence scale: {rawScale.toFixed(2)} ÷ 2.1 = {equivScale.toFixed(3)}</strong></p>
-
-        <h3 className="step-header">Step 3: Geographic Adjustment (GEOADJ)</h3>
-        <p>GEOADJ adjusts for local housing costs using the formula:</p>
-        <div className="code-block" style={{ marginBottom: 16 }}>
-          GEOADJ = (local median rent / national median rent) × 0.492 + 0.508
+          <CalculationCard
+            icon="📍"
+            title="Location Adjustment"
+            value={`×${geoadj.toFixed(2)}`}
+            subtitle={getLocationName()}
+            color="var(--error)"
+            isExpanded={expandedCard === 'location'}
+            onToggle={() => setExpandedCard(expandedCard === 'location' ? null : 'location')}
+            details={
+              <div>
+                <p>
+                  Housing costs vary dramatically by location. The <strong>GEOADJ</strong> factor
+                  adjusts based on local vs. national median rent.
+                </p>
+                <div className="geoadj-scale">
+                  <div className="geoadj-bar">
+                    <span style={{ left: '0%' }}>0.84</span>
+                    <span style={{ left: '50%' }}>1.00</span>
+                    <span style={{ left: '100%' }}>1.27</span>
+                    <div
+                      className="geoadj-marker"
+                      style={{ left: `${((geoadj - 0.84) / (1.27 - 0.84)) * 100}%` }}
+                    />
+                  </div>
+                  <div className="geoadj-labels">
+                    <span>West Virginia</span>
+                    <span>National avg</span>
+                    <span>Hawaii</span>
+                  </div>
+                </div>
+                <p className="geoadj-formula">
+                  GEOADJ = (local rent ÷ national rent) × 0.492 + 0.508
+                </p>
+              </div>
+            }
+          />
         </div>
-        <p>Where 0.492 is the housing share of the SPM threshold for renters.</p>
-        <ul style={{ marginLeft: 24, marginBottom: 16 }}>
-          <li>GEOADJ ranges from ~0.84 (West Virginia) to ~1.27 (Hawaii)</li>
-          <li>National average: 1.00</li>
-        </ul>
-        <p><strong>Your GEOADJ: {geoadj.toFixed(2)}</strong></p>
+      </div>
 
-        <h3 className="step-header">Step 4: Final Calculation</h3>
-        <div className="code-block">
-          Threshold = Base × Equivalence Scale × GEOADJ<br />
-          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= {formatCurrency(base)} × {equivScale.toFixed(3)} × {geoadj.toFixed(2)}<br />
-          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= <strong>{formatCurrency(threshold)}</strong>
-        </div>
-      </section>
-
-      {/* Comparison table */}
-      <section className="section">
-        <h2 className="section-title">Comparison</h2>
-        <p>
-          Thresholds for different scenarios with {numAdults} adult{numAdults !== 1 ? 's' : ''} and{' '}
-          {numChildren} child{numChildren !== 1 ? 'ren' : ''}:
+      {/* Quick comparison table */}
+      <div className="comparison-table-section">
+        <h2 className="section-title">Compare Scenarios</h2>
+        <p className="section-subtitle">
+          How thresholds vary for {numAdults} adult{numAdults !== 1 ? 's' : ''} and {numChildren} child{numChildren !== 1 ? 'ren' : ''}
         </p>
-        <table>
-          <thead>
-            <tr>
-              <th>Tenure</th>
-              <th>Low-cost (0.84)</th>
-              <th>Average (1.00)</th>
-              <th>High-cost (1.20)</th>
-            </tr>
-          </thead>
-          <tbody>
-            {Object.entries(tenureNames).map(([key, name]) => (
-              <tr key={key}>
-                <td>{name}</td>
-                <td>{formatCurrency(baseThresholds[year][key] * equivScale * 0.84)}</td>
-                <td>{formatCurrency(baseThresholds[year][key] * equivScale * 1.00)}</td>
-                <td>{formatCurrency(baseThresholds[year][key] * equivScale * 1.20)}</td>
+        <div className="comparison-table-wrapper">
+          <table className="comparison-table">
+            <thead>
+              <tr>
+                <th></th>
+                <th>Low-cost<br/><span className="th-sub">GEOADJ 0.84</span></th>
+                <th>Average<br/><span className="th-sub">GEOADJ 1.00</span></th>
+                <th>High-cost<br/><span className="th-sub">GEOADJ 1.20</span></th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </section>
+            </thead>
+            <tbody>
+              {Object.entries(tenureShortNames).map(([key, name]) => (
+                <tr key={key} className={tenure === key ? 'highlight-row' : ''}>
+                  <td className="tenure-cell">{name}</td>
+                  <td>{formatCurrency(baseThresholds[year][key] * equivScale * 0.84)}</td>
+                  <td>{formatCurrency(baseThresholds[year][key] * equivScale * 1.00)}</td>
+                  <td>{formatCurrency(baseThresholds[year][key] * equivScale * 1.20)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
       {/* Resources */}
-      <section className="section">
-        <h2 className="section-title">Resources</h2>
-        <ul style={{ marginLeft: 24 }}>
-          <li>
-            <a href="https://www.bls.gov/pir/spm/spm_thresholds_2024.htm" target="_blank" rel="noopener noreferrer">
-              BLS SPM Thresholds
-            </a> - Official threshold values
-          </li>
-          <li>
-            <a href="https://www.bls.gov/cex/pumd.htm" target="_blank" rel="noopener noreferrer">
-              CE Survey Public Use Microdata
-            </a> - Source data for threshold calculation
-          </li>
-          <li>
-            <a href="https://www.census.gov/topics/income-poverty/supplemental-poverty-measure.html" target="_blank" rel="noopener noreferrer">
-              Census SPM Methodology
-            </a> - How SPM is calculated
-          </li>
-          <li>
-            <a href="https://github.com/PolicyEngine/spm-calculator" target="_blank" rel="noopener noreferrer">
-              spm-calculator on GitHub
-            </a> - Source code for this tool
-          </li>
-        </ul>
-      </section>
+      <div className="resources-section">
+        <h2 className="section-title">Learn More</h2>
+        <div className="resource-links">
+          <a href="https://www.bls.gov/pir/spm/spm_thresholds_2024.htm" target="_blank" rel="noopener noreferrer">
+            BLS Thresholds →
+          </a>
+          <a href="https://www.bls.gov/cex/pumd.htm" target="_blank" rel="noopener noreferrer">
+            CE Survey Data →
+          </a>
+          <a href="https://www.census.gov/topics/income-poverty/supplemental-poverty-measure.html" target="_blank" rel="noopener noreferrer">
+            Census SPM →
+          </a>
+          <a href="https://github.com/PolicyEngine/spm-calculator" target="_blank" rel="noopener noreferrer">
+            GitHub →
+          </a>
+        </div>
+      </div>
 
       {/* Footer */}
       <footer className="footer">
         <img src={LOGO_URL} alt="PolicyEngine" />
-        <p>
-          Built by <a href="https://policyengine.org">PolicyEngine</a> using the spm-calculator package.
-        </p>
+        <p>Built by <a href="https://policyengine.org">PolicyEngine</a></p>
       </footer>
     </div>
   )
