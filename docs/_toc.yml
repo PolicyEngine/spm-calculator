@@ -1,0 +1,10 @@
+root: index
+chapters:
+  - file: quickstart
+  - file: methodology
+  - file: api
+    sections:
+      - file: api/calculator
+      - file: api/geoadj
+      - file: api/equivalence_scale
+  - file: validation
