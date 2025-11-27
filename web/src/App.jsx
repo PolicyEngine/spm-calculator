@@ -1,9 +1,6 @@
 import { useState, useMemo } from 'react'
 import spmConfig from '../public/data/spm_config.json'
 
-// PolicyEngine logo URL
-const LOGO_URL = "https://raw.githubusercontent.com/PolicyEngine/policyengine-app/master/src/images/logos/policyengine/teal.png"
-
 // Extract data from config
 const { baseThresholds, states, costLevels, methodology, forecast } = spmConfig
 const LATEST_PUBLISHED_YEAR = forecast.latestPublishedYear
@@ -123,7 +120,6 @@ function App() {
     <div className="container">
       {/* Header */}
       <header className="header">
-        <img src={LOGO_URL} alt="PolicyEngine" />
         <h1>SPM Threshold Calculator</h1>
       </header>
 
@@ -529,7 +525,6 @@ function App() {
 
       {/* Footer */}
       <footer className="footer">
-        <img src={LOGO_URL} alt="PolicyEngine" />
         <p>Built by <a href="https://policyengine.org">PolicyEngine</a></p>
       </footer>
     </div>
