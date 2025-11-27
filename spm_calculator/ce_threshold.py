@@ -1,16 +1,21 @@
 """
 Calculate SPM base thresholds from Consumer Expenditure Survey.
 
-Follows BLS methodology:
-1. Use 5 years of CE Survey PUMD (Public Use Microdata)
+Follows BLS methodology (updated September 2021):
+1. Use 5 years of CE Survey PUMD (Public Use Microdata), lagged by 1 year
 2. Filter to consumer units with children
 3. Calculate FCSUti (Food, Clothing, Shelter, Utilities, telephone, internet)
-4. Convert to reference family (2A2C) using equivalence scale
-5. Calculate 33rd percentile by tenure type
+4. Adjust for inflation using FCSUti CPI-U composite index
+5. Convert to reference family (2A2C) using equivalence scale
+6. Calculate 83% of median (47th-53rd percentile average) by tenure type
+
+Note: Pre-2021 methodology used 33rd percentile (30th-36th range).
+The 2021+ methodology uses 83% of median which is approximately equivalent.
 
 Reference:
 - BLS SPM Thresholds: https://www.bls.gov/pir/spm/spm_thresholds_2024.htm
 - CE Survey PUMD: https://www.bls.gov/cex/pumd.htm
+- Methodology: https://www.bls.gov/pir/spm/garner_spm_choices_03_15_21.pdf
 """
 
 import io
@@ -260,7 +265,9 @@ def calculate_base_thresholds(
         # Get tenure type
         ce["tenure_type"] = get_tenure_type(ce)
 
-        # Calculate 33rd percentile by tenure (83% of median ≈ 33rd percentile)
+        # Calculate 83% of median (47th-53rd percentile average) by tenure
+        # This is the methodology used since September 2021
+        # Previously used 33rd percentile (30th-36th range)
         base_thresholds = {}
         for tenure in [
             "renter",
@@ -269,12 +276,18 @@ def calculate_base_thresholds(
         ]:
             subset = ce[ce["tenure_type"] == tenure]["fcsuti_2a2c"].dropna()
             if len(subset) > 0:
-                base_thresholds[tenure] = np.percentile(subset, 33)
+                # 83% of median approximation: average of 47th-53rd percentiles
+                p47 = np.percentile(subset, 47)
+                p53 = np.percentile(subset, 53)
+                median_range = (p47 + p53) / 2
+                base_thresholds[tenure] = 0.83 * median_range
             else:
                 # Fallback to overall if specific tenure not available
-                base_thresholds[tenure] = np.percentile(
-                    ce["fcsuti_2a2c"].dropna(), 33
-                )
+                subset = ce["fcsuti_2a2c"].dropna()
+                p47 = np.percentile(subset, 47)
+                p53 = np.percentile(subset, 53)
+                median_range = (p47 + p53) / 2
+                base_thresholds[tenure] = 0.83 * median_range
 
         return base_thresholds
 

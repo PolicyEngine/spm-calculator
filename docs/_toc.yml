@@ -8,3 +8,4 @@ chapters:
       - file: api/geoadj
       - file: api/equivalence_scale
   - file: validation
+  - file: cps_validation
