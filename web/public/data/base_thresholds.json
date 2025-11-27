@@ -1,17 +1,82 @@
 {
-  "2024": {
-    "renter": 39430,
-    "owner_with_mortgage": 39068,
-    "owner_without_mortgage": 32586
+  "2015": {
+    "renter": 25155,
+    "owner_with_mortgage": 24859,
+    "owner_without_mortgage": 20639
+  },
+  "2016": {
+    "renter": 25558,
+    "owner_with_mortgage": 25248,
+    "owner_without_mortgage": 20943
+  },
+  "2017": {
+    "renter": 26213,
+    "owner_with_mortgage": 25897,
+    "owner_without_mortgage": 21527
+  },
+  "2018": {
+    "renter": 26905,
+    "owner_with_mortgage": 26565,
+    "owner_without_mortgage": 22095
+  },
+  "2019": {
+    "renter": 27515,
+    "owner_with_mortgage": 27172,
+    "owner_without_mortgage": 22600
+  },
+  "2020": {
+    "renter": 28881,
+    "owner_with_mortgage": 28533,
+    "owner_without_mortgage": 23948
+  },
+  "2021": {
+    "renter": 31453,
+    "owner_with_mortgage": 31089,
+    "owner_without_mortgage": 26022
+  },
+  "2022": {
+    "renter": 33402,
+    "owner_with_mortgage": 32949,
+    "owner_without_mortgage": 27679
   },
   "2023": {
     "renter": 36606,
     "owner_with_mortgage": 36192,
     "owner_without_mortgage": 30347
   },
-  "2022": {
-    "renter": 33402,
-    "owner_with_mortgage": 32949,
-    "owner_without_mortgage": 27679
+  "2024": {
+    "renter": 39430,
+    "owner_with_mortgage": 39068,
+    "owner_without_mortgage": 32586
+  },
+  "2025": {
+    "renter": 40416,
+    "owner_with_mortgage": 40045,
+    "owner_without_mortgage": 33401
+  },
+  "2026": {
+    "renter": 41345,
+    "owner_with_mortgage": 40966,
+    "owner_without_mortgage": 34169
+  },
+  "2027": {
+    "renter": 42255,
+    "owner_with_mortgage": 41867,
+    "owner_without_mortgage": 34921
+  },
+  "2028": {
+    "renter": 43100,
+    "owner_with_mortgage": 42704,
+    "owner_without_mortgage": 35619
+  },
+  "2029": {
+    "renter": 43962,
+    "owner_with_mortgage": 43558,
+    "owner_without_mortgage": 36331
+  },
+  "2030": {
+    "renter": 44841,
+    "owner_with_mortgage": 44430,
+    "owner_without_mortgage": 37058
   }
 }

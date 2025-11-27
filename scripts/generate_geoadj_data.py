@@ -8,27 +8,102 @@ geographies, enabling a fully static web app without server-side computation.
 import json
 from pathlib import Path
 
-# Base thresholds by year and tenure (from BLS)
-BASE_THRESHOLDS = {
-    "2024": {
-        "renter": 39430,
-        "owner_with_mortgage": 39068,
-        "owner_without_mortgage": 32586,
+# Historical BLS thresholds (2015-2024)
+HISTORICAL_THRESHOLDS = {
+    "2015": {
+        "renter": 25155,
+        "owner_with_mortgage": 24859,
+        "owner_without_mortgage": 20639,
     },
-    "2023": {
-        "renter": 36606,
-        "owner_with_mortgage": 36192,
-        "owner_without_mortgage": 30347,
+    "2016": {
+        "renter": 25558,
+        "owner_with_mortgage": 25248,
+        "owner_without_mortgage": 20943,
+    },
+    "2017": {
+        "renter": 26213,
+        "owner_with_mortgage": 25897,
+        "owner_without_mortgage": 21527,
+    },
+    "2018": {
+        "renter": 26905,
+        "owner_with_mortgage": 26565,
+        "owner_without_mortgage": 22095,
+    },
+    "2019": {
+        "renter": 27515,
+        "owner_with_mortgage": 27172,
+        "owner_without_mortgage": 22600,
+    },
+    "2020": {
+        "renter": 28881,
+        "owner_with_mortgage": 28533,
+        "owner_without_mortgage": 23948,
+    },
+    "2021": {
+        "renter": 31453,
+        "owner_with_mortgage": 31089,
+        "owner_without_mortgage": 26022,
     },
     "2022": {
         "renter": 33402,
         "owner_with_mortgage": 32949,
         "owner_without_mortgage": 27679,
     },
+    "2023": {
+        "renter": 36606,
+        "owner_with_mortgage": 36192,
+        "owner_without_mortgage": 30347,
+    },
+    "2024": {
+        "renter": 39430,
+        "owner_with_mortgage": 39068,
+        "owner_without_mortgage": 32586,
+    },
 }
 
+# CPI projections for forecasting
+CPI_PROJECTIONS = {
+    2025: 0.025,  # 2.5%
+    2026: 0.023,  # 2.3%
+    2027: 0.022,  # 2.2%
+    2028: 0.020,  # 2.0%
+    2029: 0.020,
+    2030: 0.020,
+}
+
+LATEST_PUBLISHED_YEAR = 2024
+
+
+def forecast_thresholds(year: int) -> dict:
+    """Forecast thresholds for a future year."""
+    base = HISTORICAL_THRESHOLDS[str(LATEST_PUBLISHED_YEAR)]
+
+    # Calculate cumulative inflation
+    factor = 1.0
+    for y in range(LATEST_PUBLISHED_YEAR + 1, year + 1):
+        rate = CPI_PROJECTIONS.get(y, 0.020)
+        factor *= (1 + rate)
+
+    return {
+        tenure: int(round(value * factor))
+        for tenure, value in base.items()
+    }
+
+
+# Generate thresholds for all years including forecasts
+def generate_all_thresholds():
+    """Generate thresholds for historical and forecast years."""
+    all_thresholds = dict(HISTORICAL_THRESHOLDS)
+
+    # Add forecasted years
+    for year in range(LATEST_PUBLISHED_YEAR + 1, 2031):
+        all_thresholds[str(year)] = forecast_thresholds(year)
+
+    return all_thresholds
+
+
 # Sample GEOADJ values by state (can be expanded with ACS data)
-# These are illustrative - actual values should come from ACS median rents
 STATE_GEOADJ = {
     "AL": 0.87,
     "AK": 1.15,
@@ -153,9 +228,10 @@ def generate_data():
     output_dir = Path(__file__).parent.parent / "web" / "public" / "data"
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Generate base thresholds
+    # Generate all thresholds (historical + forecast)
+    all_thresholds = generate_all_thresholds()
     with open(output_dir / "base_thresholds.json", "w") as f:
-        json.dump(BASE_THRESHOLDS, f, indent=2)
+        json.dump(all_thresholds, f, indent=2)
 
     # Generate state GEOADJ values
     states_data = {
@@ -171,7 +247,7 @@ def generate_data():
 
     # Generate combined config for easy loading
     config = {
-        "baseThresholds": BASE_THRESHOLDS,
+        "baseThresholds": all_thresholds,
         "states": states_data,
         "costLevels": COST_LEVELS,
         "methodology": {
@@ -186,11 +262,17 @@ def generate_data():
                 "nonHousingShare": 0.508,
             },
         },
+        "forecast": {
+            "latestPublishedYear": LATEST_PUBLISHED_YEAR,
+            "cpiProjections": {str(k): v for k, v in CPI_PROJECTIONS.items()},
+            "defaultInflation": 0.020,
+        },
     }
     with open(output_dir / "spm_config.json", "w") as f:
         json.dump(config, f, indent=2)
 
     print(f"Generated data files in {output_dir}")
+    print(f"Years available: {sorted(all_thresholds.keys())}")
     return config
 
 

@@ -5,7 +5,11 @@ import spmConfig from '../public/data/spm_config.json'
 const LOGO_URL = "https://raw.githubusercontent.com/PolicyEngine/policyengine-app/master/src/images/logos/policyengine/teal.png"
 
 // Extract data from config
-const { baseThresholds, states, costLevels, methodology } = spmConfig
+const { baseThresholds, states, costLevels, methodology, forecast } = spmConfig
+const LATEST_PUBLISHED_YEAR = forecast.latestPublishedYear
+
+// Get all available years sorted
+const availableYears = Object.keys(baseThresholds).sort((a, b) => parseInt(b) - parseInt(a))
 
 // Calculate equivalence scale
 function calculateEquivalenceScale(adults, children) {
@@ -28,9 +32,25 @@ function formatCurrency(value) {
   }).format(value)
 }
 
+// Get CE survey years used for a given threshold year
+function getCESurveyYears(year) {
+  const y = parseInt(year)
+  // BLS uses 5 years of data, lagged by 1 year
+  // For 2024 thresholds, they use 2018-2022 CE data
+  return [y - 6, y - 5, y - 4, y - 3, y - 2]
+}
+
+// Check if a year is forecasted
+function isForecast(year) {
+  return parseInt(year) > LATEST_PUBLISHED_YEAR
+}
+
 function App() {
-  // Form state
-  const [year, setYear] = useState('2024')
+  // Form state - default to current year (2025)
+  const currentYear = new Date().getFullYear()
+  const defaultYear = availableYears.includes(String(currentYear)) ? String(currentYear) : String(LATEST_PUBLISHED_YEAR)
+
+  const [year, setYear] = useState(defaultYear)
   const [numAdults, setNumAdults] = useState(2)
   const [numChildren, setNumChildren] = useState(2)
   const [tenure, setTenure] = useState('renter')
@@ -42,6 +62,8 @@ function App() {
   // Calculate values
   const base = baseThresholds[year][tenure]
   const equivScale = calculateEquivalenceScale(numAdults, numChildren)
+  const isForecasted = isForecast(year)
+  const ceYears = getCESurveyYears(year)
 
   const geoadj = useMemo(() => {
     if (locationType === 'preset') {
@@ -77,6 +99,26 @@ function App() {
     return 'average'
   }
 
+  // Get historical thresholds for rolling 5-year display
+  const getHistoricalThresholds = () => {
+    const years = []
+    for (let i = 5; i >= 1; i--) {
+      const y = String(parseInt(year) - i)
+      if (baseThresholds[y]) {
+        years.push({
+          year: y,
+          renter: baseThresholds[y].renter,
+          owner_with_mortgage: baseThresholds[y].owner_with_mortgage,
+          owner_without_mortgage: baseThresholds[y].owner_without_mortgage,
+          isPublished: parseInt(y) <= LATEST_PUBLISHED_YEAR
+        })
+      }
+    }
+    return years
+  }
+
+  const historicalThresholds = getHistoricalThresholds()
+
   return (
     <div className="container">
       {/* Header */}
@@ -107,11 +149,17 @@ function App() {
             <div className="form-group">
               <label htmlFor="year">Year</label>
               <select id="year" value={year} onChange={e => setYear(e.target.value)}>
-                <option value="2024">2024</option>
-                <option value="2023">2023</option>
-                <option value="2022">2022</option>
+                {availableYears.map(y => (
+                  <option key={y} value={y}>
+                    {y} {parseInt(y) > LATEST_PUBLISHED_YEAR ? '(forecast)' : ''}
+                  </option>
+                ))}
               </select>
-              <p className="help-text">The year for which to calculate the threshold</p>
+              <p className="help-text">
+                {isForecasted
+                  ? `Forecast based on ${LATEST_PUBLISHED_YEAR} thresholds + projected inflation`
+                  : 'Published BLS threshold'}
+              </p>
             </div>
 
             {/* Family composition */}
@@ -219,7 +267,17 @@ function App() {
 
             <div className="card card-highlight">
               <div className="result">
-                <p className="result-label">SPM Threshold ({year})</p>
+                <p className="result-label">
+                  SPM Threshold ({year})
+                  {isForecasted && <span style={{
+                    marginLeft: 8,
+                    fontSize: 12,
+                    backgroundColor: 'var(--warning)',
+                    color: 'var(--gray-900)',
+                    padding: '2px 8px',
+                    borderRadius: 4
+                  }}>FORECAST</span>}
+                </p>
                 <p className="result-value">{formatCurrency(threshold)}</p>
                 <p className="result-description">
                   For a household with <strong>{numAdults} adult{numAdults !== 1 ? 's' : ''}</strong> and{' '}
@@ -234,6 +292,14 @@ function App() {
               <p className="result-label">Monthly Equivalent</p>
               <p className="monthly-value">{formatCurrency(monthly)}</p>
             </div>
+
+            {isForecasted && (
+              <div className="card" style={{ marginTop: 16, backgroundColor: 'var(--teal-50)', fontSize: 14 }}>
+                <strong>Note:</strong> This is a forecast based on {LATEST_PUBLISHED_YEAR} published thresholds
+                adjusted for projected inflation ({(forecast.cpiProjections[year] * 100 || 2.0).toFixed(1)}% for {year}).
+                Official BLS thresholds typically lag by 1-2 years.
+              </div>
+            )}
           </section>
         </div>
       </div>
@@ -242,28 +308,59 @@ function App() {
       <section className="section">
         <h2 className="section-title">How It's Calculated</h2>
 
-        <h3 className="step-header">Step 1: Base Threshold</h3>
+        <h3 className="step-header">Step 1: Base Threshold (Rolling 5-Year CE Survey)</h3>
         <p>
-          The base threshold is set by the BLS based on Consumer Expenditure Survey data.
-          For {year}, the base thresholds for a reference family (2 adults, 2 children) are:
+          The base threshold comes from the BLS Consumer Expenditure Survey. For {year} thresholds,
+          BLS uses <strong>5 years of CE Survey data</strong> ({ceYears[0]}-{ceYears[4]}), lagged by one year.
         </p>
+
+        {!isForecasted && (
+          <p style={{ marginTop: 12 }}>
+            The methodology calculates <strong>83% of the median</strong> FCSUti (Food, Clothing, Shelter,
+            Utilities, telephone, internet) expenditures for consumer units with children, adjusted to
+            a reference family of 2 adults and 2 children.
+          </p>
+        )}
+
+        {isForecasted && (
+          <div className="card" style={{ margin: '16px 0', backgroundColor: 'var(--teal-50)' }}>
+            <strong>Forecast methodology:</strong> The {year} threshold is forecasted by applying
+            cumulative projected inflation to the {LATEST_PUBLISHED_YEAR} published threshold.
+          </div>
+        )}
+
+        {/* Historical thresholds table */}
+        <p style={{ marginTop: 16 }}><strong>Historical base thresholds (reference family 2A2C):</strong></p>
         <table>
           <thead>
             <tr>
-              <th>Tenure Type</th>
-              <th>Base Threshold</th>
+              <th>Year</th>
+              <th>Renter</th>
+              <th>Owner w/ Mortgage</th>
+              <th>Owner w/o Mortgage</th>
+              <th>Source</th>
             </tr>
           </thead>
           <tbody>
-            {Object.entries(tenureNames).map(([key, name]) => (
-              <tr key={key} style={tenure === key ? { backgroundColor: 'var(--teal-50)' } : {}}>
-                <td>{name}</td>
-                <td>{formatCurrency(baseThresholds[year][key])}</td>
+            {historicalThresholds.map(h => (
+              <tr key={h.year}>
+                <td>{h.year}</td>
+                <td>{formatCurrency(h.renter)}</td>
+                <td>{formatCurrency(h.owner_with_mortgage)}</td>
+                <td>{formatCurrency(h.owner_without_mortgage)}</td>
+                <td>{h.isPublished ? 'BLS Published' : 'Forecast'}</td>
               </tr>
             ))}
+            <tr style={{ backgroundColor: 'var(--teal-50)', fontWeight: 600 }}>
+              <td>{year}</td>
+              <td>{formatCurrency(baseThresholds[year].renter)}</td>
+              <td>{formatCurrency(baseThresholds[year].owner_with_mortgage)}</td>
+              <td>{formatCurrency(baseThresholds[year].owner_without_mortgage)}</td>
+              <td>{isForecasted ? 'Forecast' : 'BLS Published'}</td>
+            </tr>
           </tbody>
         </table>
-        <p><strong>Your base threshold ({tenureNames[tenure]}):</strong> {formatCurrency(base)}</p>
+        <p style={{ marginTop: 8 }}><strong>Your base threshold ({tenureNames[tenure]}):</strong> {formatCurrency(base)}</p>
 
         <h3 className="step-header">Step 2: Equivalence Scale</h3>
         <p>The equivalence scale adjusts for family size using the three-parameter formula:</p>
@@ -338,6 +435,11 @@ function App() {
             <a href="https://www.bls.gov/pir/spm/spm_thresholds_2024.htm" target="_blank" rel="noopener noreferrer">
               BLS SPM Thresholds
             </a> - Official threshold values
+          </li>
+          <li>
+            <a href="https://www.bls.gov/cex/pumd.htm" target="_blank" rel="noopener noreferrer">
+              CE Survey Public Use Microdata
+            </a> - Source data for threshold calculation
           </li>
           <li>
             <a href="https://www.census.gov/topics/income-poverty/supplemental-poverty-measure.html" target="_blank" rel="noopener noreferrer">
