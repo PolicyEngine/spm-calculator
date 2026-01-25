@@ -10,8 +10,6 @@ is necessary for current and future year calculations.
 
 from typing import Optional
 
-import numpy as np
-
 # Historical BLS published thresholds
 HISTORICAL_THRESHOLDS = {
     2015: {
@@ -97,9 +95,7 @@ def get_inflation_rate(year: int) -> float:
     return CPI_PROJECTIONS.get(year, DEFAULT_INFLATION)
 
 
-def calculate_cumulative_inflation(
-    from_year: int, to_year: int
-) -> float:
+def calculate_cumulative_inflation(from_year: int, to_year: int) -> float:
     """
     Calculate cumulative inflation factor between two years.
 
@@ -251,16 +247,12 @@ def get_threshold_with_metadata(
             years_ahead = year - base_year
             inflation_factor = (1 + custom_inflation) ** years_ahead
         else:
-            inflation_factor = calculate_cumulative_inflation(
-                base_year, year
-            )
+            inflation_factor = calculate_cumulative_inflation(base_year, year)
 
         result["base_year"] = base_year
         result["inflation_factor"] = inflation_factor
         result["inflation_rate"] = (
-            custom_inflation
-            if custom_inflation
-            else get_inflation_rate(year)
+            custom_inflation if custom_inflation else get_inflation_rate(year)
         )
 
     return result

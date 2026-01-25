@@ -19,6 +19,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Scientific/Engineering",
 ]
 requires-python = ">=3.10"
@@ -37,9 +38,6 @@ dev = [
     "black>=23.0",
     "ruff>=0.1",
 ]
-app = [
-    "streamlit>=1.30",
-]
 
 [project.urls]
 Homepage = "https://github.com/PolicyEngine/spm-calculator"
@@ -51,10 +49,15 @@ packages = ["spm_calculator"]
 
 [tool.black]
 line-length = 79
+extend-exclude = "\\.ipynb$"
 
 [tool.ruff]
 line-length = 79
+exclude = ["*.ipynb"]
+
+[tool.ruff.lint]
 select = ["E", "F", "I"]
+ignore = ["E501", "E402"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

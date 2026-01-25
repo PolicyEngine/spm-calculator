@@ -83,11 +83,10 @@ def forecast_thresholds(year: int) -> dict:
     factor = 1.0
     for y in range(LATEST_PUBLISHED_YEAR + 1, year + 1):
         rate = CPI_PROJECTIONS.get(y, 0.020)
-        factor *= (1 + rate)
+        factor *= 1 + rate
 
     return {
-        tenure: int(round(value * factor))
-        for tenure, value in base.items()
+        tenure: int(round(value * factor)) for tenure, value in base.items()
     }
 
 

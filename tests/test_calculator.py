@@ -7,9 +7,8 @@ The full SPM threshold calculation is:
 
 import os
 
-import pytest
 import numpy as np
-
+import pytest
 
 REQUIRES_CENSUS_API = pytest.mark.skipif(
     not os.environ.get("CENSUS_API_KEY"),

@@ -6,6 +6,7 @@ match the published BLS values within acceptable tolerance.
 """
 
 import os
+
 import pytest
 
 # Skip all tests in this module if CE data download is slow/unavailable
@@ -107,8 +108,8 @@ class TestCEDataDownload:
     def test_fcsuti_calculation(self):
         """Test FCSUti calculation on real CE data."""
         from spm_calculator.ce_threshold import (
-            download_ce_fmli,
             calculate_fcsuti,
+            download_ce_fmli,
         )
 
         df = download_ce_fmli(2022, 1)

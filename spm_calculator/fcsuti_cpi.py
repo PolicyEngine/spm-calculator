@@ -84,7 +84,9 @@ def fetch_bls_cpi_series(
     data = response.json()
 
     if data["status"] != "REQUEST_SUCCEEDED":
-        raise ValueError(f"BLS API error: {data.get('message', 'Unknown error')}")
+        raise ValueError(
+            f"BLS API error: {data.get('message', 'Unknown error')}"
+        )
 
     # Extract annual averages
     series_data = data["Results"]["series"][0]["data"]
