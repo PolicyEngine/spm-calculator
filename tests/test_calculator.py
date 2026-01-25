@@ -10,7 +10,6 @@ import os
 import pytest
 import numpy as np
 
-
 REQUIRES_CENSUS_API = pytest.mark.skipif(
     not os.environ.get("CENSUS_API_KEY"),
     reason="Requires CENSUS_API_KEY environment variable",
