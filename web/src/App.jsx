@@ -1,8 +1,10 @@
 import { useState, useMemo } from 'react'
 import spmConfig from '../public/data/spm_config.json'
+import cdData from '../public/data/cd_geoadj.json'
 
 // Extract data from config
 const { baseThresholds, states, costLevels, methodology, forecast } = spmConfig
+const { congressionalDistricts } = cdData
 const LATEST_PUBLISHED_YEAR = forecast.latestPublishedYear
 
 // Get all available years sorted
@@ -66,6 +68,7 @@ function App() {
   const [locationType, setLocationType] = useState('preset')
   const [costLevel, setCostLevel] = useState('national_average')
   const [selectedState, setSelectedState] = useState('CA')
+  const [selectedDistrict, setSelectedDistrict] = useState('612') // CA-12 default
   const [customGeoadj, setCustomGeoadj] = useState(1.0)
 
   // Expanded state for detail cards
@@ -80,8 +83,9 @@ function App() {
   const geoadj = useMemo(() => {
     if (locationType === 'preset') return costLevels[costLevel].geoadj
     if (locationType === 'state') return states[selectedState]?.geoadj || 1.0
+    if (locationType === 'district') return congressionalDistricts[selectedDistrict]?.geoadj || 1.0
     return customGeoadj
-  }, [locationType, costLevel, selectedState, customGeoadj])
+  }, [locationType, costLevel, selectedState, selectedDistrict, customGeoadj])
 
   const threshold = base * equivScale * geoadj
   const monthly = threshold / 12
@@ -113,6 +117,7 @@ function App() {
   const getLocationName = () => {
     if (locationType === 'preset') return costLevels[costLevel].label
     if (locationType === 'state') return states[selectedState]?.name
+    if (locationType === 'district') return congressionalDistricts[selectedDistrict]?.name
     return `Custom (${customGeoadj.toFixed(2)})`
   }
 
@@ -201,6 +206,12 @@ function App() {
                 State
               </button>
               <button
+                className={`chip ${locationType === 'district' ? 'selected' : ''}`}
+                onClick={() => setLocationType('district')}
+              >
+                District
+              </button>
+              <button
                 className={`chip ${locationType === 'custom' ? 'selected' : ''}`}
                 onClick={() => setLocationType('custom')}
               >
@@ -222,6 +233,23 @@ function App() {
                   .sort((a, b) => a[1].name.localeCompare(b[1].name))
                   .map(([code, { name }]) => (
                     <option key={code} value={code}>{name}</option>
+                  ))}
+              </select>
+            )}
+
+            {locationType === 'district' && (
+              <select value={selectedDistrict} onChange={e => setSelectedDistrict(e.target.value)}>
+                {Object.entries(congressionalDistricts)
+                  .sort((a, b) => {
+                    // Sort by state code first, then by district number
+                    const stateCompare = a[1].state.localeCompare(b[1].state)
+                    if (stateCompare !== 0) return stateCompare
+                    return (parseInt(a[0]) % 100) - (parseInt(b[0]) % 100)
+                  })
+                  .map(([geoid, { name, geoadj }]) => (
+                    <option key={geoid} value={geoid}>
+                      {name} (GEOADJ: {geoadj.toFixed(2)})
+                    </option>
                   ))}
               </select>
             )}

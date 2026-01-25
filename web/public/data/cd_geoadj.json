@@ -1,0 +1,2623 @@
+{
+  "year": 2023,
+  "nationalMedian2BRRent": 1338.0,
+  "housingShare": 0.492,
+  "congressionalDistricts": {
+    "200": {
+      "name": "AK-AL",
+      "fullName": "Congressional District (at Large) (118th Congress), Alaska",
+      "geoadj": 1.0224,
+      "state": "AK"
+    },
+    "101": {
+      "name": "AL-01",
+      "fullName": "Congressional District 1 (118th Congress), Alabama",
+      "geoadj": 0.8757,
+      "state": "AL"
+    },
+    "102": {
+      "name": "AL-02",
+      "fullName": "Congressional District 2 (118th Congress), Alabama",
+      "geoadj": 0.8312,
+      "state": "AL"
+    },
+    "103": {
+      "name": "AL-03",
+      "fullName": "Congressional District 3 (118th Congress), Alabama",
+      "geoadj": 0.8132,
+      "state": "AL"
+    },
+    "104": {
+      "name": "AL-04",
+      "fullName": "Congressional District 4 (118th Congress), Alabama",
+      "geoadj": 0.7768,
+      "state": "AL"
+    },
+    "105": {
+      "name": "AL-05",
+      "fullName": "Congressional District 5 (118th Congress), Alabama",
+      "geoadj": 0.8507,
+      "state": "AL"
+    },
+    "106": {
+      "name": "AL-06",
+      "fullName": "Congressional District 6 (118th Congress), Alabama",
+      "geoadj": 0.9423,
+      "state": "AL"
+    },
+    "107": {
+      "name": "AL-07",
+      "fullName": "Congressional District 7 (118th Congress), Alabama",
+      "geoadj": 0.8434,
+      "state": "AL"
+    },
+    "501": {
+      "name": "AR-01",
+      "fullName": "Congressional District 1 (118th Congress), Arkansas",
+      "geoadj": 0.7981,
+      "state": "AR"
+    },
+    "502": {
+      "name": "AR-02",
+      "fullName": "Congressional District 2 (118th Congress), Arkansas",
+      "geoadj": 0.8584,
+      "state": "AR"
+    },
+    "503": {
+      "name": "AR-03",
+      "fullName": "Congressional District 3 (118th Congress), Arkansas",
+      "geoadj": 0.8588,
+      "state": "AR"
+    },
+    "504": {
+      "name": "AR-04",
+      "fullName": "Congressional District 4 (118th Congress), Arkansas",
+      "geoadj": 0.7908,
+      "state": "AR"
+    },
+    "401": {
+      "name": "AZ-01",
+      "fullName": "Congressional District 1 (118th Congress), Arizona",
+      "geoadj": 1.132,
+      "state": "AZ"
+    },
+    "402": {
+      "name": "AZ-02",
+      "fullName": "Congressional District 2 (118th Congress), Arizona",
+      "geoadj": 0.9474,
+      "state": "AZ"
+    },
+    "403": {
+      "name": "AZ-03",
+      "fullName": "Congressional District 3 (118th Congress), Arizona",
+      "geoadj": 0.9982,
+      "state": "AZ"
+    },
+    "404": {
+      "name": "AZ-04",
+      "fullName": "Congressional District 4 (118th Congress), Arizona",
+      "geoadj": 1.0934,
+      "state": "AZ"
+    },
+    "405": {
+      "name": "AZ-05",
+      "fullName": "Congressional District 5 (118th Congress), Arizona",
+      "geoadj": 1.1493,
+      "state": "AZ"
+    },
+    "406": {
+      "name": "AZ-06",
+      "fullName": "Congressional District 6 (118th Congress), Arizona",
+      "geoadj": 0.9636,
+      "state": "AZ"
+    },
+    "407": {
+      "name": "AZ-07",
+      "fullName": "Congressional District 7 (118th Congress), Arizona",
+      "geoadj": 0.9,
+      "state": "AZ"
+    },
+    "408": {
+      "name": "AZ-08",
+      "fullName": "Congressional District 8 (118th Congress), Arizona",
+      "geoadj": 1.0621,
+      "state": "AZ"
+    },
+    "409": {
+      "name": "AZ-09",
+      "fullName": "Congressional District 9 (118th Congress), Arizona",
+      "geoadj": 0.9375,
+      "state": "AZ"
+    },
+    "601": {
+      "name": "CA-01",
+      "fullName": "Congressional District 1 (118th Congress), California",
+      "geoadj": 0.9526,
+      "state": "CA"
+    },
+    "602": {
+      "name": "CA-02",
+      "fullName": "Congressional District 2 (118th Congress), California",
+      "geoadj": 1.2206,
+      "state": "CA"
+    },
+    "603": {
+      "name": "CA-03",
+      "fullName": "Congressional District 3 (118th Congress), California",
+      "geoadj": 1.1798,
+      "state": "CA"
+    },
+    "604": {
+      "name": "CA-04",
+      "fullName": "Congressional District 4 (118th Congress), California",
+      "geoadj": 1.2508,
+      "state": "CA"
+    },
+    "605": {
+      "name": "CA-05",
+      "fullName": "Congressional District 5 (118th Congress), California",
+      "geoadj": 1.0673,
+      "state": "CA"
+    },
+    "606": {
+      "name": "CA-06",
+      "fullName": "Congressional District 6 (118th Congress), California",
+      "geoadj": 1.1217,
+      "state": "CA"
+    },
+    "607": {
+      "name": "CA-07",
+      "fullName": "Congressional District 7 (118th Congress), California",
+      "geoadj": 1.1236,
+      "state": "CA"
+    },
+    "608": {
+      "name": "CA-08",
+      "fullName": "Congressional District 8 (118th Congress), California",
+      "geoadj": 1.2633,
+      "state": "CA"
+    },
+    "609": {
+      "name": "CA-09",
+      "fullName": "Congressional District 9 (118th Congress), California",
+      "geoadj": 1.0555,
+      "state": "CA"
+    },
+    "610": {
+      "name": "CA-10",
+      "fullName": "Congressional District 10 (118th Congress), California",
+      "geoadj": 1.446,
+      "state": "CA"
+    },
+    "611": {
+      "name": "CA-11",
+      "fullName": "Congressional District 11 (118th Congress), California",
+      "geoadj": 1.5,
+      "state": "CA"
+    },
+    "612": {
+      "name": "CA-12",
+      "fullName": "Congressional District 12 (118th Congress), California",
+      "geoadj": 1.3497,
+      "state": "CA"
+    },
+    "613": {
+      "name": "CA-13",
+      "fullName": "Congressional District 13 (118th Congress), California",
+      "geoadj": 0.9445,
+      "state": "CA"
+    },
+    "614": {
+      "name": "CA-14",
+      "fullName": "Congressional District 14 (118th Congress), California",
+      "geoadj": 1.4666,
+      "state": "CA"
+    },
+    "615": {
+      "name": "CA-15",
+      "fullName": "Congressional District 15 (118th Congress), California",
+      "geoadj": 1.5,
+      "state": "CA"
+    },
+    "616": {
+      "name": "CA-16",
+      "fullName": "Congressional District 16 (118th Congress), California",
+      "geoadj": 1.5,
+      "state": "CA"
+    },
+    "617": {
+      "name": "CA-17",
+      "fullName": "Congressional District 17 (118th Congress), California",
+      "geoadj": 1.5,
+      "state": "CA"
+    },
+    "618": {
+      "name": "CA-18",
+      "fullName": "Congressional District 18 (118th Congress), California",
+      "geoadj": 1.2714,
+      "state": "CA"
+    },
+    "619": {
+      "name": "CA-19",
+      "fullName": "Congressional District 19 (118th Congress), California",
+      "geoadj": 1.3519,
+      "state": "CA"
+    },
+    "620": {
+      "name": "CA-20",
+      "fullName": "Congressional District 20 (118th Congress), California",
+      "geoadj": 0.9956,
+      "state": "CA"
+    },
+    "621": {
+      "name": "CA-21",
+      "fullName": "Congressional District 21 (118th Congress), California",
+      "geoadj": 0.9316,
+      "state": "CA"
+    },
+    "622": {
+      "name": "CA-22",
+      "fullName": "Congressional District 22 (118th Congress), California",
+      "geoadj": 0.8996,
+      "state": "CA"
+    },
+    "623": {
+      "name": "CA-23",
+      "fullName": "Congressional District 23 (118th Congress), California",
+      "geoadj": 1.0,
+      "state": "CA"
+    },
+    "624": {
+      "name": "CA-24",
+      "fullName": "Congressional District 24 (118th Congress), California",
+      "geoadj": 1.2695,
+      "state": "CA"
+    },
+    "625": {
+      "name": "CA-25",
+      "fullName": "Congressional District 25 (118th Congress), California",
+      "geoadj": 0.9684,
+      "state": "CA"
+    },
+    "626": {
+      "name": "CA-26",
+      "fullName": "Congressional District 26 (118th Congress), California",
+      "geoadj": 1.3225,
+      "state": "CA"
+    },
+    "627": {
+      "name": "CA-27",
+      "fullName": "Congressional District 27 (118th Congress), California",
+      "geoadj": 1.2203,
+      "state": "CA"
+    },
+    "628": {
+      "name": "CA-28",
+      "fullName": "Congressional District 28 (118th Congress), California",
+      "geoadj": 1.289,
+      "state": "CA"
+    },
+    "629": {
+      "name": "CA-29",
+      "fullName": "Congressional District 29 (118th Congress), California",
+      "geoadj": 1.2545,
+      "state": "CA"
+    },
+    "630": {
+      "name": "CA-30",
+      "fullName": "Congressional District 30 (118th Congress), California",
+      "geoadj": 1.3894,
+      "state": "CA"
+    },
+    "631": {
+      "name": "CA-31",
+      "fullName": "Congressional District 31 (118th Congress), California",
+      "geoadj": 1.2103,
+      "state": "CA"
+    },
+    "632": {
+      "name": "CA-32",
+      "fullName": "Congressional District 32 (118th Congress), California",
+      "geoadj": 1.4291,
+      "state": "CA"
+    },
+    "633": {
+      "name": "CA-33",
+      "fullName": "Congressional District 33 (118th Congress), California",
+      "geoadj": 1.0923,
+      "state": "CA"
+    },
+    "634": {
+      "name": "CA-34",
+      "fullName": "Congressional District 34 (118th Congress), California",
+      "geoadj": 1.1842,
+      "state": "CA"
+    },
+    "635": {
+      "name": "CA-35",
+      "fullName": "Congressional District 35 (118th Congress), California",
+      "geoadj": 1.1982,
+      "state": "CA"
+    },
+    "636": {
+      "name": "CA-36",
+      "fullName": "Congressional District 36 (118th Congress), California",
+      "geoadj": 1.5,
+      "state": "CA"
+    },
+    "637": {
+      "name": "CA-37",
+      "fullName": "Congressional District 37 (118th Congress), California",
+      "geoadj": 1.1967,
+      "state": "CA"
+    },
+    "638": {
+      "name": "CA-38",
+      "fullName": "Congressional District 38 (118th Congress), California",
+      "geoadj": 1.2188,
+      "state": "CA"
+    },
+    "639": {
+      "name": "CA-39",
+      "fullName": "Congressional District 39 (118th Congress), California",
+      "geoadj": 1.1647,
+      "state": "CA"
+    },
+    "640": {
+      "name": "CA-40",
+      "fullName": "Congressional District 40 (118th Congress), California",
+      "geoadj": 1.4427,
+      "state": "CA"
+    },
+    "641": {
+      "name": "CA-41",
+      "fullName": "Congressional District 41 (118th Congress), California",
+      "geoadj": 1.171,
+      "state": "CA"
+    },
+    "642": {
+      "name": "CA-42",
+      "fullName": "Congressional District 42 (118th Congress), California",
+      "geoadj": 1.1975,
+      "state": "CA"
+    },
+    "643": {
+      "name": "CA-43",
+      "fullName": "Congressional District 43 (118th Congress), California",
+      "geoadj": 1.1688,
+      "state": "CA"
+    },
+    "644": {
+      "name": "CA-44",
+      "fullName": "Congressional District 44 (118th Congress), California",
+      "geoadj": 1.1699,
+      "state": "CA"
+    },
+    "645": {
+      "name": "CA-45",
+      "fullName": "Congressional District 45 (118th Congress), California",
+      "geoadj": 1.3004,
+      "state": "CA"
+    },
+    "646": {
+      "name": "CA-46",
+      "fullName": "Congressional District 46 (118th Congress), California",
+      "geoadj": 1.2861,
+      "state": "CA"
+    },
+    "647": {
+      "name": "CA-47",
+      "fullName": "Congressional District 47 (118th Congress), California",
+      "geoadj": 1.5,
+      "state": "CA"
+    },
+    "648": {
+      "name": "CA-48",
+      "fullName": "Congressional District 48 (118th Congress), California",
+      "geoadj": 1.2306,
+      "state": "CA"
+    },
+    "649": {
+      "name": "CA-49",
+      "fullName": "Congressional District 49 (118th Congress), California",
+      "geoadj": 1.4015,
+      "state": "CA"
+    },
+    "650": {
+      "name": "CA-50",
+      "fullName": "Congressional District 50 (118th Congress), California",
+      "geoadj": 1.4126,
+      "state": "CA"
+    },
+    "651": {
+      "name": "CA-51",
+      "fullName": "Congressional District 51 (118th Congress), California",
+      "geoadj": 1.3365,
+      "state": "CA"
+    },
+    "652": {
+      "name": "CA-52",
+      "fullName": "Congressional District 52 (118th Congress), California",
+      "geoadj": 1.1971,
+      "state": "CA"
+    },
+    "801": {
+      "name": "CO-01",
+      "fullName": "Congressional District 1 (118th Congress), Colorado",
+      "geoadj": 1.228,
+      "state": "CO"
+    },
+    "802": {
+      "name": "CO-02",
+      "fullName": "Congressional District 2 (118th Congress), Colorado",
+      "geoadj": 1.1669,
+      "state": "CO"
+    },
+    "803": {
+      "name": "CO-03",
+      "fullName": "Congressional District 3 (118th Congress), Colorado",
+      "geoadj": 0.9158,
+      "state": "CO"
+    },
+    "804": {
+      "name": "CO-04",
+      "fullName": "Congressional District 4 (118th Congress), Colorado",
+      "geoadj": 1.1324,
+      "state": "CO"
+    },
+    "805": {
+      "name": "CO-05",
+      "fullName": "Congressional District 5 (118th Congress), Colorado",
+      "geoadj": 1.0596,
+      "state": "CO"
+    },
+    "806": {
+      "name": "CO-06",
+      "fullName": "Congressional District 6 (118th Congress), Colorado",
+      "geoadj": 1.1905,
+      "state": "CO"
+    },
+    "807": {
+      "name": "CO-07",
+      "fullName": "Congressional District 7 (118th Congress), Colorado",
+      "geoadj": 1.1636,
+      "state": "CO"
+    },
+    "808": {
+      "name": "CO-08",
+      "fullName": "Congressional District 8 (118th Congress), Colorado",
+      "geoadj": 1.1088,
+      "state": "CO"
+    },
+    "901": {
+      "name": "CT-01",
+      "fullName": "Congressional District 1 (118th Congress), Connecticut",
+      "geoadj": 1.039,
+      "state": "CT"
+    },
+    "902": {
+      "name": "CT-02",
+      "fullName": "Congressional District 2 (118th Congress), Connecticut",
+      "geoadj": 1.0324,
+      "state": "CT"
+    },
+    "903": {
+      "name": "CT-03",
+      "fullName": "Congressional District 3 (118th Congress), Connecticut",
+      "geoadj": 1.078,
+      "state": "CT"
+    },
+    "904": {
+      "name": "CT-04",
+      "fullName": "Congressional District 4 (118th Congress), Connecticut",
+      "geoadj": 1.2217,
+      "state": "CT"
+    },
+    "905": {
+      "name": "CT-05",
+      "fullName": "Congressional District 5 (118th Congress), Connecticut",
+      "geoadj": 1.0096,
+      "state": "CT"
+    },
+    "1198": {
+      "name": "DC-DEL",
+      "fullName": "Delegate District (at Large) (118th Congress), District of Columbia",
+      "geoadj": 1.2247,
+      "state": "DC"
+    },
+    "1000": {
+      "name": "DE-AL",
+      "fullName": "Congressional District (at Large) (118th Congress), Delaware",
+      "geoadj": 0.9967,
+      "state": "DE"
+    },
+    "1201": {
+      "name": "FL-01",
+      "fullName": "Congressional District 1 (118th Congress), Florida",
+      "geoadj": 0.9599,
+      "state": "FL"
+    },
+    "1202": {
+      "name": "FL-02",
+      "fullName": "Congressional District 2 (118th Congress), Florida",
+      "geoadj": 0.9485,
+      "state": "FL"
+    },
+    "1203": {
+      "name": "FL-03",
+      "fullName": "Congressional District 3 (118th Congress), Florida",
+      "geoadj": 0.9323,
+      "state": "FL"
+    },
+    "1204": {
+      "name": "FL-04",
+      "fullName": "Congressional District 4 (118th Congress), Florida",
+      "geoadj": 0.9437,
+      "state": "FL"
+    },
+    "1205": {
+      "name": "FL-05",
+      "fullName": "Congressional District 5 (118th Congress), Florida",
+      "geoadj": 1.0978,
+      "state": "FL"
+    },
+    "1206": {
+      "name": "FL-06",
+      "fullName": "Congressional District 6 (118th Congress), Florida",
+      "geoadj": 0.9533,
+      "state": "FL"
+    },
+    "1207": {
+      "name": "FL-07",
+      "fullName": "Congressional District 7 (118th Congress), Florida",
+      "geoadj": 1.0883,
+      "state": "FL"
+    },
+    "1208": {
+      "name": "FL-08",
+      "fullName": "Congressional District 8 (118th Congress), Florida",
+      "geoadj": 1.0096,
+      "state": "FL"
+    },
+    "1209": {
+      "name": "FL-09",
+      "fullName": "Congressional District 9 (118th Congress), Florida",
+      "geoadj": 1.1184,
+      "state": "FL"
+    },
+    "1210": {
+      "name": "FL-10",
+      "fullName": "Congressional District 10 (118th Congress), Florida",
+      "geoadj": 1.0963,
+      "state": "FL"
+    },
+    "1211": {
+      "name": "FL-11",
+      "fullName": "Congressional District 11 (118th Congress), Florida",
+      "geoadj": 1.0934,
+      "state": "FL"
+    },
+    "1212": {
+      "name": "FL-12",
+      "fullName": "Congressional District 12 (118th Congress), Florida",
+      "geoadj": 0.9426,
+      "state": "FL"
+    },
+    "1213": {
+      "name": "FL-13",
+      "fullName": "Congressional District 13 (118th Congress), Florida",
+      "geoadj": 1.0956,
+      "state": "FL"
+    },
+    "1214": {
+      "name": "FL-14",
+      "fullName": "Congressional District 14 (118th Congress), Florida",
+      "geoadj": 1.1184,
+      "state": "FL"
+    },
+    "1215": {
+      "name": "FL-15",
+      "fullName": "Congressional District 15 (118th Congress), Florida",
+      "geoadj": 1.0099,
+      "state": "FL"
+    },
+    "1216": {
+      "name": "FL-16",
+      "fullName": "Congressional District 16 (118th Congress), Florida",
+      "geoadj": 1.0886,
+      "state": "FL"
+    },
+    "1217": {
+      "name": "FL-17",
+      "fullName": "Congressional District 17 (118th Congress), Florida",
+      "geoadj": 1.0515,
+      "state": "FL"
+    },
+    "1218": {
+      "name": "FL-18",
+      "fullName": "Congressional District 18 (118th Congress), Florida",
+      "geoadj": 0.9011,
+      "state": "FL"
+    },
+    "1219": {
+      "name": "FL-19",
+      "fullName": "Congressional District 19 (118th Congress), Florida",
+      "geoadj": 1.1015,
+      "state": "FL"
+    },
+    "1220": {
+      "name": "FL-20",
+      "fullName": "Congressional District 20 (118th Congress), Florida",
+      "geoadj": 1.121,
+      "state": "FL"
+    },
+    "1221": {
+      "name": "FL-21",
+      "fullName": "Congressional District 21 (118th Congress), Florida",
+      "geoadj": 1.1092,
+      "state": "FL"
+    },
+    "1222": {
+      "name": "FL-22",
+      "fullName": "Congressional District 22 (118th Congress), Florida",
+      "geoadj": 1.1533,
+      "state": "FL"
+    },
+    "1223": {
+      "name": "FL-23",
+      "fullName": "Congressional District 23 (118th Congress), Florida",
+      "geoadj": 1.221,
+      "state": "FL"
+    },
+    "1224": {
+      "name": "FL-24",
+      "fullName": "Congressional District 24 (118th Congress), Florida",
+      "geoadj": 1.1603,
+      "state": "FL"
+    },
+    "1225": {
+      "name": "FL-25",
+      "fullName": "Congressional District 25 (118th Congress), Florida",
+      "geoadj": 1.21,
+      "state": "FL"
+    },
+    "1226": {
+      "name": "FL-26",
+      "fullName": "Congressional District 26 (118th Congress), Florida",
+      "geoadj": 1.1519,
+      "state": "FL"
+    },
+    "1227": {
+      "name": "FL-27",
+      "fullName": "Congressional District 27 (118th Congress), Florida",
+      "geoadj": 1.1912,
+      "state": "FL"
+    },
+    "1228": {
+      "name": "FL-28",
+      "fullName": "Congressional District 28 (118th Congress), Florida",
+      "geoadj": 1.1331,
+      "state": "FL"
+    },
+    "1301": {
+      "name": "GA-01",
+      "fullName": "Congressional District 1 (118th Congress), Georgia",
+      "geoadj": 0.9235,
+      "state": "GA"
+    },
+    "1302": {
+      "name": "GA-02",
+      "fullName": "Congressional District 2 (118th Congress), Georgia",
+      "geoadj": 0.8327,
+      "state": "GA"
+    },
+    "1303": {
+      "name": "GA-03",
+      "fullName": "Congressional District 3 (118th Congress), Georgia",
+      "geoadj": 0.8945,
+      "state": "GA"
+    },
+    "1304": {
+      "name": "GA-04",
+      "fullName": "Congressional District 4 (118th Congress), Georgia",
+      "geoadj": 1.078,
+      "state": "GA"
+    },
+    "1305": {
+      "name": "GA-05",
+      "fullName": "Congressional District 5 (118th Congress), Georgia",
+      "geoadj": 1.0732,
+      "state": "GA"
+    },
+    "1306": {
+      "name": "GA-06",
+      "fullName": "Congressional District 6 (118th Congress), Georgia",
+      "geoadj": 1.1493,
+      "state": "GA"
+    },
+    "1307": {
+      "name": "GA-07",
+      "fullName": "Congressional District 7 (118th Congress), Georgia",
+      "geoadj": 1.1173,
+      "state": "GA"
+    },
+    "1308": {
+      "name": "GA-08",
+      "fullName": "Congressional District 8 (118th Congress), Georgia",
+      "geoadj": 0.8279,
+      "state": "GA"
+    },
+    "1309": {
+      "name": "GA-09",
+      "fullName": "Congressional District 9 (118th Congress), Georgia",
+      "geoadj": 0.9261,
+      "state": "GA"
+    },
+    "1310": {
+      "name": "GA-10",
+      "fullName": "Congressional District 10 (118th Congress), Georgia",
+      "geoadj": 0.9077,
+      "state": "GA"
+    },
+    "1311": {
+      "name": "GA-11",
+      "fullName": "Congressional District 11 (118th Congress), Georgia",
+      "geoadj": 1.0978,
+      "state": "GA"
+    },
+    "1312": {
+      "name": "GA-12",
+      "fullName": "Congressional District 12 (118th Congress), Georgia",
+      "geoadj": 0.8492,
+      "state": "GA"
+    },
+    "1313": {
+      "name": "GA-13",
+      "fullName": "Congressional District 13 (118th Congress), Georgia",
+      "geoadj": 0.9974,
+      "state": "GA"
+    },
+    "1314": {
+      "name": "GA-14",
+      "fullName": "Congressional District 14 (118th Congress), Georgia",
+      "geoadj": 0.8301,
+      "state": "GA"
+    },
+    "1501": {
+      "name": "HI-01",
+      "fullName": "Congressional District 1 (118th Congress), Hawaii",
+      "geoadj": 1.2607,
+      "state": "HI"
+    },
+    "1502": {
+      "name": "HI-02",
+      "fullName": "Congressional District 2 (118th Congress), Hawaii",
+      "geoadj": 1.1967,
+      "state": "HI"
+    },
+    "1901": {
+      "name": "IA-01",
+      "fullName": "Congressional District 1 (118th Congress), Iowa",
+      "geoadj": 0.8603,
+      "state": "IA"
+    },
+    "1902": {
+      "name": "IA-02",
+      "fullName": "Congressional District 2 (118th Congress), Iowa",
+      "geoadj": 0.847,
+      "state": "IA"
+    },
+    "1903": {
+      "name": "IA-03",
+      "fullName": "Congressional District 3 (118th Congress), Iowa",
+      "geoadj": 0.9121,
+      "state": "IA"
+    },
+    "1904": {
+      "name": "IA-04",
+      "fullName": "Congressional District 4 (118th Congress), Iowa",
+      "geoadj": 0.8356,
+      "state": "IA"
+    },
+    "1601": {
+      "name": "ID-01",
+      "fullName": "Congressional District 1 (118th Congress), Idaho",
+      "geoadj": 0.9077,
+      "state": "ID"
+    },
+    "1602": {
+      "name": "ID-02",
+      "fullName": "Congressional District 2 (118th Congress), Idaho",
+      "geoadj": 0.904,
+      "state": "ID"
+    },
+    "1701": {
+      "name": "IL-01",
+      "fullName": "Congressional District 1 (118th Congress), Illinois",
+      "geoadj": 0.9338,
+      "state": "IL"
+    },
+    "1702": {
+      "name": "IL-02",
+      "fullName": "Congressional District 2 (118th Congress), Illinois",
+      "geoadj": 0.9011,
+      "state": "IL"
+    },
+    "1703": {
+      "name": "IL-03",
+      "fullName": "Congressional District 3 (118th Congress), Illinois",
+      "geoadj": 1.0382,
+      "state": "IL"
+    },
+    "1704": {
+      "name": "IL-04",
+      "fullName": "Congressional District 4 (118th Congress), Illinois",
+      "geoadj": 0.9235,
+      "state": "IL"
+    },
+    "1705": {
+      "name": "IL-05",
+      "fullName": "Congressional District 5 (118th Congress), Illinois",
+      "geoadj": 1.2044,
+      "state": "IL"
+    },
+    "1706": {
+      "name": "IL-06",
+      "fullName": "Congressional District 6 (118th Congress), Illinois",
+      "geoadj": 1.0316,
+      "state": "IL"
+    },
+    "1707": {
+      "name": "IL-07",
+      "fullName": "Congressional District 7 (118th Congress), Illinois",
+      "geoadj": 1.0349,
+      "state": "IL"
+    },
+    "1708": {
+      "name": "IL-08",
+      "fullName": "Congressional District 8 (118th Congress), Illinois",
+      "geoadj": 1.0985,
+      "state": "IL"
+    },
+    "1709": {
+      "name": "IL-09",
+      "fullName": "Congressional District 9 (118th Congress), Illinois",
+      "geoadj": 1.1081,
+      "state": "IL"
+    },
+    "1710": {
+      "name": "IL-10",
+      "fullName": "Congressional District 10 (118th Congress), Illinois",
+      "geoadj": 1.0268,
+      "state": "IL"
+    },
+    "1711": {
+      "name": "IL-11",
+      "fullName": "Congressional District 11 (118th Congress), Illinois",
+      "geoadj": 1.0941,
+      "state": "IL"
+    },
+    "1712": {
+      "name": "IL-12",
+      "fullName": "Congressional District 12 (118th Congress), Illinois",
+      "geoadj": 0.8081,
+      "state": "IL"
+    },
+    "1713": {
+      "name": "IL-13",
+      "fullName": "Congressional District 13 (118th Congress), Illinois",
+      "geoadj": 0.868,
+      "state": "IL"
+    },
+    "1714": {
+      "name": "IL-14",
+      "fullName": "Congressional District 14 (118th Congress), Illinois",
+      "geoadj": 0.9573,
+      "state": "IL"
+    },
+    "1715": {
+      "name": "IL-15",
+      "fullName": "Congressional District 15 (118th Congress), Illinois",
+      "geoadj": 0.8161,
+      "state": "IL"
+    },
+    "1716": {
+      "name": "IL-16",
+      "fullName": "Congressional District 16 (118th Congress), Illinois",
+      "geoadj": 0.8768,
+      "state": "IL"
+    },
+    "1717": {
+      "name": "IL-17",
+      "fullName": "Congressional District 17 (118th Congress), Illinois",
+      "geoadj": 0.8404,
+      "state": "IL"
+    },
+    "1801": {
+      "name": "IN-01",
+      "fullName": "Congressional District 1 (118th Congress), Indiana",
+      "geoadj": 0.9092,
+      "state": "IN"
+    },
+    "1802": {
+      "name": "IN-02",
+      "fullName": "Congressional District 2 (118th Congress), Indiana",
+      "geoadj": 0.8753,
+      "state": "IN"
+    },
+    "1803": {
+      "name": "IN-03",
+      "fullName": "Congressional District 3 (118th Congress), Indiana",
+      "geoadj": 0.8474,
+      "state": "IN"
+    },
+    "1804": {
+      "name": "IN-04",
+      "fullName": "Congressional District 4 (118th Congress), Indiana",
+      "geoadj": 0.8967,
+      "state": "IN"
+    },
+    "1805": {
+      "name": "IN-05",
+      "fullName": "Congressional District 5 (118th Congress), Indiana",
+      "geoadj": 0.886,
+      "state": "IN"
+    },
+    "1806": {
+      "name": "IN-06",
+      "fullName": "Congressional District 6 (118th Congress), Indiana",
+      "geoadj": 0.8812,
+      "state": "IN"
+    },
+    "1807": {
+      "name": "IN-07",
+      "fullName": "Congressional District 7 (118th Congress), Indiana",
+      "geoadj": 0.925,
+      "state": "IN"
+    },
+    "1808": {
+      "name": "IN-08",
+      "fullName": "Congressional District 8 (118th Congress), Indiana",
+      "geoadj": 0.8503,
+      "state": "IN"
+    },
+    "1809": {
+      "name": "IN-09",
+      "fullName": "Congressional District 9 (118th Congress), Indiana",
+      "geoadj": 0.8735,
+      "state": "IN"
+    },
+    "2001": {
+      "name": "KS-01",
+      "fullName": "Congressional District 1 (118th Congress), Kansas",
+      "geoadj": 0.8437,
+      "state": "KS"
+    },
+    "2002": {
+      "name": "KS-02",
+      "fullName": "Congressional District 2 (118th Congress), Kansas",
+      "geoadj": 0.8452,
+      "state": "KS"
+    },
+    "2003": {
+      "name": "KS-03",
+      "fullName": "Congressional District 3 (118th Congress), Kansas",
+      "geoadj": 1.0099,
+      "state": "KS"
+    },
+    "2004": {
+      "name": "KS-04",
+      "fullName": "Congressional District 4 (118th Congress), Kansas",
+      "geoadj": 0.8588,
+      "state": "KS"
+    },
+    "2101": {
+      "name": "KY-01",
+      "fullName": "Congressional District 1 (118th Congress), Kentucky",
+      "geoadj": 0.8095,
+      "state": "KY"
+    },
+    "2102": {
+      "name": "KY-02",
+      "fullName": "Congressional District 2 (118th Congress), Kentucky",
+      "geoadj": 0.8294,
+      "state": "KY"
+    },
+    "2103": {
+      "name": "KY-03",
+      "fullName": "Congressional District 3 (118th Congress), Kentucky",
+      "geoadj": 0.9195,
+      "state": "KY"
+    },
+    "2104": {
+      "name": "KY-04",
+      "fullName": "Congressional District 4 (118th Congress), Kentucky",
+      "geoadj": 0.893,
+      "state": "KY"
+    },
+    "2105": {
+      "name": "KY-05",
+      "fullName": "Congressional District 5 (118th Congress), Kentucky",
+      "geoadj": 0.7742,
+      "state": "KY"
+    },
+    "2106": {
+      "name": "KY-06",
+      "fullName": "Congressional District 6 (118th Congress), Kentucky",
+      "geoadj": 0.8621,
+      "state": "KY"
+    },
+    "2201": {
+      "name": "LA-01",
+      "fullName": "Congressional District 1 (118th Congress), Louisiana",
+      "geoadj": 0.9566,
+      "state": "LA"
+    },
+    "2202": {
+      "name": "LA-02",
+      "fullName": "Congressional District 2 (118th Congress), Louisiana",
+      "geoadj": 0.9331,
+      "state": "LA"
+    },
+    "2203": {
+      "name": "LA-03",
+      "fullName": "Congressional District 3 (118th Congress), Louisiana",
+      "geoadj": 0.8559,
+      "state": "LA"
+    },
+    "2204": {
+      "name": "LA-04",
+      "fullName": "Congressional District 4 (118th Congress), Louisiana",
+      "geoadj": 0.8279,
+      "state": "LA"
+    },
+    "2205": {
+      "name": "LA-05",
+      "fullName": "Congressional District 5 (118th Congress), Louisiana",
+      "geoadj": 0.8161,
+      "state": "LA"
+    },
+    "2206": {
+      "name": "LA-06",
+      "fullName": "Congressional District 6 (118th Congress), Louisiana",
+      "geoadj": 0.9257,
+      "state": "LA"
+    },
+    "2501": {
+      "name": "MA-01",
+      "fullName": "Congressional District 1 (118th Congress), Massachusetts",
+      "geoadj": 0.9456,
+      "state": "MA"
+    },
+    "2502": {
+      "name": "MA-02",
+      "fullName": "Congressional District 2 (118th Congress), Massachusetts",
+      "geoadj": 1.0574,
+      "state": "MA"
+    },
+    "2503": {
+      "name": "MA-03",
+      "fullName": "Congressional District 3 (118th Congress), Massachusetts",
+      "geoadj": 1.1224,
+      "state": "MA"
+    },
+    "2504": {
+      "name": "MA-04",
+      "fullName": "Congressional District 4 (118th Congress), Massachusetts",
+      "geoadj": 1.1059,
+      "state": "MA"
+    },
+    "2505": {
+      "name": "MA-05",
+      "fullName": "Congressional District 5 (118th Congress), Massachusetts",
+      "geoadj": 1.3692,
+      "state": "MA"
+    },
+    "2506": {
+      "name": "MA-06",
+      "fullName": "Congressional District 6 (118th Congress), Massachusetts",
+      "geoadj": 1.2295,
+      "state": "MA"
+    },
+    "2507": {
+      "name": "MA-07",
+      "fullName": "Congressional District 7 (118th Congress), Massachusetts",
+      "geoadj": 1.2953,
+      "state": "MA"
+    },
+    "2508": {
+      "name": "MA-08",
+      "fullName": "Congressional District 8 (118th Congress), Massachusetts",
+      "geoadj": 1.3236,
+      "state": "MA"
+    },
+    "2509": {
+      "name": "MA-09",
+      "fullName": "Congressional District 9 (118th Congress), Massachusetts",
+      "geoadj": 1.0614,
+      "state": "MA"
+    },
+    "2401": {
+      "name": "MD-01",
+      "fullName": "Congressional District 1 (118th Congress), Maryland",
+      "geoadj": 0.9768,
+      "state": "MD"
+    },
+    "2402": {
+      "name": "MD-02",
+      "fullName": "Congressional District 2 (118th Congress), Maryland",
+      "geoadj": 1.1199,
+      "state": "MD"
+    },
+    "2403": {
+      "name": "MD-03",
+      "fullName": "Congressional District 3 (118th Congress), Maryland",
+      "geoadj": 1.2236,
+      "state": "MD"
+    },
+    "2404": {
+      "name": "MD-04",
+      "fullName": "Congressional District 4 (118th Congress), Maryland",
+      "geoadj": 1.1644,
+      "state": "MD"
+    },
+    "2405": {
+      "name": "MD-05",
+      "fullName": "Congressional District 5 (118th Congress), Maryland",
+      "geoadj": 1.2081,
+      "state": "MD"
+    },
+    "2406": {
+      "name": "MD-06",
+      "fullName": "Congressional District 6 (118th Congress), Maryland",
+      "geoadj": 1.1059,
+      "state": "MD"
+    },
+    "2407": {
+      "name": "MD-07",
+      "fullName": "Congressional District 7 (118th Congress), Maryland",
+      "geoadj": 1.0107,
+      "state": "MD"
+    },
+    "2408": {
+      "name": "MD-08",
+      "fullName": "Congressional District 8 (118th Congress), Maryland",
+      "geoadj": 1.278,
+      "state": "MD"
+    },
+    "2301": {
+      "name": "ME-01",
+      "fullName": "Congressional District 1 (118th Congress), Maine",
+      "geoadj": 1.0287,
+      "state": "ME"
+    },
+    "2302": {
+      "name": "ME-02",
+      "fullName": "Congressional District 2 (118th Congress), Maine",
+      "geoadj": 0.8702,
+      "state": "ME"
+    },
+    "2601": {
+      "name": "MI-01",
+      "fullName": "Congressional District 1 (118th Congress), Michigan",
+      "geoadj": 0.8353,
+      "state": "MI"
+    },
+    "2602": {
+      "name": "MI-02",
+      "fullName": "Congressional District 2 (118th Congress), Michigan",
+      "geoadj": 0.8349,
+      "state": "MI"
+    },
+    "2603": {
+      "name": "MI-03",
+      "fullName": "Congressional District 3 (118th Congress), Michigan",
+      "geoadj": 0.9448,
+      "state": "MI"
+    },
+    "2604": {
+      "name": "MI-04",
+      "fullName": "Congressional District 4 (118th Congress), Michigan",
+      "geoadj": 0.9011,
+      "state": "MI"
+    },
+    "2605": {
+      "name": "MI-05",
+      "fullName": "Congressional District 5 (118th Congress), Michigan",
+      "geoadj": 0.8625,
+      "state": "MI"
+    },
+    "2606": {
+      "name": "MI-06",
+      "fullName": "Congressional District 6 (118th Congress), Michigan",
+      "geoadj": 1.0404,
+      "state": "MI"
+    },
+    "2607": {
+      "name": "MI-07",
+      "fullName": "Congressional District 7 (118th Congress), Michigan",
+      "geoadj": 0.9169,
+      "state": "MI"
+    },
+    "2608": {
+      "name": "MI-08",
+      "fullName": "Congressional District 8 (118th Congress), Michigan",
+      "geoadj": 0.8559,
+      "state": "MI"
+    },
+    "2609": {
+      "name": "MI-09",
+      "fullName": "Congressional District 9 (118th Congress), Michigan",
+      "geoadj": 0.8952,
+      "state": "MI"
+    },
+    "2610": {
+      "name": "MI-10",
+      "fullName": "Congressional District 10 (118th Congress), Michigan",
+      "geoadj": 0.9566,
+      "state": "MI"
+    },
+    "2611": {
+      "name": "MI-11",
+      "fullName": "Congressional District 11 (118th Congress), Michigan",
+      "geoadj": 1.0243,
+      "state": "MI"
+    },
+    "2612": {
+      "name": "MI-12",
+      "fullName": "Congressional District 12 (118th Congress), Michigan",
+      "geoadj": 0.9371,
+      "state": "MI"
+    },
+    "2613": {
+      "name": "MI-13",
+      "fullName": "Congressional District 13 (118th Congress), Michigan",
+      "geoadj": 0.8794,
+      "state": "MI"
+    },
+    "2701": {
+      "name": "MN-01",
+      "fullName": "Congressional District 1 (118th Congress), Minnesota",
+      "geoadj": 0.8772,
+      "state": "MN"
+    },
+    "2702": {
+      "name": "MN-02",
+      "fullName": "Congressional District 2 (118th Congress), Minnesota",
+      "geoadj": 1.064,
+      "state": "MN"
+    },
+    "2703": {
+      "name": "MN-03",
+      "fullName": "Congressional District 3 (118th Congress), Minnesota",
+      "geoadj": 1.1125,
+      "state": "MN"
+    },
+    "2704": {
+      "name": "MN-04",
+      "fullName": "Congressional District 4 (118th Congress), Minnesota",
+      "geoadj": 1.0375,
+      "state": "MN"
+    },
+    "2705": {
+      "name": "MN-05",
+      "fullName": "Congressional District 5 (118th Congress), Minnesota",
+      "geoadj": 1.0618,
+      "state": "MN"
+    },
+    "2706": {
+      "name": "MN-06",
+      "fullName": "Congressional District 6 (118th Congress), Minnesota",
+      "geoadj": 0.947,
+      "state": "MN"
+    },
+    "2707": {
+      "name": "MN-07",
+      "fullName": "Congressional District 7 (118th Congress), Minnesota",
+      "geoadj": 0.8309,
+      "state": "MN"
+    },
+    "2708": {
+      "name": "MN-08",
+      "fullName": "Congressional District 8 (118th Congress), Minnesota",
+      "geoadj": 0.8893,
+      "state": "MN"
+    },
+    "2901": {
+      "name": "MO-01",
+      "fullName": "Congressional District 1 (118th Congress), Missouri",
+      "geoadj": 0.9187,
+      "state": "MO"
+    },
+    "2902": {
+      "name": "MO-02",
+      "fullName": "Congressional District 2 (118th Congress), Missouri",
+      "geoadj": 0.9467,
+      "state": "MO"
+    },
+    "2903": {
+      "name": "MO-03",
+      "fullName": "Congressional District 3 (118th Congress), Missouri",
+      "geoadj": 0.861,
+      "state": "MO"
+    },
+    "2904": {
+      "name": "MO-04",
+      "fullName": "Congressional District 4 (118th Congress), Missouri",
+      "geoadj": 0.8316,
+      "state": "MO"
+    },
+    "2905": {
+      "name": "MO-05",
+      "fullName": "Congressional District 5 (118th Congress), Missouri",
+      "geoadj": 0.9316,
+      "state": "MO"
+    },
+    "2906": {
+      "name": "MO-06",
+      "fullName": "Congressional District 6 (118th Congress), Missouri",
+      "geoadj": 0.8415,
+      "state": "MO"
+    },
+    "2907": {
+      "name": "MO-07",
+      "fullName": "Congressional District 7 (118th Congress), Missouri",
+      "geoadj": 0.8386,
+      "state": "MO"
+    },
+    "2908": {
+      "name": "MO-08",
+      "fullName": "Congressional District 8 (118th Congress), Missouri",
+      "geoadj": 0.7996,
+      "state": "MO"
+    },
+    "2801": {
+      "name": "MS-01",
+      "fullName": "Congressional District 1 (118th Congress), Mississippi",
+      "geoadj": 0.8121,
+      "state": "MS"
+    },
+    "2802": {
+      "name": "MS-02",
+      "fullName": "Congressional District 2 (118th Congress), Mississippi",
+      "geoadj": 0.8011,
+      "state": "MS"
+    },
+    "2803": {
+      "name": "MS-03",
+      "fullName": "Congressional District 3 (118th Congress), Mississippi",
+      "geoadj": 0.8621,
+      "state": "MS"
+    },
+    "2804": {
+      "name": "MS-04",
+      "fullName": "Congressional District 4 (118th Congress), Mississippi",
+      "geoadj": 0.8555,
+      "state": "MS"
+    },
+    "3001": {
+      "name": "MT-01",
+      "fullName": "Congressional District 1 (118th Congress), Montana",
+      "geoadj": 0.9165,
+      "state": "MT"
+    },
+    "3002": {
+      "name": "MT-02",
+      "fullName": "Congressional District 2 (118th Congress), Montana",
+      "geoadj": 0.8647,
+      "state": "MT"
+    },
+    "3701": {
+      "name": "NC-01",
+      "fullName": "Congressional District 1 (118th Congress), North Carolina",
+      "geoadj": 0.8272,
+      "state": "NC"
+    },
+    "3702": {
+      "name": "NC-02",
+      "fullName": "Congressional District 2 (118th Congress), North Carolina",
+      "geoadj": 1.0599,
+      "state": "NC"
+    },
+    "3703": {
+      "name": "NC-03",
+      "fullName": "Congressional District 3 (118th Congress), North Carolina",
+      "geoadj": 0.8511,
+      "state": "NC"
+    },
+    "3704": {
+      "name": "NC-04",
+      "fullName": "Congressional District 4 (118th Congress), North Carolina",
+      "geoadj": 0.9783,
+      "state": "NC"
+    },
+    "3705": {
+      "name": "NC-05",
+      "fullName": "Congressional District 5 (118th Congress), North Carolina",
+      "geoadj": 0.8382,
+      "state": "NC"
+    },
+    "3706": {
+      "name": "NC-06",
+      "fullName": "Congressional District 6 (118th Congress), North Carolina",
+      "geoadj": 0.8812,
+      "state": "NC"
+    },
+    "3707": {
+      "name": "NC-07",
+      "fullName": "Congressional District 7 (118th Congress), North Carolina",
+      "geoadj": 0.904,
+      "state": "NC"
+    },
+    "3708": {
+      "name": "NC-08",
+      "fullName": "Congressional District 8 (118th Congress), North Carolina",
+      "geoadj": 0.8261,
+      "state": "NC"
+    },
+    "3709": {
+      "name": "NC-09",
+      "fullName": "Congressional District 9 (118th Congress), North Carolina",
+      "geoadj": 0.8742,
+      "state": "NC"
+    },
+    "3710": {
+      "name": "NC-10",
+      "fullName": "Congressional District 10 (118th Congress), North Carolina",
+      "geoadj": 0.8161,
+      "state": "NC"
+    },
+    "3711": {
+      "name": "NC-11",
+      "fullName": "Congressional District 11 (118th Congress), North Carolina",
+      "geoadj": 0.8937,
+      "state": "NC"
+    },
+    "3712": {
+      "name": "NC-12",
+      "fullName": "Congressional District 12 (118th Congress), North Carolina",
+      "geoadj": 1.0195,
+      "state": "NC"
+    },
+    "3713": {
+      "name": "NC-13",
+      "fullName": "Congressional District 13 (118th Congress), North Carolina",
+      "geoadj": 0.9191,
+      "state": "NC"
+    },
+    "3714": {
+      "name": "NC-14",
+      "fullName": "Congressional District 14 (118th Congress), North Carolina",
+      "geoadj": 1.0441,
+      "state": "NC"
+    },
+    "3800": {
+      "name": "ND-AL",
+      "fullName": "Congressional District (at Large) (118th Congress), North Dakota",
+      "geoadj": 0.8514,
+      "state": "ND"
+    },
+    "3101": {
+      "name": "NE-01",
+      "fullName": "Congressional District 1 (118th Congress), Nebraska",
+      "geoadj": 0.9018,
+      "state": "NE"
+    },
+    "3102": {
+      "name": "NE-02",
+      "fullName": "Congressional District 2 (118th Congress), Nebraska",
+      "geoadj": 0.9515,
+      "state": "NE"
+    },
+    "3103": {
+      "name": "NE-03",
+      "fullName": "Congressional District 3 (118th Congress), Nebraska",
+      "geoadj": 0.8228,
+      "state": "NE"
+    },
+    "3301": {
+      "name": "NH-01",
+      "fullName": "Congressional District 1 (118th Congress), New Hampshire",
+      "geoadj": 1.103,
+      "state": "NH"
+    },
+    "3302": {
+      "name": "NH-02",
+      "fullName": "Congressional District 2 (118th Congress), New Hampshire",
+      "geoadj": 1.0518,
+      "state": "NH"
+    },
+    "3401": {
+      "name": "NJ-01",
+      "fullName": "Congressional District 1 (118th Congress), New Jersey",
+      "geoadj": 1.0621,
+      "state": "NJ"
+    },
+    "3402": {
+      "name": "NJ-02",
+      "fullName": "Congressional District 2 (118th Congress), New Jersey",
+      "geoadj": 1.0059,
+      "state": "NJ"
+    },
+    "3403": {
+      "name": "NJ-03",
+      "fullName": "Congressional District 3 (118th Congress), New Jersey",
+      "geoadj": 1.1699,
+      "state": "NJ"
+    },
+    "3404": {
+      "name": "NJ-04",
+      "fullName": "Congressional District 4 (118th Congress), New Jersey",
+      "geoadj": 1.1463,
+      "state": "NJ"
+    },
+    "3405": {
+      "name": "NJ-05",
+      "fullName": "Congressional District 5 (118th Congress), New Jersey",
+      "geoadj": 1.2541,
+      "state": "NJ"
+    },
+    "3406": {
+      "name": "NJ-06",
+      "fullName": "Congressional District 6 (118th Congress), New Jersey",
+      "geoadj": 1.2317,
+      "state": "NJ"
+    },
+    "3407": {
+      "name": "NJ-07",
+      "fullName": "Congressional District 7 (118th Congress), New Jersey",
+      "geoadj": 1.214,
+      "state": "NJ"
+    },
+    "3408": {
+      "name": "NJ-08",
+      "fullName": "Congressional District 8 (118th Congress), New Jersey",
+      "geoadj": 1.1478,
+      "state": "NJ"
+    },
+    "3409": {
+      "name": "NJ-09",
+      "fullName": "Congressional District 9 (118th Congress), New Jersey",
+      "geoadj": 1.1302,
+      "state": "NJ"
+    },
+    "3410": {
+      "name": "NJ-10",
+      "fullName": "Congressional District 10 (118th Congress), New Jersey",
+      "geoadj": 1.0824,
+      "state": "NJ"
+    },
+    "3411": {
+      "name": "NJ-11",
+      "fullName": "Congressional District 11 (118th Congress), New Jersey",
+      "geoadj": 1.264,
+      "state": "NJ"
+    },
+    "3412": {
+      "name": "NJ-12",
+      "fullName": "Congressional District 12 (118th Congress), New Jersey",
+      "geoadj": 1.1938,
+      "state": "NJ"
+    },
+    "3501": {
+      "name": "NM-01",
+      "fullName": "Congressional District 1 (118th Congress), New Mexico",
+      "geoadj": 0.9276,
+      "state": "NM"
+    },
+    "3502": {
+      "name": "NM-02",
+      "fullName": "Congressional District 2 (118th Congress), New Mexico",
+      "geoadj": 0.8224,
+      "state": "NM"
+    },
+    "3503": {
+      "name": "NM-03",
+      "fullName": "Congressional District 3 (118th Congress), New Mexico",
+      "geoadj": 0.8636,
+      "state": "NM"
+    },
+    "3201": {
+      "name": "NV-01",
+      "fullName": "Congressional District 1 (118th Congress), Nevada",
+      "geoadj": 1.0011,
+      "state": "NV"
+    },
+    "3202": {
+      "name": "NV-02",
+      "fullName": "Congressional District 2 (118th Congress), Nevada",
+      "geoadj": 1.0283,
+      "state": "NV"
+    },
+    "3203": {
+      "name": "NV-03",
+      "fullName": "Congressional District 3 (118th Congress), Nevada",
+      "geoadj": 1.0919,
+      "state": "NV"
+    },
+    "3204": {
+      "name": "NV-04",
+      "fullName": "Congressional District 4 (118th Congress), Nevada",
+      "geoadj": 0.9952,
+      "state": "NV"
+    },
+    "3601": {
+      "name": "NY-01",
+      "fullName": "Congressional District 1 (118th Congress), New York",
+      "geoadj": 1.3379,
+      "state": "NY"
+    },
+    "3602": {
+      "name": "NY-02",
+      "fullName": "Congressional District 2 (118th Congress), New York",
+      "geoadj": 1.3247,
+      "state": "NY"
+    },
+    "3603": {
+      "name": "NY-03",
+      "fullName": "Congressional District 3 (118th Congress), New York",
+      "geoadj": 1.3434,
+      "state": "NY"
+    },
+    "3604": {
+      "name": "NY-04",
+      "fullName": "Congressional District 4 (118th Congress), New York",
+      "geoadj": 1.2773,
+      "state": "NY"
+    },
+    "3605": {
+      "name": "NY-05",
+      "fullName": "Congressional District 5 (118th Congress), New York",
+      "geoadj": 1.1699,
+      "state": "NY"
+    },
+    "3606": {
+      "name": "NY-06",
+      "fullName": "Congressional District 6 (118th Congress), New York",
+      "geoadj": 1.2688,
+      "state": "NY"
+    },
+    "3607": {
+      "name": "NY-07",
+      "fullName": "Congressional District 7 (118th Congress), New York",
+      "geoadj": 1.239,
+      "state": "NY"
+    },
+    "3608": {
+      "name": "NY-08",
+      "fullName": "Congressional District 8 (118th Congress), New York",
+      "geoadj": 1.0842,
+      "state": "NY"
+    },
+    "3609": {
+      "name": "NY-09",
+      "fullName": "Congressional District 9 (118th Congress), New York",
+      "geoadj": 1.1706,
+      "state": "NY"
+    },
+    "3610": {
+      "name": "NY-10",
+      "fullName": "Congressional District 10 (118th Congress), New York",
+      "geoadj": 1.2747,
+      "state": "NY"
+    },
+    "3611": {
+      "name": "NY-11",
+      "fullName": "Congressional District 11 (118th Congress), New York",
+      "geoadj": 1.1666,
+      "state": "NY"
+    },
+    "3612": {
+      "name": "NY-12",
+      "fullName": "Congressional District 12 (118th Congress), New York",
+      "geoadj": 1.5,
+      "state": "NY"
+    },
+    "3613": {
+      "name": "NY-13",
+      "fullName": "Congressional District 13 (118th Congress), New York",
+      "geoadj": 1.0636,
+      "state": "NY"
+    },
+    "3614": {
+      "name": "NY-14",
+      "fullName": "Congressional District 14 (118th Congress), New York",
+      "geoadj": 1.1566,
+      "state": "NY"
+    },
+    "3615": {
+      "name": "NY-15",
+      "fullName": "Congressional District 15 (118th Congress), New York",
+      "geoadj": 1.0419,
+      "state": "NY"
+    },
+    "3616": {
+      "name": "NY-16",
+      "fullName": "Congressional District 16 (118th Congress), New York",
+      "geoadj": 1.2078,
+      "state": "NY"
+    },
+    "3617": {
+      "name": "NY-17",
+      "fullName": "Congressional District 17 (118th Congress), New York",
+      "geoadj": 1.2309,
+      "state": "NY"
+    },
+    "3618": {
+      "name": "NY-18",
+      "fullName": "Congressional District 18 (118th Congress), New York",
+      "geoadj": 1.1191,
+      "state": "NY"
+    },
+    "3619": {
+      "name": "NY-19",
+      "fullName": "Congressional District 19 (118th Congress), New York",
+      "geoadj": 0.9055,
+      "state": "NY"
+    },
+    "3620": {
+      "name": "NY-20",
+      "fullName": "Congressional District 20 (118th Congress), New York",
+      "geoadj": 0.9937,
+      "state": "NY"
+    },
+    "3621": {
+      "name": "NY-21",
+      "fullName": "Congressional District 21 (118th Congress), New York",
+      "geoadj": 0.8871,
+      "state": "NY"
+    },
+    "3622": {
+      "name": "NY-22",
+      "fullName": "Congressional District 22 (118th Congress), New York",
+      "geoadj": 0.907,
+      "state": "NY"
+    },
+    "3623": {
+      "name": "NY-23",
+      "fullName": "Congressional District 23 (118th Congress), New York",
+      "geoadj": 0.8573,
+      "state": "NY"
+    },
+    "3624": {
+      "name": "NY-24",
+      "fullName": "Congressional District 24 (118th Congress), New York",
+      "geoadj": 0.8643,
+      "state": "NY"
+    },
+    "3625": {
+      "name": "NY-25",
+      "fullName": "Congressional District 25 (118th Congress), New York",
+      "geoadj": 0.9507,
+      "state": "NY"
+    },
+    "3626": {
+      "name": "NY-26",
+      "fullName": "Congressional District 26 (118th Congress), New York",
+      "geoadj": 0.8805,
+      "state": "NY"
+    },
+    "3901": {
+      "name": "OH-01",
+      "fullName": "Congressional District 1 (118th Congress), Ohio",
+      "geoadj": 0.9165,
+      "state": "OH"
+    },
+    "3902": {
+      "name": "OH-02",
+      "fullName": "Congressional District 2 (118th Congress), Ohio",
+      "geoadj": 0.8301,
+      "state": "OH"
+    },
+    "3903": {
+      "name": "OH-03",
+      "fullName": "Congressional District 3 (118th Congress), Ohio",
+      "geoadj": 0.9647,
+      "state": "OH"
+    },
+    "3904": {
+      "name": "OH-04",
+      "fullName": "Congressional District 4 (118th Congress), Ohio",
+      "geoadj": 0.8529,
+      "state": "OH"
+    },
+    "3905": {
+      "name": "OH-05",
+      "fullName": "Congressional District 5 (118th Congress), Ohio",
+      "geoadj": 0.829,
+      "state": "OH"
+    },
+    "3906": {
+      "name": "OH-06",
+      "fullName": "Congressional District 6 (118th Congress), Ohio",
+      "geoadj": 0.8055,
+      "state": "OH"
+    },
+    "3907": {
+      "name": "OH-07",
+      "fullName": "Congressional District 7 (118th Congress), Ohio",
+      "geoadj": 0.9191,
+      "state": "OH"
+    },
+    "3908": {
+      "name": "OH-08",
+      "fullName": "Congressional District 8 (118th Congress), Ohio",
+      "geoadj": 0.8867,
+      "state": "OH"
+    },
+    "3909": {
+      "name": "OH-09",
+      "fullName": "Congressional District 9 (118th Congress), Ohio",
+      "geoadj": 0.8485,
+      "state": "OH"
+    },
+    "3910": {
+      "name": "OH-10",
+      "fullName": "Congressional District 10 (118th Congress), Ohio",
+      "geoadj": 0.8658,
+      "state": "OH"
+    },
+    "3911": {
+      "name": "OH-11",
+      "fullName": "Congressional District 11 (118th Congress), Ohio",
+      "geoadj": 0.875,
+      "state": "OH"
+    },
+    "3912": {
+      "name": "OH-12",
+      "fullName": "Congressional District 12 (118th Congress), Ohio",
+      "geoadj": 0.8537,
+      "state": "OH"
+    },
+    "3913": {
+      "name": "OH-13",
+      "fullName": "Congressional District 13 (118th Congress), Ohio",
+      "geoadj": 0.8643,
+      "state": "OH"
+    },
+    "3914": {
+      "name": "OH-14",
+      "fullName": "Congressional District 14 (118th Congress), Ohio",
+      "geoadj": 0.8566,
+      "state": "OH"
+    },
+    "3915": {
+      "name": "OH-15",
+      "fullName": "Congressional District 15 (118th Congress), Ohio",
+      "geoadj": 0.9559,
+      "state": "OH"
+    },
+    "4001": {
+      "name": "OK-01",
+      "fullName": "Congressional District 1 (118th Congress), Oklahoma",
+      "geoadj": 0.9007,
+      "state": "OK"
+    },
+    "4002": {
+      "name": "OK-02",
+      "fullName": "Congressional District 2 (118th Congress), Oklahoma",
+      "geoadj": 0.8003,
+      "state": "OK"
+    },
+    "4003": {
+      "name": "OK-03",
+      "fullName": "Congressional District 3 (118th Congress), Oklahoma",
+      "geoadj": 0.832,
+      "state": "OK"
+    },
+    "4004": {
+      "name": "OK-04",
+      "fullName": "Congressional District 4 (118th Congress), Oklahoma",
+      "geoadj": 0.8617,
+      "state": "OK"
+    },
+    "4005": {
+      "name": "OK-05",
+      "fullName": "Congressional District 5 (118th Congress), Oklahoma",
+      "geoadj": 0.9055,
+      "state": "OK"
+    },
+    "4101": {
+      "name": "OR-01",
+      "fullName": "Congressional District 1 (118th Congress), Oregon",
+      "geoadj": 1.1452,
+      "state": "OR"
+    },
+    "4102": {
+      "name": "OR-02",
+      "fullName": "Congressional District 2 (118th Congress), Oregon",
+      "geoadj": 0.9026,
+      "state": "OR"
+    },
+    "4103": {
+      "name": "OR-03",
+      "fullName": "Congressional District 3 (118th Congress), Oregon",
+      "geoadj": 1.1022,
+      "state": "OR"
+    },
+    "4104": {
+      "name": "OR-04",
+      "fullName": "Congressional District 4 (118th Congress), Oregon",
+      "geoadj": 0.9658,
+      "state": "OR"
+    },
+    "4105": {
+      "name": "OR-05",
+      "fullName": "Congressional District 5 (118th Congress), Oregon",
+      "geoadj": 1.0735,
+      "state": "OR"
+    },
+    "4106": {
+      "name": "OR-06",
+      "fullName": "Congressional District 6 (118th Congress), Oregon",
+      "geoadj": 1.0368,
+      "state": "OR"
+    },
+    "4201": {
+      "name": "PA-01",
+      "fullName": "Congressional District 1 (118th Congress), Pennsylvania",
+      "geoadj": 1.1085,
+      "state": "PA"
+    },
+    "4202": {
+      "name": "PA-02",
+      "fullName": "Congressional District 2 (118th Congress), Pennsylvania",
+      "geoadj": 0.9971,
+      "state": "PA"
+    },
+    "4203": {
+      "name": "PA-03",
+      "fullName": "Congressional District 3 (118th Congress), Pennsylvania",
+      "geoadj": 1.0441,
+      "state": "PA"
+    },
+    "4204": {
+      "name": "PA-04",
+      "fullName": "Congressional District 4 (118th Congress), Pennsylvania",
+      "geoadj": 1.1177,
+      "state": "PA"
+    },
+    "4205": {
+      "name": "PA-05",
+      "fullName": "Congressional District 5 (118th Congress), Pennsylvania",
+      "geoadj": 1.0449,
+      "state": "PA"
+    },
+    "4206": {
+      "name": "PA-06",
+      "fullName": "Congressional District 6 (118th Congress), Pennsylvania",
+      "geoadj": 1.0585,
+      "state": "PA"
+    },
+    "4207": {
+      "name": "PA-07",
+      "fullName": "Congressional District 7 (118th Congress), Pennsylvania",
+      "geoadj": 1.0051,
+      "state": "PA"
+    },
+    "4208": {
+      "name": "PA-08",
+      "fullName": "Congressional District 8 (118th Congress), Pennsylvania",
+      "geoadj": 0.8728,
+      "state": "PA"
+    },
+    "4209": {
+      "name": "PA-09",
+      "fullName": "Congressional District 9 (118th Congress), Pennsylvania",
+      "geoadj": 0.8529,
+      "state": "PA"
+    },
+    "4210": {
+      "name": "PA-10",
+      "fullName": "Congressional District 10 (118th Congress), Pennsylvania",
+      "geoadj": 0.9478,
+      "state": "PA"
+    },
+    "4211": {
+      "name": "PA-11",
+      "fullName": "Congressional District 11 (118th Congress), Pennsylvania",
+      "geoadj": 0.9768,
+      "state": "PA"
+    },
+    "4212": {
+      "name": "PA-12",
+      "fullName": "Congressional District 12 (118th Congress), Pennsylvania",
+      "geoadj": 0.9257,
+      "state": "PA"
+    },
+    "4213": {
+      "name": "PA-13",
+      "fullName": "Congressional District 13 (118th Congress), Pennsylvania",
+      "geoadj": 0.8356,
+      "state": "PA"
+    },
+    "4214": {
+      "name": "PA-14",
+      "fullName": "Congressional District 14 (118th Congress), Pennsylvania",
+      "geoadj": 0.8224,
+      "state": "PA"
+    },
+    "4215": {
+      "name": "PA-15",
+      "fullName": "Congressional District 15 (118th Congress), Pennsylvania",
+      "geoadj": 0.8331,
+      "state": "PA"
+    },
+    "4216": {
+      "name": "PA-16",
+      "fullName": "Congressional District 16 (118th Congress), Pennsylvania",
+      "geoadj": 0.8367,
+      "state": "PA"
+    },
+    "4217": {
+      "name": "PA-17",
+      "fullName": "Congressional District 17 (118th Congress), Pennsylvania",
+      "geoadj": 0.9213,
+      "state": "PA"
+    },
+    "4401": {
+      "name": "RI-01",
+      "fullName": "Congressional District 1 (118th Congress), Rhode Island",
+      "geoadj": 0.9993,
+      "state": "RI"
+    },
+    "4402": {
+      "name": "RI-02",
+      "fullName": "Congressional District 2 (118th Congress), Rhode Island",
+      "geoadj": 1.0147,
+      "state": "RI"
+    },
+    "4501": {
+      "name": "SC-01",
+      "fullName": "Congressional District 1 (118th Congress), South Carolina",
+      "geoadj": 1.0673,
+      "state": "SC"
+    },
+    "4502": {
+      "name": "SC-02",
+      "fullName": "Congressional District 2 (118th Congress), South Carolina",
+      "geoadj": 0.9077,
+      "state": "SC"
+    },
+    "4503": {
+      "name": "SC-03",
+      "fullName": "Congressional District 3 (118th Congress), South Carolina",
+      "geoadj": 0.8327,
+      "state": "SC"
+    },
+    "4504": {
+      "name": "SC-04",
+      "fullName": "Congressional District 4 (118th Congress), South Carolina",
+      "geoadj": 0.9257,
+      "state": "SC"
+    },
+    "4505": {
+      "name": "SC-05",
+      "fullName": "Congressional District 5 (118th Congress), South Carolina",
+      "geoadj": 0.8783,
+      "state": "SC"
+    },
+    "4506": {
+      "name": "SC-06",
+      "fullName": "Congressional District 6 (118th Congress), South Carolina",
+      "geoadj": 0.9368,
+      "state": "SC"
+    },
+    "4507": {
+      "name": "SC-07",
+      "fullName": "Congressional District 7 (118th Congress), South Carolina",
+      "geoadj": 0.8639,
+      "state": "SC"
+    },
+    "4600": {
+      "name": "SD-AL",
+      "fullName": "Congressional District (at Large) (118th Congress), South Dakota",
+      "geoadj": 0.8573,
+      "state": "SD"
+    },
+    "4701": {
+      "name": "TN-01",
+      "fullName": "Congressional District 1 (118th Congress), Tennessee",
+      "geoadj": 0.8206,
+      "state": "TN"
+    },
+    "4702": {
+      "name": "TN-02",
+      "fullName": "Congressional District 2 (118th Congress), Tennessee",
+      "geoadj": 0.9224,
+      "state": "TN"
+    },
+    "4703": {
+      "name": "TN-03",
+      "fullName": "Congressional District 3 (118th Congress), Tennessee",
+      "geoadj": 0.8706,
+      "state": "TN"
+    },
+    "4704": {
+      "name": "TN-04",
+      "fullName": "Congressional District 4 (118th Congress), Tennessee",
+      "geoadj": 0.8882,
+      "state": "TN"
+    },
+    "4705": {
+      "name": "TN-05",
+      "fullName": "Congressional District 5 (118th Congress), Tennessee",
+      "geoadj": 1.0655,
+      "state": "TN"
+    },
+    "4706": {
+      "name": "TN-06",
+      "fullName": "Congressional District 6 (118th Congress), Tennessee",
+      "geoadj": 0.9327,
+      "state": "TN"
+    },
+    "4707": {
+      "name": "TN-07",
+      "fullName": "Congressional District 7 (118th Congress), Tennessee",
+      "geoadj": 0.9526,
+      "state": "TN"
+    },
+    "4708": {
+      "name": "TN-08",
+      "fullName": "Congressional District 8 (118th Congress), Tennessee",
+      "geoadj": 0.8099,
+      "state": "TN"
+    },
+    "4709": {
+      "name": "TN-09",
+      "fullName": "Congressional District 9 (118th Congress), Tennessee",
+      "geoadj": 0.907,
+      "state": "TN"
+    },
+    "4801": {
+      "name": "TX-01",
+      "fullName": "Congressional District 1 (118th Congress), Texas",
+      "geoadj": 0.8787,
+      "state": "TX"
+    },
+    "4802": {
+      "name": "TX-02",
+      "fullName": "Congressional District 2 (118th Congress), Texas",
+      "geoadj": 1.0853,
+      "state": "TX"
+    },
+    "4803": {
+      "name": "TX-03",
+      "fullName": "Congressional District 3 (118th Congress), Texas",
+      "geoadj": 1.1452,
+      "state": "TX"
+    },
+    "4804": {
+      "name": "TX-04",
+      "fullName": "Congressional District 4 (118th Congress), Texas",
+      "geoadj": 1.1026,
+      "state": "TX"
+    },
+    "4805": {
+      "name": "TX-05",
+      "fullName": "Congressional District 5 (118th Congress), Texas",
+      "geoadj": 0.9805,
+      "state": "TX"
+    },
+    "4806": {
+      "name": "TX-06",
+      "fullName": "Congressional District 6 (118th Congress), Texas",
+      "geoadj": 1.0033,
+      "state": "TX"
+    },
+    "4807": {
+      "name": "TX-07",
+      "fullName": "Congressional District 7 (118th Congress), Texas",
+      "geoadj": 1.0776,
+      "state": "TX"
+    },
+    "4808": {
+      "name": "TX-08",
+      "fullName": "Congressional District 8 (118th Congress), Texas",
+      "geoadj": 1.0257,
+      "state": "TX"
+    },
+    "4809": {
+      "name": "TX-09",
+      "fullName": "Congressional District 9 (118th Congress), Texas",
+      "geoadj": 0.971,
+      "state": "TX"
+    },
+    "4810": {
+      "name": "TX-10",
+      "fullName": "Congressional District 10 (118th Congress), Texas",
+      "geoadj": 0.9331,
+      "state": "TX"
+    },
+    "4811": {
+      "name": "TX-11",
+      "fullName": "Congressional District 11 (118th Congress), Texas",
+      "geoadj": 0.9379,
+      "state": "TX"
+    },
+    "4812": {
+      "name": "TX-12",
+      "fullName": "Congressional District 12 (118th Congress), Texas",
+      "geoadj": 1.0397,
+      "state": "TX"
+    },
+    "4813": {
+      "name": "TX-13",
+      "fullName": "Congressional District 13 (118th Congress), Texas",
+      "geoadj": 0.8945,
+      "state": "TX"
+    },
+    "4814": {
+      "name": "TX-14",
+      "fullName": "Congressional District 14 (118th Congress), Texas",
+      "geoadj": 0.9522,
+      "state": "TX"
+    },
+    "4815": {
+      "name": "TX-15",
+      "fullName": "Congressional District 15 (118th Congress), Texas",
+      "geoadj": 0.8562,
+      "state": "TX"
+    },
+    "4816": {
+      "name": "TX-16",
+      "fullName": "Congressional District 16 (118th Congress), Texas",
+      "geoadj": 0.8724,
+      "state": "TX"
+    },
+    "4817": {
+      "name": "TX-17",
+      "fullName": "Congressional District 17 (118th Congress), Texas",
+      "geoadj": 0.9165,
+      "state": "TX"
+    },
+    "4818": {
+      "name": "TX-18",
+      "fullName": "Congressional District 18 (118th Congress), Texas",
+      "geoadj": 0.975,
+      "state": "TX"
+    },
+    "4819": {
+      "name": "TX-19",
+      "fullName": "Congressional District 19 (118th Congress), Texas",
+      "geoadj": 0.8901,
+      "state": "TX"
+    },
+    "4820": {
+      "name": "TX-20",
+      "fullName": "Congressional District 20 (118th Congress), Texas",
+      "geoadj": 0.9846,
+      "state": "TX"
+    },
+    "4821": {
+      "name": "TX-21",
+      "fullName": "Congressional District 21 (118th Congress), Texas",
+      "geoadj": 1.0434,
+      "state": "TX"
+    },
+    "4822": {
+      "name": "TX-22",
+      "fullName": "Congressional District 22 (118th Congress), Texas",
+      "geoadj": 1.0754,
+      "state": "TX"
+    },
+    "4823": {
+      "name": "TX-23",
+      "fullName": "Congressional District 23 (118th Congress), Texas",
+      "geoadj": 0.9239,
+      "state": "TX"
+    },
+    "4824": {
+      "name": "TX-24",
+      "fullName": "Congressional District 24 (118th Congress), Texas",
+      "geoadj": 1.15,
+      "state": "TX"
+    },
+    "4825": {
+      "name": "TX-25",
+      "fullName": "Congressional District 25 (118th Congress), Texas",
+      "geoadj": 0.9835,
+      "state": "TX"
+    },
+    "4826": {
+      "name": "TX-26",
+      "fullName": "Congressional District 26 (118th Congress), Texas",
+      "geoadj": 1.1574,
+      "state": "TX"
+    },
+    "4827": {
+      "name": "TX-27",
+      "fullName": "Congressional District 27 (118th Congress), Texas",
+      "geoadj": 0.9467,
+      "state": "TX"
+    },
+    "4828": {
+      "name": "TX-28",
+      "fullName": "Congressional District 28 (118th Congress), Texas",
+      "geoadj": 0.8867,
+      "state": "TX"
+    },
+    "4829": {
+      "name": "TX-29",
+      "fullName": "Congressional District 29 (118th Congress), Texas",
+      "geoadj": 0.9393,
+      "state": "TX"
+    },
+    "4830": {
+      "name": "TX-30",
+      "fullName": "Congressional District 30 (118th Congress), Texas",
+      "geoadj": 1.0537,
+      "state": "TX"
+    },
+    "4831": {
+      "name": "TX-31",
+      "fullName": "Congressional District 31 (118th Congress), Texas",
+      "geoadj": 0.9654,
+      "state": "TX"
+    },
+    "4832": {
+      "name": "TX-32",
+      "fullName": "Congressional District 32 (118th Congress), Texas",
+      "geoadj": 1.1037,
+      "state": "TX"
+    },
+    "4833": {
+      "name": "TX-33",
+      "fullName": "Congressional District 33 (118th Congress), Texas",
+      "geoadj": 1.0213,
+      "state": "TX"
+    },
+    "4834": {
+      "name": "TX-34",
+      "fullName": "Congressional District 34 (118th Congress), Texas",
+      "geoadj": 0.8257,
+      "state": "TX"
+    },
+    "4835": {
+      "name": "TX-35",
+      "fullName": "Congressional District 35 (118th Congress), Texas",
+      "geoadj": 1.0316,
+      "state": "TX"
+    },
+    "4836": {
+      "name": "TX-36",
+      "fullName": "Congressional District 36 (118th Congress), Texas",
+      "geoadj": 0.9757,
+      "state": "TX"
+    },
+    "4837": {
+      "name": "TX-37",
+      "fullName": "Congressional District 37 (118th Congress), Texas",
+      "geoadj": 1.1706,
+      "state": "TX"
+    },
+    "4838": {
+      "name": "TX-38",
+      "fullName": "Congressional District 38 (118th Congress), Texas",
+      "geoadj": 1.1195,
+      "state": "TX"
+    },
+    "4901": {
+      "name": "UT-01",
+      "fullName": "Congressional District 1 (118th Congress), Utah",
+      "geoadj": 0.9687,
+      "state": "UT"
+    },
+    "4902": {
+      "name": "UT-02",
+      "fullName": "Congressional District 2 (118th Congress), Utah",
+      "geoadj": 0.9915,
+      "state": "UT"
+    },
+    "4903": {
+      "name": "UT-03",
+      "fullName": "Congressional District 3 (118th Congress), Utah",
+      "geoadj": 0.9879,
+      "state": "UT"
+    },
+    "4904": {
+      "name": "UT-04",
+      "fullName": "Congressional District 4 (118th Congress), Utah",
+      "geoadj": 1.0485,
+      "state": "UT"
+    },
+    "5101": {
+      "name": "VA-01",
+      "fullName": "Congressional District 1 (118th Congress), Virginia",
+      "geoadj": 1.0566,
+      "state": "VA"
+    },
+    "5102": {
+      "name": "VA-02",
+      "fullName": "Congressional District 2 (118th Congress), Virginia",
+      "geoadj": 1.0544,
+      "state": "VA"
+    },
+    "5103": {
+      "name": "VA-03",
+      "fullName": "Congressional District 3 (118th Congress), Virginia",
+      "geoadj": 0.9643,
+      "state": "VA"
+    },
+    "5104": {
+      "name": "VA-04",
+      "fullName": "Congressional District 4 (118th Congress), Virginia",
+      "geoadj": 0.979,
+      "state": "VA"
+    },
+    "5105": {
+      "name": "VA-05",
+      "fullName": "Congressional District 5 (118th Congress), Virginia",
+      "geoadj": 0.8772,
+      "state": "VA"
+    },
+    "5106": {
+      "name": "VA-06",
+      "fullName": "Congressional District 6 (118th Congress), Virginia",
+      "geoadj": 0.875,
+      "state": "VA"
+    },
+    "5107": {
+      "name": "VA-07",
+      "fullName": "Congressional District 7 (118th Congress), Virginia",
+      "geoadj": 1.1129,
+      "state": "VA"
+    },
+    "5108": {
+      "name": "VA-08",
+      "fullName": "Congressional District 8 (118th Congress), Virginia",
+      "geoadj": 1.3427,
+      "state": "VA"
+    },
+    "5109": {
+      "name": "VA-09",
+      "fullName": "Congressional District 9 (118th Congress), Virginia",
+      "geoadj": 0.8022,
+      "state": "VA"
+    },
+    "5110": {
+      "name": "VA-10",
+      "fullName": "Congressional District 10 (118th Congress), Virginia",
+      "geoadj": 1.2456,
+      "state": "VA"
+    },
+    "5111": {
+      "name": "VA-11",
+      "fullName": "Congressional District 11 (118th Congress), Virginia",
+      "geoadj": 1.3552,
+      "state": "VA"
+    },
+    "5000": {
+      "name": "VT-AL",
+      "fullName": "Congressional District (at Large) (118th Congress), Vermont",
+      "geoadj": 0.996,
+      "state": "VT"
+    },
+    "5301": {
+      "name": "WA-01",
+      "fullName": "Congressional District 1 (118th Congress), Washington",
+      "geoadj": 1.3324,
+      "state": "WA"
+    },
+    "5302": {
+      "name": "WA-02",
+      "fullName": "Congressional District 2 (118th Congress), Washington",
+      "geoadj": 1.1096,
+      "state": "WA"
+    },
+    "5303": {
+      "name": "WA-03",
+      "fullName": "Congressional District 3 (118th Congress), Washington",
+      "geoadj": 1.0357,
+      "state": "WA"
+    },
+    "5304": {
+      "name": "WA-04",
+      "fullName": "Congressional District 4 (118th Congress), Washington",
+      "geoadj": 0.9231,
+      "state": "WA"
+    },
+    "5305": {
+      "name": "WA-05",
+      "fullName": "Congressional District 5 (118th Congress), Washington",
+      "geoadj": 0.9357,
+      "state": "WA"
+    },
+    "5306": {
+      "name": "WA-06",
+      "fullName": "Congressional District 6 (118th Congress), Washington",
+      "geoadj": 1.1008,
+      "state": "WA"
+    },
+    "5307": {
+      "name": "WA-07",
+      "fullName": "Congressional District 7 (118th Congress), Washington",
+      "geoadj": 1.3585,
+      "state": "WA"
+    },
+    "5308": {
+      "name": "WA-08",
+      "fullName": "Congressional District 8 (118th Congress), Washington",
+      "geoadj": 1.15,
+      "state": "WA"
+    },
+    "5309": {
+      "name": "WA-09",
+      "fullName": "Congressional District 9 (118th Congress), Washington",
+      "geoadj": 1.21,
+      "state": "WA"
+    },
+    "5310": {
+      "name": "WA-10",
+      "fullName": "Congressional District 10 (118th Congress), Washington",
+      "geoadj": 1.118,
+      "state": "WA"
+    },
+    "5501": {
+      "name": "WI-01",
+      "fullName": "Congressional District 1 (118th Congress), Wisconsin",
+      "geoadj": 0.9184,
+      "state": "WI"
+    },
+    "5502": {
+      "name": "WI-02",
+      "fullName": "Congressional District 2 (118th Congress), Wisconsin",
+      "geoadj": 0.9993,
+      "state": "WI"
+    },
+    "5503": {
+      "name": "WI-03",
+      "fullName": "Congressional District 3 (118th Congress), Wisconsin",
+      "geoadj": 0.8606,
+      "state": "WI"
+    },
+    "5504": {
+      "name": "WI-04",
+      "fullName": "Congressional District 4 (118th Congress), Wisconsin",
+      "geoadj": 0.9018,
+      "state": "WI"
+    },
+    "5505": {
+      "name": "WI-05",
+      "fullName": "Congressional District 5 (118th Congress), Wisconsin",
+      "geoadj": 0.9504,
+      "state": "WI"
+    },
+    "5506": {
+      "name": "WI-06",
+      "fullName": "Congressional District 6 (118th Congress), Wisconsin",
+      "geoadj": 0.8566,
+      "state": "WI"
+    },
+    "5507": {
+      "name": "WI-07",
+      "fullName": "Congressional District 7 (118th Congress), Wisconsin",
+      "geoadj": 0.8459,
+      "state": "WI"
+    },
+    "5508": {
+      "name": "WI-08",
+      "fullName": "Congressional District 8 (118th Congress), Wisconsin",
+      "geoadj": 0.8687,
+      "state": "WI"
+    },
+    "5401": {
+      "name": "WV-01",
+      "fullName": "Congressional District 1 (118th Congress), West Virginia",
+      "geoadj": 0.8132,
+      "state": "WV"
+    },
+    "5402": {
+      "name": "WV-02",
+      "fullName": "Congressional District 2 (118th Congress), West Virginia",
+      "geoadj": 0.8411,
+      "state": "WV"
+    },
+    "5600": {
+      "name": "WY-AL",
+      "fullName": "Congressional District (at Large) (118th Congress), Wyoming",
+      "geoadj": 0.8507,
+      "state": "WY"
+    }
+  }
+}
