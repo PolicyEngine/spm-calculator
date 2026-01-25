@@ -3,7 +3,7 @@ import spmConfig from '../public/data/spm_config.json'
 import cdData from '../public/data/cd_geoadj.json'
 
 // Extract data from config
-const { baseThresholds, states, costLevels, methodology, forecast } = spmConfig
+const { baseThresholds, states, costLevels, metroStatus, methodology, forecast } = spmConfig
 const { congressionalDistricts } = cdData
 const LATEST_PUBLISHED_YEAR = forecast.latestPublishedYear
 
@@ -69,7 +69,7 @@ function App() {
   const [costLevel, setCostLevel] = useState('national_average')
   const [selectedState, setSelectedState] = useState('CA')
   const [selectedDistrict, setSelectedDistrict] = useState('612') // CA-12 default
-  const [customGeoadj, setCustomGeoadj] = useState(1.0)
+  const [selectedMetro, setSelectedMetro] = useState('metro')
 
   // Expanded state for detail cards
   const [expandedCard, setExpandedCard] = useState(null)
@@ -84,8 +84,9 @@ function App() {
     if (locationType === 'preset') return costLevels[costLevel].geoadj
     if (locationType === 'state') return states[selectedState]?.geoadj || 1.0
     if (locationType === 'district') return congressionalDistricts[selectedDistrict]?.geoadj || 1.0
-    return customGeoadj
-  }, [locationType, costLevel, selectedState, selectedDistrict, customGeoadj])
+    if (locationType === 'metro') return metroStatus[selectedMetro]?.geoadj || 1.0
+    return 1.0
+  }, [locationType, costLevel, selectedState, selectedDistrict, selectedMetro])
 
   const threshold = base * equivScale * geoadj
   const monthly = threshold / 12
@@ -118,7 +119,8 @@ function App() {
     if (locationType === 'preset') return costLevels[costLevel].label
     if (locationType === 'state') return states[selectedState]?.name
     if (locationType === 'district') return congressionalDistricts[selectedDistrict]?.name
-    return `Custom (${customGeoadj.toFixed(2)})`
+    if (locationType === 'metro') return metroStatus[selectedMetro]?.label
+    return 'National average'
   }
 
   return (
@@ -212,10 +214,10 @@ function App() {
                 District
               </button>
               <button
-                className={`chip ${locationType === 'custom' ? 'selected' : ''}`}
-                onClick={() => setLocationType('custom')}
+                className={`chip ${locationType === 'metro' ? 'selected' : ''}`}
+                onClick={() => setLocationType('metro')}
               >
-                Custom
+                Metro
               </button>
             </div>
 
@@ -246,26 +248,20 @@ function App() {
                     if (stateCompare !== 0) return stateCompare
                     return (parseInt(a[0]) % 100) - (parseInt(b[0]) % 100)
                   })
-                  .map(([geoid, { name, geoadj }]) => (
+                  .map(([geoid, { name }]) => (
                     <option key={geoid} value={geoid}>
-                      {name} (GEOADJ: {geoadj.toFixed(2)})
+                      {name}
                     </option>
                   ))}
               </select>
             )}
 
-            {locationType === 'custom' && (
-              <div className="slider-container">
-                <input
-                  type="range"
-                  min="0.70"
-                  max="1.50"
-                  step="0.01"
-                  value={customGeoadj}
-                  onChange={e => setCustomGeoadj(parseFloat(e.target.value))}
-                />
-                <span className="slider-value">{customGeoadj.toFixed(2)}</span>
-              </div>
+            {locationType === 'metro' && (
+              <select value={selectedMetro} onChange={e => setSelectedMetro(e.target.value)}>
+                {Object.entries(metroStatus).map(([key, { label }]) => (
+                  <option key={key} value={key}>{label}</option>
+                ))}
+              </select>
             )}
           </div>
         </div>

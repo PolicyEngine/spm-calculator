@@ -313,6 +313,16 @@
       "label": "Very high-cost area"
     }
   },
+  "metroStatus": {
+    "metro": {
+      "geoadj": 1.05,
+      "label": "Metro area"
+    },
+    "non_metro": {
+      "geoadj": 0.89,
+      "label": "Non-metro area"
+    }
+  },
   "methodology": {
     "equivalenceScale": {
       "firstAdult": 1.0,
