@@ -214,6 +214,122 @@ class TestGeoAdjLookupTable:
         assert result1 is result2
 
 
+class TestBundledCDData:
+    """Test bundled congressional district GEOADJ data (no API key required)."""
+
+    def test_get_cd_geoadj_basic(self):
+        """Should return GEOADJ for a valid CD."""
+        from spm_calculator import get_cd_geoadj
+
+        # CA-12 (San Francisco) should have high GEOADJ
+        result = get_cd_geoadj("612")
+        assert result > 1.2, "SF district should have high GEOADJ"
+        assert result <= 1.5, "GEOADJ should be clamped to 1.5"
+
+    def test_get_cd_geoadj_int_input(self):
+        """Should accept integer CD GEOID."""
+        from spm_calculator import get_cd_geoadj
+
+        result = get_cd_geoadj(612)  # int instead of string
+        assert result > 1.2
+
+    def test_get_cd_geoadj_with_leading_zeros(self):
+        """Should handle zero-padded GEOIDs like '0612'."""
+        from spm_calculator import get_cd_geoadj
+
+        # Both formats should work
+        result1 = get_cd_geoadj("612")
+        result2 = get_cd_geoadj("0612")
+        assert result1 == result2
+
+    def test_get_cd_geoadj_low_cost_area(self):
+        """Rural/low-cost areas should have GEOADJ < 1.0."""
+        from spm_calculator import get_cd_geoadj
+
+        # WV-01 (West Virginia) should have low GEOADJ
+        result = get_cd_geoadj("5401")
+        assert result < 0.9, "WV district should have low GEOADJ"
+
+    def test_get_cd_geoadj_ny_manhattan(self):
+        """NY-12 (Manhattan) should have maximum GEOADJ (clamped)."""
+        from spm_calculator import get_cd_geoadj
+
+        result = get_cd_geoadj("3612")
+        assert result == pytest.approx(1.5), "Manhattan should be at max (clamped)"
+
+    def test_get_cd_geoadj_invalid_cd_raises(self):
+        """Invalid CD should raise ValueError."""
+        from spm_calculator import get_cd_geoadj
+
+        with pytest.raises(ValueError, match="not found"):
+            get_cd_geoadj("9999")  # No such CD
+
+    def test_get_cd_geoadj_batch_basic(self):
+        """Should return array of GEOADJ values for multiple CDs."""
+        from spm_calculator import get_cd_geoadj_batch
+
+        cds = ["612", "3612", "101"]  # CA-12, NY-12, AL-01
+        result = get_cd_geoadj_batch(cds)
+
+        assert len(result) == 3
+        assert result[0] > 1.2  # CA-12 high
+        assert result[1] == pytest.approx(1.5)  # NY-12 max
+        assert result[2] < 0.9  # AL-01 low
+
+    def test_get_cd_geoadj_batch_mixed_formats(self):
+        """Should handle mixed string/int and padded/unpadded formats."""
+        from spm_calculator import get_cd_geoadj_batch
+
+        cds = [612, "0612", "612"]  # All same CD
+        result = get_cd_geoadj_batch(cds)
+
+        assert result[0] == result[1] == result[2]
+
+    def test_get_bundled_cd_data_structure(self):
+        """Should return dict with expected structure."""
+        from spm_calculator import get_bundled_cd_data
+
+        data = get_bundled_cd_data()
+
+        assert "year" in data
+        assert "national_median_2br_rent" in data
+        assert "housing_share" in data
+        assert "congressional_districts" in data
+        assert data["housing_share"] == pytest.approx(0.492)
+
+    def test_get_bundled_cd_data_cd_count(self):
+        """Should have data for all 435+ congressional districts."""
+        from spm_calculator import get_bundled_cd_data
+
+        data = get_bundled_cd_data()
+        cds = data["congressional_districts"]
+
+        # At least 435 CDs (plus at-large states, DC delegate)
+        # With both padded and unpadded keys, count unique by int value
+        unique_cds = set(int(k) for k in cds.keys())
+        assert len(unique_cds) >= 435
+
+    def test_get_bundled_cd_data_cd_structure(self):
+        """Each CD should have geoadj, name, and median_2br_rent."""
+        from spm_calculator import get_bundled_cd_data
+
+        data = get_bundled_cd_data()
+        cd_612 = data["congressional_districts"]["612"]
+
+        assert "geoadj" in cd_612
+        assert "name" in cd_612
+        assert "median_2br_rent" in cd_612
+        assert cd_612["geoadj"] > 0
+        assert cd_612["median_2br_rent"] > 0
+
+    def test_invalid_year_raises(self):
+        """Requesting unavailable year should raise ValueError."""
+        from spm_calculator import get_cd_geoadj
+
+        with pytest.raises(ValueError, match="No bundled CD data"):
+            get_cd_geoadj("612", year=2010)
+
+
 class TestInvalidInputs:
     """Test error handling for invalid inputs."""
 

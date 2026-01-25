@@ -16,11 +16,16 @@ Supported geographies:
 - congressional_district: 435 congressional districts
 - puma: Public Use Microdata Areas
 - tract: Census tracts (limited availability)
+
+For congressional districts, bundled data is available via get_cd_geoadj()
+which works without a Census API key.
 """
 
+import json
 import os
 from functools import lru_cache
-from typing import Union, Optional
+from pathlib import Path
+from typing import Union, Optional, Sequence
 
 import numpy as np
 import pandas as pd
@@ -61,6 +66,149 @@ def calculate_geoadj_from_rent(
     """
     rent_ratio = np.asarray(local_rent) / national_rent
     return rent_ratio * HOUSING_SHARE + (1 - HOUSING_SHARE)
+
+
+# =============================================================================
+# Bundled data for offline lookups (no Census API key required)
+# =============================================================================
+
+_DATA_DIR = Path(__file__).parent / "data"
+_bundled_cd_data: dict[int, dict] = {}
+
+
+@lru_cache(maxsize=8)
+def _load_bundled_cd_data(year: int = 2023) -> dict:
+    """
+    Load bundled congressional district GEOADJ data.
+
+    Args:
+        year: Data year (currently only 2023 available)
+
+    Returns:
+        Dict with 'congressional_districts' mapping CD GEOIDs to geoadj data
+    """
+    data_file = _DATA_DIR / f"cd_geoadj_{year}.json"
+    if not data_file.exists():
+        available = [f.stem for f in _DATA_DIR.glob("cd_geoadj_*.json")]
+        raise ValueError(
+            f"No bundled CD data for year {year}. "
+            f"Available: {available or 'none'}"
+        )
+
+    with open(data_file) as f:
+        return json.load(f)
+
+
+def get_cd_geoadj(
+    cd_geoid: Union[str, int],
+    year: int = 2023,
+) -> float:
+    """
+    Get GEOADJ for a congressional district using bundled data.
+
+    This function uses pre-computed data bundled with the package,
+    so it works without a Census API key.
+
+    Args:
+        cd_geoid: Congressional district GEOID (e.g., "612" or "0612" for CA-12,
+            "3601" for NY-01). Can be string or int.
+        year: Data year (default 2023)
+
+    Returns:
+        GEOADJ value for the congressional district
+
+    Raises:
+        ValueError: If CD GEOID not found in bundled data
+
+    Example:
+        >>> get_cd_geoadj("612")  # CA-12 (San Francisco)
+        1.3497
+        >>> get_cd_geoadj(3612)   # NY-12 (Manhattan)
+        1.5
+        >>> get_cd_geoadj("101")  # AL-01
+        0.8757
+    """
+    data = _load_bundled_cd_data(year)
+    cds = data["congressional_districts"]
+
+    # Normalize to string without leading zeros
+    cd_str = str(int(cd_geoid))
+
+    if cd_str not in cds:
+        # Try with leading zeros (4-digit format)
+        cd_str_padded = cd_str.zfill(4)
+        if cd_str_padded not in cds:
+            raise ValueError(
+                f"Congressional district '{cd_geoid}' not found in bundled data. "
+                f"Use format like '612' for CA-12 or '3601' for NY-01."
+            )
+        cd_str = cd_str_padded
+
+    return cds[cd_str]["geoadj"]
+
+
+def get_cd_geoadj_batch(
+    cd_geoids: Sequence[Union[str, int]],
+    year: int = 2023,
+) -> np.ndarray:
+    """
+    Get GEOADJ values for multiple congressional districts (vectorized).
+
+    Args:
+        cd_geoids: Sequence of CD GEOIDs
+        year: Data year (default 2023)
+
+    Returns:
+        Array of GEOADJ values
+
+    Example:
+        >>> get_cd_geoadj_batch(["612", "3612", "101"])
+        array([1.3497, 1.5   , 0.8757])
+    """
+    data = _load_bundled_cd_data(year)
+    cds = data["congressional_districts"]
+
+    results = np.zeros(len(cd_geoids), dtype=np.float64)
+
+    for i, cd_geoid in enumerate(cd_geoids):
+        cd_str = str(int(cd_geoid))
+        if cd_str in cds:
+            results[i] = cds[cd_str]["geoadj"]
+        elif cd_str.zfill(4) in cds:
+            results[i] = cds[cd_str.zfill(4)]["geoadj"]
+        else:
+            raise ValueError(
+                f"Congressional district '{cd_geoid}' not found in bundled data."
+            )
+
+    return results
+
+
+def get_bundled_cd_data(year: int = 2023) -> dict:
+    """
+    Get the full bundled congressional district data.
+
+    Useful for inspecting available CDs or getting rent data.
+
+    Args:
+        year: Data year (default 2023)
+
+    Returns:
+        Dict with keys:
+        - 'year': Data year
+        - 'national_median_2br_rent': National median rent
+        - 'housing_share': Housing share used in GEOADJ formula
+        - 'congressional_districts': Dict mapping CD GEOIDs to
+          {geoadj, name, median_2br_rent}
+
+    Example:
+        >>> data = get_bundled_cd_data()
+        >>> data["national_median_2br_rent"]
+        1338.0
+        >>> data["congressional_districts"]["612"]["name"]
+        'Congressional District 12 (118th Congress), California'
+    """
+    return _load_bundled_cd_data(year)
 
 
 def _get_census_api_key() -> str:
