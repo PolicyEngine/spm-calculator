@@ -6,19 +6,24 @@ GEOADJ adjusts poverty thresholds for local housing costs using the formula:
 
 Where 0.492 is the housing portion of the SPM threshold for renters.
 
-Data source: ACS Table B25031 (Median Gross Rent by Bedrooms)
+Data sources:
+- Official Census SPM metro area GEOADJ (bundled): get_metro_geoadj()
+- Congressional districts from ACS (bundled): get_cd_geoadj()
+- Other geographies via Census API: get_geoadj()
 
 Supported geographies:
 - nation: National average (always 1.0)
 - state: 50 states + DC
 - county: ~3,200 counties
-- metro_area: Metropolitan statistical areas
+- metro_area: Metropolitan statistical areas (official Census SPM data)
 - congressional_district: 435 congressional districts
 - puma: Public Use Microdata Areas
 - tract: Census tracts (limited availability)
 
-For congressional districts, bundled data is available via get_cd_geoadj()
-which works without a Census API key.
+Bundled data (no API key required):
+- Metro areas: get_metro_geoadj() uses official Census Bureau SPM thresholds
+  which are the authoritative source for GEOADJ values.
+- Congressional districts: get_cd_geoadj() uses ACS median rents (unofficial).
 """
 
 import json
@@ -209,6 +214,147 @@ def get_bundled_cd_data(year: int = 2023) -> dict:
         'Congressional District 12 (118th Congress), California'
     """
     return _load_bundled_cd_data(year)
+
+
+# =============================================================================
+# Bundled official Census SPM metro area data (no API key required)
+# =============================================================================
+
+
+@lru_cache(maxsize=8)
+def _load_bundled_metro_data(year: int = 2024) -> dict:
+    """
+    Load bundled official Census SPM metro area GEOADJ data.
+
+    Args:
+        year: Data year (currently only 2024 available)
+
+    Returns:
+        Dict with 'metroAreas' mapping metro codes to geoadj data
+    """
+    data_file = _DATA_DIR / f"metro_geoadj_{year}.json"
+    if not data_file.exists():
+        available = [f.stem for f in _DATA_DIR.glob("metro_geoadj_*.json")]
+        raise ValueError(
+            f"No bundled metro data for year {year}. "
+            f"Available: {available or 'none'}"
+        )
+
+    with open(data_file) as f:
+        return json.load(f)
+
+
+def get_metro_geoadj(
+    metro_code: Union[str, Sequence[str]],
+    year: int = 2024,
+) -> Union[float, np.ndarray]:
+    """
+    Get official GEOADJ for metro area(s) using bundled Census data.
+
+    This function uses official Census Bureau SPM thresholds data,
+    so it works without a Census API key.
+
+    Args:
+        metro_code: CBSA code (e.g., "35620" for NYC metro) or
+            state metro/nonmetro code (e.g., "1002" for Alabama Nonmetro).
+            Can be a single string or a sequence for batch lookups.
+        year: Data year (default 2024)
+
+    Returns:
+        GEOADJ value (float) for single input, or array for sequence input
+
+    Raises:
+        ValueError: If metro code not found in bundled data
+
+    Example:
+        >>> get_metro_geoadj("35620")  # NYC metro
+        1.361
+        >>> get_metro_geoadj("41940")  # San Jose metro
+        2.167
+        >>> get_metro_geoadj(["35620", "41940", "1002"])  # Batch
+        array([1.361, 2.167, 0.553])
+    """
+    data = _load_bundled_metro_data(year)
+    metros = data["metroAreas"]
+
+    # Handle single string input
+    if isinstance(metro_code, str):
+        if metro_code not in metros:
+            raise ValueError(
+                f"Metro area '{metro_code}' not found in bundled data. "
+                f"Use CBSA codes like '35620' for NYC or state codes like '1002' for Alabama Nonmetro."
+            )
+        return metros[metro_code]["geoadj"]
+
+    # Handle sequence input (batch)
+    results = np.zeros(len(metro_code), dtype=np.float64)
+    for i, code in enumerate(metro_code):
+        if code not in metros:
+            raise ValueError(
+                f"Metro area '{code}' not found in bundled data."
+            )
+        results[i] = metros[code]["geoadj"]
+    return results
+
+
+def get_bundled_metro_data(year: int = 2024) -> dict:
+    """
+    Get the full bundled official Census SPM metro area data.
+
+    Useful for inspecting available metro areas or getting names.
+
+    Args:
+        year: Data year (default 2024)
+
+    Returns:
+        Dict with keys:
+        - 'year': Data year
+        - 'source': Data source description
+        - 'sourceUrl': URL to original Census data
+        - 'metroAreas': Dict mapping metro codes to
+          {geoadj, name}
+
+    Example:
+        >>> data = get_bundled_metro_data()
+        >>> data["metroAreas"]["35620"]["name"]
+        'New York-Newark-Jersey City, NY-NJ-PA MSA'
+        >>> data["metroAreas"]["35620"]["geoadj"]
+        1.361
+    """
+    return _load_bundled_metro_data(year)
+
+
+def list_metro_areas(year: int = 2024) -> list[dict]:
+    """
+    List all available metro areas with their GEOADJ values.
+
+    Args:
+        year: Data year (default 2024)
+
+    Returns:
+        List of dicts with 'code', 'name', and 'geoadj' keys,
+        sorted by name
+
+    Example:
+        >>> metros = list_metro_areas()
+        >>> len(metros)
+        341
+        >>> metros[0]
+        {'code': '10180', 'name': 'Abilene, TX MSA', 'geoadj': 0.827}
+    """
+    data = _load_bundled_metro_data(year)
+    metros = data["metroAreas"]
+
+    result = [
+        {"code": code, "name": info["name"], "geoadj": info["geoadj"]}
+        for code, info in metros.items()
+    ]
+    return sorted(result, key=lambda x: x["name"])
+
+
+# =============================================================================
+# Census API-based lookups (requires API key)
+# =============================================================================
 
 
 def _get_census_api_key() -> str:
@@ -432,9 +578,6 @@ def create_geoadj_lookup(
 
     # Calculate GEOADJ
     df["geoadj"] = calculate_geoadj_from_rent(df["median_rent"], national_rent)
-
-    # Clamp to reasonable range
-    df["geoadj"] = df["geoadj"].clip(0.70, 1.50)
 
     # Cache the result
     _geoadj_cache[cache_key] = df

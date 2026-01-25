@@ -1,30 +1,28 @@
 """
 SPM Calculator - Calculate Supplemental Poverty Measure thresholds.
 
-This package calculates SPM thresholds for any US geography and year using:
-- Base thresholds from BLS Consumer Expenditure Survey (by tenure type)
-- Geographic adjustments (GEOADJ) from ACS median rents
-- SPM three-parameter equivalence scale for family composition
+Install with: uv add spm-calculator
 
-Example using bundled CD data (no API key needed):
-    >>> from spm_calculator import get_cd_geoadj, SPMCalculator
-    >>> get_cd_geoadj("612")  # CA-12 (San Francisco)
-    1.3497
-    >>> get_cd_geoadj("3612")  # NY-12 (Manhattan)
-    1.5
+Quick start:
+    >>> from spm_calculator import spm_threshold
+    >>> spm_threshold(2, 2, metro="San Jose")  # 2 adults, 2 children
+    85444.81
+    >>> spm_threshold(1, 0, tenure="owner_without_mortgage", metro="Alabama Nonmetro")
+    8580.98
 
-Example using full calculator:
-    >>> calc = SPMCalculator(year=2024)
-    >>> threshold = calc.calculate_threshold(
-    ...     num_adults=2,
-    ...     num_children=2,
-    ...     tenure="renter",
-    ...     geography_type="congressional_district",
-    ...     geography_id="0612"
-    ... )
+The threshold calculation is: base × equivalence_scale × geoadj
+
+Get the pieces separately:
+    >>> from spm_calculator import get_thresholds, spm_equivalence_scale, get_metro_geoadj
+    >>> get_thresholds(2024)["renter"]  # Base threshold
+    39430.0
+    >>> spm_equivalence_scale(2, 2)  # Family size adjustment
+    1.0
+    >>> get_metro_geoadj("41940")  # San Jose GEOADJ
+    2.167
 """
 
-from .calculator import SPMCalculator
+from .calculator import SPMCalculator, spm_threshold
 from .ce_threshold import calculate_base_thresholds, get_published_thresholds
 from .equivalence_scale import spm_equivalence_scale
 from .fcsuti_cpi import get_fcsuti_cpi, get_fcsuti_inflation_factor
@@ -40,14 +38,18 @@ from .geoadj import (
     calculate_geoadj_from_rent,
     create_geoadj_lookup,
     get_bundled_cd_data,
+    get_bundled_metro_data,
     get_cd_geoadj,
     get_cd_geoadj_batch,
     get_geoadj,
+    get_metro_geoadj,
+    list_metro_areas,
 )
 
 __version__ = "0.1.0"
 
 __all__ = [
+    "spm_threshold",
     "SPMCalculator",
     "calculate_base_thresholds",
     "get_published_thresholds",
@@ -56,6 +58,9 @@ __all__ = [
     "get_cd_geoadj",
     "get_cd_geoadj_batch",
     "get_bundled_cd_data",
+    "get_metro_geoadj",
+    "get_bundled_metro_data",
+    "list_metro_areas",
     "calculate_geoadj_from_rent",
     "spm_equivalence_scale",
     "get_fcsuti_cpi",

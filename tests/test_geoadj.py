@@ -333,6 +333,101 @@ class TestBundledCDData:
             get_cd_geoadj("612", year=2010)
 
 
+class TestBundledMetroData:
+    """Test bundled official Census SPM metro area GEOADJ data."""
+
+    def test_get_metro_geoadj_basic(self):
+        """Should return GEOADJ for a valid metro area."""
+        from spm_calculator import get_metro_geoadj
+
+        # NYC metro should have GEOADJ > 1
+        result = get_metro_geoadj("35620")
+        assert result == pytest.approx(1.361), "NYC metro GEOADJ should be 1.361"
+
+    def test_get_metro_geoadj_high_cost(self):
+        """San Jose should have very high GEOADJ."""
+        from spm_calculator import get_metro_geoadj
+
+        result = get_metro_geoadj("41940")  # San Jose
+        assert result == pytest.approx(2.167), "San Jose should have highest GEOADJ"
+
+    def test_get_metro_geoadj_low_cost(self):
+        """Alabama nonmetro should have low GEOADJ."""
+        from spm_calculator import get_metro_geoadj
+
+        result = get_metro_geoadj("1002")  # Alabama Nonmetro
+        assert result == pytest.approx(0.553), "Alabama nonmetro should be low"
+
+    def test_get_metro_geoadj_invalid_raises(self):
+        """Invalid metro code should raise ValueError."""
+        from spm_calculator import get_metro_geoadj
+
+        with pytest.raises(ValueError, match="not found"):
+            get_metro_geoadj("99999")
+
+    def test_get_metro_geoadj_batch(self):
+        """Should return array of GEOADJ values for sequence input."""
+        from spm_calculator import get_metro_geoadj
+
+        codes = ["35620", "41940", "1002"]  # NYC, San Jose, AL nonmetro
+        result = get_metro_geoadj(codes)
+
+        assert len(result) == 3
+        assert result[0] == pytest.approx(1.361)
+        assert result[1] == pytest.approx(2.167)
+        assert result[2] == pytest.approx(0.553)
+
+    def test_get_bundled_metro_data_structure(self):
+        """Should return dict with expected structure."""
+        from spm_calculator import get_bundled_metro_data
+
+        data = get_bundled_metro_data()
+
+        assert "year" in data
+        assert "source" in data
+        assert "sourceUrl" in data
+        assert "metroAreas" in data
+        assert data["year"] == 2024
+
+    def test_get_bundled_metro_data_metro_count(self):
+        """Should have 341 metro areas (official Census count)."""
+        from spm_calculator import get_bundled_metro_data
+
+        data = get_bundled_metro_data()
+        metros = data["metroAreas"]
+
+        assert len(metros) == 341, "Should have 341 official Census SPM areas"
+
+    def test_get_bundled_metro_data_metro_structure(self):
+        """Each metro area should have geoadj and name."""
+        from spm_calculator import get_bundled_metro_data
+
+        data = get_bundled_metro_data()
+        nyc = data["metroAreas"]["35620"]
+
+        assert "geoadj" in nyc
+        assert "name" in nyc
+        assert "New York" in nyc["name"]
+
+    def test_list_metro_areas(self):
+        """Should return sorted list of metro areas."""
+        from spm_calculator.geoadj import list_metro_areas
+
+        metros = list_metro_areas()
+
+        assert len(metros) == 341
+        assert all("code" in m and "name" in m and "geoadj" in m for m in metros)
+        # Should be sorted by name
+        assert metros[0]["name"] < metros[-1]["name"]
+
+    def test_invalid_metro_year_raises(self):
+        """Requesting unavailable year should raise ValueError."""
+        from spm_calculator import get_metro_geoadj
+
+        with pytest.raises(ValueError, match="No bundled metro data"):
+            get_metro_geoadj("35620", year=2010)
+
+
 class TestInvalidInputs:
     """Test error handling for invalid inputs."""
 

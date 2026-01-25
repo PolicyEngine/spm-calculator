@@ -1,5 +1,5 @@
 """
-Main SPMCalculator class for calculating SPM thresholds.
+Main SPM threshold calculation.
 
 The full SPM threshold calculation is:
     threshold = base_threshold[tenure] × equivalence_scale × geoadj
@@ -16,7 +16,8 @@ import numpy as np
 
 from .ce_threshold import calculate_base_thresholds, get_published_thresholds
 from .equivalence_scale import spm_equivalence_scale
-from .geoadj import SUPPORTED_GEOGRAPHIES, get_geoadj
+from .forecast import get_thresholds
+from .geoadj import SUPPORTED_GEOGRAPHIES, get_geoadj, get_metro_geoadj, get_bundled_metro_data
 
 VALID_TENURE_TYPES = [
     "renter",
@@ -245,3 +246,117 @@ class SPMCalculator:
     def supported_geographies(self) -> list[str]:
         """List of supported geography types."""
         return list(SUPPORTED_GEOGRAPHIES.keys())
+
+
+# =============================================================================
+# Simple standalone function for SPM threshold calculation
+# =============================================================================
+
+# Build metro name lookup (lazy loaded)
+_metro_name_to_code: Optional[dict[str, str]] = None
+
+
+def _get_metro_code(metro: str) -> str:
+    """
+    Get metro code from either a code or name.
+
+    Args:
+        metro: Either a CBSA code (e.g., "35620") or metro name
+            (e.g., "New York" or "San Jose")
+
+    Returns:
+        Metro code
+    """
+    global _metro_name_to_code
+
+    data = get_bundled_metro_data()
+    metros = data["metroAreas"]
+
+    # If it's already a valid code, return it
+    if metro in metros:
+        return metro
+
+    # Build name lookup if needed
+    if _metro_name_to_code is None:
+        _metro_name_to_code = {}
+        for code, info in metros.items():
+            name = info["name"].lower()
+            _metro_name_to_code[name] = code
+            # Also add shortened versions (before comma, before MSA)
+            if "," in name:
+                short = name.split(",")[0].strip()
+                if short not in _metro_name_to_code:
+                    _metro_name_to_code[short] = code
+            if " msa" in name:
+                short = name.replace(" msa", "").strip()
+                if short not in _metro_name_to_code:
+                    _metro_name_to_code[short] = code
+
+    # Try exact match on name
+    metro_lower = metro.lower()
+    if metro_lower in _metro_name_to_code:
+        return _metro_name_to_code[metro_lower]
+
+    # Try partial match
+    for name, code in _metro_name_to_code.items():
+        if metro_lower in name:
+            return code
+
+    raise ValueError(
+        f"Metro '{metro}' not found. Use a CBSA code like '35620' "
+        f"or a name like 'New York' or 'San Jose'."
+    )
+
+
+def spm_threshold(
+    num_adults: int,
+    num_children: int,
+    tenure: str = "renter",
+    metro: str = "35620",
+    year: int = 2024,
+) -> float:
+    """
+    Calculate SPM threshold for a household.
+
+    This is the main entry point for SPM threshold calculations using
+    official Census Bureau metro area data.
+
+    Args:
+        num_adults: Number of adults (18+) in the household
+        num_children: Number of children (under 18) in the household
+        tenure: Housing tenure - "renter", "owner_with_mortgage", or
+            "owner_without_mortgage" (default: "renter")
+        metro: Metro area - either CBSA code (e.g., "35620" for NYC) or
+            name (e.g., "New York", "San Jose") (default: NYC)
+        year: Threshold year (default: 2024)
+
+    Returns:
+        SPM threshold in dollars
+
+    Example:
+        >>> spm_threshold(2, 2)  # Reference family in NYC
+        45617.71
+        >>> spm_threshold(2, 2, metro="San Jose")  # High-cost area
+        72607.11
+        >>> spm_threshold(1, 0, tenure="owner_without_mortgage", metro="Alabama Nonmetro")
+        12073.91
+    """
+    if tenure not in VALID_TENURE_TYPES:
+        raise ValueError(
+            f"Invalid tenure: {tenure}. "
+            f"Must be one of: {VALID_TENURE_TYPES}"
+        )
+
+    if num_adults < 0 or num_children < 0:
+        raise ValueError("Number of persons cannot be negative")
+
+    if num_adults == 0 and num_children == 0:
+        return 0.0
+
+    # Get components
+    base = get_thresholds(year)[tenure]
+    equiv_scale = spm_equivalence_scale(num_adults, num_children)
+    metro_code = _get_metro_code(metro)
+    geoadj = get_metro_geoadj(metro_code)
+
+    return base * equiv_scale * geoadj

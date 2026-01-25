@@ -1,11 +1,9 @@
 import { useState, useMemo } from 'react'
 import spmConfig from '../public/data/spm_config.json'
-import cdData from '../public/data/cd_geoadj.json'
 import metroData from '../public/data/metro_geoadj.json'
 
 // Extract data from config
-const { baseThresholds, states, costLevels, methodology, forecast } = spmConfig
-const { congressionalDistricts } = cdData
+const { baseThresholds, methodology, forecast } = spmConfig
 const { metroAreas } = metroData
 const LATEST_PUBLISHED_YEAR = forecast.latestPublishedYear
 
@@ -67,11 +65,7 @@ function App() {
   const [numAdults, setNumAdults] = useState(2)
   const [numChildren, setNumChildren] = useState(2)
   const [tenure, setTenure] = useState('renter')
-  const [locationType, setLocationType] = useState('preset')
-  const [costLevel, setCostLevel] = useState('national_average')
-  const [selectedState, setSelectedState] = useState('CA')
-  const [selectedDistrict, setSelectedDistrict] = useState('612') // CA-12 default
-  const [selectedMetro, setSelectedMetro] = useState('NYC')
+  const [selectedMetro, setSelectedMetro] = useState('35620') // NYC metro
 
   // Expanded state for detail cards
   const [expandedCard, setExpandedCard] = useState(null)
@@ -83,12 +77,8 @@ function App() {
   const rawScale = equivScale * methodology.equivalenceScale.referenceFamily
 
   const geoadj = useMemo(() => {
-    if (locationType === 'preset') return costLevels[costLevel].geoadj
-    if (locationType === 'state') return states[selectedState]?.geoadj || 1.0
-    if (locationType === 'district') return congressionalDistricts[selectedDistrict]?.geoadj || 1.0
-    if (locationType === 'metro') return metroAreas[selectedMetro]?.geoadj || 1.0
-    return 1.0
-  }, [locationType, costLevel, selectedState, selectedDistrict, selectedMetro])
+    return metroAreas[selectedMetro]?.geoadj || 1.0
+  }, [selectedMetro])
 
   const threshold = base * equivScale * geoadj
   const monthly = threshold / 12
@@ -118,28 +108,21 @@ function App() {
 
   // Get location description
   const getLocationName = () => {
-    if (locationType === 'preset') return costLevels[costLevel].label
-    if (locationType === 'state') return states[selectedState]?.name
-    if (locationType === 'district') return congressionalDistricts[selectedDistrict]?.name
-    if (locationType === 'metro') return metroAreas[selectedMetro]?.name
-    return 'National average'
+    return metroAreas[selectedMetro]?.name || 'National average'
   }
 
   return (
     <div className="container">
       {/* Header */}
       <header className="header">
-        <h1>SPM Threshold Calculator</h1>
-        <p className="header-subtitle">
-          Interactive documentation for <a href="https://github.com/PolicyEngine/spm-calculator" target="_blank" rel="noopener noreferrer">spm-calculator</a>
-        </p>
+        <h1>SPM threshold calculator</h1>
       </header>
 
       {/* Two-column layout */}
       <div className="main-grid">
         {/* Left: Inputs */}
         <div className="inputs-panel">
-          <h2 className="panel-title">Your Household</h2>
+          <h2 className="panel-title">Your household</h2>
 
           {/* Year */}
           <div className="form-group">
@@ -199,77 +182,16 @@ function App() {
           {/* Location */}
           <div className="form-group">
             <label>Location</label>
-            <div className="chip-group" style={{ marginBottom: 12 }}>
-              <button
-                className={`chip ${locationType === 'preset' ? 'selected' : ''}`}
-                onClick={() => setLocationType('preset')}
-              >
-                Cost level
-              </button>
-              <button
-                className={`chip ${locationType === 'state' ? 'selected' : ''}`}
-                onClick={() => setLocationType('state')}
-              >
-                State
-              </button>
-              <button
-                className={`chip ${locationType === 'district' ? 'selected' : ''}`}
-                onClick={() => setLocationType('district')}
-              >
-                District
-              </button>
-              <button
-                className={`chip ${locationType === 'metro' ? 'selected' : ''}`}
-                onClick={() => setLocationType('metro')}
-              >
-                Metro
-              </button>
-            </div>
-
-            {locationType === 'preset' && (
-              <select value={costLevel} onChange={e => setCostLevel(e.target.value)}>
-                {Object.entries(costLevels).map(([key, { label }]) => (
-                  <option key={key} value={key}>{label}</option>
+            <select value={selectedMetro} onChange={e => setSelectedMetro(e.target.value)}>
+              {Object.entries(metroAreas)
+                .sort((a, b) => a[1].name.localeCompare(b[1].name))
+                .map(([key, { name }]) => (
+                  <option key={key} value={key}>{name}</option>
                 ))}
-              </select>
-            )}
-
-            {locationType === 'state' && (
-              <select value={selectedState} onChange={e => setSelectedState(e.target.value)}>
-                {Object.entries(states)
-                  .sort((a, b) => a[1].name.localeCompare(b[1].name))
-                  .map(([code, { name }]) => (
-                    <option key={code} value={code}>{name}</option>
-                  ))}
-              </select>
-            )}
-
-            {locationType === 'district' && (
-              <select value={selectedDistrict} onChange={e => setSelectedDistrict(e.target.value)}>
-                {Object.entries(congressionalDistricts)
-                  .sort((a, b) => {
-                    // Sort by state code first, then by district number
-                    const stateCompare = a[1].state.localeCompare(b[1].state)
-                    if (stateCompare !== 0) return stateCompare
-                    return (parseInt(a[0]) % 100) - (parseInt(b[0]) % 100)
-                  })
-                  .map(([geoid, { name }]) => (
-                    <option key={geoid} value={geoid}>
-                      {name}
-                    </option>
-                  ))}
-              </select>
-            )}
-
-            {locationType === 'metro' && (
-              <select value={selectedMetro} onChange={e => setSelectedMetro(e.target.value)}>
-                {Object.entries(metroAreas)
-                  .sort((a, b) => a[1].name.localeCompare(b[1].name))
-                  .map(([key, { name }]) => (
-                    <option key={key} value={key}>{name}</option>
-                  ))}
-              </select>
-            )}
+            </select>
+            <div className="location-note">
+              Official Census Bureau SPM metro area thresholds.
+            </div>
           </div>
         </div>
 
@@ -278,12 +200,9 @@ function App() {
           {/* Main result */}
           <div className="result-hero">
             {isForecasted && <span className="forecast-badge">FORECAST</span>}
-            <div className="result-label">Your {year} SPM Threshold</div>
+            <div className="result-label">Your {year} SPM threshold</div>
             <div className="result-amount">{formatCurrency(threshold)}</div>
             <div className="result-monthly">{formatCurrency(monthly)}/month</div>
-            <div className="result-year-note">
-              Used with {year} income (March {parseInt(year) + 1} CPS ASEC)
-            </div>
           </div>
 
           {/* Visual formula */}
@@ -309,37 +228,40 @@ function App() {
             </div>
           </div>
 
-          {/* Comparison bar */}
+          {/* Comparison bars */}
           <div className="comparison-section">
             <div className="comparison-label">
-              Compared to reference family (2 adults, 2 children, national average):
+              Compared to reference (2 adults, 2 children, national average)
             </div>
-            <div className="comparison-bar-container">
-              {(() => {
-                const maxValue = Math.max(threshold, referenceThreshold)
-                const thresholdPct = (threshold / maxValue) * 100
-                const refPct = (referenceThreshold / maxValue) * 100
-                return (
-                  <>
-                    <div className="comparison-bar-bg">
+            {(() => {
+              const maxValue = Math.max(threshold, referenceThreshold)
+              const thresholdPct = (threshold / maxValue) * 100
+              const refPct = (referenceThreshold / maxValue) * 100
+              return (
+                <div className="comparison-bars">
+                  <div className="comparison-row">
+                    <span className="comparison-row-label">You</span>
+                    <div className="comparison-bar-track">
                       <div
-                        className="comparison-bar-fill"
+                        className="comparison-bar-fill yours"
                         style={{ width: `${thresholdPct}%` }}
                       />
+                    </div>
+                    <span className="comparison-row-value">{formatCurrency(threshold)}</span>
+                  </div>
+                  <div className="comparison-row">
+                    <span className="comparison-row-label">Reference</span>
+                    <div className="comparison-bar-track">
                       <div
-                        className="comparison-bar-marker"
-                        style={{ left: `${refPct}%` }}
-                        title="Reference family threshold"
+                        className="comparison-bar-fill reference"
+                        style={{ width: `${refPct}%` }}
                       />
                     </div>
-                    <div className="comparison-values">
-                      <span>{formatCurrency(threshold)}</span>
-                      <span className="comparison-ref">Reference: {formatCurrency(referenceThreshold)}</span>
-                    </div>
-                  </>
-                )
-              })()}
-            </div>
+                    <span className="comparison-row-value">{formatCurrency(referenceThreshold)}</span>
+                  </div>
+                </div>
+              )
+            })()}
             <div className="comparison-percent">
               {percentOfReference > 100
                 ? `${percentOfReference - 100}% above reference`
@@ -353,12 +275,12 @@ function App() {
 
       {/* Expandable explanation cards */}
       <div className="explanation-section">
-        <h2 className="section-title">How It's Calculated</h2>
+        <h2 className="section-title">How it's calculated</h2>
 
         <div className="calc-cards">
           <CalculationCard
             icon="🏠"
-            title="Base Threshold"
+            title="Base threshold"
             value={formatCurrency(base)}
             subtitle={`${tenureNames[tenure]}, ${year}${isForecasted ? ' (forecast)' : ''}`}
             color="var(--teal-500)"
@@ -433,7 +355,7 @@ function App() {
 
           <CalculationCard
             icon="👨‍👩‍👧‍👦"
-            title="Family Size Adjustment"
+            title="Family size adjustment"
             value={`×${equivScale.toFixed(2)}`}
             subtitle={`${numAdults} adult${numAdults !== 1 ? 's' : ''}, ${numChildren} child${numChildren !== 1 ? 'ren' : ''}`}
             color="var(--blue-700)"
@@ -468,7 +390,7 @@ function App() {
 
           <CalculationCard
             icon="📍"
-            title="Location Adjustment"
+            title="Location adjustment"
             value={`×${geoadj.toFixed(2)}`}
             subtitle={getLocationName()}
             color="var(--error)"
@@ -480,22 +402,6 @@ function App() {
                   Housing costs vary dramatically by location. The <strong>GEOADJ</strong> factor
                   adjusts based on local vs. national median rent.
                 </p>
-                <div className="geoadj-scale">
-                  <div className="geoadj-bar">
-                    <span style={{ left: '0%' }}>0.84</span>
-                    <span style={{ left: '50%' }}>1.00</span>
-                    <span style={{ left: '100%' }}>1.27</span>
-                    <div
-                      className="geoadj-marker"
-                      style={{ left: `${((geoadj - 0.84) / (1.27 - 0.84)) * 100}%` }}
-                    />
-                  </div>
-                  <div className="geoadj-labels">
-                    <span>West Virginia</span>
-                    <span>National avg</span>
-                    <span>Hawaii</span>
-                  </div>
-                </div>
                 <p className="geoadj-formula">
                   GEOADJ = (local rent ÷ national rent) × 0.492 + 0.508
                 </p>
@@ -507,7 +413,7 @@ function App() {
 
       {/* Quick comparison table */}
       <div className="comparison-table-section">
-        <h2 className="section-title">Compare Scenarios</h2>
+        <h2 className="section-title">Compare scenarios</h2>
         <p className="section-subtitle">
           How thresholds vary for {numAdults} adult{numAdults !== 1 ? 's' : ''} and {numChildren} child{numChildren !== 1 ? 'ren' : ''}
         </p>
@@ -537,49 +443,42 @@ function App() {
 
       {/* Python code section */}
       {(() => {
-        const imports = locationType === 'district'
-          ? 'from spm_calculator import get_thresholds, spm_equivalence_scale, get_cd_geoadj'
-          : 'from spm_calculator import get_thresholds, spm_equivalence_scale'
-        const geoLine = locationType === 'district'
-          ? `geoadj = get_cd_geoadj("${selectedDistrict}")  # ${geoadj.toFixed(4)}`
-          : `geoadj = ${geoadj.toFixed(2)}  # ${getLocationName()}`
-        const pythonCode = `${imports}
+        const metroName = metroAreas[selectedMetro]?.name || selectedMetro
+        const pythonCode = `from spm_calculator import spm_threshold
 
-# Get base threshold for ${year}
-thresholds = get_thresholds(${year})
-base = thresholds["${tenure}"]  # ${formatCurrency(base)}
-
-# Calculate equivalence scale for ${numAdults} adult${numAdults !== 1 ? 's' : ''}, ${numChildren} child${numChildren !== 1 ? 'ren' : ''}
-equiv_scale = spm_equivalence_scale(${numAdults}, ${numChildren})  # ${equivScale.toFixed(4)}
-
-# Geographic adjustment
-${geoLine}
-
-# Calculate threshold
-threshold = base * equiv_scale * geoadj
+threshold = spm_threshold(
+    num_adults=${numAdults},
+    num_children=${numChildren},
+    tenure="${tenure}",
+    metro="${metroName}",
+    year=${year}
+)
 print(f"${year} SPM Threshold: \${'{'}threshold:,.0f{'}'}")  # ${formatCurrency(threshold)}`
 
         return (
-          <div className="python-section">
-            <h2 className="section-title">Use in Python</h2>
-            <p className="section-subtitle">
-              Replicate this calculation with the <code>spm-calculator</code> package
+          <details className="python-section">
+            <summary className="python-summary">Python code</summary>
+            <p className="python-package-link">
+              <a href="https://github.com/PolicyEngine/spm-calculator" target="_blank" rel="noopener noreferrer">
+                spm-calculator
+              </a>
+              {' '}— Calculate SPM thresholds in Python
             </p>
             <div className="code-block">
               <div className="code-header">
                 <span>Install</span>
                 <button
                   className="copy-btn"
-                  onClick={() => navigator.clipboard.writeText('pip install spm-calculator')}
+                  onClick={() => navigator.clipboard.writeText('uv add spm-calculator')}
                 >
                   Copy
                 </button>
               </div>
-              <pre className="code-content">pip install spm-calculator</pre>
+              <pre className="code-content">uv add spm-calculator</pre>
             </div>
             <div className="code-block">
               <div className="code-header">
-                <span>Python</span>
+                <span>Code</span>
                 <button
                   className="copy-btn"
                   onClick={() => navigator.clipboard.writeText(pythonCode)}
@@ -589,13 +488,13 @@ print(f"${year} SPM Threshold: \${'{'}threshold:,.0f{'}'}")  # ${formatCurrency(
               </div>
               <pre className="code-content">{pythonCode}</pre>
             </div>
-          </div>
+          </details>
         )
       })()}
 
       {/* Resources */}
       <div className="resources-section">
-        <h2 className="section-title">Learn More</h2>
+        <h2 className="section-title">Learn more</h2>
         <div className="resource-links">
           <a href="https://github.com/PolicyEngine/spm-calculator" target="_blank" rel="noopener noreferrer">
             GitHub →
