@@ -50,9 +50,13 @@ where = ["."]
 
 [tool.black]
 line-length = 79
+extend-exclude = "\\.ipynb$"
 
 [tool.ruff]
 line-length = 79
+exclude = ["*.ipynb"]
+
+[tool.ruff.lint]
 select = ["E", "F", "I"]
 
 [tool.pytest.ini_options]
