@@ -1,0 +1,232 @@
+{
+  "year": 2023,
+  "national_median_2br_rent": 1338,
+  "housing_share": 0.492,
+  "metroAreas": {
+    "NYC": {
+      "name": "New York-Newark-Jersey City, NY-NJ-PA",
+      "median_2br_rent": 1950,
+      "geoadj": 1.22
+    },
+    "LA": {
+      "name": "Los Angeles-Long Beach-Anaheim, CA",
+      "median_2br_rent": 2100,
+      "geoadj": 1.28
+    },
+    "CHI": {
+      "name": "Chicago-Naperville-Elgin, IL-IN-WI",
+      "median_2br_rent": 1400,
+      "geoadj": 1.02
+    },
+    "DFW": {
+      "name": "Dallas-Fort Worth-Arlington, TX",
+      "median_2br_rent": 1450,
+      "geoadj": 1.04
+    },
+    "HOU": {
+      "name": "Houston-The Woodlands-Sugar Land, TX",
+      "median_2br_rent": 1350,
+      "geoadj": 1.00
+    },
+    "DC": {
+      "name": "Washington-Arlington-Alexandria, DC-VA-MD-WV",
+      "median_2br_rent": 1900,
+      "geoadj": 1.21
+    },
+    "MIA": {
+      "name": "Miami-Fort Lauderdale-Pompano Beach, FL",
+      "median_2br_rent": 2000,
+      "geoadj": 1.24
+    },
+    "PHI": {
+      "name": "Philadelphia-Camden-Wilmington, PA-NJ-DE-MD",
+      "median_2br_rent": 1450,
+      "geoadj": 1.04
+    },
+    "ATL": {
+      "name": "Atlanta-Sandy Springs-Alpharetta, GA",
+      "median_2br_rent": 1550,
+      "geoadj": 1.08
+    },
+    "PHX": {
+      "name": "Phoenix-Mesa-Chandler, AZ",
+      "median_2br_rent": 1500,
+      "geoadj": 1.06
+    },
+    "BOS": {
+      "name": "Boston-Cambridge-Newton, MA-NH",
+      "median_2br_rent": 2200,
+      "geoadj": 1.32
+    },
+    "SF": {
+      "name": "San Francisco-Oakland-Berkeley, CA",
+      "median_2br_rent": 2500,
+      "geoadj": 1.43
+    },
+    "RIV": {
+      "name": "Riverside-San Bernardino-Ontario, CA",
+      "median_2br_rent": 1700,
+      "geoadj": 1.13
+    },
+    "DET": {
+      "name": "Detroit-Warren-Dearborn, MI",
+      "median_2br_rent": 1200,
+      "geoadj": 0.95
+    },
+    "SEA": {
+      "name": "Seattle-Tacoma-Bellevue, WA",
+      "median_2br_rent": 1950,
+      "geoadj": 1.22
+    },
+    "MSP": {
+      "name": "Minneapolis-St. Paul-Bloomington, MN-WI",
+      "median_2br_rent": 1400,
+      "geoadj": 1.02
+    },
+    "SD": {
+      "name": "San Diego-Chula Vista-Carlsbad, CA",
+      "median_2br_rent": 2300,
+      "geoadj": 1.35
+    },
+    "TB": {
+      "name": "Tampa-St. Petersburg-Clearwater, FL",
+      "median_2br_rent": 1600,
+      "geoadj": 1.10
+    },
+    "DEN": {
+      "name": "Denver-Aurora-Lakewood, CO",
+      "median_2br_rent": 1750,
+      "geoadj": 1.15
+    },
+    "STL": {
+      "name": "St. Louis, MO-IL",
+      "median_2br_rent": 1100,
+      "geoadj": 0.91
+    },
+    "BAL": {
+      "name": "Baltimore-Columbia-Towson, MD",
+      "median_2br_rent": 1600,
+      "geoadj": 1.10
+    },
+    "ORL": {
+      "name": "Orlando-Kissimmee-Sanford, FL",
+      "median_2br_rent": 1650,
+      "geoadj": 1.11
+    },
+    "CLT": {
+      "name": "Charlotte-Concord-Gastonia, NC-SC",
+      "median_2br_rent": 1450,
+      "geoadj": 1.04
+    },
+    "SA": {
+      "name": "San Antonio-New Braunfels, TX",
+      "median_2br_rent": 1250,
+      "geoadj": 0.97
+    },
+    "PDX": {
+      "name": "Portland-Vancouver-Hillsboro, OR-WA",
+      "median_2br_rent": 1600,
+      "geoadj": 1.10
+    },
+    "SAC": {
+      "name": "Sacramento-Roseville-Folsom, CA",
+      "median_2br_rent": 1700,
+      "geoadj": 1.13
+    },
+    "PIT": {
+      "name": "Pittsburgh, PA",
+      "median_2br_rent": 1150,
+      "geoadj": 0.93
+    },
+    "AUS": {
+      "name": "Austin-Round Rock-Georgetown, TX",
+      "median_2br_rent": 1600,
+      "geoadj": 1.10
+    },
+    "LV": {
+      "name": "Las Vegas-Henderson-Paradise, NV",
+      "median_2br_rent": 1500,
+      "geoadj": 1.06
+    },
+    "CIN": {
+      "name": "Cincinnati, OH-KY-IN",
+      "median_2br_rent": 1150,
+      "geoadj": 0.93
+    },
+    "KC": {
+      "name": "Kansas City, MO-KS",
+      "median_2br_rent": 1200,
+      "geoadj": 0.95
+    },
+    "CLM": {
+      "name": "Columbus, OH",
+      "median_2br_rent": 1250,
+      "geoadj": 0.97
+    },
+    "IND": {
+      "name": "Indianapolis-Carmel-Anderson, IN",
+      "median_2br_rent": 1200,
+      "geoadj": 0.95
+    },
+    "CLE": {
+      "name": "Cleveland-Elyria, OH",
+      "median_2br_rent": 1050,
+      "geoadj": 0.89
+    },
+    "SJ": {
+      "name": "San Jose-Sunnyvale-Santa Clara, CA",
+      "median_2br_rent": 2800,
+      "geoadj": 1.50
+    },
+    "NSH": {
+      "name": "Nashville-Davidson-Murfreesboro-Franklin, TN",
+      "median_2br_rent": 1550,
+      "geoadj": 1.08
+    },
+    "RDU": {
+      "name": "Raleigh-Cary, NC",
+      "median_2br_rent": 1500,
+      "geoadj": 1.06
+    },
+    "JAX": {
+      "name": "Jacksonville, FL",
+      "median_2br_rent": 1450,
+      "geoadj": 1.04
+    },
+    "MKE": {
+      "name": "Milwaukee-Waukesha, WI",
+      "median_2br_rent": 1150,
+      "geoadj": 0.93
+    },
+    "OKC": {
+      "name": "Oklahoma City, OK",
+      "median_2br_rent": 1000,
+      "geoadj": 0.88
+    },
+    "MEM": {
+      "name": "Memphis, TN-MS-AR",
+      "median_2br_rent": 1100,
+      "geoadj": 0.91
+    },
+    "BIR": {
+      "name": "Birmingham-Hoover, AL",
+      "median_2br_rent": 1100,
+      "geoadj": 0.91
+    },
+    "NOL": {
+      "name": "New Orleans-Metairie, LA",
+      "median_2br_rent": 1250,
+      "geoadj": 0.97
+    },
+    "HNL": {
+      "name": "Honolulu, HI",
+      "median_2br_rent": 2400,
+      "geoadj": 1.39
+    },
+    "non_metro": {
+      "name": "Non-metro areas (national average)",
+      "median_2br_rent": 975,
+      "geoadj": 0.87
+    }
+  }
+}

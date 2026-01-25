@@ -1,10 +1,12 @@
 import { useState, useMemo } from 'react'
 import spmConfig from '../public/data/spm_config.json'
 import cdData from '../public/data/cd_geoadj.json'
+import metroData from '../public/data/metro_geoadj.json'
 
 // Extract data from config
-const { baseThresholds, states, costLevels, metroStatus, methodology, forecast } = spmConfig
+const { baseThresholds, states, costLevels, methodology, forecast } = spmConfig
 const { congressionalDistricts } = cdData
+const { metroAreas } = metroData
 const LATEST_PUBLISHED_YEAR = forecast.latestPublishedYear
 
 // Get all available years sorted
@@ -69,7 +71,7 @@ function App() {
   const [costLevel, setCostLevel] = useState('national_average')
   const [selectedState, setSelectedState] = useState('CA')
   const [selectedDistrict, setSelectedDistrict] = useState('612') // CA-12 default
-  const [selectedMetro, setSelectedMetro] = useState('metro')
+  const [selectedMetro, setSelectedMetro] = useState('NYC')
 
   // Expanded state for detail cards
   const [expandedCard, setExpandedCard] = useState(null)
@@ -84,7 +86,7 @@ function App() {
     if (locationType === 'preset') return costLevels[costLevel].geoadj
     if (locationType === 'state') return states[selectedState]?.geoadj || 1.0
     if (locationType === 'district') return congressionalDistricts[selectedDistrict]?.geoadj || 1.0
-    if (locationType === 'metro') return metroStatus[selectedMetro]?.geoadj || 1.0
+    if (locationType === 'metro') return metroAreas[selectedMetro]?.geoadj || 1.0
     return 1.0
   }, [locationType, costLevel, selectedState, selectedDistrict, selectedMetro])
 
@@ -119,7 +121,7 @@ function App() {
     if (locationType === 'preset') return costLevels[costLevel].label
     if (locationType === 'state') return states[selectedState]?.name
     if (locationType === 'district') return congressionalDistricts[selectedDistrict]?.name
-    if (locationType === 'metro') return metroStatus[selectedMetro]?.label
+    if (locationType === 'metro') return metroAreas[selectedMetro]?.name
     return 'National average'
   }
 
@@ -128,6 +130,9 @@ function App() {
       {/* Header */}
       <header className="header">
         <h1>SPM Threshold Calculator</h1>
+        <p className="header-subtitle">
+          Interactive documentation for <a href="https://github.com/PolicyEngine/spm-calculator" target="_blank" rel="noopener noreferrer">spm-calculator</a>
+        </p>
       </header>
 
       {/* Two-column layout */}
@@ -258,9 +263,11 @@ function App() {
 
             {locationType === 'metro' && (
               <select value={selectedMetro} onChange={e => setSelectedMetro(e.target.value)}>
-                {Object.entries(metroStatus).map(([key, { label }]) => (
-                  <option key={key} value={key}>{label}</option>
-                ))}
+                {Object.entries(metroAreas)
+                  .sort((a, b) => a[1].name.localeCompare(b[1].name))
+                  .map(([key, { name }]) => (
+                    <option key={key} value={key}>{name}</option>
+                  ))}
               </select>
             )}
           </div>
@@ -275,7 +282,7 @@ function App() {
             <div className="result-amount">{formatCurrency(threshold)}</div>
             <div className="result-monthly">{formatCurrency(monthly)}/month</div>
             <div className="result-year-note">
-              Used with {parseInt(year) - 1} income (March {year} CPS ASEC)
+              Used with {year} income (March {parseInt(year) + 1} CPS ASEC)
             </div>
           </div>
 
@@ -528,10 +535,71 @@ function App() {
         </div>
       </div>
 
+      {/* Python code section */}
+      {(() => {
+        const imports = locationType === 'district'
+          ? 'from spm_calculator import get_thresholds, spm_equivalence_scale, get_cd_geoadj'
+          : 'from spm_calculator import get_thresholds, spm_equivalence_scale'
+        const geoLine = locationType === 'district'
+          ? `geoadj = get_cd_geoadj("${selectedDistrict}")  # ${geoadj.toFixed(4)}`
+          : `geoadj = ${geoadj.toFixed(2)}  # ${getLocationName()}`
+        const pythonCode = `${imports}
+
+# Get base threshold for ${year}
+thresholds = get_thresholds(${year})
+base = thresholds["${tenure}"]  # ${formatCurrency(base)}
+
+# Calculate equivalence scale for ${numAdults} adult${numAdults !== 1 ? 's' : ''}, ${numChildren} child${numChildren !== 1 ? 'ren' : ''}
+equiv_scale = spm_equivalence_scale(${numAdults}, ${numChildren})  # ${equivScale.toFixed(4)}
+
+# Geographic adjustment
+${geoLine}
+
+# Calculate threshold
+threshold = base * equiv_scale * geoadj
+print(f"${year} SPM Threshold: \${'{'}threshold:,.0f{'}'}")  # ${formatCurrency(threshold)}`
+
+        return (
+          <div className="python-section">
+            <h2 className="section-title">Use in Python</h2>
+            <p className="section-subtitle">
+              Replicate this calculation with the <code>spm-calculator</code> package
+            </p>
+            <div className="code-block">
+              <div className="code-header">
+                <span>Install</span>
+                <button
+                  className="copy-btn"
+                  onClick={() => navigator.clipboard.writeText('pip install spm-calculator')}
+                >
+                  Copy
+                </button>
+              </div>
+              <pre className="code-content">pip install spm-calculator</pre>
+            </div>
+            <div className="code-block">
+              <div className="code-header">
+                <span>Python</span>
+                <button
+                  className="copy-btn"
+                  onClick={() => navigator.clipboard.writeText(pythonCode)}
+                >
+                  Copy
+                </button>
+              </div>
+              <pre className="code-content">{pythonCode}</pre>
+            </div>
+          </div>
+        )
+      })()}
+
       {/* Resources */}
       <div className="resources-section">
         <h2 className="section-title">Learn More</h2>
         <div className="resource-links">
+          <a href="https://github.com/PolicyEngine/spm-calculator" target="_blank" rel="noopener noreferrer">
+            GitHub →
+          </a>
           <a href="https://www.bls.gov/pir/spm/spm_thresholds_2024.htm" target="_blank" rel="noopener noreferrer">
             BLS Thresholds →
           </a>
@@ -540,9 +608,6 @@ function App() {
           </a>
           <a href="https://www.census.gov/topics/income-poverty/supplemental-poverty-measure.html" target="_blank" rel="noopener noreferrer">
             Census SPM →
-          </a>
-          <a href="https://github.com/PolicyEngine/spm-calculator" target="_blank" rel="noopener noreferrer">
-            GitHub →
           </a>
         </div>
       </div>
