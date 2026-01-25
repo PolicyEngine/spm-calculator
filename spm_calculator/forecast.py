@@ -10,8 +10,6 @@ is necessary for current and future year calculations.
 
 from typing import Optional
 
-import numpy as np
-
 # Historical BLS published thresholds
 HISTORICAL_THRESHOLDS = {
     2015: {

@@ -5,8 +5,9 @@ The SPM uses a modified OECD equivalence scale to adjust thresholds
 for different family compositions.
 """
 
-import numpy as np
 from typing import Union
+
+import numpy as np
 
 
 def spm_equivalence_scale(

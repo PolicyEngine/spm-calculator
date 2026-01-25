@@ -12,8 +12,8 @@ import numpy as np
 import pytest
 
 from spm_calculator.equivalence_scale import (
-    spm_equivalence_scale,
     equivalence_scale_from_persons,
+    spm_equivalence_scale,
 )
 
 

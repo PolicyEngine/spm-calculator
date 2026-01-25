@@ -25,7 +25,7 @@ import json
 import os
 from functools import lru_cache
 from pathlib import Path
-from typing import Union, Optional, Sequence
+from typing import Optional, Sequence, Union
 
 import numpy as np
 import pandas as pd
@@ -253,7 +253,7 @@ def _fetch_acs_median_rent(
     # B25031_004E = Median gross rent, 2 bedrooms
     variable = "B25031_004E"
 
-    census_geo = SUPPORTED_GEOGRAPHIES[geography_type]
+    SUPPORTED_GEOGRAPHIES[geography_type]
 
     if geography_type == "nation":
         data = c.acs5.get([variable], {"for": "us:*"}, year=year)

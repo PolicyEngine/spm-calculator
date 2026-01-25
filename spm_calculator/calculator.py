@@ -10,13 +10,13 @@ Where:
 - geoadj adjusts for local housing costs
 """
 
-from typing import Union, Optional, Sequence
+from typing import Optional, Sequence, Union
 
 import numpy as np
 
-from .ce_threshold import get_published_thresholds, calculate_base_thresholds
+from .ce_threshold import calculate_base_thresholds, get_published_thresholds
 from .equivalence_scale import spm_equivalence_scale
-from .geoadj import get_geoadj, create_geoadj_lookup, SUPPORTED_GEOGRAPHIES
+from .geoadj import SUPPORTED_GEOGRAPHIES, get_geoadj
 
 VALID_TENURE_TYPES = [
     "renter",

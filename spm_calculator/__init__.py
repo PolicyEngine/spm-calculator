@@ -26,23 +26,23 @@ Example using full calculator:
 
 from .calculator import SPMCalculator
 from .ce_threshold import calculate_base_thresholds, get_published_thresholds
-from .geoadj import (
-    get_geoadj,
-    create_geoadj_lookup,
-    get_cd_geoadj,
-    get_cd_geoadj_batch,
-    get_bundled_cd_data,
-    calculate_geoadj_from_rent,
-)
 from .equivalence_scale import spm_equivalence_scale
 from .fcsuti_cpi import get_fcsuti_cpi, get_fcsuti_inflation_factor
 from .forecast import (
+    HISTORICAL_THRESHOLDS,
     forecast_thresholds,
-    get_thresholds,
-    get_threshold_with_metadata,
     get_available_years,
     get_latest_published_year,
-    HISTORICAL_THRESHOLDS,
+    get_threshold_with_metadata,
+    get_thresholds,
+)
+from .geoadj import (
+    calculate_geoadj_from_rent,
+    create_geoadj_lookup,
+    get_bundled_cd_data,
+    get_cd_geoadj,
+    get_cd_geoadj_batch,
+    get_geoadj,
 )
 
 __version__ = "0.1.0"

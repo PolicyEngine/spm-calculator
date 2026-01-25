@@ -13,8 +13,8 @@ Sources:
 - ACS Table B25031: Median Gross Rent by Bedrooms
 """
 
-import pytest
 import numpy as np
+import pytest
 
 
 class TestGeoAdjFormula:
@@ -189,8 +189,9 @@ class TestGeoAdjLookupTable:
 
     def test_lookup_returns_dataframe(self):
         """create_geoadj_lookup should return a DataFrame."""
-        from spm_calculator.geoadj import create_geoadj_lookup
         import pandas as pd
+
+        from spm_calculator.geoadj import create_geoadj_lookup
 
         result = create_geoadj_lookup("state", year=2022)
         assert isinstance(result, pd.DataFrame)

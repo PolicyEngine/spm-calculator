@@ -12,8 +12,8 @@ Source: https://www.bls.gov/pir/spm/spm_thresholds_2024.htm
 import pytest
 
 from spm_calculator.ce_threshold import (
-    get_published_thresholds,
     BLS_PUBLISHED_THRESHOLDS_2024,
+    get_published_thresholds,
 )
 
 
