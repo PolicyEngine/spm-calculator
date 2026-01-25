@@ -255,7 +255,9 @@ class TestBundledCDData:
         from spm_calculator import get_cd_geoadj
 
         result = get_cd_geoadj("3612")
-        assert result == pytest.approx(1.5), "Manhattan should be at max (clamped)"
+        assert result == pytest.approx(
+            1.5
+        ), "Manhattan should be at max (clamped)"
 
     def test_get_cd_geoadj_invalid_cd_raises(self):
         """Invalid CD should raise ValueError."""
