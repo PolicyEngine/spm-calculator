@@ -151,10 +151,15 @@ class SPMCalculator:
             for pair in unique_pairs
         }
         geoadj_values = np.array(
-            [pair_to_geoadj[(geo_id, tenure_type)] for geo_id, tenure_type in zip(geography_ids, tenure)]
+            [
+                pair_to_geoadj[(geo_id, tenure_type)]
+                for geo_id, tenure_type in zip(geography_ids, tenure)
+            ]
         )
 
-        base_values = np.array([base_thresholds[t] for t in tenure], dtype=float)
+        base_values = np.array(
+            [base_thresholds[t] for t in tenure], dtype=float
+        )
         return base_values * equiv_scales * geoadj_values
 
     @property

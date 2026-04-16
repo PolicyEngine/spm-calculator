@@ -288,7 +288,9 @@ class TestBundledMetroData:
         metros = list_metro_areas()
 
         assert len(metros) == 341
-        assert all("code" in m and "name" in m and "rentIndex" in m for m in metros)
+        assert all(
+            "code" in m and "name" in m and "rentIndex" in m for m in metros
+        )
         assert metros[0]["name"] < metros[-1]["name"]
 
     def test_invalid_metro_year_raises(self):

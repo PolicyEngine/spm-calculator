@@ -172,7 +172,10 @@ def get_cd_geoadj_batch(
 ) -> np.ndarray:
     _validate_tenure(tenure)
     return np.array(
-        [get_cd_geoadj(cd_geoid, year=year, tenure=tenure) for cd_geoid in cd_geoids],
+        [
+            get_cd_geoadj(cd_geoid, year=year, tenure=tenure)
+            for cd_geoid in cd_geoids
+        ],
         dtype=np.float64,
     )
 
@@ -247,9 +250,7 @@ def get_metro_rent_index(
     results = np.zeros(len(metro_code), dtype=np.float64)
     for i, code in enumerate(metro_code):
         if code not in metros:
-            raise ValueError(
-                f"Metro area '{code}' not found in bundled data."
-            )
+            raise ValueError(f"Metro area '{code}' not found in bundled data.")
         info = metros[code]
         results[i] = info.get("rentIndex", info.get("geoadj"))
     return results
@@ -296,9 +297,7 @@ def get_metro_geoadj(
     for i, (code, tenure_value) in enumerate(zip(metro_code, tenure_list)):
         _validate_tenure(tenure_value)
         if code not in metros:
-            raise ValueError(
-                f"Metro area '{code}' not found in bundled data."
-            )
+            raise ValueError(f"Metro area '{code}' not found in bundled data.")
         info = metros[code]
         if "adjustments" in info:
             results[i] = info["adjustments"][tenure_value]
@@ -388,7 +387,9 @@ def _fetch_acs_median_rent(
                     pass
             data = all_data
         df = pd.DataFrame(data)
-        df["geography_id"] = df["state"].str.zfill(2) + df["county"].str.zfill(3)
+        df["geography_id"] = df["state"].str.zfill(2) + df["county"].str.zfill(
+            3
+        )
 
     elif geography_type == "congressional_district":
         all_data = []

@@ -90,7 +90,9 @@ def forecast_thresholds(year: int) -> dict:
     factor = 1.0
     for y in range(LATEST_PUBLISHED_YEAR + 1, year + 1):
         factor *= 1 + CPI_PROJECTIONS.get(y, 0.020)
-    return {tenure: int(round(value * factor)) for tenure, value in base.items()}
+    return {
+        tenure: int(round(value * factor)) for tenure, value in base.items()
+    }
 
 
 def generate_all_thresholds():
@@ -98,6 +100,8 @@ def generate_all_thresholds():
     for year in range(LATEST_PUBLISHED_YEAR + 1, 2031):
         all_thresholds[str(year)] = forecast_thresholds(year)
     return all_thresholds
+
+
 def _load_workbook_from_bytes(content: bytes):
     from io import BytesIO
 

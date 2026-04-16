@@ -125,9 +125,9 @@ class TestThresholdCalculation:
     def test_spm_threshold_matches_census_workbook(self):
         from spm_calculator import spm_threshold
 
-        assert spm_threshold(2, 2, tenure="renter", metro="35620", year=2024) == pytest.approx(
-            45736
-        )
+        assert spm_threshold(
+            2, 2, tenure="renter", metro="35620", year=2024
+        ) == pytest.approx(45736)
         assert spm_threshold(
             2,
             2,
@@ -197,7 +197,9 @@ class TestBatchCalculation:
 
         assert len(results) == 3
         base = calc.get_base_thresholds()["renter"]
-        expected_scales = np.array([1.0, REFERENCE_RAW_SCALE, 5**0.7]) / REFERENCE_RAW_SCALE
+        expected_scales = (
+            np.array([1.0, REFERENCE_RAW_SCALE, 5**0.7]) / REFERENCE_RAW_SCALE
+        )
         expected = base * expected_scales
         np.testing.assert_allclose(results, expected)
 
