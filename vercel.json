@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "cd web && npm install && npm run build",
+  "buildCommand": "cd web && bun install --frozen-lockfile && bun run build",
   "outputDirectory": "web/out",
-  "installCommand": "cd web && npm install"
+  "installCommand": "cd web && bun install --frozen-lockfile"
 }
