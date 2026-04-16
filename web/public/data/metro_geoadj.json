@@ -2,1370 +2,4790 @@
   "year": 2024,
   "source": "Census Bureau SPM Thresholds by Metro Area 2024",
   "sourceUrl": "https://www2.census.gov/programs-surveys/demo/tables/p60/287/SPM-pov-threshold-2024.xlsx",
+  "nationalThresholds": {
+    "renter": 39430,
+    "owner_with_mortgage": 39068,
+    "owner_without_mortgage": 32586
+  },
+  "housingShares": {
+    "owner_with_mortgage": 0.434,
+    "owner_without_mortgage": 0.323,
+    "renter": 0.443
+  },
   "metroAreas": {
     "1002": {
       "name": "Alabama Nonmetro",
-      "geoadj": 0.553
+      "rentIndex": 0.553,
+      "adjustments": {
+        "renter": 0.8019781891960436,
+        "owner_with_mortgage": 0.8060049145080372,
+        "owner_without_mortgage": 0.8556128398698828
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 31489,
+        "owner_without_mortgage": 27881,
+        "renter": 31622
+      }
     },
     "2001": {
       "name": "Alaska Metro",
-      "geoadj": 1.067
+      "rentIndex": 1.067,
+      "adjustments": {
+        "renter": 1.0296728379406543,
+        "owner_with_mortgage": 1.029077505887171,
+        "owner_without_mortgage": 1.0216350580003684
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 40204,
+        "owner_without_mortgage": 33291,
+        "renter": 40600
+      }
     },
     "2002": {
       "name": "Alaska Nonmetro",
-      "geoadj": 1.043
+      "rentIndex": 1.043,
+      "adjustments": {
+        "renter": 1.019046411361907,
+        "owner_with_mortgage": 1.0186597727040032,
+        "owner_without_mortgage": 1.013901675566194
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 39797,
+        "owner_without_mortgage": 33039,
+        "renter": 40181
+      }
     },
     "4001": {
       "name": "Arizona Metro",
-      "geoadj": 1.108
+      "rentIndex": 1.108,
+      "adjustments": {
+        "renter": 1.0478316003043369,
+        "owner_with_mortgage": 1.0468670011262413,
+        "owner_without_mortgage": 1.0348922850303812
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 40899,
+        "owner_without_mortgage": 33723,
+        "renter": 41316
+      }
     },
     "4002": {
       "name": "Arizona Nonmetro",
-      "geoadj": 0.613
+      "rentIndex": 0.613,
+      "adjustments": {
+        "renter": 0.8285569363428861,
+        "owner_with_mortgage": 0.8320364492679431,
+        "owner_without_mortgage": 0.8750076720063831
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 32506,
+        "owner_without_mortgage": 28513,
+        "renter": 32670
+      }
     },
     "5001": {
       "name": "Arkansas Metro",
-      "geoadj": 0.673
+      "rentIndex": 0.673,
+      "adjustments": {
+        "renter": 0.8551356834897287,
+        "owner_with_mortgage": 0.8580935804238763,
+        "owner_without_mortgage": 0.8943718161173511
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 33524,
+        "owner_without_mortgage": 29144,
+        "renter": 33718
+      }
     },
     "5002": {
       "name": "Arkansas Nonmetro",
-      "geoadj": 0.597
+      "rentIndex": 0.597,
+      "adjustments": {
+        "renter": 0.8214811057570378,
+        "owner_with_mortgage": 0.825099825944507,
+        "owner_without_mortgage": 0.8698213956914013
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 32235,
+        "owner_without_mortgage": 28344,
+        "renter": 32391
+      }
     },
     "6002": {
       "name": "California Nonmetro",
-      "geoadj": 0.964
+      "rentIndex": 0.964,
+      "adjustments": {
+        "renter": 0.9840476794319046,
+        "owner_with_mortgage": 0.984386198423262,
+        "owner_without_mortgage": 0.9883692383232063
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 38458,
+        "owner_without_mortgage": 32207,
+        "renter": 38801
+      }
     },
     "8002": {
       "name": "Colorado Nonmetro",
-      "geoadj": 0.944
+      "rentIndex": 0.944,
+      "adjustments": {
+        "renter": 0.9751965508496069,
+        "owner_with_mortgage": 0.9756834237739326,
+        "owner_without_mortgage": 0.9819247529613945
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 38118,
+        "owner_without_mortgage": 31997,
+        "renter": 38452
+      }
     },
     "9002": {
       "name": "Connecticut Nonmetro",
-      "geoadj": 0.976
+      "rentIndex": 0.976,
+      "adjustments": {
+        "renter": 0.9893735734212529,
+        "owner_with_mortgage": 0.9895822668168321,
+        "owner_without_mortgage": 0.9922359295402934
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 38661,
+        "owner_without_mortgage": 32333,
+        "renter": 39011
+      }
     },
     "10180": {
       "name": "Abilene, TX MSA",
-      "geoadj": 0.827
+      "rentIndex": 0.827,
+      "adjustments": {
+        "renter": 0.9233578493532844,
+        "owner_with_mortgage": 0.9249257704515205,
+        "owner_without_mortgage": 0.9441171055054318
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 36135,
+        "owner_without_mortgage": 30765,
+        "renter": 36408
+      }
     },
     "10420": {
       "name": "Akron, OH MSA",
-      "geoadj": 0.771
+      "rentIndex": 0.771,
+      "adjustments": {
+        "renter": 0.8985544002028912,
+        "owner_with_mortgage": 0.900609194225453,
+        "owner_without_mortgage": 0.9260418584668263
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 35185,
+        "owner_without_mortgage": 30176,
+        "renter": 35430
+      }
     },
     "10580": {
       "name": "Albany-Schenectady-Troy, NY MSA",
-      "geoadj": 0.985
+      "rentIndex": 0.985,
+      "adjustments": {
+        "renter": 0.9933553132132894,
+        "owner_with_mortgage": 0.9934985154090304,
+        "owner_without_mortgage": 0.9951512919658749
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 38814,
+        "owner_without_mortgage": 32428,
+        "renter": 39168
+      }
     },
     "10740": {
       "name": "Albuquerque, NM MSA",
-      "geoadj": 0.831
+      "rentIndex": 0.831,
+      "adjustments": {
+        "renter": 0.9251331473497337,
+        "owner_with_mortgage": 0.9266663253813863,
+        "owner_without_mortgage": 0.9454060025777942
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 36203,
+        "owner_without_mortgage": 30807,
+        "renter": 36478
+      }
     },
     "10900": {
       "name": "Allentown-Bethlehem-Easton, PA-NJ MSA",
-      "geoadj": 1.025
+      "rentIndex": 1.025,
+      "adjustments": {
+        "renter": 1.011082931777834,
+        "owner_with_mortgage": 1.0108528719156342,
+        "owner_without_mortgage": 1.008070950715031
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 39492,
+        "owner_without_mortgage": 32849,
+        "renter": 39867
+      }
     },
     "11100": {
       "name": "Amarillo, TX MSA",
-      "geoadj": 0.785
+      "rentIndex": 0.785,
+      "adjustments": {
+        "renter": 0.9047425817905148,
+        "owner_with_mortgage": 0.9067011364799836,
+        "owner_without_mortgage": 0.9305529982200945
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 35423,
+        "owner_without_mortgage": 30323,
+        "renter": 35674
+      }
     },
     "11460": {
       "name": "Ann Arbor, MI MSA",
-      "geoadj": 1.116
+      "rentIndex": 1.116,
+      "adjustments": {
+        "renter": 1.0513821962972356,
+        "owner_with_mortgage": 1.0503481109859731,
+        "owner_without_mortgage": 1.037470079175106
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 41035,
+        "owner_without_mortgage": 33807,
+        "renter": 41456
+      }
     },
     "11540": {
       "name": "Appleton, WI MSA",
-      "geoadj": 0.763
+      "rentIndex": 0.763,
+      "adjustments": {
+        "renter": 0.8950038042099924,
+        "owner_with_mortgage": 0.8971536807617487,
+        "owner_without_mortgage": 0.9234640643221015
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 35050,
+        "owner_without_mortgage": 30092,
+        "renter": 35290
+      }
     },
     "11700": {
       "name": "Asheville, NC MSA",
-      "geoadj": 0.881
+      "rentIndex": 0.881,
+      "adjustments": {
+        "renter": 0.9472736495054527,
+        "owner_with_mortgage": 0.9483464728166274,
+        "owner_without_mortgage": 0.9615479040078562
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 37050,
+        "owner_without_mortgage": 31333,
+        "renter": 37351
+      }
     },
     "12001": {
       "name": "Florida Metro",
-      "geoadj": 0.729
+      "rentIndex": 0.729,
+      "adjustments": {
+        "renter": 0.8799391326401217,
+        "owner_with_mortgage": 0.8823845602539162,
+        "owner_without_mortgage": 0.912477751181489
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34473,
+        "owner_without_mortgage": 29734,
+        "renter": 34696
+      }
     },
     "12002": {
       "name": "Florida Nonmetro",
-      "geoadj": 0.605
+      "rentIndex": 0.605,
+      "adjustments": {
+        "renter": 0.8250063403499873,
+        "owner_with_mortgage": 0.8285809358042387,
+        "owner_without_mortgage": 0.8724298778616584
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 32371,
+        "owner_without_mortgage": 28429,
+        "renter": 32530
+      }
     },
     "12020": {
       "name": "Athens-Clarke County, GA MSA",
-      "geoadj": 0.855
+      "rentIndex": 0.855,
+      "adjustments": {
+        "renter": 0.9357595739284809,
+        "owner_with_mortgage": 0.9370584621685266,
+        "owner_without_mortgage": 0.9531700730375008
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 36609,
+        "owner_without_mortgage": 31060,
+        "renter": 36897
+      }
     },
     "12060": {
       "name": "Atlanta-Sandy Springs-Roswell, GA MSA",
-      "geoadj": 1.144
+      "rentIndex": 1.144,
+      "adjustments": {
+        "renter": 1.0637839208724322,
+        "owner_with_mortgage": 1.062506399099007,
+        "owner_without_mortgage": 1.0465230467071749
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 41510,
+        "owner_without_mortgage": 34102,
+        "renter": 41945
+      }
     },
     "12100": {
       "name": "Atlantic City-Hammonton, NJ MSA",
-      "geoadj": 1.045
+      "rentIndex": 1.045,
+      "adjustments": {
+        "renter": 1.019934060360132,
+        "owner_with_mortgage": 1.0195300501689362,
+        "owner_without_mortgage": 1.0145461241023752
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 39831,
+        "owner_without_mortgage": 33060,
+        "renter": 40216
+      }
     },
     "12220": {
       "name": "Auburn-Opelika, AL MSA",
-      "geoadj": 0.735
+      "rentIndex": 0.735,
+      "adjustments": {
+        "renter": 0.8826020796347959,
+        "owner_with_mortgage": 0.8849953926487151,
+        "owner_without_mortgage": 0.9144110967900325
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34575,
+        "owner_without_mortgage": 29797,
+        "renter": 34801
+      }
     },
     "12260": {
       "name": "Augusta-Richmond County, GA-SC MSA",
-      "geoadj": 0.762
+      "rentIndex": 0.762,
+      "adjustments": {
+        "renter": 0.8945726604108547,
+        "owner_with_mortgage": 0.8967185420292823,
+        "owner_without_mortgage": 0.9231264960412447
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 35033,
+        "owner_without_mortgage": 30081,
+        "renter": 35273
+      }
     },
     "12420": {
       "name": "Austin-Round Rock, TX MSA",
-      "geoadj": 1.288
+      "rentIndex": 1.288,
+      "adjustments": {
+        "renter": 1.1275932031448135,
+        "owner_with_mortgage": 1.1249872018019862,
+        "owner_without_mortgage": 1.0930154053888173
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 43951,
+        "owner_without_mortgage": 35617,
+        "renter": 44461
+      }
     },
     "12540": {
       "name": "Bakersfield, CA MSA",
-      "geoadj": 0.845
+      "rentIndex": 0.845,
+      "adjustments": {
+        "renter": 0.9313466903373067,
+        "owner_with_mortgage": 0.9327326712398895,
+        "owner_without_mortgage": 0.9499478303565948
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 36440,
+        "owner_without_mortgage": 30955,
+        "renter": 36723
+      }
     },
     "12580": {
       "name": "Baltimore-Columbia-Towson, MD MSA",
-      "geoadj": 1.214
+      "rentIndex": 1.214,
+      "adjustments": {
+        "renter": 1.0948009130103982,
+        "owner_with_mortgage": 1.09286372478755,
+        "owner_without_mortgage": 1.0691094334990487
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 42696,
+        "owner_without_mortgage": 34838,
+        "renter": 43168
+      }
     },
     "12620": {
       "name": "Bangor, ME MSA",
-      "geoadj": 0.817
+      "rentIndex": 0.817,
+      "adjustments": {
+        "renter": 0.9189196043621608,
+        "owner_with_mortgage": 0.9205743831268557,
+        "owner_without_mortgage": 0.9408948628245258
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 35965,
+        "owner_without_mortgage": 30660,
+        "renter": 36233
+      }
     },
     "12700": {
       "name": "Barnstable Town, MA MSA",
-      "geoadj": 1.295
+      "rentIndex": 1.295,
+      "adjustments": {
+        "renter": 1.1306872939386254,
+        "owner_with_mortgage": 1.1280331729292516,
+        "owner_without_mortgage": 1.0952863192782176
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 44070,
+        "owner_without_mortgage": 35691,
+        "renter": 44583
+      }
     },
     "12940": {
       "name": "Baton Rouge, LA MSA",
-      "geoadj": 0.818
+      "rentIndex": 0.818,
+      "adjustments": {
+        "renter": 0.9193761095612478,
+        "owner_with_mortgage": 0.9210095218593222,
+        "owner_without_mortgage": 0.9412017430798503
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 35982,
+        "owner_without_mortgage": 30670,
+        "renter": 36251
+      }
     },
     "12980": {
       "name": "Battle Creek, MI MSA",
-      "geoadj": 0.751
+      "rentIndex": 0.751,
+      "adjustments": {
+        "renter": 0.8897032716205935,
+        "owner_with_mortgage": 0.8919320159721511,
+        "owner_without_mortgage": 0.919566685079482
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34846,
+        "owner_without_mortgage": 29965,
+        "renter": 35081
+      }
     },
     "13001": {
       "name": "Georgia Metro",
-      "geoadj": 0.652
+      "rentIndex": 0.652,
+      "adjustments": {
+        "renter": 0.8458280497083439,
+        "owner_with_mortgage": 0.8489556670420805,
+        "owner_without_mortgage": 0.8875897624746824
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 33167,
+        "owner_without_mortgage": 28923,
+        "renter": 33351
+      }
     },
     "13002": {
       "name": "Georgia Nonmetro",
-      "geoadj": 0.621
+      "rentIndex": 0.621,
+      "adjustments": {
+        "renter": 0.8321075323357849,
+        "owner_with_mortgage": 0.8355175591276748,
+        "owner_without_mortgage": 0.8775854661511079
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 32642,
+        "owner_without_mortgage": 28597,
+        "renter": 32810
+      }
     },
     "13140": {
       "name": "Beaumont-Port Arthur, TX MSA",
-      "geoadj": 0.78
+      "rentIndex": 0.78,
+      "adjustments": {
+        "renter": 0.9025361399949278,
+        "owner_with_mortgage": 0.9045254428176512,
+        "owner_without_mortgage": 0.9289265328668753
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 35338,
+        "owner_without_mortgage": 30270,
+        "renter": 35587
+      }
     },
     "13460": {
       "name": "Bend-Redmond, OR MSA",
-      "geoadj": 1.152
+      "rentIndex": 1.152,
+      "adjustments": {
+        "renter": 1.067334516865331,
+        "owner_with_mortgage": 1.0659619125627111,
+        "owner_without_mortgage": 1.0491008408518996
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 41645,
+        "owner_without_mortgage": 34186,
+        "renter": 42085
+      }
     },
     "13740": {
       "name": "Billings, MT MSA",
-      "geoadj": 0.792
+      "rentIndex": 0.792,
+      "adjustments": {
+        "renter": 0.9078620339842759,
+        "owner_with_mortgage": 0.9097215112112215,
+        "owner_without_mortgage": 0.9328239121094949
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 35541,
+        "owner_without_mortgage": 30397,
+        "renter": 35797
+      }
     },
     "13780": {
       "name": "Binghamton, NY MSA",
-      "geoadj": 0.715
+      "rentIndex": 0.715,
+      "adjustments": {
+        "renter": 0.8737509510524981,
+        "owner_with_mortgage": 0.8763182143954131,
+        "owner_without_mortgage": 0.9079359234026882
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34236,
+        "owner_without_mortgage": 29586,
+        "renter": 34452
+      }
     },
     "13820": {
       "name": "Birmingham-Hoover, AL MSA",
-      "geoadj": 0.804
+      "rentIndex": 0.804,
+      "adjustments": {
+        "renter": 0.9131625665736749,
+        "owner_with_mortgage": 0.9149431760008191,
+        "owner_without_mortgage": 0.9366906033265819
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 35745,
+        "owner_without_mortgage": 30523,
+        "renter": 36006
+      }
     },
     "13980": {
       "name": "Blacksburg-Christiansburg-Radford, VA MSA",
-      "geoadj": 0.814
+      "rentIndex": 0.814,
+      "adjustments": {
+        "renter": 0.9176008115647983,
+        "owner_with_mortgage": 0.9192689669294564,
+        "owner_without_mortgage": 0.9399128460074879
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 35914,
+        "owner_without_mortgage": 30628,
+        "renter": 36181
+      }
     },
     "14010": {
       "name": "Bloomington, IL MSA",
-      "geoadj": 0.763
+      "rentIndex": 0.763,
+      "adjustments": {
+        "renter": 0.8950038042099924,
+        "owner_with_mortgage": 0.8971536807617487,
+        "owner_without_mortgage": 0.9234640643221015
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 35050,
+        "owner_without_mortgage": 30092,
+        "renter": 35290
+      }
     },
     "14020": {
       "name": "Bloomington, IN MSA",
-      "geoadj": 0.836
+      "rentIndex": 0.836,
+      "adjustments": {
+        "renter": 0.9273395891453208,
+        "owner_with_mortgage": 0.9288164226476912,
+        "owner_without_mortgage": 0.9470324679310134
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 36287,
+        "owner_without_mortgage": 30860,
+        "renter": 36565
+      }
     },
     "14260": {
       "name": "Boise City, ID MSA",
-      "geoadj": 0.98
+      "rentIndex": 0.98,
+      "adjustments": {
+        "renter": 0.9911488714177022,
+        "owner_with_mortgage": 0.9913228217466981,
+        "owner_without_mortgage": 0.9935248266126557
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 38729,
+        "owner_without_mortgage": 32375,
+        "renter": 39081
+      }
     },
     "14460": {
       "name": "Boston-Cambridge-Newton, MA-NH MSA",
-      "geoadj": 1.553
+      "rentIndex": 1.553,
+      "adjustments": {
+        "renter": 1.2449911235100177,
+        "owner_with_mortgage": 1.2399918091532711,
+        "owner_without_mortgage": 1.1786043085987847
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 48444,
+        "owner_without_mortgage": 38406,
+        "renter": 49090
+      }
     },
     "14500": {
       "name": "Boulder, CO MSA",
-      "geoadj": 1.43
+      "rentIndex": 1.43,
+      "adjustments": {
+        "renter": 1.1904894750190211,
+        "owner_with_mortgage": 1.1866233234360601,
+        "owner_without_mortgage": 1.138894003559811
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 46359,
+        "owner_without_mortgage": 37112,
+        "renter": 46941
+      }
     },
     "14540": {
       "name": "Bowling Green, KY MSA",
-      "geoadj": 0.718
+      "rentIndex": 0.718,
+      "adjustments": {
+        "renter": 0.8750697438498605,
+        "owner_with_mortgage": 0.8776236305928126,
+        "owner_without_mortgage": 0.9089179402197263
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34287,
+        "owner_without_mortgage": 29618,
+        "renter": 34504
+      }
     },
     "14860": {
       "name": "Bridgeport-Stamford-Norwalk, CT MSA",
-      "geoadj": 1.42
+      "rentIndex": 1.42,
+      "adjustments": {
+        "renter": 1.1860512300278976,
+        "owner_with_mortgage": 1.1822719361113956,
+        "owner_without_mortgage": 1.135671760878905
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 46189,
+        "owner_without_mortgage": 37007,
+        "renter": 46766
+      }
     },
     "15002": {
       "name": "Hawaii Nonmetro",
-      "geoadj": 1.139
+      "rentIndex": 1.139,
+      "adjustments": {
+        "renter": 1.061577479076845,
+        "owner_with_mortgage": 1.0603307054366746,
+        "owner_without_mortgage": 1.0448965813539557
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 41425,
+        "owner_without_mortgage": 34049,
+        "renter": 41858
+      }
     },
     "15180": {
       "name": "Brownsville-Harlingen, TX MSA",
-      "geoadj": 0.643
+      "rentIndex": 0.643,
+      "adjustments": {
+        "renter": 0.8418463099163074,
+        "owner_with_mortgage": 0.8450650148459097,
+        "owner_without_mortgage": 0.8846744000491008
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 33015,
+        "owner_without_mortgage": 28828,
+        "renter": 33194
+      }
     },
     "15380": {
       "name": "Buffalo-Cheektowaga-Niagara Falls, NY MSA",
-      "geoadj": 0.759
+      "rentIndex": 0.759,
+      "adjustments": {
+        "renter": 0.893228506213543,
+        "owner_with_mortgage": 0.8954131258318828,
+        "owner_without_mortgage": 0.9221444792242067
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34982,
+        "owner_without_mortgage": 30049,
+        "renter": 35220
+      }
     },
     "15500": {
       "name": "Burlington, NC MSA",
-      "geoadj": 0.724
+      "rentIndex": 0.724,
+      "adjustments": {
+        "renter": 0.8777326908445346,
+        "owner_with_mortgage": 0.8802088665915839,
+        "owner_without_mortgage": 0.9108512858282698
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34388,
+        "owner_without_mortgage": 29681,
+        "renter": 34609
+      }
     },
     "15540": {
       "name": "Burlington-South Burlington, VT MSA",
-      "geoadj": 1.217
+      "rentIndex": 1.217,
+      "adjustments": {
+        "renter": 1.0961197058077605,
+        "owner_with_mortgage": 1.0941691409849492,
+        "owner_without_mortgage": 1.0700914503160868
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 42747,
+        "owner_without_mortgage": 34870,
+        "renter": 43220
+      }
     },
     "15680": {
       "name": "California-Lexington Park, MD MSA",
-      "geoadj": 1.193
+      "rentIndex": 1.193,
+      "adjustments": {
+        "renter": 1.0854932792290135,
+        "owner_with_mortgage": 1.0837514078017816,
+        "owner_without_mortgage": 1.0623273798563801
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 42340,
+        "owner_without_mortgage": 34617,
+        "renter": 42801
+      }
     },
     "15940": {
       "name": "Canton-Massillon, OH MSA",
-      "geoadj": 0.662
+      "rentIndex": 0.662,
+      "adjustments": {
+        "renter": 0.8502662946994675,
+        "owner_with_mortgage": 0.8533070543667451,
+        "owner_without_mortgage": 0.8908120051555883
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 33337,
+        "owner_without_mortgage": 29028,
+        "renter": 33526
+      }
     },
     "15980": {
       "name": "Cape Coral-Fort Myers, FL MSA",
-      "geoadj": 1.126
+      "rentIndex": 1.126,
+      "adjustments": {
+        "renter": 1.0558204412883592,
+        "owner_with_mortgage": 1.0546739019146105,
+        "owner_without_mortgage": 1.0406923218560118
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 41204,
+        "owner_without_mortgage": 33912,
+        "renter": 41631
+      }
     },
     "16001": {
       "name": "Idaho Metro",
-      "geoadj": 0.668
+      "rentIndex": 0.668,
+      "adjustments": {
+        "renter": 0.8529292416941415,
+        "owner_with_mortgage": 0.855917886761544,
+        "owner_without_mortgage": 0.8927760387896643
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 33439,
+        "owner_without_mortgage": 29092,
+        "renter": 33631
+      }
     },
     "16002": {
       "name": "Idaho Nonmetro",
-      "geoadj": 0.681
+      "rentIndex": 0.681,
+      "adjustments": {
+        "renter": 0.8586862794826274,
+        "owner_with_mortgage": 0.8615490938875806,
+        "owner_without_mortgage": 0.8969496102620758
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 33659,
+        "owner_without_mortgage": 29228,
+        "renter": 33858
+      }
     },
     "16060": {
       "name": "Carbondale-Marion, IL MSA",
-      "geoadj": 0.617
+      "rentIndex": 0.617,
+      "adjustments": {
+        "renter": 0.8303322343393356,
+        "owner_with_mortgage": 0.833777004197809,
+        "owner_without_mortgage": 0.8762965690787454
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 32574,
+        "owner_without_mortgage": 28555,
+        "renter": 32740
+      }
     },
     "16300": {
       "name": "Cedar Rapids, IA MSA",
-      "geoadj": 0.742
+      "rentIndex": 0.742,
+      "adjustments": {
+        "renter": 0.8856961704286077,
+        "owner_with_mortgage": 0.8880157673799529,
+        "owner_without_mortgage": 0.9166513226539005
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34693,
+        "owner_without_mortgage": 29870,
+        "renter": 34923
+      }
     },
     "16540": {
       "name": "Chambersburg-Waynesboro, PA MSA",
-      "geoadj": 0.795
+      "rentIndex": 0.795,
+      "adjustments": {
+        "renter": 0.9091808267816384,
+        "owner_with_mortgage": 0.9110269274086209,
+        "owner_without_mortgage": 0.9337752409010004
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 35592,
+        "owner_without_mortgage": 30428,
+        "renter": 35849
+      }
     },
     "16580": {
       "name": "Champaign-Urbana, IL MSA",
-      "geoadj": 0.78
+      "rentIndex": 0.78,
+      "adjustments": {
+        "renter": 0.9025361399949278,
+        "owner_with_mortgage": 0.9045254428176512,
+        "owner_without_mortgage": 0.9289265328668753
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 35338,
+        "owner_without_mortgage": 30270,
+        "renter": 35587
+      }
     },
     "16620": {
       "name": "Charleston, WV MSA",
-      "geoadj": 0.692
+      "rentIndex": 0.692,
+      "adjustments": {
+        "renter": 0.8635556682728887,
+        "owner_with_mortgage": 0.8663356199447118,
+        "owner_without_mortgage": 0.9005094212238385
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 33846,
+        "owner_without_mortgage": 29344,
+        "renter": 34050
+      }
     },
     "16700": {
       "name": "Charleston-North Charleston, SC MSA",
-      "geoadj": 1.099
+      "rentIndex": 1.099,
+      "adjustments": {
+        "renter": 1.0438498605123003,
+        "owner_with_mortgage": 1.0429763489300707,
+        "owner_without_mortgage": 1.0319769226047997
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 40747,
+        "owner_without_mortgage": 33628,
+        "renter": 41159
+      }
     },
     "16740": {
       "name": "Charlotte-Concord-Gastonia, NC-SC MSA",
-      "geoadj": 0.989
+      "rentIndex": 0.989,
+      "adjustments": {
+        "renter": 0.9951306112097388,
+        "owner_with_mortgage": 0.9952134739428689,
+        "owner_without_mortgage": 0.9964401890382373
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 38881,
+        "owner_without_mortgage": 32470,
+        "renter": 39238
+      }
     },
     "16820": {
       "name": "Charlottesville, VA MSA",
-      "geoadj": 1.176
+      "rentIndex": 1.176,
+      "adjustments": {
+        "renter": 1.0779609434440782,
+        "owner_with_mortgage": 1.076379645745879,
+        "owner_without_mortgage": 1.0568342232860737
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 42052,
+        "owner_without_mortgage": 34438,
+        "renter": 42504
+      }
     },
     "16860": {
       "name": "Chattanooga, TN-GA MSA",
-      "geoadj": 0.8
+      "rentIndex": 0.8,
+      "adjustments": {
+        "renter": 0.9114126299771748,
+        "owner_with_mortgage": 0.9132026210709532,
+        "owner_without_mortgage": 0.9354017062542196
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 35677,
+        "owner_without_mortgage": 30481,
+        "renter": 35937
+      }
     },
     "16980": {
       "name": "Chicago-Naperville-Elgin, IL-IN-WI MSA",
-      "geoadj": 1.038
+      "rentIndex": 1.038,
+      "adjustments": {
+        "renter": 1.0168399695663202,
+        "owner_with_mortgage": 1.016484079041671,
+        "owner_without_mortgage": 1.0122752102129748
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 39712,
+        "owner_without_mortgage": 32986,
+        "renter": 40094
+      }
     },
     "17001": {
       "name": "Illinois Metro",
-      "geoadj": 0.706
+      "rentIndex": 0.706,
+      "adjustments": {
+        "renter": 0.8697692112604616,
+        "owner_with_mortgage": 0.8724019658032149,
+        "owner_without_mortgage": 0.9050512490026392
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34083,
+        "owner_without_mortgage": 29492,
+        "renter": 34295
+      }
     },
     "17002": {
       "name": "Illinois Nonmetro",
-      "geoadj": 0.631
+      "rentIndex": 0.631,
+      "adjustments": {
+        "renter": 0.8365204159269591,
+        "owner_with_mortgage": 0.839843350056312,
+        "owner_without_mortgage": 0.8808077088320138
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 32811,
+        "owner_without_mortgage": 28702,
+        "renter": 32984
+      }
     },
     "17020": {
       "name": "Chico, CA MSA",
-      "geoadj": 1.005
+      "rentIndex": 1.005,
+      "adjustments": {
+        "renter": 1.0022064417955872,
+        "owner_with_mortgage": 1.0021756936623323,
+        "owner_without_mortgage": 1.0016264653532192
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 39153,
+        "owner_without_mortgage": 32639,
+        "renter": 39517
+      }
     },
     "17140": {
       "name": "Cincinnati, OH-KY-IN MSA",
-      "geoadj": 0.808
+      "rentIndex": 0.808,
+      "adjustments": {
+        "renter": 0.9149378645701243,
+        "owner_with_mortgage": 0.916683730930685,
+        "owner_without_mortgage": 0.9379795003989443
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 35813,
+        "owner_without_mortgage": 30565,
+        "renter": 36076
+      }
     },
     "17300": {
       "name": "Clarksville, TN-KY MSA",
-      "geoadj": 0.831
+      "rentIndex": 0.831,
+      "adjustments": {
+        "renter": 0.9251331473497337,
+        "owner_with_mortgage": 0.9266663253813863,
+        "owner_without_mortgage": 0.9454060025777942
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 36203,
+        "owner_without_mortgage": 30807,
+        "renter": 36478
+      }
     },
     "17420": {
       "name": "Cleveland, TN MSA",
-      "geoadj": 0.701
+      "rentIndex": 0.701,
+      "adjustments": {
+        "renter": 0.8675374080649252,
+        "owner_with_mortgage": 0.8702262721408826,
+        "owner_without_mortgage": 0.90342478364942
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 33998,
+        "owner_without_mortgage": 29439,
+        "renter": 34207
+      }
     },
     "17460": {
       "name": "Cleveland-Elyria, OH MSA",
-      "geoadj": 0.776
+      "rentIndex": 0.776,
+      "adjustments": {
+        "renter": 0.9007608419984783,
+        "owner_with_mortgage": 0.9027848878877854,
+        "owner_without_mortgage": 0.927637635794513
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 35270,
+        "owner_without_mortgage": 30228,
+        "renter": 35517
+      }
     },
     "17660": {
       "name": "Coeur d'Alene, ID MSA",
-      "geoadj": 0.904
+      "rentIndex": 0.904,
+      "adjustments": {
+        "renter": 0.9574689322850621,
+        "owner_with_mortgage": 0.9583290672673288,
+        "owner_without_mortgage": 0.9690050942122383
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 37440,
+        "owner_without_mortgage": 31576,
+        "renter": 37753
+      }
     },
     "17780": {
       "name": "College Station-Bryan, TX MSA",
-      "geoadj": 0.798
+      "rentIndex": 0.798,
+      "adjustments": {
+        "renter": 0.9105249809789501,
+        "owner_with_mortgage": 0.9123323436060202,
+        "owner_without_mortgage": 0.9347572577180384
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 35643,
+        "owner_without_mortgage": 30460,
+        "renter": 35902
+      }
     },
     "17820": {
       "name": "Colorado Springs, CO MSA",
-      "geoadj": 1.127
+      "rentIndex": 1.127,
+      "adjustments": {
+        "renter": 1.0562515850874967,
+        "owner_with_mortgage": 1.055109040647077,
+        "owner_without_mortgage": 1.0410298901368686
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 41221,
+        "owner_without_mortgage": 33923,
+        "renter": 41648
+      }
     },
     "17900": {
       "name": "Columbia, SC MSA",
-      "geoadj": 0.816
+      "rentIndex": 0.816,
+      "adjustments": {
+        "renter": 0.918488460563023,
+        "owner_with_mortgage": 0.9201392443943893,
+        "owner_without_mortgage": 0.9405572945436691
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 35948,
+        "owner_without_mortgage": 30649,
+        "renter": 36216
+      }
     },
     "17980": {
       "name": "Columbus, GA-AL MSA",
-      "geoadj": 0.746
+      "rentIndex": 0.746,
+      "adjustments": {
+        "renter": 0.8874714684250571,
+        "owner_with_mortgage": 0.8897563223098188,
+        "owner_without_mortgage": 0.9179709077517952
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34761,
+        "owner_without_mortgage": 29913,
+        "renter": 34993
+      }
     },
     "18001": {
       "name": "Indiana Metro",
-      "geoadj": 0.692
+      "rentIndex": 0.692,
+      "adjustments": {
+        "renter": 0.8635556682728887,
+        "owner_with_mortgage": 0.8663356199447118,
+        "owner_without_mortgage": 0.9005094212238385
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 33846,
+        "owner_without_mortgage": 29344,
+        "renter": 34050
+      }
     },
     "18002": {
       "name": "Indiana Nonmetro",
-      "geoadj": 0.619
+      "rentIndex": 0.619,
+      "adjustments": {
+        "renter": 0.8312198833375603,
+        "owner_with_mortgage": 0.8346472816627419,
+        "owner_without_mortgage": 0.8769410176149267
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 32608,
+        "owner_without_mortgage": 28576,
+        "renter": 32775
+      }
     },
     "18140": {
       "name": "Columbus, OH MSA",
-      "geoadj": 0.94
+      "rentIndex": 0.94,
+      "adjustments": {
+        "renter": 0.9734212528531575,
+        "owner_with_mortgage": 0.9739684652400942,
+        "owner_without_mortgage": 0.9806051678634997
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 38051,
+        "owner_without_mortgage": 31954,
+        "renter": 38382
+      }
     },
     "18580": {
       "name": "Corpus Christi, TX MSA",
-      "geoadj": 0.939
+      "rentIndex": 0.939,
+      "adjustments": {
+        "renter": 0.9729647476540705,
+        "owner_with_mortgage": 0.9735333265076277,
+        "owner_without_mortgage": 0.9802982876081753
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 38034,
+        "owner_without_mortgage": 31944,
+        "renter": 38364
+      }
     },
     "19001": {
       "name": "Iowa Metro",
-      "geoadj": 0.744
+      "rentIndex": 0.744,
+      "adjustments": {
+        "renter": 0.8865838194268324,
+        "owner_with_mortgage": 0.8888860448448859,
+        "owner_without_mortgage": 0.9173264592156141
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34727,
+        "owner_without_mortgage": 29892,
+        "renter": 34958
+      }
     },
     "19002": {
       "name": "Iowa Nonmetro",
-      "geoadj": 0.599
+      "rentIndex": 0.599,
+      "adjustments": {
+        "renter": 0.8223687547552625,
+        "owner_with_mortgage": 0.82597010340944,
+        "owner_without_mortgage": 0.8704658442275824
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 32269,
+        "owner_without_mortgage": 28365,
+        "renter": 32426
+      }
     },
     "19100": {
       "name": "Dallas-Fort Worth-Arlington, TX MSA",
-      "geoadj": 1.162
+      "rentIndex": 1.162,
+      "adjustments": {
+        "renter": 1.0717727618564545,
+        "owner_with_mortgage": 1.070313299887376,
+        "owner_without_mortgage": 1.0523230835328055
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 41815,
+        "owner_without_mortgage": 34291,
+        "renter": 42260
+      }
     },
     "19300": {
       "name": "Daphne-Fairhope-Foley, AL MSA",
-      "geoadj": 0.882
+      "rentIndex": 0.882,
+      "adjustments": {
+        "renter": 0.9477301547045397,
+        "owner_with_mortgage": 0.9487816115490939,
+        "owner_without_mortgage": 0.9618854722887129
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 37067,
+        "owner_without_mortgage": 31344,
+        "renter": 37369
+      }
     },
     "19340": {
       "name": "Davenport-Moline-Rock Island, IA-IL MSA",
-      "geoadj": 0.7
+      "rentIndex": 0.7,
+      "adjustments": {
+        "renter": 0.8671062642657875,
+        "owner_with_mortgage": 0.8697911334084161,
+        "owner_without_mortgage": 0.9030872153685632
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 33981,
+        "owner_without_mortgage": 29428,
+        "renter": 34190
+      }
     },
     "19380": {
       "name": "Dayton, OH MSA",
-      "geoadj": 0.732
+      "rentIndex": 0.732,
+      "adjustments": {
+        "renter": 0.8812832868374334,
+        "owner_with_mortgage": 0.8836899764513156,
+        "owner_without_mortgage": 0.9134290799729945
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34524,
+        "owner_without_mortgage": 29765,
+        "renter": 34749
+      }
     },
     "19660": {
       "name": "Deltona-Daytona Beach-Ormond Beach, FL MSA",
-      "geoadj": 1.008
+      "rentIndex": 1.008,
+      "adjustments": {
+        "renter": 1.0035505959928988,
+        "owner_with_mortgage": 1.0034811098597318,
+        "owner_without_mortgage": 1.0025777941447247
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 39204,
+        "owner_without_mortgage": 32670,
+        "renter": 39570
+      }
     },
     "19740": {
       "name": "Denver-Aurora-Lakewood, CO MSA",
-      "geoadj": 1.417
+      "rentIndex": 1.417,
+      "adjustments": {
+        "renter": 1.1847324372305352,
+        "owner_with_mortgage": 1.180966519913996,
+        "owner_without_mortgage": 1.134689744061867
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 46138,
+        "owner_without_mortgage": 36975,
+        "renter": 46714
+      }
     },
     "19780": {
       "name": "Des Moines-West Des Moines, IA MSA",
-      "geoadj": 0.85
+      "rentIndex": 0.85,
+      "adjustments": {
+        "renter": 0.9335531321328937,
+        "owner_with_mortgage": 0.9349083649022217,
+        "owner_without_mortgage": 0.9515436076842816
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 36525,
+        "owner_without_mortgage": 31007,
+        "renter": 36810
+      }
     },
     "19820": {
       "name": "Detroit-Warren-Dearborn, MI MSA",
-      "geoadj": 0.904
+      "rentIndex": 0.904,
+      "adjustments": {
+        "renter": 0.9574689322850621,
+        "owner_with_mortgage": 0.9583290672673288,
+        "owner_without_mortgage": 0.9690050942122383
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 37440,
+        "owner_without_mortgage": 31576,
+        "renter": 37753
+      }
     },
     "20001": {
       "name": "Kansas Metro",
-      "geoadj": 0.774
+      "rentIndex": 0.774,
+      "adjustments": {
+        "renter": 0.8998731930002536,
+        "owner_with_mortgage": 0.9019146104228525,
+        "owner_without_mortgage": 0.9269931872583318
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 35236,
+        "owner_without_mortgage": 30207,
+        "renter": 35482
+      }
     },
     "20002": {
       "name": "Kansas Nonmetro",
-      "geoadj": 0.589
+      "rentIndex": 0.589,
+      "adjustments": {
+        "renter": 0.817930509764139,
+        "owner_with_mortgage": 0.8216187160847752,
+        "owner_without_mortgage": 0.8672436015466765
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 32099,
+        "owner_without_mortgage": 28260,
+        "renter": 32251
+      }
     },
     "20100": {
       "name": "Dover, DE MSA",
-      "geoadj": 0.917
+      "rentIndex": 0.917,
+      "adjustments": {
+        "renter": 0.963225970073548,
+        "owner_with_mortgage": 0.9639858707893929,
+        "owner_without_mortgage": 0.9731786656846498
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 37661,
+        "owner_without_mortgage": 31712,
+        "renter": 37980
+      }
     },
     "20500": {
       "name": "Durham-Chapel Hill, NC MSA",
-      "geoadj": 1.025
+      "rentIndex": 1.025,
+      "adjustments": {
+        "renter": 1.011082931777834,
+        "owner_with_mortgage": 1.0108528719156342,
+        "owner_without_mortgage": 1.008070950715031
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 39492,
+        "owner_without_mortgage": 32849,
+        "renter": 39867
+      }
     },
     "20700": {
       "name": "East Stroudsburg, PA MSA",
-      "geoadj": 1.016
+      "rentIndex": 1.016,
+      "adjustments": {
+        "renter": 1.0070758305858483,
+        "owner_with_mortgage": 1.006936623323436,
+        "owner_without_mortgage": 1.0051555882894494
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 39339,
+        "owner_without_mortgage": 32754,
+        "renter": 39709
+      }
     },
     "21001": {
       "name": "Kentucky Metro",
-      "geoadj": 0.656
+      "rentIndex": 0.656,
+      "adjustments": {
+        "renter": 0.8476033477047933,
+        "owner_with_mortgage": 0.8506962219719464,
+        "owner_without_mortgage": 0.8888786595470447
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 33235,
+        "owner_without_mortgage": 28965,
+        "renter": 33421
+      }
     },
     "21002": {
       "name": "Kentucky Nonmetro",
-      "geoadj": 0.583
+      "rentIndex": 0.583,
+      "adjustments": {
+        "renter": 0.8152675627694649,
+        "owner_with_mortgage": 0.8190334800860039,
+        "owner_without_mortgage": 0.8653102559381329
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 31998,
+        "owner_without_mortgage": 28197,
+        "renter": 32146
+      }
     },
     "21140": {
       "name": "Elkhart-Goshen, IN MSA",
-      "geoadj": 0.752
+      "rentIndex": 0.752,
+      "adjustments": {
+        "renter": 0.8901344154197312,
+        "owner_with_mortgage": 0.8923671547046176,
+        "owner_without_mortgage": 0.9199042533603388
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34863,
+        "owner_without_mortgage": 29976,
+        "renter": 35098
+      }
     },
     "21340": {
       "name": "El Paso, TX MSA",
-      "geoadj": 0.741
+      "rentIndex": 0.741,
+      "adjustments": {
+        "renter": 0.8852650266294699,
+        "owner_with_mortgage": 0.8876062250435138,
+        "owner_without_mortgage": 0.916344442398576
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34677,
+        "owner_without_mortgage": 29860,
+        "renter": 34906
+      }
     },
     "21500": {
       "name": "Erie, PA MSA",
-      "geoadj": 0.683
+      "rentIndex": 0.683,
+      "adjustments": {
+        "renter": 0.8595739284808521,
+        "owner_with_mortgage": 0.8624193713525136,
+        "owner_without_mortgage": 0.8975940587982569
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 33693,
+        "owner_without_mortgage": 29249,
+        "renter": 33893
+      }
     },
     "21660": {
       "name": "Eugene, OR MSA",
-      "geoadj": 0.982
+      "rentIndex": 0.982,
+      "adjustments": {
+        "renter": 0.9920365204159269,
+        "owner_with_mortgage": 0.992193099211631,
+        "owner_without_mortgage": 0.9941999631743693
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 38763,
+        "owner_without_mortgage": 32397,
+        "renter": 39116
+      }
     },
     "21780": {
       "name": "Evansville, IN-KY MSA",
-      "geoadj": 0.756
+      "rentIndex": 0.756,
+      "adjustments": {
+        "renter": 0.8919097134161805,
+        "owner_with_mortgage": 0.8941077096344835,
+        "owner_without_mortgage": 0.9211931504327011
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34931,
+        "owner_without_mortgage": 30018,
+        "renter": 35168
+      }
     },
     "22001": {
       "name": "Louisiana Metro",
-      "geoadj": 0.696
+      "rentIndex": 0.696,
+      "adjustments": {
+        "renter": 0.865330966269338,
+        "owner_with_mortgage": 0.8680761748745777,
+        "owner_without_mortgage": 0.9017983182962008
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 33914,
+        "owner_without_mortgage": 29386,
+        "renter": 34120
+      }
     },
     "22002": {
       "name": "Louisiana Nonmetro",
-      "geoadj": 0.595
+      "rentIndex": 0.595,
+      "adjustments": {
+        "renter": 0.8205934567588131,
+        "owner_with_mortgage": 0.8242295484795741,
+        "owner_without_mortgage": 0.86917694715522
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 32201,
+        "owner_without_mortgage": 28323,
+        "renter": 32356
+      }
     },
     "22020": {
       "name": "Fargo, ND-MN MSA",
-      "geoadj": 0.716
+      "rentIndex": 0.716,
+      "adjustments": {
+        "renter": 0.8741820948516358,
+        "owner_with_mortgage": 0.8767533531278796,
+        "owner_without_mortgage": 0.9082734916835451
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34253,
+        "owner_without_mortgage": 29597,
+        "renter": 34469
+      }
     },
     "22140": {
       "name": "Farmington, NM MSA",
-      "geoadj": 0.663
+      "rentIndex": 0.663,
+      "adjustments": {
+        "renter": 0.8506974384986051,
+        "owner_with_mortgage": 0.8537421930992116,
+        "owner_without_mortgage": 0.8911495734364451
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 33354,
+        "owner_without_mortgage": 29039,
+        "renter": 33543
+      }
     },
     "22180": {
       "name": "Fayetteville, NC MSA",
-      "geoadj": 0.795
+      "rentIndex": 0.795,
+      "adjustments": {
+        "renter": 0.9091808267816384,
+        "owner_with_mortgage": 0.9110269274086209,
+        "owner_without_mortgage": 0.9337752409010004
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 35592,
+        "owner_without_mortgage": 30428,
+        "renter": 35849
+      }
     },
     "22220": {
       "name": "Fayetteville-Springdale-Rogers, AR-MO MSA",
-      "geoadj": 0.762
+      "rentIndex": 0.762,
+      "adjustments": {
+        "renter": 0.8945726604108547,
+        "owner_with_mortgage": 0.8967185420292823,
+        "owner_without_mortgage": 0.9231264960412447
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 35033,
+        "owner_without_mortgage": 30081,
+        "renter": 35273
+      }
     },
     "22420": {
       "name": "Flint, MI MSA",
-      "geoadj": 0.722
+      "rentIndex": 0.722,
+      "adjustments": {
+        "renter": 0.87684504184631,
+        "owner_with_mortgage": 0.879338589126651,
+        "owner_without_mortgage": 0.9102068372920886
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34354,
+        "owner_without_mortgage": 29660,
+        "renter": 34574
+      }
     },
     "22500": {
       "name": "Florence, SC MSA",
-      "geoadj": 0.633
+      "rentIndex": 0.633,
+      "adjustments": {
+        "renter": 0.8374080649251838,
+        "owner_with_mortgage": 0.840713627521245,
+        "owner_without_mortgage": 0.8814521573681949
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 32845,
+        "owner_without_mortgage": 28723,
+        "renter": 33019
+      }
     },
     "22520": {
       "name": "Florence-Muscle Shoals, AL MSA",
-      "geoadj": 0.63
+      "rentIndex": 0.63,
+      "adjustments": {
+        "renter": 0.8360892721278215,
+        "owner_with_mortgage": 0.8394082113238456,
+        "owner_without_mortgage": 0.8805008285766893
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 32794,
+        "owner_without_mortgage": 28692,
+        "renter": 32967
+      }
     },
     "22660": {
       "name": "Fort Collins, CO MSA",
-      "geoadj": 1.185
+      "rentIndex": 1.185,
+      "adjustments": {
+        "renter": 1.0819426832361145,
+        "owner_with_mortgage": 1.0802958943380772,
+        "owner_without_mortgage": 1.0597495857116552
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 42205,
+        "owner_without_mortgage": 34533,
+        "renter": 42661
+      }
     },
     "22900": {
       "name": "Fort Smith, AR-OK MSA",
-      "geoadj": 0.621
+      "rentIndex": 0.621,
+      "adjustments": {
+        "renter": 0.8321075323357849,
+        "owner_with_mortgage": 0.8355175591276748,
+        "owner_without_mortgage": 0.8775854661511079
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 32642,
+        "owner_without_mortgage": 28597,
+        "renter": 32810
+      }
     },
     "23002": {
       "name": "Maine Nonmetro",
-      "geoadj": 0.7
+      "rentIndex": 0.7,
+      "adjustments": {
+        "renter": 0.8671062642657875,
+        "owner_with_mortgage": 0.8697911334084161,
+        "owner_without_mortgage": 0.9030872153685632
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 33981,
+        "owner_without_mortgage": 29428,
+        "renter": 34190
+      }
     },
     "23060": {
       "name": "Fort Wayne, IN MSA",
-      "geoadj": 0.731
+      "rentIndex": 0.731,
+      "adjustments": {
+        "renter": 0.8808267816383465,
+        "owner_with_mortgage": 0.8832548377188492,
+        "owner_without_mortgage": 0.9131221997176702
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34507,
+        "owner_without_mortgage": 29755,
+        "renter": 34731
+      }
     },
     "23420": {
       "name": "Fresno, CA MSA",
-      "geoadj": 0.94
+      "rentIndex": 0.94,
+      "adjustments": {
+        "renter": 0.9734212528531575,
+        "owner_with_mortgage": 0.9739684652400942,
+        "owner_without_mortgage": 0.9806051678634997
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 38051,
+        "owner_without_mortgage": 31954,
+        "renter": 38382
+      }
     },
     "23540": {
       "name": "Gainesville, FL MSA",
-      "geoadj": 0.985
+      "rentIndex": 0.985,
+      "adjustments": {
+        "renter": 0.9933553132132894,
+        "owner_with_mortgage": 0.9934985154090304,
+        "owner_without_mortgage": 0.9951512919658749
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 38814,
+        "owner_without_mortgage": 32428,
+        "renter": 39168
+      }
     },
     "23580": {
       "name": "Gainesville, GA MSA",
-      "geoadj": 0.895
+      "rentIndex": 0.895,
+      "adjustments": {
+        "renter": 0.9534871924930256,
+        "owner_with_mortgage": 0.954438415071158,
+        "owner_without_mortgage": 0.9660897317866568
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 37288,
+        "owner_without_mortgage": 31481,
+        "renter": 37596
+      }
     },
     "24002": {
       "name": "Maryland Nonmetro",
-      "geoadj": 0.783
+      "rentIndex": 0.783,
+      "adjustments": {
+        "renter": 0.9038802941922394,
+        "owner_with_mortgage": 0.9058308590150507,
+        "owner_without_mortgage": 0.9299085496839133
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 35389,
+        "owner_without_mortgage": 30302,
+        "renter": 35640
+      }
     },
     "24020": {
       "name": "Glens Falls, NY MSA",
-      "geoadj": 0.808
+      "rentIndex": 0.808,
+      "adjustments": {
+        "renter": 0.9149378645701243,
+        "owner_with_mortgage": 0.916683730930685,
+        "owner_without_mortgage": 0.9379795003989443
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 35813,
+        "owner_without_mortgage": 30565,
+        "renter": 36076
+      }
     },
     "24140": {
       "name": "Goldsboro, NC MSA",
-      "geoadj": 0.678
+      "rentIndex": 0.678,
+      "adjustments": {
+        "renter": 0.8573421252853157,
+        "owner_with_mortgage": 0.8602436776901812,
+        "owner_without_mortgage": 0.8959982814705701
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 33608,
+        "owner_without_mortgage": 29197,
+        "renter": 33805
+      }
     },
     "24340": {
       "name": "Grand Rapids-Wyoming, MI MSA",
-      "geoadj": 0.881
+      "rentIndex": 0.881,
+      "adjustments": {
+        "renter": 0.9472736495054527,
+        "owner_with_mortgage": 0.9483464728166274,
+        "owner_without_mortgage": 0.9615479040078562
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 37050,
+        "owner_without_mortgage": 31333,
+        "renter": 37351
+      }
     },
     "24540": {
       "name": "Greeley, CO MSA",
-      "geoadj": 1.045
+      "rentIndex": 1.045,
+      "adjustments": {
+        "renter": 1.019934060360132,
+        "owner_with_mortgage": 1.0195300501689362,
+        "owner_without_mortgage": 1.0145461241023752
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 39831,
+        "owner_without_mortgage": 33060,
+        "renter": 40216
+      }
     },
     "24580": {
       "name": "Green Bay, WI MSA",
-      "geoadj": 0.763
+      "rentIndex": 0.763,
+      "adjustments": {
+        "renter": 0.8950038042099924,
+        "owner_with_mortgage": 0.8971536807617487,
+        "owner_without_mortgage": 0.9234640643221015
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 35050,
+        "owner_without_mortgage": 30092,
+        "renter": 35290
+      }
     },
     "24660": {
       "name": "Greensboro-High Point, NC MSA",
-      "geoadj": 0.754
+      "rentIndex": 0.754,
+      "adjustments": {
+        "renter": 0.8910220644179558,
+        "owner_with_mortgage": 0.8932374321695505,
+        "owner_without_mortgage": 0.9205487018965199
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34897,
+        "owner_without_mortgage": 29997,
+        "renter": 35133
+      }
     },
     "24780": {
       "name": "Greenville, NC MSA",
-      "geoadj": 0.719
+      "rentIndex": 0.719,
+      "adjustments": {
+        "renter": 0.8755262490489475,
+        "owner_with_mortgage": 0.878058769325279,
+        "owner_without_mortgage": 0.9092248204750506
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34304,
+        "owner_without_mortgage": 29628,
+        "renter": 34522
+      }
     },
     "24860": {
       "name": "Greenville-Anderson-Mauldin, SC MSA",
-      "geoadj": 0.802
+      "rentIndex": 0.802,
+      "adjustments": {
+        "renter": 0.9122749175754502,
+        "owner_with_mortgage": 0.9140728985358861,
+        "owner_without_mortgage": 0.9360461547904008
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 35711,
+        "owner_without_mortgage": 30502,
+        "renter": 35971
+      }
     },
     "25001": {
       "name": "Massachusetts Metro",
-      "geoadj": 0.843
+      "rentIndex": 0.843,
+      "adjustments": {
+        "renter": 0.930459041339082,
+        "owner_with_mortgage": 0.9318623937749565,
+        "owner_without_mortgage": 0.9493033818204136
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 36406,
+        "owner_without_mortgage": 30934,
+        "renter": 36688
+      }
     },
     "25002": {
       "name": "Massachusetts Nonmetro",
-      "geoadj": 1.026
+      "rentIndex": 1.026,
+      "adjustments": {
+        "renter": 1.0115140755769718,
+        "owner_with_mortgage": 1.0112880106481008,
+        "owner_without_mortgage": 1.0084085189958878
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 39509,
+        "owner_without_mortgage": 32860,
+        "renter": 39884
+      }
     },
     "25180": {
       "name": "Hagerstown-Martinsburg, MD-WV MSA",
-      "geoadj": 0.868
+      "rentIndex": 0.868,
+      "adjustments": {
+        "renter": 0.9415166117169668,
+        "owner_with_mortgage": 0.9427152656905907,
+        "owner_without_mortgage": 0.9573743325354447
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 36830,
+        "owner_without_mortgage": 31197,
+        "renter": 37124
+      }
     },
     "25260": {
       "name": "Hanford-Corcoran, CA MSA",
-      "geoadj": 0.851
+      "rentIndex": 0.851,
+      "adjustments": {
+        "renter": 0.9339842759320315,
+        "owner_with_mortgage": 0.9353435036346882,
+        "owner_without_mortgage": 0.9518811759651384
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 36542,
+        "owner_without_mortgage": 31018,
+        "renter": 36827
+      }
     },
     "25420": {
       "name": "Harrisburg-Carlisle, PA MSA",
-      "geoadj": 0.9
+      "rentIndex": 0.9,
+      "adjustments": {
+        "renter": 0.9556936342886128,
+        "owner_with_mortgage": 0.9565885123374629,
+        "owner_without_mortgage": 0.9676855091143436
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 37372,
+        "owner_without_mortgage": 31533,
+        "renter": 37683
+      }
     },
     "25540": {
       "name": "Hartford-West Hartford-East Hartford, CT MSA",
-      "geoadj": 1.1
+      "rentIndex": 1.1,
+      "adjustments": {
+        "renter": 1.0443063657113874,
+        "owner_with_mortgage": 1.043411487662537,
+        "owner_without_mortgage": 1.0323144908856565
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 40764,
+        "owner_without_mortgage": 33639,
+        "renter": 41177
+      }
     },
     "25860": {
       "name": "Hickory-Lenoir-Morganton, NC MSA",
-      "geoadj": 0.598
+      "rentIndex": 0.598,
+      "adjustments": {
+        "renter": 0.8219122495561755,
+        "owner_with_mortgage": 0.8255349646769735,
+        "owner_without_mortgage": 0.870158963972258
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 32252,
+        "owner_without_mortgage": 28355,
+        "renter": 32408
+      }
     },
     "25940": {
       "name": "Hilton Head Island-Bluffton-Beaufort, SC MSA",
-      "geoadj": 1.065
+      "rentIndex": 1.065,
+      "adjustments": {
+        "renter": 1.0287851889424295,
+        "owner_with_mortgage": 1.028207228422238,
+        "owner_without_mortgage": 1.0209906094641872
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 40170,
+        "owner_without_mortgage": 33270,
+        "renter": 40565
+      }
     },
     "26001": {
       "name": "Michigan Metro",
-      "geoadj": 0.709
+      "rentIndex": 0.709,
+      "adjustments": {
+        "renter": 0.8710880040578239,
+        "owner_with_mortgage": 0.8737073820006143,
+        "owner_without_mortgage": 0.9060025777941447
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34134,
+        "owner_without_mortgage": 29523,
+        "renter": 34347
+      }
     },
     "26002": {
       "name": "Michigan Nonmetro",
-      "geoadj": 0.729
+      "rentIndex": 0.729,
+      "adjustments": {
+        "renter": 0.8799391326401217,
+        "owner_with_mortgage": 0.8823845602539162,
+        "owner_without_mortgage": 0.912477751181489
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34473,
+        "owner_without_mortgage": 29734,
+        "renter": 34696
+      }
     },
     "26420": {
       "name": "Houston-The Woodlands-Sugar Land, TX MSA",
-      "geoadj": 1.029
+      "rentIndex": 1.029,
+      "adjustments": {
+        "renter": 1.0128582297742836,
+        "owner_with_mortgage": 1.0125934268455001,
+        "owner_without_mortgage": 1.0093598477873933
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 39560,
+        "owner_without_mortgage": 32891,
+        "renter": 39937
+      }
     },
     "26580": {
       "name": "Huntington-Ashland, WV-KY-OH MSA",
-      "geoadj": 0.664
+      "rentIndex": 0.664,
+      "adjustments": {
+        "renter": 0.8511539436976922,
+        "owner_with_mortgage": 0.8541773318316781,
+        "owner_without_mortgage": 0.8914871417173019
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 33371,
+        "owner_without_mortgage": 29050,
+        "renter": 33561
+      }
     },
     "26620": {
       "name": "Huntsville, AL MSA",
-      "geoadj": 0.778
+      "rentIndex": 0.778,
+      "adjustments": {
+        "renter": 0.901648490996703,
+        "owner_with_mortgage": 0.9036551653527184,
+        "owner_without_mortgage": 0.9282820843306941
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 35304,
+        "owner_without_mortgage": 30249,
+        "renter": 35552
+      }
     },
     "26820": {
       "name": "Idaho Falls, ID MSA",
-      "geoadj": 0.732
+      "rentIndex": 0.732,
+      "adjustments": {
+        "renter": 0.8812832868374334,
+        "owner_with_mortgage": 0.8836899764513156,
+        "owner_without_mortgage": 0.9134290799729945
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34524,
+        "owner_without_mortgage": 29765,
+        "renter": 34749
+      }
     },
     "26900": {
       "name": "Indianapolis-Carmel-Anderson, IN MSA",
-      "geoadj": 0.85
+      "rentIndex": 0.85,
+      "adjustments": {
+        "renter": 0.9335531321328937,
+        "owner_with_mortgage": 0.9349083649022217,
+        "owner_without_mortgage": 0.9515436076842816
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 36525,
+        "owner_without_mortgage": 31007,
+        "renter": 36810
+      }
     },
     "26980": {
       "name": "Iowa City, IA MSA",
-      "geoadj": 0.804
+      "rentIndex": 0.804,
+      "adjustments": {
+        "renter": 0.9131625665736749,
+        "owner_with_mortgage": 0.9149431760008191,
+        "owner_without_mortgage": 0.9366906033265819
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 35745,
+        "owner_without_mortgage": 30523,
+        "renter": 36006
+      }
     },
     "27001": {
       "name": "Minnesota Metro",
-      "geoadj": 0.78
+      "rentIndex": 0.78,
+      "adjustments": {
+        "renter": 0.9025361399949278,
+        "owner_with_mortgage": 0.9045254428176512,
+        "owner_without_mortgage": 0.9289265328668753
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 35338,
+        "owner_without_mortgage": 30270,
+        "renter": 35587
+      }
     },
     "27002": {
       "name": "Minnesota Nonmetro",
-      "geoadj": 0.72
+      "rentIndex": 0.72,
+      "adjustments": {
+        "renter": 0.8759573928480852,
+        "owner_with_mortgage": 0.878468311661718,
+        "owner_without_mortgage": 0.9095623887559074
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34320,
+        "owner_without_mortgage": 29639,
+        "renter": 34539
+      }
     },
     "27100": {
       "name": "Jackson, MI MSA",
-      "geoadj": 0.714
+      "rentIndex": 0.714,
+      "adjustments": {
+        "renter": 0.8732944458534111,
+        "owner_with_mortgage": 0.8758830756629467,
+        "owner_without_mortgage": 0.9076290431473639
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34219,
+        "owner_without_mortgage": 29576,
+        "renter": 34434
+      }
     },
     "27140": {
       "name": "Jackson, MS MSA",
-      "geoadj": 0.8
+      "rentIndex": 0.8,
+      "adjustments": {
+        "renter": 0.9114126299771748,
+        "owner_with_mortgage": 0.9132026210709532,
+        "owner_without_mortgage": 0.9354017062542196
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 35677,
+        "owner_without_mortgage": 30481,
+        "renter": 35937
+      }
     },
     "27260": {
       "name": "Jacksonville, FL MSA",
-      "geoadj": 1.059
+      "rentIndex": 1.059,
+      "adjustments": {
+        "renter": 1.0261476033477048,
+        "owner_with_mortgage": 1.0255963960274392,
+        "owner_without_mortgage": 1.0190572638556434
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 40068,
+        "owner_without_mortgage": 33207,
+        "renter": 40461
+      }
     },
     "27340": {
       "name": "Jacksonville, NC MSA",
-      "geoadj": 0.75
+      "rentIndex": 0.75,
+      "adjustments": {
+        "renter": 0.8892467664215065,
+        "owner_with_mortgage": 0.8914968772396846,
+        "owner_without_mortgage": 0.9192598048241576
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34829,
+        "owner_without_mortgage": 29955,
+        "renter": 35063
+      }
     },
     "27500": {
       "name": "Janesville-Beloit, WI MSA",
-      "geoadj": 0.776
+      "rentIndex": 0.776,
+      "adjustments": {
+        "renter": 0.9007608419984783,
+        "owner_with_mortgage": 0.9027848878877854,
+        "owner_without_mortgage": 0.927637635794513
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 35270,
+        "owner_without_mortgage": 30228,
+        "renter": 35517
+      }
     },
     "27740": {
       "name": "Johnson City, TN MSA",
-      "geoadj": 0.674
+      "rentIndex": 0.674,
+      "adjustments": {
+        "renter": 0.8555921886888156,
+        "owner_with_mortgage": 0.8585287191563428,
+        "owner_without_mortgage": 0.8947093843982078
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 33541,
+        "owner_without_mortgage": 29155,
+        "renter": 33736
+      }
     },
     "27780": {
       "name": "Johnstown, PA MSA",
-      "geoadj": 0.564
+      "rentIndex": 0.564,
+      "adjustments": {
+        "renter": 0.8068475779863048,
+        "owner_with_mortgage": 0.810765844169141,
+        "owner_without_mortgage": 0.8591726508316455
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 31675,
+        "owner_without_mortgage": 27997,
+        "renter": 31814
+      }
     },
     "27980": {
       "name": "Kahului-Wailuku-Lahaina, HI MSA",
-      "geoadj": 1.449
+      "rentIndex": 1.449,
+      "adjustments": {
+        "renter": 1.198909459802181,
+        "owner_with_mortgage": 1.1948653629568957,
+        "owner_without_mortgage": 1.1450316086662984
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 46681,
+        "owner_without_mortgage": 37312,
+        "renter": 47273
+      }
     },
     "28001": {
       "name": "Mississippi Metro",
-      "geoadj": 0.716
+      "rentIndex": 0.716,
+      "adjustments": {
+        "renter": 0.8741820948516358,
+        "owner_with_mortgage": 0.8767533531278796,
+        "owner_without_mortgage": 0.9082734916835451
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34253,
+        "owner_without_mortgage": 29597,
+        "renter": 34469
+      }
     },
     "28002": {
       "name": "Mississippi Nonmetro",
-      "geoadj": 0.584
+      "rentIndex": 0.584,
+      "adjustments": {
+        "renter": 0.8157240679685519,
+        "owner_with_mortgage": 0.8194686188184703,
+        "owner_without_mortgage": 0.8656171361934573
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 32015,
+        "owner_without_mortgage": 28207,
+        "renter": 32164
+      }
     },
     "28020": {
       "name": "Kalamazoo-Portage, MI MSA",
-      "geoadj": 0.789
+      "rentIndex": 0.789,
+      "adjustments": {
+        "renter": 0.9065178797869642,
+        "owner_with_mortgage": 0.908416095013822,
+        "owner_without_mortgage": 0.9318418952924569
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 35490,
+        "owner_without_mortgage": 30365,
+        "renter": 35744
+      }
     },
     "28140": {
       "name": "Kansas City, MO-KS MSA",
-      "geoadj": 0.893
+      "rentIndex": 0.893,
+      "adjustments": {
+        "renter": 0.9525995434948009,
+        "owner_with_mortgage": 0.953568137606225,
+        "owner_without_mortgage": 0.9654452832504756
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 37254,
+        "owner_without_mortgage": 31460,
+        "renter": 37561
+      }
     },
     "28420": {
       "name": "Kennewick-Richland, WA MSA",
-      "geoadj": 0.927
+      "rentIndex": 0.927,
+      "adjustments": {
+        "renter": 0.9676642150646716,
+        "owner_with_mortgage": 0.9683116617180301,
+        "owner_without_mortgage": 0.9764315963910882
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 37830,
+        "owner_without_mortgage": 31818,
+        "renter": 38155
+      }
     },
     "28660": {
       "name": "Killeen-Temple, TX MSA",
-      "geoadj": 0.779
+      "rentIndex": 0.779,
+      "adjustments": {
+        "renter": 0.90210499619579,
+        "owner_with_mortgage": 0.9040903040851848,
+        "owner_without_mortgage": 0.928619652611551
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 35321,
+        "owner_without_mortgage": 30260,
+        "renter": 35570
+      }
     },
     "28700": {
       "name": "Kingsport-Bristol-Bristol, TN-VA MSA",
-      "geoadj": 0.609
+      "rentIndex": 0.609,
+      "adjustments": {
+        "renter": 0.8267816383464367,
+        "owner_with_mortgage": 0.8302958943380772,
+        "owner_without_mortgage": 0.8737187749340207
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 32438,
+        "owner_without_mortgage": 28471,
+        "renter": 32600
+      }
     },
     "28940": {
       "name": "Knoxville, TN MSA",
-      "geoadj": 0.809
+      "rentIndex": 0.809,
+      "adjustments": {
+        "renter": 0.9153943697692113,
+        "owner_with_mortgage": 0.917093273267124,
+        "owner_without_mortgage": 0.9383170686798011
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 35829,
+        "owner_without_mortgage": 30576,
+        "renter": 36094
+      }
     },
     "29001": {
       "name": "Missouri Metro",
-      "geoadj": 0.592
+      "rentIndex": 0.592,
+      "adjustments": {
+        "renter": 0.8192493025615014,
+        "owner_with_mortgage": 0.8229241322821746,
+        "owner_without_mortgage": 0.8682256183637145
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 32150,
+        "owner_without_mortgage": 28292,
+        "renter": 32303
+      }
     },
     "29002": {
       "name": "Missouri Nonmetro",
-      "geoadj": 0.606
+      "rentIndex": 0.606,
+      "adjustments": {
+        "renter": 0.8254628455490743,
+        "owner_with_mortgage": 0.8290160745367052,
+        "owner_without_mortgage": 0.8727367581169827
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 32388,
+        "owner_without_mortgage": 28439,
+        "renter": 32548
+      }
     },
     "29180": {
       "name": "Lafayette, LA MSA",
-      "geoadj": 0.689
+      "rentIndex": 0.689,
+      "adjustments": {
+        "renter": 0.8622368754755263,
+        "owner_with_mortgage": 0.8650302037473124,
+        "owner_without_mortgage": 0.8995580924323329
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 33795,
+        "owner_without_mortgage": 29313,
+        "renter": 33998
+      }
     },
     "29200": {
       "name": "Lafayette-West Lafayette, IN MSA",
-      "geoadj": 0.82
+      "rentIndex": 0.82,
+      "adjustments": {
+        "renter": 0.9202637585594725,
+        "owner_with_mortgage": 0.9218797993242551,
+        "owner_without_mortgage": 0.9418461916160314
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 36016,
+        "owner_without_mortgage": 30691,
+        "renter": 36286
+      }
     },
     "29340": {
       "name": "Lake Charles, LA MSA",
-      "geoadj": 0.823
+      "rentIndex": 0.823,
+      "adjustments": {
+        "renter": 0.9215825513568349,
+        "owner_with_mortgage": 0.9231852155216546,
+        "owner_without_mortgage": 0.9428282084330695
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 36067,
+        "owner_without_mortgage": 30723,
+        "renter": 36338
+      }
     },
     "29460": {
       "name": "Lakeland-Winter Haven, FL MSA",
-      "geoadj": 0.886
+      "rentIndex": 0.886,
+      "adjustments": {
+        "renter": 0.9495054527009891,
+        "owner_with_mortgage": 0.9505221664789598,
+        "owner_without_mortgage": 0.9631743693610753
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 37135,
+        "owner_without_mortgage": 31386,
+        "renter": 37439
+      }
     },
     "29540": {
       "name": "Lancaster, PA MSA",
-      "geoadj": 0.977
+      "rentIndex": 0.977,
+      "adjustments": {
+        "renter": 0.9898047172203905,
+        "owner_with_mortgage": 0.9900174055492986,
+        "owner_without_mortgage": 0.9925734978211502
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 38678,
+        "owner_without_mortgage": 32344,
+        "renter": 39028
+      }
     },
     "29620": {
       "name": "Lansing-East Lansing, MI MSA",
-      "geoadj": 0.834
+      "rentIndex": 0.834,
+      "adjustments": {
+        "renter": 0.9264519401470961,
+        "owner_with_mortgage": 0.9279461451827583,
+        "owner_without_mortgage": 0.9463880193948322
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 36253,
+        "owner_without_mortgage": 30839,
+        "renter": 36530
+      }
     },
     "29700": {
       "name": "Laredo, TX MSA",
-      "geoadj": 0.734
+      "rentIndex": 0.734,
+      "adjustments": {
+        "renter": 0.8821709358356581,
+        "owner_with_mortgage": 0.8845602539162486,
+        "owner_without_mortgage": 0.9140735285091757
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34558,
+        "owner_without_mortgage": 29786,
+        "renter": 34784
+      }
     },
     "29740": {
       "name": "Las Cruces, NM MSA",
-      "geoadj": 0.629
+      "rentIndex": 0.629,
+      "adjustments": {
+        "renter": 0.8356581283286837,
+        "owner_with_mortgage": 0.8389986689874066,
+        "owner_without_mortgage": 0.8801632602958326
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 32778,
+        "owner_without_mortgage": 28681,
+        "renter": 32950
+      }
     },
     "29820": {
       "name": "Las Vegas-Henderson-Paradise, NV MSA",
-      "geoadj": 1.08
+      "rentIndex": 1.08,
+      "adjustments": {
+        "renter": 1.0354298757291402,
+        "owner_with_mortgage": 1.0347087130132078,
+        "owner_without_mortgage": 1.0258393174983123
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 40424,
+        "owner_without_mortgage": 33428,
+        "renter": 40827
+      }
     },
     "30001": {
       "name": "Montana Metro",
-      "geoadj": 0.812
+      "rentIndex": 0.812,
+      "adjustments": {
+        "renter": 0.9167131625665736,
+        "owner_with_mortgage": 0.9183986894645234,
+        "owner_without_mortgage": 0.9392683974713067
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 35880,
+        "owner_without_mortgage": 30607,
+        "renter": 36146
+      }
     },
     "30002": {
       "name": "Montana Nonmetro",
-      "geoadj": 0.811
+      "rentIndex": 0.811,
+      "adjustments": {
+        "renter": 0.916282018767436,
+        "owner_with_mortgage": 0.9179635507320569,
+        "owner_without_mortgage": 0.9389615172159823
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 35863,
+        "owner_without_mortgage": 30597,
+        "renter": 36129
+      }
     },
     "30340": {
       "name": "Lewiston-Auburn, ME MSA",
-      "geoadj": 0.764
+      "rentIndex": 0.764,
+      "adjustments": {
+        "renter": 0.8954603094090794,
+        "owner_with_mortgage": 0.8975632230981878,
+        "owner_without_mortgage": 0.9237709445774259
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 35066,
+        "owner_without_mortgage": 30102,
+        "renter": 35308
+      }
     },
     "30460": {
       "name": "Lexington-Fayette, KY MSA",
-      "geoadj": 0.796
+      "rentIndex": 0.796,
+      "adjustments": {
+        "renter": 0.9096373319807254,
+        "owner_with_mortgage": 0.9114620661410874,
+        "owner_without_mortgage": 0.9341128091818572
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 35609,
+        "owner_without_mortgage": 30439,
+        "renter": 35867
+      }
     },
     "30780": {
       "name": "Little Rock-North Little Rock-Conway, AR MSA",
-      "geoadj": 0.725
+      "rentIndex": 0.725,
+      "adjustments": {
+        "renter": 0.8781638346436723,
+        "owner_with_mortgage": 0.8806440053240504,
+        "owner_without_mortgage": 0.9111888541091266
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34405,
+        "owner_without_mortgage": 29692,
+        "renter": 34626
+      }
     },
     "30980": {
       "name": "Longview, TX MSA",
-      "geoadj": 0.786
+      "rentIndex": 0.786,
+      "adjustments": {
+        "renter": 0.9051990869896018,
+        "owner_with_mortgage": 0.9071362752124501,
+        "owner_without_mortgage": 0.9308905665009514
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 35440,
+        "owner_without_mortgage": 30334,
+        "renter": 35692
+      }
     },
     "31001": {
       "name": "Nebraska Metro",
-      "geoadj": 0.779
+      "rentIndex": 0.779,
+      "adjustments": {
+        "renter": 0.90210499619579,
+        "owner_with_mortgage": 0.9040903040851848,
+        "owner_without_mortgage": 0.928619652611551
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 35321,
+        "owner_without_mortgage": 30260,
+        "renter": 35570
+      }
     },
     "31002": {
       "name": "Nebraska Nonmetro",
-      "geoadj": 0.665
+      "rentIndex": 0.665,
+      "adjustments": {
+        "renter": 0.8515850874968298,
+        "owner_with_mortgage": 0.8546124705641446,
+        "owner_without_mortgage": 0.8917940219726262
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 33388,
+        "owner_without_mortgage": 29060,
+        "renter": 33578
+      }
     },
     "31080": {
       "name": "Los Angeles-Long Beach-Anaheim, CA MSA",
-      "geoadj": 1.6
+      "rentIndex": 1.6,
+      "adjustments": {
+        "renter": 1.265787471468425,
+        "owner_with_mortgage": 1.2603921367871405,
+        "owner_without_mortgage": 1.1937948812373411
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 49241,
+        "owner_without_mortgage": 38901,
+        "renter": 49910
+      }
     },
     "31140": {
       "name": "Louisville/Jefferson County, KY-IN MSA",
-      "geoadj": 0.812
+      "rentIndex": 0.812,
+      "adjustments": {
+        "renter": 0.9167131625665736,
+        "owner_with_mortgage": 0.9183986894645234,
+        "owner_without_mortgage": 0.9392683974713067
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 35880,
+        "owner_without_mortgage": 30607,
+        "renter": 36146
+      }
     },
     "31180": {
       "name": "Lubbock, TX MSA",
-      "geoadj": 0.814
+      "rentIndex": 0.814,
+      "adjustments": {
+        "renter": 0.9176008115647983,
+        "owner_with_mortgage": 0.9192689669294564,
+        "owner_without_mortgage": 0.9399128460074879
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 35914,
+        "owner_without_mortgage": 30628,
+        "renter": 36181
+      }
     },
     "31420": {
       "name": "Macon, GA MSA",
-      "geoadj": 0.754
+      "rentIndex": 0.754,
+      "adjustments": {
+        "renter": 0.8910220644179558,
+        "owner_with_mortgage": 0.8932374321695505,
+        "owner_without_mortgage": 0.9205487018965199
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34897,
+        "owner_without_mortgage": 29997,
+        "renter": 35133
+      }
     },
     "31540": {
       "name": "Madison, WI MSA",
-      "geoadj": 1.006
+      "rentIndex": 1.006,
+      "adjustments": {
+        "renter": 1.0026629469946742,
+        "owner_with_mortgage": 1.0026108323947989,
+        "owner_without_mortgage": 1.0019333456085435
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 39170,
+        "owner_without_mortgage": 32649,
+        "renter": 39535
+      }
     },
     "31700": {
       "name": "Manchester-Nashua, NH MSA",
-      "geoadj": 1.222
+      "rentIndex": 1.222,
+      "adjustments": {
+        "renter": 1.098351509003297,
+        "owner_with_mortgage": 1.0963448346472817,
+        "owner_without_mortgage": 1.0717179156693057
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 42832,
+        "owner_without_mortgage": 34923,
+        "renter": 43308
+      }
     },
     "32001": {
       "name": "Nevada Metro",
-      "geoadj": 1.138
+      "rentIndex": 1.138,
+      "adjustments": {
+        "renter": 1.0611463352777073,
+        "owner_with_mortgage": 1.059895566704208,
+        "owner_without_mortgage": 1.0445590130730988
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 41408,
+        "owner_without_mortgage": 34038,
+        "renter": 41841
+      }
     },
     "32002": {
       "name": "Nevada Nonmetro",
-      "geoadj": 0.847
+      "rentIndex": 0.847,
+      "adjustments": {
+        "renter": 0.932208977935582,
+        "owner_with_mortgage": 0.9336029487048224,
+        "owner_without_mortgage": 0.9505922788927761
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 36474,
+        "owner_without_mortgage": 30976,
+        "renter": 36757
+      }
     },
     "32580": {
       "name": "McAllen-Edinburg-Mission, TX MSA",
-      "geoadj": 0.696
+      "rentIndex": 0.696,
+      "adjustments": {
+        "renter": 0.865330966269338,
+        "owner_with_mortgage": 0.8680761748745777,
+        "owner_without_mortgage": 0.9017983182962008
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 33914,
+        "owner_without_mortgage": 29386,
+        "renter": 34120
+      }
     },
     "32780": {
       "name": "Medford, OR MSA",
-      "geoadj": 0.942
+      "rentIndex": 0.942,
+      "adjustments": {
+        "renter": 0.9743089018513822,
+        "owner_with_mortgage": 0.9748387427050271,
+        "owner_without_mortgage": 0.9812803044252133
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 38085,
+        "owner_without_mortgage": 31976,
+        "renter": 38417
+      }
     },
     "32820": {
       "name": "Memphis, TN-MS-AR MSA",
-      "geoadj": 0.815
+      "rentIndex": 0.815,
+      "adjustments": {
+        "renter": 0.9180573167638854,
+        "owner_with_mortgage": 0.9197041056619228,
+        "owner_without_mortgage": 0.9402504142883447
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 35931,
+        "owner_without_mortgage": 30639,
+        "renter": 36199
+      }
     },
     "33002": {
       "name": "New Hampshire Nonmetro",
-      "geoadj": 1.001
+      "rentIndex": 1.001,
+      "adjustments": {
+        "renter": 1.0004311437991378,
+        "owner_with_mortgage": 1.0004351387324664,
+        "owner_without_mortgage": 1.0003375682808568
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 39085,
+        "owner_without_mortgage": 32597,
+        "renter": 39447
+      }
     },
     "33100": {
       "name": "Miami-Fort Lauderdale-West Palm Beach, FL MSA",
-      "geoadj": 1.337
+      "rentIndex": 1.337,
+      "adjustments": {
+        "renter": 1.149302561501395,
+        "owner_with_mortgage": 1.1462578069007883,
+        "owner_without_mortgage": 1.1088504265635548
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 44782,
+        "owner_without_mortgage": 36133,
+        "renter": 45317
+      }
     },
     "33340": {
       "name": "Milwaukee-Waukesha-West Allis, WI MSA",
-      "geoadj": 0.837
+      "rentIndex": 0.837,
+      "adjustments": {
+        "renter": 0.9277960943444078,
+        "owner_with_mortgage": 0.9292515613801576,
+        "owner_without_mortgage": 0.9473393481863377
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 36304,
+        "owner_without_mortgage": 30870,
+        "renter": 36583
+      }
     },
     "33460": {
       "name": "Minneapolis-St. Paul-Bloomington, MN-WI MSA",
-      "geoadj": 1.117
+      "rentIndex": 1.117,
+      "adjustments": {
+        "renter": 1.0518387014963226,
+        "owner_with_mortgage": 1.0507832497184397,
+        "owner_without_mortgage": 1.0377769594304302
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 41052,
+        "owner_without_mortgage": 33817,
+        "renter": 41474
+      }
     },
     "33660": {
       "name": "Mobile, AL MSA",
-      "geoadj": 0.745
+      "rentIndex": 0.745,
+      "adjustments": {
+        "renter": 0.8870403246259193,
+        "owner_with_mortgage": 0.8893211835773523,
+        "owner_without_mortgage": 0.9176333394709384
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34744,
+        "owner_without_mortgage": 29902,
+        "renter": 34976
+      }
     },
     "33700": {
       "name": "Modesto, CA MSA",
-      "geoadj": 1.047
+      "rentIndex": 1.047,
+      "adjustments": {
+        "renter": 1.0208217093583565,
+        "owner_with_mortgage": 1.0204003276338691,
+        "owner_without_mortgage": 1.0151905726385564
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 39865,
+        "owner_without_mortgage": 33081,
+        "renter": 40251
+      }
     },
     "33740": {
       "name": "Monroe, LA MSA",
-      "geoadj": 0.689
+      "rentIndex": 0.689,
+      "adjustments": {
+        "renter": 0.8622368754755263,
+        "owner_with_mortgage": 0.8650302037473124,
+        "owner_without_mortgage": 0.8995580924323329
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 33795,
+        "owner_without_mortgage": 29313,
+        "renter": 33998
+      }
     },
     "33780": {
       "name": "Monroe, MI MSA",
-      "geoadj": 0.831
+      "rentIndex": 0.831,
+      "adjustments": {
+        "renter": 0.9251331473497337,
+        "owner_with_mortgage": 0.9266663253813863,
+        "owner_without_mortgage": 0.9454060025777942
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 36203,
+        "owner_without_mortgage": 30807,
+        "renter": 36478
+      }
     },
     "33860": {
       "name": "Montgomery, AL MSA",
-      "geoadj": 0.734
+      "rentIndex": 0.734,
+      "adjustments": {
+        "renter": 0.8821709358356581,
+        "owner_with_mortgage": 0.8845602539162486,
+        "owner_without_mortgage": 0.9140735285091757
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34558,
+        "owner_without_mortgage": 29786,
+        "renter": 34784
+      }
     },
     "34001": {
       "name": "New Jersey Metro",
-      "geoadj": 1.123
+      "rentIndex": 1.123,
+      "adjustments": {
+        "renter": 1.0545016484909968,
+        "owner_with_mortgage": 1.0533940821132384,
+        "owner_without_mortgage": 1.0397409930645063
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 41154,
+        "owner_without_mortgage": 33881,
+        "renter": 41579
+      }
     },
     "34060": {
       "name": "Morgantown, WV MSA",
-      "geoadj": 0.754
+      "rentIndex": 0.754,
+      "adjustments": {
+        "renter": 0.8910220644179558,
+        "owner_with_mortgage": 0.8932374321695505,
+        "owner_without_mortgage": 0.9205487018965199
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34897,
+        "owner_without_mortgage": 29997,
+        "renter": 35133
+      }
     },
     "34580": {
       "name": "Mount Vernon-Anacortes, WA MSA",
-      "geoadj": 1.026
+      "rentIndex": 1.026,
+      "adjustments": {
+        "renter": 1.0115140755769718,
+        "owner_with_mortgage": 1.0112880106481008,
+        "owner_without_mortgage": 1.0084085189958878
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 39509,
+        "owner_without_mortgage": 32860,
+        "renter": 39884
+      }
     },
     "34740": {
       "name": "Muskegon, MI MSA",
-      "geoadj": 0.768
+      "rentIndex": 0.768,
+      "adjustments": {
+        "renter": 0.8972356074055288,
+        "owner_with_mortgage": 0.8993037780280536,
+        "owner_without_mortgage": 0.9250598416497883
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 35134,
+        "owner_without_mortgage": 30144,
+        "renter": 35378
+      }
     },
     "34820": {
       "name": "Myrtle Beach-Conway-North Myrtle Beach, SC-NC MSA",
-      "geoadj": 0.859
+      "rentIndex": 0.859,
+      "adjustments": {
+        "renter": 0.9375348719249302,
+        "owner_with_mortgage": 0.9387990170983925,
+        "owner_without_mortgage": 0.9544589701098631
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 36677,
+        "owner_without_mortgage": 31102,
+        "renter": 36967
+      }
     },
     "34940": {
       "name": "Naples-Immokalee-Marco Island, FL MSA",
-      "geoadj": 1.239
+      "rentIndex": 1.239,
+      "adjustments": {
+        "renter": 1.1058838447882322,
+        "owner_with_mortgage": 1.1037165967031841,
+        "owner_without_mortgage": 1.0772110722396122
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 43120,
+        "owner_without_mortgage": 35102,
+        "renter": 43605
+      }
     },
     "34980": {
       "name": "Nashville-Davidson--Murfreesboro--Franklin, TN MSA",
-      "geoadj": 1.065
+      "rentIndex": 1.065,
+      "adjustments": {
+        "renter": 1.0287851889424295,
+        "owner_with_mortgage": 1.028207228422238,
+        "owner_without_mortgage": 1.0209906094641872
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 40170,
+        "owner_without_mortgage": 33270,
+        "renter": 40565
+      }
     },
     "35002": {
       "name": "New Mexico Nonmetro",
-      "geoadj": 0.641
+      "rentIndex": 0.641,
+      "adjustments": {
+        "renter": 0.8409586609180827,
+        "owner_with_mortgage": 0.8441947373809767,
+        "owner_without_mortgage": 0.8840299515129196
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 32981,
+        "owner_without_mortgage": 28807,
+        "renter": 33159
+      }
     },
     "35300": {
       "name": "New Haven-Milford, CT MSA",
-      "geoadj": 1.079
+      "rentIndex": 1.079,
+      "adjustments": {
+        "renter": 1.0349987319300025,
+        "owner_with_mortgage": 1.0342735742807412,
+        "owner_without_mortgage": 1.0255017492174554
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 40407,
+        "owner_without_mortgage": 33417,
+        "renter": 40810
+      }
     },
     "35380": {
       "name": "New Orleans-Metairie, LA MSA",
-      "geoadj": 0.902
+      "rentIndex": 0.902,
+      "adjustments": {
+        "renter": 0.9565812832868374,
+        "owner_with_mortgage": 0.9574587898023958,
+        "owner_without_mortgage": 0.9683606456760572
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 37406,
+        "owner_without_mortgage": 31555,
+        "renter": 37718
+      }
     },
     "35620": {
       "name": "New York-Newark-Jersey City, NY-NJ-PA MSA",
-      "geoadj": 1.361
+      "rentIndex": 1.361,
+      "adjustments": {
+        "renter": 1.159928988080142,
+        "owner_with_mortgage": 1.1566755400839561,
+        "owner_without_mortgage": 1.1166144970232614
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 45189,
+        "owner_without_mortgage": 36386,
+        "renter": 45736
+      }
     },
     "35660": {
       "name": "Niles-Benton Harbor, MI MSA",
-      "geoadj": 0.731
+      "rentIndex": 0.731,
+      "adjustments": {
+        "renter": 0.8808267816383465,
+        "owner_with_mortgage": 0.8832548377188492,
+        "owner_without_mortgage": 0.9131221997176702
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34507,
+        "owner_without_mortgage": 29755,
+        "renter": 34731
+      }
     },
     "35840": {
       "name": "North Port-Sarasota-Bradenton, FL MSA",
-      "geoadj": 1.185
+      "rentIndex": 1.185,
+      "adjustments": {
+        "renter": 1.0819426832361145,
+        "owner_with_mortgage": 1.0802958943380772,
+        "owner_without_mortgage": 1.0597495857116552
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 42205,
+        "owner_without_mortgage": 34533,
+        "renter": 42661
+      }
     },
     "35980": {
       "name": "Norwich-New London, CT MSA",
-      "geoadj": 1.057
+      "rentIndex": 1.057,
+      "adjustments": {
+        "renter": 1.02525995434948,
+        "owner_with_mortgage": 1.0247261185625065,
+        "owner_without_mortgage": 1.0184128153194623
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 40034,
+        "owner_without_mortgage": 33186,
+        "renter": 40426
+      }
     },
     "36002": {
       "name": "New York Nonmetro",
-      "geoadj": 0.687
+      "rentIndex": 0.687,
+      "adjustments": {
+        "renter": 0.8613492264773015,
+        "owner_with_mortgage": 0.8641599262823795,
+        "owner_without_mortgage": 0.8989136438961517
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 33761,
+        "owner_without_mortgage": 29292,
+        "renter": 33963
+      }
     },
     "36100": {
       "name": "Ocala, FL MSA",
-      "geoadj": 0.836
+      "rentIndex": 0.836,
+      "adjustments": {
+        "renter": 0.9273395891453208,
+        "owner_with_mortgage": 0.9288164226476912,
+        "owner_without_mortgage": 0.9470324679310134
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 36287,
+        "owner_without_mortgage": 30860,
+        "renter": 36565
+      }
     },
     "36220": {
       "name": "Odessa, TX MSA",
-      "geoadj": 0.983
+      "rentIndex": 0.983,
+      "adjustments": {
+        "renter": 0.9924676642150647,
+        "owner_with_mortgage": 0.9926282379440975,
+        "owner_without_mortgage": 0.9945068434296938
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 38780,
+        "owner_without_mortgage": 32407,
+        "renter": 39133
+      }
     },
     "36260": {
       "name": "Ogden-Clearfield, UT MSA",
-      "geoadj": 0.956
+      "rentIndex": 0.956,
+      "adjustments": {
+        "renter": 0.9804970834390059,
+        "owner_with_mortgage": 0.9809050885635302,
+        "owner_without_mortgage": 0.9857914441784815
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 38322,
+        "owner_without_mortgage": 32123,
+        "renter": 38661
+      }
     },
     "36420": {
       "name": "Oklahoma City, OK MSA",
-      "geoadj": 0.786
+      "rentIndex": 0.786,
+      "adjustments": {
+        "renter": 0.9051990869896018,
+        "owner_with_mortgage": 0.9071362752124501,
+        "owner_without_mortgage": 0.9308905665009514
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 35440,
+        "owner_without_mortgage": 30334,
+        "renter": 35692
+      }
     },
     "36540": {
       "name": "Omaha-Council Bluffs, NE-IA MSA",
-      "geoadj": 0.875
+      "rentIndex": 0.875,
+      "adjustments": {
+        "renter": 0.9446360639107279,
+        "owner_with_mortgage": 0.9457612368178561,
+        "owner_without_mortgage": 0.9596145583993125
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 36949,
+        "owner_without_mortgage": 31270,
+        "renter": 37247
+      }
     },
     "36740": {
       "name": "Orlando-Kissimmee-Sanford, FL MSA",
-      "geoadj": 1.214
+      "rentIndex": 1.214,
+      "adjustments": {
+        "renter": 1.0948009130103982,
+        "owner_with_mortgage": 1.09286372478755,
+        "owner_without_mortgage": 1.0691094334990487
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 42696,
+        "owner_without_mortgage": 34838,
+        "renter": 43168
+      }
     },
     "36780": {
       "name": "Oshkosh-Neenah, WI MSA",
-      "geoadj": 0.702
+      "rentIndex": 0.702,
+      "adjustments": {
+        "renter": 0.8679939132640122,
+        "owner_with_mortgage": 0.870661410873349,
+        "owner_without_mortgage": 0.9037316639047444
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34015,
+        "owner_without_mortgage": 29449,
+        "renter": 34225
+      }
     },
     "37001": {
       "name": "North Carolina Metro",
-      "geoadj": 0.808
+      "rentIndex": 0.808,
+      "adjustments": {
+        "renter": 0.9149378645701243,
+        "owner_with_mortgage": 0.916683730930685,
+        "owner_without_mortgage": 0.9379795003989443
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 35813,
+        "owner_without_mortgage": 30565,
+        "renter": 36076
+      }
     },
     "37002": {
       "name": "North Carolina Nonmetro",
-      "geoadj": 0.611
+      "rentIndex": 0.611,
+      "adjustments": {
+        "renter": 0.8276692873446614,
+        "owner_with_mortgage": 0.8311661718030101,
+        "owner_without_mortgage": 0.8743632234702019
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 32472,
+        "owner_without_mortgage": 28492,
+        "renter": 32635
+      }
     },
     "37100": {
       "name": "Oxnard-Thousand Oaks-Ventura, CA MSA",
-      "geoadj": 1.646
+      "rentIndex": 1.646,
+      "adjustments": {
+        "renter": 1.2861780370276439,
+        "owner_with_mortgage": 1.280357325688543,
+        "owner_without_mortgage": 1.2086478855950409
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 50021,
+        "owner_without_mortgage": 39385,
+        "renter": 50714
+      }
     },
     "37340": {
       "name": "Palm Bay-Melbourne-Titusville, FL MSA",
-      "geoadj": 1.029
+      "rentIndex": 1.029,
+      "adjustments": {
+        "renter": 1.0128582297742836,
+        "owner_with_mortgage": 1.0125934268455001,
+        "owner_without_mortgage": 1.0093598477873933
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 39560,
+        "owner_without_mortgage": 32891,
+        "renter": 39937
+      }
     },
     "37460": {
       "name": "Panama City, FL MSA",
-      "geoadj": 1.037
+      "rentIndex": 1.037,
+      "adjustments": {
+        "renter": 1.0163834643672331,
+        "owner_with_mortgage": 1.0160489403092046,
+        "owner_without_mortgage": 1.011937641932118
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 39695,
+        "owner_without_mortgage": 32975,
+        "renter": 40076
+      }
     },
     "37860": {
       "name": "Pensacola-Ferry Pass-Brent, FL MSA",
-      "geoadj": 0.881
+      "rentIndex": 0.881,
+      "adjustments": {
+        "renter": 0.9472736495054527,
+        "owner_with_mortgage": 0.9483464728166274,
+        "owner_without_mortgage": 0.9615479040078562
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 37050,
+        "owner_without_mortgage": 31333,
+        "renter": 37351
+      }
     },
     "37900": {
       "name": "Peoria, IL MSA",
-      "geoadj": 0.72
+      "rentIndex": 0.72,
+      "adjustments": {
+        "renter": 0.8759573928480852,
+        "owner_with_mortgage": 0.878468311661718,
+        "owner_without_mortgage": 0.9095623887559074
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34320,
+        "owner_without_mortgage": 29639,
+        "renter": 34539
+      }
     },
     "37980": {
       "name": "Philadelphia-Camden-Wilmington, PA-NJ-DE-MD MSA",
-      "geoadj": 1.125
+      "rentIndex": 1.125,
+      "adjustments": {
+        "renter": 1.0553639360892721,
+        "owner_with_mortgage": 1.054238763182144,
+        "owner_without_mortgage": 1.0403854416006875
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 41187,
+        "owner_without_mortgage": 33902,
+        "renter": 41613
+      }
     },
     "38001": {
       "name": "North Dakota Metro",
-      "geoadj": 0.72
+      "rentIndex": 0.72,
+      "adjustments": {
+        "renter": 0.8759573928480852,
+        "owner_with_mortgage": 0.878468311661718,
+        "owner_without_mortgage": 0.9095623887559074
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34320,
+        "owner_without_mortgage": 29639,
+        "renter": 34539
+      }
     },
     "38002": {
       "name": "North Dakota Nonmetro",
-      "geoadj": 0.685
+      "rentIndex": 0.685,
+      "adjustments": {
+        "renter": 0.8604615774790768,
+        "owner_with_mortgage": 0.8632896488174465,
+        "owner_without_mortgage": 0.8982691953599705
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 33727,
+        "owner_without_mortgage": 29271,
+        "renter": 33928
+      }
     },
     "38060": {
       "name": "Phoenix-Mesa-Scottsdale, AZ MSA",
-      "geoadj": 1.165
+      "rentIndex": 1.165,
+      "adjustments": {
+        "renter": 1.073091554653817,
+        "owner_with_mortgage": 1.0716187160847752,
+        "owner_without_mortgage": 1.0533051003498435
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 41866,
+        "owner_without_mortgage": 34323,
+        "renter": 42312
+      }
     },
     "38220": {
       "name": "Pine Bluff, AR MSA",
-      "geoadj": 0.621
+      "rentIndex": 0.621,
+      "adjustments": {
+        "renter": 0.8321075323357849,
+        "owner_with_mortgage": 0.8355175591276748,
+        "owner_without_mortgage": 0.8775854661511079
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 32642,
+        "owner_without_mortgage": 28597,
+        "renter": 32810
+      }
     },
     "38300": {
       "name": "Pittsburgh, PA MSA",
-      "geoadj": 0.783
+      "rentIndex": 0.783,
+      "adjustments": {
+        "renter": 0.9038802941922394,
+        "owner_with_mortgage": 0.9058308590150507,
+        "owner_without_mortgage": 0.9299085496839133
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 35389,
+        "owner_without_mortgage": 30302,
+        "renter": 35640
+      }
     },
     "38860": {
       "name": "Portland-South Portland, ME MSA",
-      "geoadj": 1.131
+      "rentIndex": 1.131,
+      "adjustments": {
+        "renter": 1.0580268830839463,
+        "owner_with_mortgage": 1.0568495955769428,
+        "owner_without_mortgage": 1.042318787209231
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 41289,
+        "owner_without_mortgage": 33965,
+        "renter": 41718
+      }
     },
     "38900": {
       "name": "Portland-Vancouver-Hillsboro, OR-WA MSA",
-      "geoadj": 1.236
+      "rentIndex": 1.236,
+      "adjustments": {
+        "renter": 1.1045396905909206,
+        "owner_with_mortgage": 1.1024367769018122,
+        "owner_without_mortgage": 1.0762290554225742
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 43070,
+        "owner_without_mortgage": 35070,
+        "renter": 43552
+      }
     },
     "38940": {
       "name": "Port St. Lucie, FL MSA",
-      "geoadj": 1.068
+      "rentIndex": 1.068,
+      "adjustments": {
+        "renter": 1.0301293431397414,
+        "owner_with_mortgage": 1.0295126446196377,
+        "owner_without_mortgage": 1.021972626281225
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 40221,
+        "owner_without_mortgage": 33302,
+        "renter": 40618
+      }
     },
     "39001": {
       "name": "Ohio Metro",
-      "geoadj": 0.671
+      "rentIndex": 0.671,
+      "adjustments": {
+        "renter": 0.8542480344915039,
+        "owner_with_mortgage": 0.8572233029589433,
+        "owner_without_mortgage": 0.8937273675811698
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 33490,
+        "owner_without_mortgage": 29123,
+        "renter": 33683
+      }
     },
     "39002": {
       "name": "Ohio Nonmetro",
-      "geoadj": 0.611
+      "rentIndex": 0.611,
+      "adjustments": {
+        "renter": 0.8276692873446614,
+        "owner_with_mortgage": 0.8311661718030101,
+        "owner_without_mortgage": 0.8743632234702019
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 32472,
+        "owner_without_mortgage": 28492,
+        "renter": 32635
+      }
     },
     "39140": {
       "name": "Prescott, AZ MSA",
-      "geoadj": 0.953
+      "rentIndex": 0.953,
+      "adjustments": {
+        "renter": 0.9791782906416434,
+        "owner_with_mortgage": 0.9795996723661309,
+        "owner_without_mortgage": 0.9848094273614436
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 38271,
+        "owner_without_mortgage": 32091,
+        "renter": 38609
+      }
     },
     "39300": {
       "name": "Providence-Warwick, RI-MA MSA",
-      "geoadj": 0.985
+      "rentIndex": 0.985,
+      "adjustments": {
+        "renter": 0.9933553132132894,
+        "owner_with_mortgage": 0.9934985154090304,
+        "owner_without_mortgage": 0.9951512919658749
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 38814,
+        "owner_without_mortgage": 32428,
+        "renter": 39168
+      }
     },
     "39340": {
       "name": "Provo-Orem, UT MSA",
-      "geoadj": 0.923
+      "rentIndex": 0.923,
+      "adjustments": {
+        "renter": 0.9658889170682222,
+        "owner_with_mortgage": 0.9665711067881643,
+        "owner_without_mortgage": 0.9751426993187259
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 37762,
+        "owner_without_mortgage": 31776,
+        "renter": 38085
+      }
     },
     "39540": {
       "name": "Racine, WI MSA",
-      "geoadj": 0.771
+      "rentIndex": 0.771,
+      "adjustments": {
+        "renter": 0.8985544002028912,
+        "owner_with_mortgage": 0.900609194225453,
+        "owner_without_mortgage": 0.9260418584668263
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 35185,
+        "owner_without_mortgage": 30176,
+        "renter": 35430
+      }
     },
     "39580": {
       "name": "Raleigh, NC MSA",
-      "geoadj": 1.074
+      "rentIndex": 1.074,
+      "adjustments": {
+        "renter": 1.0327922901344153,
+        "owner_with_mortgage": 1.0321234770144363,
+        "owner_without_mortgage": 1.0239059718897685
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 40323,
+        "owner_without_mortgage": 33365,
+        "renter": 40723
+      }
     },
     "39740": {
       "name": "Reading, PA MSA",
-      "geoadj": 0.895
+      "rentIndex": 0.895,
+      "adjustments": {
+        "renter": 0.9534871924930256,
+        "owner_with_mortgage": 0.954438415071158,
+        "owner_without_mortgage": 0.9660897317866568
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 37288,
+        "owner_without_mortgage": 31481,
+        "renter": 37596
+      }
     },
     "39820": {
       "name": "Redding, CA MSA",
-      "geoadj": 0.915
+      "rentIndex": 0.915,
+      "adjustments": {
+        "renter": 0.9623383210753234,
+        "owner_with_mortgage": 0.96311559332446,
+        "owner_without_mortgage": 0.9725342171484687
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 37627,
+        "owner_without_mortgage": 31691,
+        "renter": 37945
+      }
     },
     "40001": {
       "name": "Oklahoma Metro",
-      "geoadj": 0.513
+      "rentIndex": 0.513,
+      "adjustments": {
+        "renter": 0.7842505706314988,
+        "owner_with_mortgage": 0.7886505580014334,
+        "owner_without_mortgage": 0.8426931811207267
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 30811,
+        "owner_without_mortgage": 27460,
+        "renter": 30923
+      }
     },
     "40002": {
       "name": "Oklahoma Nonmetro",
-      "geoadj": 0.635
+      "rentIndex": 0.635,
+      "adjustments": {
+        "renter": 0.8382957139234086,
+        "owner_with_mortgage": 0.841583904986178,
+        "owner_without_mortgage": 0.8820966059043761
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 32879,
+        "owner_without_mortgage": 28744,
+        "renter": 33054
+      }
     },
     "40060": {
       "name": "Richmond, VA MSA",
-      "geoadj": 1.02
+      "rentIndex": 1.02,
+      "adjustments": {
+        "renter": 1.0088511285822976,
+        "owner_with_mortgage": 1.008677178253302,
+        "owner_without_mortgage": 1.0064751733873443
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 39407,
+        "owner_without_mortgage": 32797,
+        "renter": 39779
+      }
     },
     "40140": {
       "name": "Riverside-San Bernardino-Ontario, CA MSA",
-      "geoadj": 1.247
+      "rentIndex": 1.247,
+      "adjustments": {
+        "renter": 1.109409079381182,
+        "owner_with_mortgage": 1.107197706562916,
+        "owner_without_mortgage": 1.079788866384337
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 43256,
+        "owner_without_mortgage": 35186,
+        "renter": 43744
+      }
     },
     "40220": {
       "name": "Roanoke, VA MSA",
-      "geoadj": 0.732
+      "rentIndex": 0.732,
+      "adjustments": {
+        "renter": 0.8812832868374334,
+        "owner_with_mortgage": 0.8836899764513156,
+        "owner_without_mortgage": 0.9134290799729945
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34524,
+        "owner_without_mortgage": 29765,
+        "renter": 34749
+      }
     },
     "40380": {
       "name": "Rochester, NY MSA",
-      "geoadj": 0.877
+      "rentIndex": 0.877,
+      "adjustments": {
+        "renter": 0.9454983515090033,
+        "owner_with_mortgage": 0.9466059178867615,
+        "owner_without_mortgage": 0.9602590069354938
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 36982,
+        "owner_without_mortgage": 31291,
+        "renter": 37281
+      }
     },
     "40420": {
       "name": "Rockford, IL MSA",
-      "geoadj": 0.745
+      "rentIndex": 0.745,
+      "adjustments": {
+        "renter": 0.8870403246259193,
+        "owner_with_mortgage": 0.8893211835773523,
+        "owner_without_mortgage": 0.9176333394709384
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34744,
+        "owner_without_mortgage": 29902,
+        "renter": 34976
+      }
     },
     "40900": {
       "name": "Sacramento--Roseville--Arden-Arcade, CA MSA",
-      "geoadj": 1.286
+      "rentIndex": 1.286,
+      "adjustments": {
+        "renter": 1.126705554146589,
+        "owner_with_mortgage": 1.1241169243370532,
+        "owner_without_mortgage": 1.092370956852636
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 43917,
+        "owner_without_mortgage": 35596,
+        "renter": 44426
+      }
     },
     "40980": {
       "name": "Saginaw, MI MSA",
-      "geoadj": 0.688
+      "rentIndex": 0.688,
+      "adjustments": {
+        "renter": 0.8617803702764393,
+        "owner_with_mortgage": 0.864595065014846,
+        "owner_without_mortgage": 0.8992205241514761
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 33778,
+        "owner_without_mortgage": 29302,
+        "renter": 33980
+      }
     },
     "41001": {
       "name": "Oregon Metro",
-      "geoadj": 0.983
+      "rentIndex": 0.983,
+      "adjustments": {
+        "renter": 0.9924676642150647,
+        "owner_with_mortgage": 0.9926282379440975,
+        "owner_without_mortgage": 0.9945068434296938
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 38780,
+        "owner_without_mortgage": 32407,
+        "renter": 39133
+      }
     },
     "41002": {
       "name": "Oregon Nonmetro",
-      "geoadj": 0.787
+      "rentIndex": 0.787,
+      "adjustments": {
+        "renter": 0.9056302307887395,
+        "owner_with_mortgage": 0.9075458175488891,
+        "owner_without_mortgage": 0.9311974467562757
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 35456,
+        "owner_without_mortgage": 30344,
+        "renter": 35709
+      }
     },
     "41100": {
       "name": "St. George, UT MSA",
-      "geoadj": 0.956
+      "rentIndex": 0.956,
+      "adjustments": {
+        "renter": 0.9804970834390059,
+        "owner_with_mortgage": 0.9809050885635302,
+        "owner_without_mortgage": 0.9857914441784815
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 38322,
+        "owner_without_mortgage": 32123,
+        "renter": 38661
+      }
     },
     "41180": {
       "name": "St. Louis, MO-IL MSA",
-      "geoadj": 0.814
+      "rentIndex": 0.814,
+      "adjustments": {
+        "renter": 0.9176008115647983,
+        "owner_with_mortgage": 0.9192689669294564,
+        "owner_without_mortgage": 0.9399128460074879
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 35914,
+        "owner_without_mortgage": 30628,
+        "renter": 36181
+      }
     },
     "41420": {
       "name": "Salem, OR MSA",
-      "geoadj": 0.983
+      "rentIndex": 0.983,
+      "adjustments": {
+        "renter": 0.9924676642150647,
+        "owner_with_mortgage": 0.9926282379440975,
+        "owner_without_mortgage": 0.9945068434296938
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 38780,
+        "owner_without_mortgage": 32407,
+        "renter": 39133
+      }
     },
     "41500": {
       "name": "Salinas, CA MSA",
-      "geoadj": 1.493
+      "rentIndex": 1.493,
+      "adjustments": {
+        "renter": 1.2183870149632259,
+        "owner_with_mortgage": 1.2139602743933655,
+        "owner_without_mortgage": 1.1592401644878167
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 47427,
+        "owner_without_mortgage": 37775,
+        "renter": 48041
+      }
     },
     "41540": {
       "name": "Salisbury, MD-DE MSA",
-      "geoadj": 0.865
+      "rentIndex": 0.865,
+      "adjustments": {
+        "renter": 0.9401978189196044,
+        "owner_with_mortgage": 0.9414098494931914,
+        "owner_without_mortgage": 0.9563923157184067
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 36779,
+        "owner_without_mortgage": 31165,
+        "renter": 37072
+      }
     },
     "41620": {
       "name": "Salt Lake City, UT MSA",
-      "geoadj": 1.114
+      "rentIndex": 1.114,
+      "adjustments": {
+        "renter": 1.0504945472990108,
+        "owner_with_mortgage": 1.0494778335210402,
+        "owner_without_mortgage": 1.0368256306389247
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 41001,
+        "owner_without_mortgage": 33786,
+        "renter": 41421
+      }
     },
     "41700": {
       "name": "San Antonio-New Braunfels, TX MSA",
-      "geoadj": 0.998
+      "rentIndex": 0.998,
+      "adjustments": {
+        "renter": 0.9991123510017753,
+        "owner_with_mortgage": 0.999129722535067,
+        "owner_without_mortgage": 0.9993555514638188
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 39034,
+        "owner_without_mortgage": 32565,
+        "renter": 39395
+      }
     },
     "41740": {
       "name": "San Diego-Carlsbad, CA MSA",
-      "geoadj": 1.632
+      "rentIndex": 1.632,
+      "adjustments": {
+        "renter": 1.279964494040071,
+        "owner_with_mortgage": 1.27429097983004,
+        "owner_without_mortgage": 1.2041367458417724
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 49784,
+        "owner_without_mortgage": 39238,
+        "renter": 50469
+      }
     },
     "41860": {
       "name": "San Francisco-Oakland-Hayward, CA MSA",
-      "geoadj": 1.945
+      "rentIndex": 1.945,
+      "adjustments": {
+        "renter": 1.4186406289627187,
+        "owner_with_mortgage": 1.4101310535476606,
+        "owner_without_mortgage": 1.3052231019456209
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 55091,
+        "owner_without_mortgage": 42532,
+        "renter": 55937
+      }
     },
     "41940": {
       "name": "San Jose-Sunnyvale-Santa Clara, CA MSA",
-      "geoadj": 2.167
+      "rentIndex": 2.167,
+      "adjustments": {
+        "renter": 1.5169921379660156,
+        "owner_with_mortgage": 1.506475888194942,
+        "owner_without_mortgage": 1.3769410176149266
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 58855,
+        "owner_without_mortgage": 44869,
+        "renter": 59815
+      }
     },
     "42001": {
       "name": "Pennsylvania Metro",
-      "geoadj": 0.758
+      "rentIndex": 0.758,
+      "adjustments": {
+        "renter": 0.8927973624144053,
+        "owner_with_mortgage": 0.8949779870994164,
+        "owner_without_mortgage": 0.9218375989688823
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34965,
+        "owner_without_mortgage": 30039,
+        "renter": 35203
+      }
     },
     "42002": {
       "name": "Pennsylvania Nonmetro",
-      "geoadj": 0.605
+      "rentIndex": 0.605,
+      "adjustments": {
+        "renter": 0.8250063403499873,
+        "owner_with_mortgage": 0.8285809358042387,
+        "owner_without_mortgage": 0.8724298778616584
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 32371,
+        "owner_without_mortgage": 28429,
+        "renter": 32530
+      }
     },
     "42020": {
       "name": "San Luis Obispo-Paso Robles-Arroyo Grande, CA MSA",
-      "geoadj": 1.477
+      "rentIndex": 1.477,
+      "adjustments": {
+        "renter": 1.2113111843773776,
+        "owner_with_mortgage": 1.2070236510699293,
+        "owner_without_mortgage": 1.1540845761983674
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 47156,
+        "owner_without_mortgage": 37607,
+        "renter": 47762
+      }
     },
     "42100": {
       "name": "Santa Cruz-Watsonville, CA MSA",
-      "geoadj": 1.708
+      "rentIndex": 1.708,
+      "adjustments": {
+        "renter": 1.313644433172711,
+        "owner_with_mortgage": 1.3072847343094092,
+        "owner_without_mortgage": 1.2286871662677223
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 51073,
+        "owner_without_mortgage": 40038,
+        "renter": 51797
+      }
     },
     "42140": {
       "name": "Santa Fe, NM MSA",
-      "geoadj": 1.087
+      "rentIndex": 1.087,
+      "adjustments": {
+        "renter": 1.0385493279229014,
+        "owner_with_mortgage": 1.037754684140473,
+        "owner_without_mortgage": 1.0281102313877126
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 40543,
+        "owner_without_mortgage": 33502,
+        "renter": 40950
+      }
     },
     "42200": {
       "name": "Santa Maria-Santa Barbara, CA MSA",
-      "geoadj": 1.553
+      "rentIndex": 1.553,
+      "adjustments": {
+        "renter": 1.2449911235100177,
+        "owner_with_mortgage": 1.2399918091532711,
+        "owner_without_mortgage": 1.1786043085987847
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 48444,
+        "owner_without_mortgage": 38406,
+        "renter": 49090
+      }
     },
     "42220": {
       "name": "Santa Rosa, CA MSA",
-      "geoadj": 1.623
+      "rentIndex": 1.623,
+      "adjustments": {
+        "renter": 1.2759827542480344,
+        "owner_with_mortgage": 1.2703747312378417,
+        "owner_without_mortgage": 1.2012213834161911
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 49631,
+        "owner_without_mortgage": 39143,
+        "renter": 50312
+      }
     },
     "42340": {
       "name": "Savannah, GA MSA",
-      "geoadj": 0.975
+      "rentIndex": 0.975,
+      "adjustments": {
+        "renter": 0.9889170682221659,
+        "owner_with_mortgage": 0.9891471280843657,
+        "owner_without_mortgage": 0.991929049284969
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 38644,
+        "owner_without_mortgage": 32323,
+        "renter": 38993
+      }
     },
     "42540": {
       "name": "Scranton--Wilkes-Barre--Hazleton, PA MSA",
-      "geoadj": 0.713
+      "rentIndex": 0.713,
+      "adjustments": {
+        "renter": 0.8728633020542734,
+        "owner_with_mortgage": 0.8754479369304802,
+        "owner_without_mortgage": 0.9072914748665071
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34202,
+        "owner_without_mortgage": 29565,
+        "renter": 34417
+      }
     },
     "42660": {
       "name": "Seattle-Tacoma-Bellevue, WA MSA",
-      "geoadj": 1.495
+      "rentIndex": 1.495,
+      "adjustments": {
+        "renter": 1.2192746639614507,
+        "owner_with_mortgage": 1.2148305518582982,
+        "owner_without_mortgage": 1.1598846130239981
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 47461,
+        "owner_without_mortgage": 37796,
+        "renter": 48076
+      }
     },
     "43300": {
       "name": "Sherman-Denison, TX MSA",
-      "geoadj": 0.895
+      "rentIndex": 0.895,
+      "adjustments": {
+        "renter": 0.9534871924930256,
+        "owner_with_mortgage": 0.954438415071158,
+        "owner_without_mortgage": 0.9660897317866568
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 37288,
+        "owner_without_mortgage": 31481,
+        "renter": 37596
+      }
     },
     "43340": {
       "name": "Shreveport-Bossier City, LA MSA",
-      "geoadj": 0.716
+      "rentIndex": 0.716,
+      "adjustments": {
+        "renter": 0.8741820948516358,
+        "owner_with_mortgage": 0.8767533531278796,
+        "owner_without_mortgage": 0.9082734916835451
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34253,
+        "owner_without_mortgage": 29597,
+        "renter": 34469
+      }
     },
     "43620": {
       "name": "Sioux Falls, SD MSA",
-      "geoadj": 0.744
+      "rentIndex": 0.744,
+      "adjustments": {
+        "renter": 0.8865838194268324,
+        "owner_with_mortgage": 0.8888860448448859,
+        "owner_without_mortgage": 0.9173264592156141
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34727,
+        "owner_without_mortgage": 29892,
+        "renter": 34958
+      }
     },
     "43780": {
       "name": "South Bend-Mishawaka, IN-MI MSA",
-      "geoadj": 0.803
+      "rentIndex": 0.803,
+      "adjustments": {
+        "renter": 0.9127314227745371,
+        "owner_with_mortgage": 0.9145080372683526,
+        "owner_without_mortgage": 0.9363837230712576
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 35728,
+        "owner_without_mortgage": 30513,
+        "renter": 35989
+      }
     },
     "43900": {
       "name": "Spartanburg, SC MSA",
-      "geoadj": 0.731
+      "rentIndex": 0.731,
+      "adjustments": {
+        "renter": 0.8808267816383465,
+        "owner_with_mortgage": 0.8832548377188492,
+        "owner_without_mortgage": 0.9131221997176702
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34507,
+        "owner_without_mortgage": 29755,
+        "renter": 34731
+      }
     },
     "44060": {
       "name": "Spokane-Spokane Valley, WA MSA",
-      "geoadj": 0.892
+      "rentIndex": 0.892,
+      "adjustments": {
+        "renter": 0.9521683996956632,
+        "owner_with_mortgage": 0.9531329988737586,
+        "owner_without_mortgage": 0.9651077149696189
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 37237,
+        "owner_without_mortgage": 31449,
+        "renter": 37544
+      }
     },
     "44100": {
       "name": "Springfield, IL MSA",
-      "geoadj": 0.719
+      "rentIndex": 0.719,
+      "adjustments": {
+        "renter": 0.8755262490489475,
+        "owner_with_mortgage": 0.878058769325279,
+        "owner_without_mortgage": 0.9092248204750506
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34304,
+        "owner_without_mortgage": 29628,
+        "renter": 34522
+      }
     },
     "44140": {
       "name": "Springfield, MA MSA",
-      "geoadj": 0.94
+      "rentIndex": 0.94,
+      "adjustments": {
+        "renter": 0.9734212528531575,
+        "owner_with_mortgage": 0.9739684652400942,
+        "owner_without_mortgage": 0.9806051678634997
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 38051,
+        "owner_without_mortgage": 31954,
+        "renter": 38382
+      }
     },
     "44180": {
       "name": "Springfield, MO MSA",
-      "geoadj": 0.689
+      "rentIndex": 0.689,
+      "adjustments": {
+        "renter": 0.8622368754755263,
+        "owner_with_mortgage": 0.8650302037473124,
+        "owner_without_mortgage": 0.8995580924323329
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 33795,
+        "owner_without_mortgage": 29313,
+        "renter": 33998
+      }
     },
     "44700": {
       "name": "Stockton-Lodi, CA MSA",
-      "geoadj": 1.111
+      "rentIndex": 1.111,
+      "adjustments": {
+        "renter": 1.0491757545016485,
+        "owner_with_mortgage": 1.0481724173236409,
+        "owner_without_mortgage": 1.0358436138218867
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 40950,
+        "owner_without_mortgage": 33754,
+        "renter": 41369
+      }
     },
     "45002": {
       "name": "South Carolina Nonmetro",
-      "geoadj": 0.611
+      "rentIndex": 0.611,
+      "adjustments": {
+        "renter": 0.8276692873446614,
+        "owner_with_mortgage": 0.8311661718030101,
+        "owner_without_mortgage": 0.8743632234702019
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 32472,
+        "owner_without_mortgage": 28492,
+        "renter": 32635
+      }
     },
     "45060": {
       "name": "Syracuse, NY MSA",
-      "geoadj": 0.812
+      "rentIndex": 0.812,
+      "adjustments": {
+        "renter": 0.9167131625665736,
+        "owner_with_mortgage": 0.9183986894645234,
+        "owner_without_mortgage": 0.9392683974713067
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 35880,
+        "owner_without_mortgage": 30607,
+        "renter": 36146
+      }
     },
     "45220": {
       "name": "Tallahassee, FL MSA",
-      "geoadj": 0.902
+      "rentIndex": 0.902,
+      "adjustments": {
+        "renter": 0.9565812832868374,
+        "owner_with_mortgage": 0.9574587898023958,
+        "owner_without_mortgage": 0.9683606456760572
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 37406,
+        "owner_without_mortgage": 31555,
+        "renter": 37718
+      }
     },
     "45300": {
       "name": "Tampa-St. Petersburg-Clearwater, FL MSA",
-      "geoadj": 1.126
+      "rentIndex": 1.126,
+      "adjustments": {
+        "renter": 1.0558204412883592,
+        "owner_with_mortgage": 1.0546739019146105,
+        "owner_without_mortgage": 1.0406923218560118
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 41204,
+        "owner_without_mortgage": 33912,
+        "renter": 41631
+      }
     },
     "45460": {
       "name": "Terre Haute, IN MSA",
-      "geoadj": 0.698
+      "rentIndex": 0.698,
+      "adjustments": {
+        "renter": 0.8662186152675627,
+        "owner_with_mortgage": 0.8689208559434831,
+        "owner_without_mortgage": 0.902442766832382
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 33947,
+        "owner_without_mortgage": 29407,
+        "renter": 34155
+      }
     },
     "45780": {
       "name": "Toledo, OH MSA",
-      "geoadj": 0.714
+      "rentIndex": 0.714,
+      "adjustments": {
+        "renter": 0.8732944458534111,
+        "owner_with_mortgage": 0.8758830756629467,
+        "owner_without_mortgage": 0.9076290431473639
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34219,
+        "owner_without_mortgage": 29576,
+        "renter": 34434
+      }
     },
     "45820": {
       "name": "Topeka, KS MSA",
-      "geoadj": 0.741
+      "rentIndex": 0.741,
+      "adjustments": {
+        "renter": 0.8852650266294699,
+        "owner_with_mortgage": 0.8876062250435138,
+        "owner_without_mortgage": 0.916344442398576
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34677,
+        "owner_without_mortgage": 29860,
+        "renter": 34906
+      }
     },
     "45940": {
       "name": "Trenton, NJ MSA",
-      "geoadj": 1.219
+      "rentIndex": 1.219,
+      "adjustments": {
+        "renter": 1.0970073548059853,
+        "owner_with_mortgage": 1.0950394184498822,
+        "owner_without_mortgage": 1.070735898852268
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 42781,
+        "owner_without_mortgage": 34891,
+        "renter": 43255
+      }
     },
     "46001": {
       "name": "South Dakota Metro",
-      "geoadj": 0.845
+      "rentIndex": 0.845,
+      "adjustments": {
+        "renter": 0.9313466903373067,
+        "owner_with_mortgage": 0.9327326712398895,
+        "owner_without_mortgage": 0.9499478303565948
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 36440,
+        "owner_without_mortgage": 30955,
+        "renter": 36723
+      }
     },
     "46002": {
       "name": "South Dakota Nonmetro",
-      "geoadj": 0.616
+      "rentIndex": 0.616,
+      "adjustments": {
+        "renter": 0.8298757291402485,
+        "owner_with_mortgage": 0.8333418654653425,
+        "owner_without_mortgage": 0.8759590007978887
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 32557,
+        "owner_without_mortgage": 28544,
+        "renter": 32722
+      }
     },
     "46060": {
       "name": "Tucson, AZ MSA",
-      "geoadj": 0.905
+      "rentIndex": 0.905,
+      "adjustments": {
+        "renter": 0.9579254374841492,
+        "owner_with_mortgage": 0.9587642059997953,
+        "owner_without_mortgage": 0.9693119744675628
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 37457,
+        "owner_without_mortgage": 31586,
+        "renter": 37771
+      }
     },
     "46140": {
       "name": "Tulsa, OK MSA",
-      "geoadj": 0.769
+      "rentIndex": 0.769,
+      "adjustments": {
+        "renter": 0.8976667512046665,
+        "owner_with_mortgage": 0.8997389167605201,
+        "owner_without_mortgage": 0.925397409930645
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 35151,
+        "owner_without_mortgage": 30155,
+        "renter": 35395
+      }
     },
     "46340": {
       "name": "Tyler, TX MSA",
-      "geoadj": 0.874
+      "rentIndex": 0.874,
+      "adjustments": {
+        "renter": 0.9441795587116408,
+        "owner_with_mortgage": 0.9453260980853896,
+        "owner_without_mortgage": 0.9593076781439882
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 36932,
+        "owner_without_mortgage": 31260,
+        "renter": 37229
+      }
     },
     "46520": {
       "name": "Urban Honolulu, HI MSA",
-      "geoadj": 1.55
+      "rentIndex": 1.55,
+      "adjustments": {
+        "renter": 1.2436469693127061,
+        "owner_with_mortgage": 1.2387119893518992,
+        "owner_without_mortgage": 1.1776529798072792
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 48394,
+        "owner_without_mortgage": 38375,
+        "renter": 49037
+      }
     },
     "46540": {
       "name": "Utica-Rome, NY MSA",
-      "geoadj": 0.712
+      "rentIndex": 0.712,
+      "adjustments": {
+        "renter": 0.8724067968551864,
+        "owner_with_mortgage": 0.8750127981980137,
+        "owner_without_mortgage": 0.9069845946111827
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34185,
+        "owner_without_mortgage": 29555,
+        "renter": 34399
+      }
     },
     "46700": {
       "name": "Vallejo-Fairfield, CA MSA",
-      "geoadj": 1.509
+      "rentIndex": 1.509,
+      "adjustments": {
+        "renter": 1.2254882069490236,
+        "owner_with_mortgage": 1.2208968977168015,
+        "owner_without_mortgage": 1.1643957527772664
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 47698,
+        "owner_without_mortgage": 37943,
+        "renter": 48321
+      }
     },
     "47002": {
       "name": "Tennessee Nonmetro",
-      "geoadj": 0.614
+      "rentIndex": 0.614,
+      "adjustments": {
+        "renter": 0.8290134415419731,
+        "owner_with_mortgage": 0.8324715880004095,
+        "owner_without_mortgage": 0.8753145522617075
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 32523,
+        "owner_without_mortgage": 28523,
+        "renter": 32688
+      }
     },
     "47220": {
       "name": "Vineland-Bridgeton, NJ MSA",
-      "geoadj": 0.939
+      "rentIndex": 0.939,
+      "adjustments": {
+        "renter": 0.9729647476540705,
+        "owner_with_mortgage": 0.9735333265076277,
+        "owner_without_mortgage": 0.9802982876081753
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 38034,
+        "owner_without_mortgage": 31944,
+        "renter": 38364
+      }
     },
     "47260": {
       "name": "Virginia Beach-Norfolk-Newport News, VA-NC MSA",
-      "geoadj": 1.004
+      "rentIndex": 1.004,
+      "adjustments": {
+        "renter": 1.0017752979964494,
+        "owner_with_mortgage": 1.001740554929866,
+        "owner_without_mortgage": 1.0012888970723623
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 39136,
+        "owner_without_mortgage": 32628,
+        "renter": 39500
+      }
     },
     "47300": {
       "name": "Visalia-Porterville, CA MSA",
-      "geoadj": 0.835
+      "rentIndex": 0.835,
+      "adjustments": {
+        "renter": 0.9269084453461831,
+        "owner_with_mortgage": 0.9283812839152248,
+        "owner_without_mortgage": 0.9466948996501565
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 36270,
+        "owner_without_mortgage": 30849,
+        "renter": 36548
+      }
     },
     "47380": {
       "name": "Waco, TX MSA",
-      "geoadj": 0.838
+      "rentIndex": 0.838,
+      "adjustments": {
+        "renter": 0.9282272381435456,
+        "owner_with_mortgage": 0.9296867001126241,
+        "owner_without_mortgage": 0.9476769164671945
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 36321,
+        "owner_without_mortgage": 30881,
+        "renter": 36600
+      }
     },
     "47580": {
       "name": "Warner Robins, GA MSA",
-      "geoadj": 0.759
+      "rentIndex": 0.759,
+      "adjustments": {
+        "renter": 0.893228506213543,
+        "owner_with_mortgage": 0.8954131258318828,
+        "owner_without_mortgage": 0.9221444792242067
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34982,
+        "owner_without_mortgage": 30049,
+        "renter": 35220
+      }
     },
     "47900": {
       "name": "Washington-Arlington-Alexandria, DC-VA-MD-WV MSA",
-      "geoadj": 1.495
+      "rentIndex": 1.495,
+      "adjustments": {
+        "renter": 1.2192746639614507,
+        "owner_with_mortgage": 1.2148305518582982,
+        "owner_without_mortgage": 1.1598846130239981
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 47461,
+        "owner_without_mortgage": 37796,
+        "renter": 48076
+      }
     },
     "47940": {
       "name": "Waterloo-Cedar Falls, IA MSA",
-      "geoadj": 0.721
+      "rentIndex": 0.721,
+      "adjustments": {
+        "renter": 0.8764138980471722,
+        "owner_with_mortgage": 0.8789034503941845,
+        "owner_without_mortgage": 0.9098692690112318
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34337,
+        "owner_without_mortgage": 29649,
+        "renter": 34557
+      }
     },
     "48001": {
       "name": "Texas Metro",
-      "geoadj": 0.819
+      "rentIndex": 0.819,
+      "adjustments": {
+        "renter": 0.9198072533603855,
+        "owner_with_mortgage": 0.9214446605917886,
+        "owner_without_mortgage": 0.941539311360707
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 35999,
+        "owner_without_mortgage": 30681,
+        "renter": 36268
+      }
     },
     "48002": {
       "name": "Texas Nonmetro",
-      "geoadj": 0.756
+      "rentIndex": 0.756,
+      "adjustments": {
+        "renter": 0.8919097134161805,
+        "owner_with_mortgage": 0.8941077096344835,
+        "owner_without_mortgage": 0.9211931504327011
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34931,
+        "owner_without_mortgage": 30018,
+        "renter": 35168
+      }
     },
     "48060": {
       "name": "Watertown-Fort Drum, NY MSA",
-      "geoadj": 0.899
+      "rentIndex": 0.899,
+      "adjustments": {
+        "renter": 0.955262490489475,
+        "owner_with_mortgage": 0.9561533736049964,
+        "owner_without_mortgage": 0.9673786288590193
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 37355,
+        "owner_without_mortgage": 31523,
+        "renter": 37666
+      }
     },
     "48140": {
       "name": "Wausau, WI MSA",
-      "geoadj": 0.726
+      "rentIndex": 0.726,
+      "adjustments": {
+        "renter": 0.8786203398427593,
+        "owner_with_mortgage": 0.8810791440565169,
+        "owner_without_mortgage": 0.911495734364451
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34422,
+        "owner_without_mortgage": 29702,
+        "renter": 34644
+      }
     },
     "48620": {
       "name": "Wichita, KS MSA",
-      "geoadj": 0.727
+      "rentIndex": 0.727,
+      "adjustments": {
+        "renter": 0.879051483641897,
+        "owner_with_mortgage": 0.8815142827889834,
+        "owner_without_mortgage": 0.9118333026453078
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34439,
+        "owner_without_mortgage": 29713,
+        "renter": 34661
+      }
     },
     "48660": {
       "name": "Wichita Falls, TX MSA",
-      "geoadj": 0.706
+      "rentIndex": 0.706,
+      "adjustments": {
+        "renter": 0.8697692112604616,
+        "owner_with_mortgage": 0.8724019658032149,
+        "owner_without_mortgage": 0.9050512490026392
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34083,
+        "owner_without_mortgage": 29492,
+        "renter": 34295
+      }
     },
     "48700": {
       "name": "Williamsport, PA MSA",
-      "geoadj": 0.669
+      "rentIndex": 0.669,
+      "adjustments": {
+        "renter": 0.8533603854932792,
+        "owner_with_mortgage": 0.8563530254940105,
+        "owner_without_mortgage": 0.8930829190449886
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 33456,
+        "owner_without_mortgage": 29102,
+        "renter": 33648
+      }
     },
     "49001": {
       "name": "Utah Metro",
-      "geoadj": 0.756
+      "rentIndex": 0.756,
+      "adjustments": {
+        "renter": 0.8919097134161805,
+        "owner_with_mortgage": 0.8941077096344835,
+        "owner_without_mortgage": 0.9211931504327011
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34931,
+        "owner_without_mortgage": 30018,
+        "renter": 35168
+      }
     },
     "49002": {
       "name": "Utah Nonmetro",
-      "geoadj": 0.663
+      "rentIndex": 0.663,
+      "adjustments": {
+        "renter": 0.8506974384986051,
+        "owner_with_mortgage": 0.8537421930992116,
+        "owner_without_mortgage": 0.8911495734364451
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 33354,
+        "owner_without_mortgage": 29039,
+        "renter": 33543
+      }
     },
     "49020": {
       "name": "Winchester, VA-WV MSA",
-      "geoadj": 1.008
+      "rentIndex": 1.008,
+      "adjustments": {
+        "renter": 1.0035505959928988,
+        "owner_with_mortgage": 1.0034811098597318,
+        "owner_without_mortgage": 1.0025777941447247
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 39204,
+        "owner_without_mortgage": 32670,
+        "renter": 39570
+      }
     },
     "49180": {
       "name": "Winston-Salem, NC MSA",
-      "geoadj": 0.699
+      "rentIndex": 0.699,
+      "adjustments": {
+        "renter": 0.8666497590667005,
+        "owner_with_mortgage": 0.8693559946759496,
+        "owner_without_mortgage": 0.9027803351132389
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 33964,
+        "owner_without_mortgage": 29418,
+        "renter": 34172
+      }
     },
     "49340": {
       "name": "Worcester, MA-CT MSA",
-      "geoadj": 1.034
+      "rentIndex": 1.034,
+      "adjustments": {
+        "renter": 1.0150646715698706,
+        "owner_with_mortgage": 1.014743524111805,
+        "owner_without_mortgage": 1.0109863131406125
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 39644,
+        "owner_without_mortgage": 32944,
+        "renter": 40024
+      }
     },
     "49620": {
       "name": "York-Hanover, PA MSA",
-      "geoadj": 0.861
+      "rentIndex": 0.861,
+      "adjustments": {
+        "renter": 0.9384225209231549,
+        "owner_with_mortgage": 0.9396692945633255,
+        "owner_without_mortgage": 0.9551034186460443
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 36711,
+        "owner_without_mortgage": 31123,
+        "renter": 37002
+      }
     },
     "49660": {
       "name": "Youngstown-Warren-Boardman, OH-PA MSA",
-      "geoadj": 0.601
+      "rentIndex": 0.601,
+      "adjustments": {
+        "renter": 0.823231042353538,
+        "owner_with_mortgage": 0.8268403808743728,
+        "owner_without_mortgage": 0.8711102927637636
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 32303,
+        "owner_without_mortgage": 28386,
+        "renter": 32460
+      }
     },
     "49740": {
       "name": "Yuma, AZ MSA",
-      "geoadj": 0.736
+      "rentIndex": 0.736,
+      "adjustments": {
+        "renter": 0.8830585848338828,
+        "owner_with_mortgage": 0.8854305313811816,
+        "owner_without_mortgage": 0.914717977045357
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34592,
+        "owner_without_mortgage": 29807,
+        "renter": 34819
+      }
     },
     "50002": {
       "name": "Vermont Nonmetro",
-      "geoadj": 0.85
+      "rentIndex": 0.85,
+      "adjustments": {
+        "renter": 0.9335531321328937,
+        "owner_with_mortgage": 0.9349083649022217,
+        "owner_without_mortgage": 0.9515436076842816
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 36525,
+        "owner_without_mortgage": 31007,
+        "renter": 36810
+      }
     },
     "51001": {
       "name": "Virginia Metro",
-      "geoadj": 0.748
+      "rentIndex": 0.748,
+      "adjustments": {
+        "renter": 0.8883591174232818,
+        "owner_with_mortgage": 0.8906265997747517,
+        "owner_without_mortgage": 0.9186153562879764
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34795,
+        "owner_without_mortgage": 29934,
+        "renter": 35028
+      }
     },
     "51002": {
       "name": "Virginia Nonmetro",
-      "geoadj": 0.605
+      "rentIndex": 0.605,
+      "adjustments": {
+        "renter": 0.8250063403499873,
+        "owner_with_mortgage": 0.8285809358042387,
+        "owner_without_mortgage": 0.8724298778616584
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 32371,
+        "owner_without_mortgage": 28429,
+        "renter": 32530
+      }
     },
     "53001": {
       "name": "Washington Metro",
-      "geoadj": 0.863
+      "rentIndex": 0.863,
+      "adjustments": {
+        "renter": 0.9393101699213796,
+        "owner_with_mortgage": 0.9405395720282584,
+        "owner_without_mortgage": 0.9557478671822255
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 36745,
+        "owner_without_mortgage": 31144,
+        "renter": 37037
+      }
     },
     "53002": {
       "name": "Washington Nonmetro",
-      "geoadj": 0.745
+      "rentIndex": 0.745,
+      "adjustments": {
+        "renter": 0.8870403246259193,
+        "owner_with_mortgage": 0.8893211835773523,
+        "owner_without_mortgage": 0.9176333394709384
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34744,
+        "owner_without_mortgage": 29902,
+        "renter": 34976
+      }
     },
     "54001": {
       "name": "West Virginia Metro",
-      "geoadj": 0.621
+      "rentIndex": 0.621,
+      "adjustments": {
+        "renter": 0.8321075323357849,
+        "owner_with_mortgage": 0.8355175591276748,
+        "owner_without_mortgage": 0.8775854661511079
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 32642,
+        "owner_without_mortgage": 28597,
+        "renter": 32810
+      }
     },
     "54002": {
       "name": "West Virginia Nonmetro",
-      "geoadj": 0.641
+      "rentIndex": 0.641,
+      "adjustments": {
+        "renter": 0.8409586609180827,
+        "owner_with_mortgage": 0.8441947373809767,
+        "owner_without_mortgage": 0.8840299515129196
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 32981,
+        "owner_without_mortgage": 28807,
+        "renter": 33159
+      }
     },
     "55002": {
       "name": "Wisconsin Nonmetro",
-      "geoadj": 0.658
+      "rentIndex": 0.658,
+      "adjustments": {
+        "renter": 0.848490996703018,
+        "owner_with_mortgage": 0.8515664994368793,
+        "owner_without_mortgage": 0.8895231080832259
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 33269,
+        "owner_without_mortgage": 28986,
+        "renter": 33456
+      }
     },
     "56001": {
       "name": "Wyoming Metro",
-      "geoadj": 0.751
+      "rentIndex": 0.751,
+      "adjustments": {
+        "renter": 0.8897032716205935,
+        "owner_with_mortgage": 0.8919320159721511,
+        "owner_without_mortgage": 0.919566685079482
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 34846,
+        "owner_without_mortgage": 29965,
+        "renter": 35081
+      }
     },
     "56002": {
       "name": "Wyoming Nonmetro",
-      "geoadj": 0.668
+      "rentIndex": 0.668,
+      "adjustments": {
+        "renter": 0.8529292416941415,
+        "owner_with_mortgage": 0.855917886761544,
+        "owner_without_mortgage": 0.8927760387896643
+      },
+      "referenceThresholds": {
+        "owner_with_mortgage": 33439,
+        "owner_without_mortgage": 29092,
+        "renter": 33631
+      }
     }
   }
 }

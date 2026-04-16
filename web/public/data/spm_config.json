@@ -82,15 +82,18 @@
     }
   },
   "methodology": {
-    "equivalenceScale": {
-      "firstAdult": 1.0,
-      "additionalAdults": 0.5,
-      "children": 0.3,
-      "referenceFamily": 2.1
+    "referenceRawScale": 2.157669279974593,
+    "housingShares": {
+      "owner_with_mortgage": 0.434,
+      "owner_without_mortgage": 0.323,
+      "renter": 0.443
     },
-    "geoadjFormula": {
-      "housingShare": 0.492,
-      "nonHousingShare": 0.508
+    "equivalenceScale": {
+      "singleAdultFirstChild": 0.8,
+      "additionalChild": 0.5,
+      "economiesOfScale": 0.7,
+      "twoAdultNoChild": 1.41,
+      "referenceFamilyRaw": 2.157669279974593
     }
   },
   "forecast": {
@@ -102,7 +105,6 @@
       "2028": 0.02,
       "2029": 0.02,
       "2030": 0.02
-    },
-    "defaultInflation": 0.02
+    }
   }
 }
