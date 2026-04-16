@@ -181,7 +181,8 @@ def get_cd_geoadj_batch(
 
 
 def get_bundled_cd_data(year: int = 2023) -> dict:
-    return _load_bundled_cd_data(year)
+    # Return a shallow copy so callers can't mutate the lru_cached dict.
+    return dict(_load_bundled_cd_data(year))
 
 
 @lru_cache(maxsize=8)
@@ -310,7 +311,8 @@ def get_metro_geoadj(
 
 
 def get_bundled_metro_data(year: int = 2024) -> dict:
-    return _load_bundled_metro_data(year)
+    # Return a shallow copy so callers can't mutate the lru_cached dict.
+    return dict(_load_bundled_metro_data(year))
 
 
 def list_metro_areas(year: int = 2024) -> list[dict]:

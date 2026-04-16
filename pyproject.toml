@@ -48,6 +48,10 @@ Issues = "https://github.com/PolicyEngine/spm-calculator/issues"
 
 [tool.setuptools]
 packages = ["spm_calculator"]
+include-package-data = true
+
+[tool.setuptools.package-data]
+spm_calculator = ["data/*.json"]
 
 [tool.black]
 line-length = 79

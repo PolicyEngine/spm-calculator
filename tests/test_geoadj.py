@@ -27,6 +27,20 @@ class TestGeoAdjFormula:
         )
         assert result == pytest.approx(1.0)
 
+    def test_national_average_equals_one_for_every_tenure(self):
+        """Rent ratio of 1.0 must yield GEOADJ=1.0 regardless of tenure."""
+        from spm_calculator.geoadj import (
+            VALID_TENURE_TYPES,
+            calculate_geoadj_from_rent,
+        )
+
+        for tenure in VALID_TENURE_TYPES:
+            assert calculate_geoadj_from_rent(
+                1500, 1500, tenure=tenure
+            ) == pytest.approx(
+                1.0
+            ), f"GEOADJ at rent parity must be 1.0 for {tenure}"
+
     def test_double_rent_varies_by_tenure(self):
         from spm_calculator.geoadj import calculate_geoadj_from_rent
 
@@ -151,8 +165,16 @@ class TestBundledCDData:
         from spm_calculator import get_cd_geoadj
 
         renter = get_cd_geoadj("612", tenure="renter")
-        owner = get_cd_geoadj("612", tenure="owner_without_mortgage")
-        assert renter > owner
+        owner_nm = get_cd_geoadj("612", tenure="owner_without_mortgage")
+        owner_m = get_cd_geoadj("612", tenure="owner_with_mortgage")
+        # All three tenures must be callable and produce distinct, sensible
+        # high-cost values (CA-12 is well above national rent).
+        assert renter > 1.0
+        assert owner_m > 1.0
+        assert owner_nm > 1.0
+        # For high-cost areas the share ordering (renter 0.443 > owner_m
+        # 0.434 > owner_nm 0.323) pushes renter > owner_m > owner_nm.
+        assert renter > owner_m > owner_nm
 
     def test_get_cd_geoadj_int_input(self):
         from spm_calculator import get_cd_geoadj

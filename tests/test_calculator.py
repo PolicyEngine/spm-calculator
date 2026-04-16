@@ -136,6 +136,28 @@ class TestThresholdCalculation:
             year=2024,
         ) == pytest.approx(45189)
 
+    def test_spm_threshold_accepts_metro_name(self):
+        """Metro can be a CBSA code or a name; both must resolve."""
+        from spm_calculator import spm_threshold
+
+        by_code = spm_threshold(
+            2, 2, tenure="renter", metro="41940", year=2024
+        )
+        by_name = spm_threshold(
+            2, 2, tenure="renter", metro="San Jose", year=2024
+        )
+        assert by_code == pytest.approx(59815)
+        assert by_name == pytest.approx(by_code)
+
+        alabama = spm_threshold(
+            1,
+            0,
+            tenure="owner_without_mortgage",
+            metro="Alabama Nonmetro",
+            year=2024,
+        )
+        assert alabama == pytest.approx(12921.81, rel=1e-4)
+
     def test_tenure_affects_threshold(self):
         from spm_calculator import SPMCalculator
 

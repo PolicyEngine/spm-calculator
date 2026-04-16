@@ -14,16 +14,11 @@ from .equivalence_scale import spm_equivalence_scale
 from .forecast import get_thresholds
 from .geoadj import (
     SUPPORTED_GEOGRAPHIES,
+    VALID_TENURE_TYPES,
     get_bundled_metro_data,
     get_geoadj,
     get_latest_available_acs_year,
 )
-
-VALID_TENURE_TYPES = [
-    "renter",
-    "owner_with_mortgage",
-    "owner_without_mortgage",
-]
 
 
 class SPMCalculator:
