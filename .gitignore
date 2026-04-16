@@ -14,8 +14,10 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
+# Python build artifacts. Anchored to repo root so they don't swallow
+# application-level lib/ directories (e.g. web/lib/).
+/lib/
+/lib64/
 parts/
 sdist/
 var/
@@ -84,3 +86,5 @@ docs/_build/
 node_modules/
 dist/
 .vercel
+web/.next/
+web/out/

@@ -2,18 +2,18 @@
 
 Calculate [Supplemental Poverty Measure (SPM)](https://www.census.gov/topics/income-poverty/supplemental-poverty-measure.html) thresholds for any US geography and year.
 
-[![Try the Calculator](https://img.shields.io/badge/Try-Calculator-teal)](https://policyengine.github.io/spm-calculator)
-[![Documentation](https://img.shields.io/badge/docs-online-green)](https://policyengine.github.io/spm-calculator)
+[![Try the Calculator](https://img.shields.io/badge/Try-Calculator-teal)](https://spm-calculator.vercel.app/)
+[![Documentation](https://img.shields.io/badge/docs-github-green)](https://github.com/PolicyEngine/spm-calculator/tree/main/docs)
 
 ## Interactive Calculator
 
-**[Try the SPM Threshold Calculator](https://policyengine.github.io/spm-calculator)** - A static web app that walks you through calculating your SPM threshold based on your household characteristics.
+**[Try the SPM Threshold Calculator](https://spm-calculator.vercel.app/)** - A browser-based calculator for metros, states, counties, and congressional districts, with a direct handoff to the Python package for tract-level and batch work.
 
-The calculator runs entirely in your browser with no server required - all data is pre-computed and bundled.
+The calculator runs entirely in your browser with no server required. National thresholds and official metro data are bundled; state, county, and district rent adjustments are fetched directly from the Census ACS API.
 
 ### Run Locally
 
-**Static React App (recommended):**
+**Next.js app (recommended):**
 ```bash
 cd web
 npm install
@@ -31,13 +31,13 @@ streamlit run app/streamlit_app.py
 The SPM threshold is calculated as:
 
 ```
-threshold = base_threshold[tenure] × equivalence_scale × geoadj
+threshold = base_threshold[tenure] × equivalence_scale × geoadj[tenure]
 ```
 
 Where:
 - **base_threshold** varies by housing tenure (renter, owner with mortgage, owner without mortgage), calculated from 5-year rolling Consumer Expenditure Survey data
-- **equivalence_scale** adjusts for family composition using the SPM three-parameter scale
-- **geoadj** adjusts for local housing costs based on ACS median rents
+- **equivalence_scale** adjusts for family composition using the official Betson three-parameter SPM scale
+- **geoadj** adjusts for local housing costs, using official Census metro thresholds where available and a tenure-specific ACS rent adjustment elsewhere
 
 ## Installation
 
@@ -57,20 +57,24 @@ calc = SPMCalculator(year=2024)
 base = calc.get_base_thresholds()
 # {'renter': 39430, 'owner_with_mortgage': 39068, 'owner_without_mortgage': 32586}
 
-# Get GEOADJ for a specific geography
-geoadj = calc.get_geoadj("congressional_district", "0612")  # CA-12
-# 1.24 (24% above national average due to high housing costs)
+# Get GEOADJ for a specific location
+geoadj = calc.get_geoadj("metro_area", "35620", tenure="renter")  # New York metro
+# 1.1599
 
 # Calculate threshold for a specific family in a specific location
 threshold = calc.calculate_threshold(
     num_adults=2,
     num_children=2,
     tenure="renter",
-    geography_type="congressional_district",
-    geography_id="0612"
+    geography_type="metro_area",
+    geography_id="35620"
 )
-# ~$48,893 (base $39,430 × equiv_scale 1.0 × geoadj 1.24)
+# $45,736 (official 2024 Census metro threshold for NYC renters)
 ```
+
+Official metro thresholds are bundled with the package. For custom ACS-based
+geographies like states, counties, congressional districts, PUMAs, and tracts,
+set `CENSUS_API_KEY` to fetch current median rents.
 
 ## Supported Geographies
 
@@ -101,20 +105,27 @@ Following BLS methodology (updated September 2021):
 
 ### Geographic Adjustment (GEOADJ)
 
-Following Census methodology:
+For official public metro areas, the package uses the published Census metro table directly.
+
+For custom geographies built from ACS rents, the adjustment is tenure-specific:
 ```
-GEOADJ = (local_median_rent / national_median_rent) × 0.492 + 0.508
+GEOADJ_t = (local_median_rent / national_median_rent) × housing_share_t + (1 - housing_share_t)
 ```
 
-Where 0.492 is the housing portion of the SPM threshold for renters.
+For 2024 thresholds, the tenure-specific housing shares are:
+- `0.443` for renters
+- `0.434` for owners with a mortgage
+- `0.323` for owners without a mortgage
 
 ### Equivalence Scale
 
-The SPM uses a three-parameter equivalence scale:
-- First adult: 1.0
-- Additional adults: 0.5 each
-- Children: 0.3 each
-- Normalized to reference family (2A2C = 1.0)
+The SPM uses the official Betson three-parameter scale:
+- Single adult with children: `(1 + 0.8 + 0.5 × (children - 1))^0.7`
+- Multiple adults with children: `(adults + 0.5 × children)^0.7`
+- One adult without children: `1.0`
+- Two adults without children: `1.41`
+- Three or more adults without children: `adults^0.7`
+- Normalized to the reference family `(2 adults, 2 children) = 3^0.7`
 
 ## Validation
 
@@ -125,6 +136,8 @@ Base thresholds are validated against [BLS published values](https://www.bls.gov
 | Renter | $39,430 | $39,430 |
 | Owner w/ mortgage | $39,068 | $39,068 |
 | Owner w/o mortgage | $32,586 | $32,586 |
+
+Official metro thresholds are validated against [Census SPM Thresholds by Metro Area: 2024](https://www2.census.gov/programs-surveys/demo/tables/p60/287/SPM-pov-threshold-2024.xlsx).
 
 ## License
 

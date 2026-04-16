@@ -1,7 +1,6 @@
 {
   "year": 2023,
   "national_median_2br_rent": 1338.0,
-  "housing_share": 0.492,
   "congressional_districts": {
     "101": {
       "geoadj": 0.8757,

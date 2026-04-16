@@ -15,13 +15,13 @@ This package provides tools to calculate SPM thresholds at any geographic level 
 ## The SPM Threshold Formula
 
 ```
-threshold = base_threshold[tenure] × equivalence_scale × geoadj
+threshold = base_threshold[tenure] × equivalence_scale × geoadj[tenure]
 ```
 
 Where:
 - **base_threshold** comes from the BLS Consumer Expenditure Survey (5-year rolling)
 - **equivalence_scale** adjusts for family composition
-- **geoadj** adjusts for local housing costs based on ACS median rents
+- **geoadj** adjusts for local housing costs using official Census metro thresholds where available and tenure-specific ACS rent adjustments elsewhere
 
 ## Installation
 
@@ -37,16 +37,16 @@ from spm_calculator import SPMCalculator
 # Initialize for a specific year
 calc = SPMCalculator(year=2024)
 
-# Calculate threshold for a family in San Francisco
+# Calculate threshold for a family in the New York metro area
 threshold = calc.calculate_threshold(
     num_adults=2,
     num_children=2,
     tenure="renter",
-    geography_type="congressional_district",
-    geography_id="0611"  # CA-11 (SF area)
+    geography_type="metro_area",
+    geography_id="35620"
 )
 print(f"SPM threshold: ${threshold:,.0f}")
-# SPM threshold: ~$48,893
+# SPM threshold: $45,736
 ```
 
 ## Supported Geographies

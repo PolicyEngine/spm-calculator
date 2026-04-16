@@ -18,6 +18,7 @@ Reference:
 - https://www.bls.gov/pir/spm/spm_thresholds_2024.htm
 """
 
+import warnings
 from functools import lru_cache
 from typing import Optional
 
@@ -129,7 +130,11 @@ def get_fcsuti_cpi(
                     series_id, start_year, end_year
                 )
             except Exception as e:
-                print(f"Warning: Could not fetch {component} CPI: {e}")
+                warnings.warn(
+                    f"Could not fetch {component} CPI: {e}",
+                    RuntimeWarning,
+                    stacklevel=2,
+                )
 
     if not components:
         raise ValueError("Could not fetch any CPI component data")
@@ -180,9 +185,13 @@ def get_fcsuti_inflation_factor(
         )
         return fcsuti[to_year] / 100.0
     except Exception as e:
-        # Fallback to simple estimate if BLS API unavailable
-        print(f"Warning: Could not get FCSUti CPI ({e}), using estimate")
-        # Use ~4% annual inflation as fallback (recent FCSUti average)
+        # Fallback to simple estimate if BLS API unavailable.
+        # Use ~4% annual inflation (recent FCSUti average).
+        warnings.warn(
+            f"Could not get FCSUti CPI ({e}); falling back to 4%/yr estimate.",
+            RuntimeWarning,
+            stacklevel=2,
+        )
         years_diff = to_year - from_year
         return 1.04**years_diff
 

@@ -1,13 +1,23 @@
 """
-SPM three-parameter equivalence scale.
+Official Betson three-parameter SPM equivalence scale.
 
-The SPM uses a modified OECD equivalence scale to adjust thresholds
-for different family compositions.
+Source:
+- https://www.bls.gov/pir/spmhome.htm
 """
 
 from typing import Union
 
 import numpy as np
+
+# Reference family for SPM thresholds: 2 adults, 2 children.
+REFERENCE_RAW_SCALE = 3**0.7
+
+
+def _maybe_scalar(value: np.ndarray) -> Union[float, np.ndarray]:
+    """Return a Python float when the result is scalar-like."""
+    if value.ndim == 0:
+        return float(value)
+    return value
 
 
 def spm_equivalence_scale(
@@ -16,55 +26,56 @@ def spm_equivalence_scale(
     normalize: bool = True,
 ) -> Union[float, np.ndarray]:
     """
-    Calculate SPM equivalence scale for a given family composition.
+    Calculate the SPM equivalence scale for a family composition.
 
-    The SPM uses a three-parameter equivalence scale:
-    - First adult: 1.0
-    - Additional adults: 0.5 each
-    - Children (under 18): 0.3 each
+    The official SPM scale follows Betson's three-parameter form:
+    - Single adult with children: (1 + 0.8 + 0.5 * (K - 1)) ** 0.7
+    - Multiple adults with children: (A + 0.5 * K) ** 0.7
+    - One adult without children: 1.0
+    - Two adults without children: 1.41
+    - Three or more adults without children: A ** 0.7
 
     Args:
-        num_adults: Number of adults (18+) in the SPM unit
-        num_children: Number of children (under 18) in the SPM unit
-        normalize: If True, normalize to reference family (2A2C = 1.0).
-                  If False, return raw scale value.
+        num_adults: Number of adults (18+) in the SPM unit.
+        num_children: Number of children (under 18) in the SPM unit.
+        normalize: If True, divide by the 2-adult, 2-child reference scale.
 
     Returns:
-        Equivalence scale factor. If normalize=True, a family of 2 adults
-        and 2 children returns 1.0.
-
-    Examples:
-        >>> spm_equivalence_scale(2, 2)  # Reference family
-        1.0
-        >>> spm_equivalence_scale(1, 0)  # Single adult
-        0.476...
-        >>> spm_equivalence_scale(2, 0)  # Couple, no children
-        0.714...
-        >>> spm_equivalence_scale(1, 2)  # Single parent, 2 children
-        0.762...
+        Raw or normalized equivalence scale.
     """
-    num_adults = np.asarray(num_adults)
-    num_children = np.asarray(num_children)
-
-    # First adult counts as 1.0, additional adults as 0.5 each
-    adult_scale = np.where(
-        num_adults >= 1,
-        1.0 + 0.5 * np.maximum(num_adults - 1, 0),
-        0.0,
+    adults, children = np.broadcast_arrays(
+        np.asarray(num_adults, dtype=float),
+        np.asarray(num_children, dtype=float),
     )
 
-    # Children count as 0.3 each
-    child_scale = 0.3 * num_children
+    raw = np.zeros_like(adults, dtype=float)
+    has_people = (adults + children) > 0
+    with_children = has_people & (children > 0)
 
-    raw_scale = adult_scale + child_scale
+    single_adult_with_children = with_children & (adults <= 1)
+    raw[single_adult_with_children] = (
+        1.0
+        + 0.8
+        + 0.5 * np.maximum(children[single_adult_with_children] - 1, 0)
+    ) ** 0.7
 
-    if normalize:
-        # Reference family: 2 adults, 2 children
-        # = 1.0 + 0.5*(2-1) + 0.3*2 = 1.0 + 0.5 + 0.6 = 2.1
-        reference_scale = 2.1
-        return raw_scale / reference_scale
-    else:
-        return raw_scale
+    multi_adult_with_children = with_children & ~single_adult_with_children
+    raw[multi_adult_with_children] = (
+        adults[multi_adult_with_children]
+        + 0.5 * children[multi_adult_with_children]
+    ) ** 0.7
+
+    no_children = has_people & ~with_children
+    one_adult = no_children & (adults <= 1)
+    two_adults = no_children & (adults == 2)
+    larger_adult_units = no_children & (adults > 2)
+
+    raw[one_adult] = 1.0
+    raw[two_adults] = 1.41
+    raw[larger_adult_units] = adults[larger_adult_units] ** 0.7
+
+    result = raw / REFERENCE_RAW_SCALE if normalize else raw
+    return _maybe_scalar(result)
 
 
 def equivalence_scale_from_persons(
@@ -73,17 +84,11 @@ def equivalence_scale_from_persons(
     normalize: bool = True,
 ) -> Union[float, np.ndarray]:
     """
-    Calculate equivalence scale when you have total persons and children.
-
-    Args:
-        num_persons: Total number of persons in SPM unit
-        num_children: Number of children (under 18)
-        normalize: If True, normalize to reference family (2A2C = 1.0)
-
-    Returns:
-        Equivalence scale factor
+    Calculate the equivalence scale from total persons and children.
     """
     num_adults = np.maximum(
-        np.asarray(num_persons) - np.asarray(num_children), 0
+        np.asarray(num_persons, dtype=float)
+        - np.asarray(num_children, dtype=float),
+        0,
     )
     return spm_equivalence_scale(num_adults, num_children, normalize)

@@ -26,7 +26,8 @@ import numpy as np
 import pandas as pd
 import requests
 
-from .equivalence_scale import spm_equivalence_scale
+from .equivalence_scale import REFERENCE_RAW_SCALE, spm_equivalence_scale
+from .fcsuti_cpi import get_fcsuti_inflation_factor
 
 # BLS CE Survey PUMD base URL
 CE_PUMD_BASE_URL = "https://www.bls.gov/cex/pumd/data/comma"
@@ -211,10 +212,11 @@ def calculate_base_thresholds(
     """
     Calculate SPM base thresholds by tenure type from CE Survey.
 
-    Following BLS methodology:
+    Following current BLS methodology:
     - Use 5 years of data, lagged by 1 year
     - Filter to consumer units with children
-    - Calculate 33rd percentile of FCSUti by tenure
+    - Update spending to threshold-year dollars using the FCSUti CPI-U
+    - Calculate 83% of the median-range expenditure by tenure
 
     Args:
         years: Specific years to use. If None, uses 5 years lagged by 1.
@@ -248,6 +250,16 @@ def calculate_base_thresholds(
         # Calculate FCSUti
         ce["fcsuti"] = calculate_fcsuti(ce)
 
+        # Update each observation to threshold-year dollars.
+        inflation_factors = {
+            year: get_fcsuti_inflation_factor(year, target_year)
+            for year in ce["ce_year"].dropna().astype(int).unique()
+        }
+        ce["inflation_factor"] = (
+            ce["ce_year"].astype(int).map(inflation_factors).astype(float)
+        )
+        ce["fcsuti_threshold_year"] = ce["fcsuti"] * ce["inflation_factor"]
+
         # Get equivalence scale
         num_adults = ce.get("ADULT", 2)
         num_children = ce.get("PERSLT18", 0)
@@ -255,10 +267,9 @@ def calculate_base_thresholds(
             num_adults, num_children, normalize=False
         )
 
-        # Convert to reference family (2A2C)
-        reference_scale = 2.1  # 1.0 + 0.5 + 0.6 for 2A2C
-        ce["fcsuti_2a2c"] = ce["fcsuti"] * (
-            reference_scale / ce["equiv_scale"]
+        # Convert to the official 2-adult, 2-child reference family.
+        ce["fcsuti_2a2c"] = ce["fcsuti_threshold_year"] * (
+            REFERENCE_RAW_SCALE / ce["equiv_scale"]
         )
 
         # Get tenure type

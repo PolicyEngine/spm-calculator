@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "spm-calculator"
-version = "0.1.0"
+version = "0.2.0"
 description = "Calculate SPM (Supplemental Poverty Measure) thresholds for any US geography and year"
 readme = "README.md"
 license = "MIT"
@@ -29,6 +29,7 @@ dependencies = [
     "requests>=2.28",
     "census>=0.8",
     "us>=3.0",
+    "openpyxl>=3.1.5",
 ]
 
 [project.optional-dependencies]
@@ -40,12 +41,17 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/PolicyEngine/spm-calculator"
+Homepage = "https://spm-calculator.vercel.app/"
+Documentation = "https://github.com/PolicyEngine/spm-calculator/tree/main/docs"
 Repository = "https://github.com/PolicyEngine/spm-calculator"
 Issues = "https://github.com/PolicyEngine/spm-calculator/issues"
 
 [tool.setuptools]
 packages = ["spm_calculator"]
+include-package-data = true
+
+[tool.setuptools.package-data]
+spm_calculator = ["data/*.json"]
 
 [tool.black]
 line-length = 79
@@ -61,3 +67,6 @@ ignore = ["E501", "E402"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = [
+    "slow: tests that download CE microdata or access remote resources",
+]
