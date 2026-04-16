@@ -17,7 +17,7 @@ SPMCalculator(year: int, use_published_thresholds: bool = True)
 **Parameters:**
 
 - `year`: Target year for threshold calculation
-- `use_published_thresholds`: If True, use published BLS thresholds when available. If False, calculate from CE Survey data.
+- `use_published_thresholds`: If `True`, use published or forecast thresholds from `forecast.py`. If `False`, reconstruct the thresholds from CE Survey data with the FCSUti CPI adjustment.
 
 **Example:**
 
@@ -33,7 +33,7 @@ calc = SPMCalculator(year=2024)
 get_base_thresholds() -> dict[str, float]
 ```
 
-Get base SPM thresholds by tenure type for the reference family (2 adults, 2 children) before geographic adjustment.
+Get reference-family SPM thresholds by tenure type before geographic adjustment.
 
 **Returns:** Dict with keys `'renter'`, `'owner_with_mortgage'`, `'owner_without_mortgage'`
 
@@ -48,24 +48,29 @@ base = calc.get_base_thresholds()
 #### get_geoadj
 
 ```python
-get_geoadj(geography_type: str, geography_id: str) -> float
+get_geoadj(
+    geography_type: str,
+    geography_id: str,
+    tenure: str = "renter"
+) -> float
 ```
 
-Get geographic adjustment factor for a specific location.
+Get a tenure-specific geographic adjustment factor for a location.
 
 **Parameters:**
 
 - `geography_type`: One of `nation`, `state`, `county`, `congressional_district`, `metro_area`, `puma`, `tract`
 - `geography_id`: FIPS code or other identifier
+- `tenure`: One of `'renter'`, `'owner_with_mortgage'`, `'owner_without_mortgage'`
 
-**Returns:** GEOADJ value (typically 0.84 to 1.27)
+**Returns:** Tenure-specific GEOADJ value
 
 **Example:**
 
 ```python
 calc = SPMCalculator(year=2024)
-geoadj = calc.get_geoadj("state", "06")  # California
-# ~1.15
+geoadj = calc.get_geoadj("metro_area", "35620", tenure="renter")
+# 1.159928988080142
 ```
 
 #### calculate_threshold
@@ -100,10 +105,10 @@ threshold = calc.calculate_threshold(
     num_adults=2,
     num_children=2,
     tenure="renter",
-    geography_type="congressional_district",
-    geography_id="0611"
+    geography_type="metro_area",
+    geography_id="35620"
 )
-# ~$45,000 (varies by actual rent data)
+# 45736.0
 ```
 
 #### calculate_thresholds
@@ -124,9 +129,9 @@ Calculate SPM thresholds for multiple SPM units (vectorized).
 
 - `num_adults`: Number of adults for each unit (scalar or array)
 - `num_children`: Number of children for each unit (scalar or array)
-- `tenure`: Tenure type(s) - single value broadcast to all, or per-unit
-- `geography_type`: Type of geography (same for all units)
-- `geography_ids`: Geography ID(s) - single value broadcast to all, or per-unit
+- `tenure`: Tenure type(s), either a single broadcast value or one per unit
+- `geography_type`: Type of geography, shared by all units
+- `geography_ids`: Geography ID(s), either a single broadcast value or one per unit
 
 **Returns:** NumPy array of SPM thresholds
 
@@ -141,8 +146,8 @@ thresholds = calc.calculate_thresholds(
     num_adults=np.array([1, 2, 2]),
     num_children=np.array([0, 0, 2]),
     tenure=["renter", "renter", "owner_with_mortgage"],
-    geography_type="state",
-    geography_ids=["06", "54", "06"]
+    geography_type="metro_area",
+    geography_ids=["1002", "35620", "41940"]
 )
 ```
 
@@ -163,3 +168,9 @@ calc = SPMCalculator(year=2024)
 print(calc.supported_geographies)
 # ['nation', 'state', 'county', 'metro_area', 'congressional_district', 'puma', 'tract']
 ```
+
+## Notes
+
+- `metro_area` uses the bundled official Census metro workbook.
+- Other subnational geographies use ACS median rents and require the Census API path.
+- Forecast years preserve the latest bundled metro adjustments and forecast only the national base thresholds.

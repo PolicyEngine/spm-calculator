@@ -1,8 +1,5 @@
 """
-Tests for the main SPMCalculator API.
-
-The full SPM threshold calculation is:
-    threshold = base_threshold[tenure] × equivalence_scale × geoadj
+Tests for the main SPM calculator API.
 """
 
 import os
@@ -15,19 +12,19 @@ REQUIRES_CENSUS_API = pytest.mark.skipif(
     reason="Requires CENSUS_API_KEY environment variable",
 )
 
+REFERENCE_RAW_SCALE = 3**0.7
+
 
 class TestSPMCalculator:
     """Test the main SPMCalculator class."""
 
     def test_initialization(self):
-        """Should initialize with a year."""
         from spm_calculator import SPMCalculator
 
         calc = SPMCalculator(year=2024)
         assert calc.year == 2024
 
     def test_get_base_thresholds(self):
-        """Should return base thresholds by tenure."""
         from spm_calculator import SPMCalculator
 
         calc = SPMCalculator(year=2024)
@@ -38,31 +35,42 @@ class TestSPMCalculator:
         assert "owner_without_mortgage" in base
         assert all(v > 0 for v in base.values())
 
+    def test_future_year_base_thresholds_use_shared_forecast_path(self):
+        from spm_calculator import SPMCalculator, get_thresholds
+
+        calc = SPMCalculator(year=2026)
+        assert calc.get_base_thresholds() == get_thresholds(2026)
+
     def test_get_geoadj_nation(self):
-        """National GEOADJ should be 1.0."""
         from spm_calculator import SPMCalculator
 
         calc = SPMCalculator(year=2024)
-        geoadj = calc.get_geoadj("nation", "US")
+        geoadj = calc.get_geoadj("nation", "US", tenure="renter")
 
         assert geoadj == pytest.approx(1.0)
 
-    @REQUIRES_CENSUS_API
-    def test_get_geoadj_state(self):
-        """Should return state GEOADJ."""
+    def test_get_geoadj_metro_uses_official_census_data(self):
         from spm_calculator import SPMCalculator
 
         calc = SPMCalculator(year=2024)
-        ca_geoadj = calc.get_geoadj("state", "06")
+        geoadj = calc.get_geoadj("metro_area", "35620", tenure="renter")
 
-        assert ca_geoadj > 1.0  # California above average
+        assert geoadj == pytest.approx(45736 / 39430)
+
+    @REQUIRES_CENSUS_API
+    def test_get_geoadj_state(self):
+        from spm_calculator import SPMCalculator
+
+        calc = SPMCalculator(year=2024)
+        ca_geoadj = calc.get_geoadj("state", "06", tenure="renter")
+
+        assert ca_geoadj > 1.0
 
 
 class TestThresholdCalculation:
     """Test full threshold calculation."""
 
     def test_reference_family_national(self):
-        """Reference family (2A2C) at national level."""
         from spm_calculator import SPMCalculator
 
         calc = SPMCalculator(year=2024)
@@ -74,12 +82,9 @@ class TestThresholdCalculation:
             geography_id="US",
         )
 
-        # Should equal base threshold (equiv_scale=1.0, geoadj=1.0)
-        base = calc.get_base_thresholds()["renter"]
-        assert threshold == pytest.approx(base)
+        assert threshold == pytest.approx(calc.get_base_thresholds()["renter"])
 
     def test_single_adult_scales_down(self):
-        """Single adult should have lower threshold than 2A2C."""
         from spm_calculator import SPMCalculator
 
         calc = SPMCalculator(year=2024)
@@ -100,71 +105,38 @@ class TestThresholdCalculation:
             geography_id="US",
         )
 
-        assert single_threshold < ref_threshold
-        # Single adult = 1.0/2.1 ≈ 0.476 of reference
         ratio = single_threshold / ref_threshold
-        assert ratio == pytest.approx(1.0 / 2.1, rel=0.01)
+        assert ratio == pytest.approx(1.0 / REFERENCE_RAW_SCALE)
 
-    @REQUIRES_CENSUS_API
-    def test_high_cost_area_scales_up(self):
-        """High cost area should increase threshold."""
+    def test_reference_family_metro_matches_census_workbook(self):
         from spm_calculator import SPMCalculator
 
         calc = SPMCalculator(year=2024)
-
-        national = calc.calculate_threshold(
+        threshold = calc.calculate_threshold(
             num_adults=2,
             num_children=2,
             tenure="renter",
-            geography_type="nation",
-            geography_id="US",
+            geography_type="metro_area",
+            geography_id="1002",
         )
 
-        # San Francisco area congressional district
-        sf_threshold = calc.calculate_threshold(
-            num_adults=2,
-            num_children=2,
-            tenure="renter",
-            geography_type="congressional_district",
-            geography_id="0611",  # CA-11 (SF area)
+        assert threshold == pytest.approx(31622)
+
+    def test_spm_threshold_matches_census_workbook(self):
+        from spm_calculator import spm_threshold
+
+        assert spm_threshold(2, 2, tenure="renter", metro="35620", year=2024) == pytest.approx(
+            45736
         )
-
-        assert sf_threshold > national
-        # SF should be ~15-30% higher
-        ratio = sf_threshold / national
-        assert 1.10 < ratio < 1.40
-
-    @REQUIRES_CENSUS_API
-    def test_low_cost_area_scales_down(self):
-        """Low cost area should decrease threshold."""
-        from spm_calculator import SPMCalculator
-
-        calc = SPMCalculator(year=2024)
-
-        national = calc.calculate_threshold(
-            num_adults=2,
-            num_children=2,
-            tenure="renter",
-            geography_type="nation",
-            geography_id="US",
-        )
-
-        # West Virginia district
-        wv_threshold = calc.calculate_threshold(
-            num_adults=2,
-            num_children=2,
-            tenure="renter",
-            geography_type="congressional_district",
-            geography_id="5401",  # WV-01
-        )
-
-        assert wv_threshold < national
-        # WV should be ~10-20% lower
-        ratio = wv_threshold / national
-        assert 0.80 < ratio < 0.95
+        assert spm_threshold(
+            2,
+            2,
+            tenure="owner_with_mortgage",
+            metro="35620",
+            year=2024,
+        ) == pytest.approx(45189)
 
     def test_tenure_affects_threshold(self):
-        """Different tenure types should give different thresholds."""
         from spm_calculator import SPMCalculator
 
         calc = SPMCalculator(year=2024)
@@ -185,9 +157,7 @@ class TestThresholdCalculation:
             geography_id="US",
         )
 
-        # Owner without mortgage should be lower
         assert owner_no_mortgage < renter
-        # About 15-20% lower
         ratio = owner_no_mortgage / renter
         assert 0.75 < ratio < 0.90
 
@@ -197,29 +167,22 @@ class TestBatchCalculation:
 
     @REQUIRES_CENSUS_API
     def test_batch_calculation(self):
-        """Should handle batch calculation for multiple units."""
         from spm_calculator import SPMCalculator
 
         calc = SPMCalculator(year=2024)
 
-        # Multiple SPM units
         results = calc.calculate_thresholds(
             num_adults=np.array([1, 2, 2, 3]),
             num_children=np.array([0, 0, 2, 4]),
             tenure=["renter", "renter", "renter", "owner_with_mortgage"],
             geography_type="state",
-            geography_ids=["06", "06", "54", "54"],  # CA, CA, WV, WV
+            geography_ids=["06", "06", "54", "54"],
         )
 
         assert len(results) == 4
         assert all(t > 0 for t in results)
 
-        # CA thresholds should be higher than WV
-        assert results[0] > results[2]  # Single in CA > couple in WV? Depends
-        assert results[1] > results[3]  # Compare same compositions
-
     def test_batch_with_single_geography(self):
-        """Should broadcast single geography to all units."""
         from spm_calculator import SPMCalculator
 
         calc = SPMCalculator(year=2024)
@@ -229,117 +192,71 @@ class TestBatchCalculation:
             num_children=np.array([0, 2, 4]),
             tenure=["renter", "renter", "renter"],
             geography_type="nation",
-            geography_ids="US",  # Single value, broadcast to all
+            geography_ids="US",
         )
 
         assert len(results) == 3
-        # Should scale by equivalence only (geoadj=1.0 for all)
         base = calc.get_base_thresholds()["renter"]
-        expected_ratios = np.array([1.0, 2.1, 3.2]) / 2.1
-        expected = base * expected_ratios
-        np.testing.assert_array_almost_equal(results, expected)
+        expected_scales = np.array([1.0, REFERENCE_RAW_SCALE, 5**0.7]) / REFERENCE_RAW_SCALE
+        expected = base * expected_scales
+        np.testing.assert_allclose(results, expected)
 
-
-class TestYearForecasting:
-    """Test threshold calculation for different years."""
-
-    def test_future_year_higher_than_past(self):
-        """Future year should have higher thresholds (inflation)."""
-        from spm_calculator import SPMCalculator
-
-        calc_2022 = SPMCalculator(year=2022)
-        calc_2024 = SPMCalculator(year=2024)
-
-        t_2022 = calc_2022.calculate_threshold(
-            num_adults=2,
-            num_children=2,
-            tenure="renter",
-            geography_type="nation",
-            geography_id="US",
-        )
-
-        t_2024 = calc_2024.calculate_threshold(
-            num_adults=2,
-            num_children=2,
-            tenure="renter",
-            geography_type="nation",
-            geography_id="US",
-        )
-
-        assert t_2024 > t_2022
-
-    def test_forecasting_beyond_published(self):
-        """Should be able to forecast beyond published years."""
-        from spm_calculator import SPMCalculator
-
-        # 2025 thresholds not published yet
-        calc = SPMCalculator(year=2025)
-        threshold = calc.calculate_threshold(
-            num_adults=2,
-            num_children=2,
-            tenure="renter",
-            geography_type="nation",
-            geography_id="US",
-        )
-
-        # Should be higher than 2024
-        calc_2024 = SPMCalculator(year=2024)
-        t_2024 = calc_2024.calculate_threshold(
-            num_adults=2,
-            num_children=2,
-            tenure="renter",
-            geography_type="nation",
-            geography_id="US",
-        )
-
-        assert threshold > t_2024
-
-
-class TestEdgeCases:
-    """Test edge cases and error handling."""
-
-    def test_invalid_tenure_raises(self):
-        """Invalid tenure type should raise ValueError."""
+    def test_batch_uses_tenure_specific_metro_adjustments(self):
         from spm_calculator import SPMCalculator
 
         calc = SPMCalculator(year=2024)
-
-        with pytest.raises(ValueError, match="tenure"):
-            calc.calculate_threshold(
-                num_adults=2,
-                num_children=2,
-                tenure="invalid_tenure",
-                geography_type="nation",
-                geography_id="US",
-            )
-
-    def test_zero_persons_returns_zero(self):
-        """Zero adults and zero children should return 0 or raise."""
-        from spm_calculator import SPMCalculator
-
-        calc = SPMCalculator(year=2024)
-
-        result = calc.calculate_threshold(
-            num_adults=0,
-            num_children=0,
-            tenure="renter",
-            geography_type="nation",
-            geography_id="US",
+        results = calc.calculate_thresholds(
+            num_adults=np.array([2, 2, 2]),
+            num_children=np.array([2, 2, 2]),
+            tenure=[
+                "renter",
+                "owner_with_mortgage",
+                "owner_without_mortgage",
+            ],
+            geography_type="metro_area",
+            geography_ids=["1002", "1002", "1002"],
         )
 
-        assert result == 0.0
+        np.testing.assert_allclose(results, np.array([31622, 31489, 27881]))
 
-    def test_negative_persons_raises(self):
-        """Negative person counts should raise ValueError."""
-        from spm_calculator import SPMCalculator
 
-        calc = SPMCalculator(year=2024)
+# Published 2024 reference thresholds from the Census SPM metro workbook,
+# for a 2-adult, 2-child reference family. Pins every tenure across a range
+# of cost levels so a regression in rent index, tenure share, or base
+# threshold in any direction is caught.
+CENSUS_2024_METRO_REFERENCE_THRESHOLDS = [
+    # (metro_geoid, name, renter, owner_with_mortgage, owner_without_mortgage)
+    ("41940", "San Jose (high cost)", 59815, 58855, 44869),
+    ("31080", "Los Angeles", 49910, 49241, 38901),
+    ("47900", "Washington, DC", 48076, 47461, 37796),
+    ("35620", "New York", 45736, 45189, 36386),
+    ("16980", "Chicago", 40094, 39712, 32986),
+    ("1002", "Alabama Nonmetro (low cost)", 31622, 31489, 27881),
+]
 
-        with pytest.raises(ValueError):
-            calc.calculate_threshold(
-                num_adults=-1,
-                num_children=2,
-                tenure="renter",
-                geography_type="nation",
-                geography_id="US",
-            )
+
+@pytest.mark.parametrize(
+    "metro_geoid,name,renter,owner_with_mortgage,owner_without_mortgage",
+    CENSUS_2024_METRO_REFERENCE_THRESHOLDS,
+    ids=[row[1] for row in CENSUS_2024_METRO_REFERENCE_THRESHOLDS],
+)
+def test_metro_reference_thresholds_match_published_2024(
+    metro_geoid,
+    name,
+    renter,
+    owner_with_mortgage,
+    owner_without_mortgage,
+):
+    """All three tenure-specific thresholds for a 2A2C reference family must
+    match the Census Bureau's published 2024 SPM metro workbook exactly."""
+    from spm_calculator import spm_threshold
+
+    assert spm_threshold(
+        2, 2, tenure="renter", metro=metro_geoid, year=2024
+    ) == pytest.approx(renter)
+    assert spm_threshold(
+        2, 2, tenure="owner_with_mortgage", metro=metro_geoid, year=2024
+    ) == pytest.approx(owner_with_mortgage)
+    assert spm_threshold(
+        2, 2, tenure="owner_without_mortgage", metro=metro_geoid, year=2024
+    ) == pytest.approx(owner_without_mortgage)

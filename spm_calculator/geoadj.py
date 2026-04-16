@@ -1,33 +1,17 @@
 """
-Geographic adjustment (GEOADJ) calculation for SPM thresholds.
+Geographic adjustments for SPM thresholds.
 
-GEOADJ adjusts poverty thresholds for local housing costs using the formula:
-    GEOADJ = (local_median_rent / national_median_rent) × 0.492 + 0.508
+For non-metro custom geographies, adjustments are built from ACS median rents
+and the tenure-specific housing share of the SPM threshold.
 
-Where 0.492 is the housing portion of the SPM threshold for renters.
-
-Data sources:
-- Official Census SPM metro area GEOADJ (bundled): get_metro_geoadj()
-- Congressional districts from ACS (bundled): get_cd_geoadj()
-- Other geographies via Census API: get_geoadj()
-
-Supported geographies:
-- nation: National average (always 1.0)
-- state: 50 states + DC
-- county: ~3,200 counties
-- metro_area: Metropolitan statistical areas (official Census SPM data)
-- congressional_district: 435 congressional districts
-- puma: Public Use Microdata Areas
-- tract: Census tracts (limited availability)
-
-Bundled data (no API key required):
-- Metro areas: get_metro_geoadj() uses official Census Bureau SPM thresholds
-  which are the authoritative source for GEOADJ values.
-- Congressional districts: get_cd_geoadj() uses ACS median rents (unofficial).
+For metro areas, the bundled 2024 Census workbook is authoritative.
 """
+
+from __future__ import annotations
 
 import json
 import os
+from datetime import date
 from functools import lru_cache
 from pathlib import Path
 from typing import Optional, Sequence, Union
@@ -35,10 +19,21 @@ from typing import Optional, Sequence, Union
 import numpy as np
 import pandas as pd
 
-# Housing portion of SPM threshold (for renters)
-HOUSING_SHARE = 0.492
+VALID_TENURE_TYPES = (
+    "owner_with_mortgage",
+    "owner_without_mortgage",
+    "renter",
+)
 
-# Supported geography types and their Census API geography strings
+# These 2024 tenure-specific housing shares exactly reproduce the official
+# 2024 Census metro thresholds when combined with the published national BLS
+# thresholds and the published metro rent index.
+TENURE_HOUSING_SHARES = {
+    "owner_with_mortgage": 0.434,
+    "owner_without_mortgage": 0.323,
+    "renter": 0.443,
+}
+
 SUPPORTED_GEOGRAPHIES = {
     "nation": "us",
     "state": "state",
@@ -49,49 +44,78 @@ SUPPORTED_GEOGRAPHIES = {
     "tract": "tract",
 }
 
-# Cache for lookup tables
-_geoadj_cache: dict[tuple[str, int], pd.DataFrame] = {}
+_DATA_DIR = Path(__file__).parent / "data"
+_geoadj_cache: dict[tuple[str, int, Optional[str], str], pd.DataFrame] = {}
+
+
+def _validate_tenure(tenure: str) -> None:
+    if tenure not in VALID_TENURE_TYPES:
+        raise ValueError(
+            f"Invalid tenure type: {tenure}. "
+            f"Must be one of: {list(VALID_TENURE_TYPES)}"
+        )
+
+
+def _maybe_scalar(value: np.ndarray) -> Union[float, np.ndarray]:
+    if value.ndim == 0:
+        return float(value)
+    return value
+
+
+def get_housing_share(tenure: str) -> float:
+    """Get the tenure-specific housing share used in geographic adjustment."""
+    _validate_tenure(tenure)
+    return TENURE_HOUSING_SHARES[tenure]
 
 
 def calculate_geoadj_from_rent(
     local_rent: Union[float, np.ndarray],
     national_rent: float,
+    tenure: str = "renter",
 ) -> Union[float, np.ndarray]:
     """
-    Calculate GEOADJ from local and national median rents.
-
-    Formula: GEOADJ = (local_rent / national_rent) × 0.492 + 0.508
-
-    Args:
-        local_rent: Local area median rent (scalar or array)
-        national_rent: National median rent
-
-    Returns:
-        GEOADJ value(s)
+    Calculate a tenure-specific SPM geographic adjustment from rents.
     """
-    rent_ratio = np.asarray(local_rent) / national_rent
-    return rent_ratio * HOUSING_SHARE + (1 - HOUSING_SHARE)
+    share = get_housing_share(tenure)
+    rent_ratio = np.asarray(local_rent, dtype=float) / float(national_rent)
+    geoadj = rent_ratio * share + (1.0 - share)
+    return _maybe_scalar(geoadj)
 
 
-# =============================================================================
-# Bundled data for offline lookups (no Census API key required)
-# =============================================================================
+def get_latest_available_acs_year(today: Optional[date] = None) -> int:
+    """
+    Return the latest ACS 5-year end-year that should be publicly available.
+    """
+    today = today or date.today()
+    return today.year - 1 if today.month == 12 else today.year - 2
 
-_DATA_DIR = Path(__file__).parent / "data"
-_bundled_cd_data: dict[int, dict] = {}
+
+def _available_bundled_metro_years() -> list[int]:
+    years = []
+    for path in _DATA_DIR.glob("metro_geoadj_*.json"):
+        try:
+            years.append(int(path.stem.rsplit("_", 1)[-1]))
+        except ValueError:
+            pass
+    return sorted(years)
+
+
+def _resolve_bundled_metro_year(year: int) -> int:
+    available = _available_bundled_metro_years()
+    if not available:
+        raise ValueError("No bundled metro data available.")
+    if year in available:
+        return year
+    if year > available[-1]:
+        return available[-1]
+    raise ValueError(
+        f"No bundled metro data for year {year}. "
+        f"Available: {available or 'none'}"
+    )
 
 
 @lru_cache(maxsize=8)
 def _load_bundled_cd_data(year: int = 2023) -> dict:
-    """
-    Load bundled congressional district GEOADJ data.
-
-    Args:
-        year: Data year (currently only 2023 available)
-
-    Returns:
-        Dict with 'congressional_districts' mapping CD GEOIDs to geoadj data
-    """
     data_file = _DATA_DIR / f"cd_geoadj_{year}.json"
     if not data_file.exists():
         available = [f.stem for f in _DATA_DIR.glob("cd_geoadj_*.json")]
@@ -99,266 +123,215 @@ def _load_bundled_cd_data(year: int = 2023) -> dict:
             f"No bundled CD data for year {year}. "
             f"Available: {available or 'none'}"
         )
-
     with open(data_file) as f:
         return json.load(f)
+
+
+def _normalize_cd_geoid(cd_geoid: Union[str, int], cds: dict) -> str:
+    cd_str = str(int(cd_geoid))
+    if cd_str in cds:
+        return cd_str
+    cd_str_padded = cd_str.zfill(4)
+    if cd_str_padded in cds:
+        return cd_str_padded
+    raise ValueError(
+        f"Congressional district '{cd_geoid}' not found in bundled data. "
+        f"Use format like '612' for CA-12 or '3601' for NY-01."
+    )
 
 
 def get_cd_geoadj(
     cd_geoid: Union[str, int],
     year: int = 2023,
+    tenure: str = "renter",
 ) -> float:
     """
-    Get GEOADJ for a congressional district using bundled data.
-
-    This function uses pre-computed data bundled with the package,
-    so it works without a Census API key.
-
-    Args:
-        cd_geoid: Congressional district GEOID (e.g., "612" or "0612" for CA-12,
-            "3601" for NY-01). Can be string or int.
-        year: Data year (default 2023)
-
-    Returns:
-        GEOADJ value for the congressional district
-
-    Raises:
-        ValueError: If CD GEOID not found in bundled data
-
-    Example:
-        >>> get_cd_geoadj("612")  # CA-12 (San Francisco)
-        1.3497
-        >>> get_cd_geoadj(3612)   # NY-12 (Manhattan)
-        1.5
-        >>> get_cd_geoadj("101")  # AL-01
-        0.8757
+    Get a tenure-specific congressional-district adjustment from bundled rents.
     """
+    _validate_tenure(tenure)
     data = _load_bundled_cd_data(year)
     cds = data["congressional_districts"]
+    cd_str = _normalize_cd_geoid(cd_geoid, cds)
+    entry = cds[cd_str]
 
-    # Normalize to string without leading zeros
-    cd_str = str(int(cd_geoid))
+    if "median_2br_rent" in entry:
+        return calculate_geoadj_from_rent(
+            entry["median_2br_rent"],
+            data["national_median_2br_rent"],
+            tenure=tenure,
+        )
 
-    if cd_str not in cds:
-        # Try with leading zeros (4-digit format)
-        cd_str_padded = cd_str.zfill(4)
-        if cd_str_padded not in cds:
-            raise ValueError(
-                f"Congressional district '{cd_geoid}' not found in bundled data. "
-                f"Use format like '612' for CA-12 or '3601' for NY-01."
-            )
-        cd_str = cd_str_padded
-
-    return cds[cd_str]["geoadj"]
+    # Backward-compatible fallback for older bundled files.
+    return entry["geoadj"]
 
 
 def get_cd_geoadj_batch(
     cd_geoids: Sequence[Union[str, int]],
     year: int = 2023,
+    tenure: str = "renter",
 ) -> np.ndarray:
-    """
-    Get GEOADJ values for multiple congressional districts (vectorized).
-
-    Args:
-        cd_geoids: Sequence of CD GEOIDs
-        year: Data year (default 2023)
-
-    Returns:
-        Array of GEOADJ values
-
-    Example:
-        >>> get_cd_geoadj_batch(["612", "3612", "101"])
-        array([1.3497, 1.5   , 0.8757])
-    """
-    data = _load_bundled_cd_data(year)
-    cds = data["congressional_districts"]
-
-    results = np.zeros(len(cd_geoids), dtype=np.float64)
-
-    for i, cd_geoid in enumerate(cd_geoids):
-        cd_str = str(int(cd_geoid))
-        if cd_str in cds:
-            results[i] = cds[cd_str]["geoadj"]
-        elif cd_str.zfill(4) in cds:
-            results[i] = cds[cd_str.zfill(4)]["geoadj"]
-        else:
-            raise ValueError(
-                f"Congressional district '{cd_geoid}' not found in bundled data."
-            )
-
-    return results
+    _validate_tenure(tenure)
+    return np.array(
+        [get_cd_geoadj(cd_geoid, year=year, tenure=tenure) for cd_geoid in cd_geoids],
+        dtype=np.float64,
+    )
 
 
 def get_bundled_cd_data(year: int = 2023) -> dict:
-    """
-    Get the full bundled congressional district data.
-
-    Useful for inspecting available CDs or getting rent data.
-
-    Args:
-        year: Data year (default 2023)
-
-    Returns:
-        Dict with keys:
-        - 'year': Data year
-        - 'national_median_2br_rent': National median rent
-        - 'housing_share': Housing share used in GEOADJ formula
-        - 'congressional_districts': Dict mapping CD GEOIDs to
-          {geoadj, name, median_2br_rent}
-
-    Example:
-        >>> data = get_bundled_cd_data()
-        >>> data["national_median_2br_rent"]
-        1338.0
-        >>> data["congressional_districts"]["612"]["name"]
-        'Congressional District 12 (118th Congress), California'
-    """
     return _load_bundled_cd_data(year)
-
-
-# =============================================================================
-# Bundled official Census SPM metro area data (no API key required)
-# =============================================================================
 
 
 @lru_cache(maxsize=8)
 def _load_bundled_metro_data(year: int = 2024) -> dict:
-    """
-    Load bundled official Census SPM metro area GEOADJ data.
-
-    Args:
-        year: Data year (currently only 2024 available)
-
-    Returns:
-        Dict with 'metroAreas' mapping metro codes to geoadj data
-    """
-    data_file = _DATA_DIR / f"metro_geoadj_{year}.json"
-    if not data_file.exists():
-        available = [f.stem for f in _DATA_DIR.glob("metro_geoadj_*.json")]
-        raise ValueError(
-            f"No bundled metro data for year {year}. "
-            f"Available: {available or 'none'}"
-        )
-
+    resolved_year = _resolve_bundled_metro_year(year)
+    data_file = _DATA_DIR / f"metro_geoadj_{resolved_year}.json"
     with open(data_file) as f:
-        return json.load(f)
+        data = json.load(f)
+
+    if "nationalThresholds" not in data:
+        from .forecast import get_thresholds
+
+        national_thresholds = get_thresholds(resolved_year)
+        data["nationalThresholds"] = national_thresholds
+        data["housingShares"] = TENURE_HOUSING_SHARES.copy()
+        for info in data["metroAreas"].values():
+            rent_index = info.get("rentIndex", info.get("geoadj"))
+            info["rentIndex"] = rent_index
+            info["referenceThresholds"] = {
+                tenure: round(
+                    national_thresholds[tenure]
+                    * (rent_index * share + (1.0 - share))
+                )
+                for tenure, share in TENURE_HOUSING_SHARES.items()
+            }
+            info["adjustments"] = {
+                tenure: (
+                    info["referenceThresholds"][tenure]
+                    / national_thresholds[tenure]
+                )
+                for tenure in VALID_TENURE_TYPES
+            }
+
+    return data
 
 
-def get_metro_geoadj(
+def _metro_info(metro_code: str, year: int = 2024) -> dict:
+    data = _load_bundled_metro_data(year)
+    metros = data["metroAreas"]
+    if metro_code not in metros:
+        raise ValueError(
+            f"Metro area '{metro_code}' not found in bundled data. "
+            f"Use CBSA codes like '35620' for NYC or state codes like '1002' for Alabama Nonmetro."
+        )
+    return metros[metro_code]
+
+
+def get_metro_rent_index(
     metro_code: Union[str, Sequence[str]],
     year: int = 2024,
 ) -> Union[float, np.ndarray]:
     """
-    Get official GEOADJ for metro area(s) using bundled Census data.
-
-    This function uses official Census Bureau SPM thresholds data,
-    so it works without a Census API key.
-
-    Args:
-        metro_code: CBSA code (e.g., "35620" for NYC metro) or
-            state metro/nonmetro code (e.g., "1002" for Alabama Nonmetro).
-            Can be a single string or a sequence for batch lookups.
-        year: Data year (default 2024)
-
-    Returns:
-        GEOADJ value (float) for single input, or array for sequence input
-
-    Raises:
-        ValueError: If metro code not found in bundled data
-
-    Example:
-        >>> get_metro_geoadj("35620")  # NYC metro
-        1.361
-        >>> get_metro_geoadj("41940")  # San Jose metro
-        2.167
-        >>> get_metro_geoadj(["35620", "41940", "1002"])  # Batch
-        array([1.361, 2.167, 0.553])
+    Get the raw Census median-rent index for metro areas.
     """
     data = _load_bundled_metro_data(year)
     metros = data["metroAreas"]
 
-    # Handle single string input
     if isinstance(metro_code, str):
         if metro_code not in metros:
             raise ValueError(
-                f"Metro area '{metro_code}' not found in bundled data. "
-                f"Use CBSA codes like '35620' for NYC or state codes like '1002' for Alabama Nonmetro."
+                f"Metro area '{metro_code}' not found in bundled data."
             )
-        return metros[metro_code]["geoadj"]
+        info = metros[metro_code]
+        return info.get("rentIndex", info.get("geoadj"))
 
-    # Handle sequence input (batch)
     results = np.zeros(len(metro_code), dtype=np.float64)
     for i, code in enumerate(metro_code):
         if code not in metros:
             raise ValueError(
                 f"Metro area '{code}' not found in bundled data."
             )
-        results[i] = metros[code]["geoadj"]
+        info = metros[code]
+        results[i] = info.get("rentIndex", info.get("geoadj"))
     return results
 
 
-def get_bundled_metro_data(year: int = 2024) -> dict:
+def _broadcast_scalar_or_sequence(
+    values: Union[str, Sequence[str]],
+    length: int,
+) -> list[str]:
+    if isinstance(values, str):
+        return [values] * length
+    values = list(values)
+    if len(values) != length:
+        raise ValueError("Input sequences must have matching lengths.")
+    return values
+
+
+def get_metro_geoadj(
+    metro_code: Union[str, Sequence[str]],
+    tenure: Union[str, Sequence[str]] = "renter",
+    year: int = 2024,
+) -> Union[float, np.ndarray]:
     """
-    Get the full bundled official Census SPM metro area data.
-
-    Useful for inspecting available metro areas or getting names.
-
-    Args:
-        year: Data year (default 2024)
-
-    Returns:
-        Dict with keys:
-        - 'year': Data year
-        - 'source': Data source description
-        - 'sourceUrl': URL to original Census data
-        - 'metroAreas': Dict mapping metro codes to
-          {geoadj, name}
-
-    Example:
-        >>> data = get_bundled_metro_data()
-        >>> data["metroAreas"]["35620"]["name"]
-        'New York-Newark-Jersey City, NY-NJ-PA MSA'
-        >>> data["metroAreas"]["35620"]["geoadj"]
-        1.361
-    """
-    return _load_bundled_metro_data(year)
-
-
-def list_metro_areas(year: int = 2024) -> list[dict]:
-    """
-    List all available metro areas with their GEOADJ values.
-
-    Args:
-        year: Data year (default 2024)
-
-    Returns:
-        List of dicts with 'code', 'name', and 'geoadj' keys,
-        sorted by name
-
-    Example:
-        >>> metros = list_metro_areas()
-        >>> len(metros)
-        341
-        >>> metros[0]
-        {'code': '10180', 'name': 'Abilene, TX MSA', 'geoadj': 0.827}
+    Get the tenure-specific official metro adjustment factor.
     """
     data = _load_bundled_metro_data(year)
     metros = data["metroAreas"]
 
-    result = [
-        {"code": code, "name": info["name"], "geoadj": info["geoadj"]}
-        for code, info in metros.items()
-    ]
+    if isinstance(metro_code, str):
+        tenure_str = tenure if isinstance(tenure, str) else list(tenure)[0]
+        _validate_tenure(tenure_str)
+        if metro_code not in metros:
+            raise ValueError(
+                f"Metro area '{metro_code}' not found in bundled data."
+            )
+        info = metros[metro_code]
+        if "adjustments" in info:
+            return info["adjustments"][tenure_str]
+        rent_index = info.get("rentIndex", info.get("geoadj"))
+        return calculate_geoadj_from_rent(rent_index, 1.0, tenure=tenure_str)
+
+    tenure_list = _broadcast_scalar_or_sequence(tenure, len(metro_code))
+    results = np.zeros(len(metro_code), dtype=np.float64)
+    for i, (code, tenure_value) in enumerate(zip(metro_code, tenure_list)):
+        _validate_tenure(tenure_value)
+        if code not in metros:
+            raise ValueError(
+                f"Metro area '{code}' not found in bundled data."
+            )
+        info = metros[code]
+        if "adjustments" in info:
+            results[i] = info["adjustments"][tenure_value]
+        else:
+            rent_index = info.get("rentIndex", info.get("geoadj"))
+            results[i] = calculate_geoadj_from_rent(
+                rent_index, 1.0, tenure=tenure_value
+            )
+    return results
+
+
+def get_bundled_metro_data(year: int = 2024) -> dict:
+    return _load_bundled_metro_data(year)
+
+
+def list_metro_areas(year: int = 2024) -> list[dict]:
+    data = _load_bundled_metro_data(year)
+    metros = data["metroAreas"]
+    result = []
+    for code, info in metros.items():
+        result.append(
+            {
+                "code": code,
+                "name": info["name"],
+                "rentIndex": info.get("rentIndex", info.get("geoadj")),
+                "adjustments": info.get("adjustments"),
+                "referenceThresholds": info.get("referenceThresholds"),
+            }
+        )
     return sorted(result, key=lambda x: x["name"])
 
 
-# =============================================================================
-# Census API-based lookups (requires API key)
-# =============================================================================
-
-
 def _get_census_api_key() -> str:
-    """Get Census API key from environment."""
     key = os.environ.get("CENSUS_API_KEY")
     if not key:
         raise ValueError(
@@ -373,19 +346,6 @@ def _fetch_acs_median_rent(
     year: int,
     state_fips: Optional[str] = None,
 ) -> pd.DataFrame:
-    """
-    Fetch median 2-bedroom rent from ACS for a geography type.
-
-    Uses ACS 5-year estimates, Table B25031.
-
-    Args:
-        geography_type: Type of geography (state, county, etc.)
-        year: End year of ACS 5-year estimates
-        state_fips: State FIPS code (required for sub-state geographies)
-
-    Returns:
-        DataFrame with geography_id and median_rent columns
-    """
     try:
         from census import Census
     except ImportError:
@@ -395,11 +355,7 @@ def _fetch_acs_median_rent(
 
     api_key = _get_census_api_key()
     c = Census(api_key)
-
-    # B25031_004E = Median gross rent, 2 bedrooms
     variable = "B25031_004E"
-
-    SUPPORTED_GEOGRAPHIES[geography_type]
 
     if geography_type == "nation":
         data = c.acs5.get([variable], {"for": "us:*"}, year=year)
@@ -419,9 +375,8 @@ def _fetch_acs_median_rent(
                 year=year,
             )
         else:
-            # Get all counties (may need to iterate by state)
             all_data = []
-            for st in range(1, 57):  # State FIPS codes
+            for st in range(1, 57):
                 try:
                     data = c.acs5.get(
                         [variable],
@@ -433,9 +388,7 @@ def _fetch_acs_median_rent(
                     pass
             data = all_data
         df = pd.DataFrame(data)
-        df["geography_id"] = df["state"].str.zfill(2) + df["county"].str.zfill(
-            3
-        )
+        df["geography_id"] = df["state"].str.zfill(2) + df["county"].str.zfill(3)
 
     elif geography_type == "congressional_district":
         all_data = []
@@ -481,7 +434,6 @@ def _fetch_acs_median_rent(
         if not state_fips:
             raise ValueError("state_fips required for tract-level data")
         all_data = []
-        # Get counties in state first, then tracts by county
         counties = c.acs5.get(
             ["NAME"],
             {"for": "county:*", "in": f"state:{state_fips}"},
@@ -517,7 +469,6 @@ def _fetch_acs_median_rent(
             year=year,
         )
         df = pd.DataFrame(data)
-        # MSA codes are 5 digits
         msa_col = [
             c
             for c in df.columns
@@ -537,32 +488,34 @@ def _fetch_acs_median_rent(
 
 @lru_cache(maxsize=32)
 def _get_national_median_rent(year: int) -> float:
-    """Get national median 2-bedroom rent for a year (cached)."""
     df = _fetch_acs_median_rent("nation", year)
-    return df["median_rent"].iloc[0]
+    return float(df["median_rent"].iloc[0])
+
+
+def _create_bundled_metro_lookup(year: int, tenure: str) -> pd.DataFrame:
+    data = _load_bundled_metro_data(year)
+    rows = []
+    for code, info in data["metroAreas"].items():
+        rows.append(
+            {
+                "geography_id": code,
+                "rent_index": info.get("rentIndex", info.get("geoadj")),
+                "geoadj": get_metro_geoadj(code, tenure=tenure, year=year),
+            }
+        )
+    return pd.DataFrame(rows)
 
 
 def create_geoadj_lookup(
     geography_type: str,
     year: int,
     state_fips: Optional[str] = None,
+    tenure: str = "renter",
 ) -> pd.DataFrame:
     """
-    Create a GEOADJ lookup table for a geography type.
-
-    Args:
-        geography_type: Type of geography
-        year: ACS 5-year end year
-        state_fips: State FIPS code (required for some sub-state geos)
-
-    Returns:
-        DataFrame with geography_id, median_rent, and geoadj columns
+    Create a tenure-specific lookup table of geographic adjustments.
     """
-    cache_key = (geography_type, year, state_fips)
-
-    # Check cache
-    if cache_key in _geoadj_cache:
-        return _geoadj_cache[cache_key]
+    _validate_tenure(tenure)
 
     if geography_type not in SUPPORTED_GEOGRAPHIES:
         raise ValueError(
@@ -570,18 +523,21 @@ def create_geoadj_lookup(
             f"Supported: {list(SUPPORTED_GEOGRAPHIES.keys())}"
         )
 
-    # Get local rents
+    cache_key = (geography_type, year, state_fips, tenure)
+    if cache_key in _geoadj_cache:
+        return _geoadj_cache[cache_key]
+
+    if geography_type == "metro_area":
+        df = _create_bundled_metro_lookup(year, tenure)
+        _geoadj_cache[cache_key] = df
+        return df
+
     df = _fetch_acs_median_rent(geography_type, year, state_fips)
-
-    # Get national rent
     national_rent = _get_national_median_rent(year)
-
-    # Calculate GEOADJ
-    df["geoadj"] = calculate_geoadj_from_rent(df["median_rent"], national_rent)
-
-    # Cache the result
+    df["geoadj"] = calculate_geoadj_from_rent(
+        df["median_rent"], national_rent, tenure=tenure
+    )
     _geoadj_cache[cache_key] = df
-
     return df
 
 
@@ -589,55 +545,41 @@ def get_geoadj(
     geography_type: str,
     geography_id: str,
     year: int,
+    tenure: str = "renter",
 ) -> float:
     """
-    Get GEOADJ for a specific geography.
-
-    Args:
-        geography_type: Type of geography (nation, state, county, etc.)
-        geography_id: Geography identifier (FIPS code, etc.)
-        year: Year for ACS data
-
-    Returns:
-        GEOADJ value
-
-    Raises:
-        ValueError: If geography type not supported or ID not found
+    Get a tenure-specific geographic adjustment for a single geography.
     """
+    _validate_tenure(tenure)
+
     if geography_type not in SUPPORTED_GEOGRAPHIES:
         raise ValueError(
             f"Unsupported geography type: {geography_type}. "
             f"Supported: {list(SUPPORTED_GEOGRAPHIES.keys())}"
         )
 
-    # Check if data available for this year
-    # ACS 5-year typically available 2009-present
-    current_year = 2024  # TODO: Get dynamically
-    if year > current_year:
-        raise ValueError(
-            f"ACS data not available for {year}. "
-            f"Latest available: {current_year - 1}"
-        )
-
-    # Nation is always 1.0
     if geography_type == "nation":
         return 1.0
 
-    # Get lookup table
-    lookup = create_geoadj_lookup(geography_type, year)
+    if geography_type != "metro_area":
+        latest_available = get_latest_available_acs_year()
+        if year > latest_available:
+            raise ValueError(
+                f"ACS data not available for {year}. "
+                f"Latest available: {latest_available}"
+            )
 
-    # Find the geography
+    lookup = create_geoadj_lookup(
+        geography_type, year, state_fips=None, tenure=tenure
+    )
     match = lookup[lookup["geography_id"] == geography_id]
-
     if len(match) == 0:
         raise ValueError(
             f"Geography ID '{geography_id}' not found for {geography_type}"
         )
+    return float(match["geoadj"].iloc[0])
 
-    return match["geoadj"].iloc[0]
 
-
-def clear_cache():
-    """Clear the GEOADJ cache."""
+def clear_cache() -> None:
     _geoadj_cache.clear()
     _get_national_median_rent.cache_clear()

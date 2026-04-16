@@ -6,7 +6,9 @@
 pip install spm-calculator
 ```
 
-You'll also need a Census API key for geographic data:
+You'll need a Census API key for custom ACS-based geographies like states,
+counties, congressional districts, PUMAs, and tracts. Official Census metro
+thresholds are bundled and work without any API key.
 
 1. Get a free key at [https://api.census.gov/data/key_signup.html](https://api.census.gov/data/key_signup.html)
 2. Set it as an environment variable:
@@ -69,10 +71,9 @@ calc = SPMCalculator(year=2024)
 
 locations = [
     ("nation", "US", "National"),
-    ("state", "06", "California"),
-    ("state", "54", "West Virginia"),
-    ("congressional_district", "0611", "CA-11 (SF)"),
-    ("congressional_district", "5401", "WV-01"),
+    ("metro_area", "1002", "Alabama Nonmetro"),
+    ("metro_area", "35620", "New York metro"),
+    ("metro_area", "41940", "San Jose metro"),
 ]
 
 for geo_type, geo_id, name in locations:
@@ -123,19 +124,31 @@ print(base)
 
 ### Geographic Adjustment (GEOADJ)
 
-Get the GEOADJ factor for any geography:
+Get the tenure-specific GEOADJ factor for any geography:
 
 ```python
 calc = SPMCalculator(year=2024)
 
 # National is always 1.0
-print(calc.get_geoadj("nation", "US"))  # 1.0
+print(calc.get_geoadj("nation", "US", tenure="renter"))  # 1.0
 
-# High-cost area
-print(calc.get_geoadj("state", "06"))  # ~1.15 (California)
+# Official metro adjustment from bundled Census data
+print(calc.get_geoadj("metro_area", "35620", tenure="renter"))  # ~1.160 (New York)
 
-# Low-cost area
-print(calc.get_geoadj("state", "54"))  # ~0.85 (West Virginia)
+# Low-cost official metro area
+print(calc.get_geoadj("metro_area", "1002", tenure="renter"))  # ~0.802 (Alabama Nonmetro)
+```
+
+For ACS-derived custom geographies:
+
+```python
+import os
+from spm_calculator import SPMCalculator
+
+os.environ["CENSUS_API_KEY"] = "your_key_here"
+
+calc = SPMCalculator(year=2024)
+print(calc.get_geoadj("state", "06", tenure="renter"))  # California
 ```
 
 ### Equivalence Scale
@@ -149,10 +162,10 @@ from spm_calculator import spm_equivalence_scale
 print(spm_equivalence_scale(2, 2))  # 1.0
 
 # Single adult
-print(spm_equivalence_scale(1, 0))  # ~0.48
+print(spm_equivalence_scale(1, 0))  # ~0.463
 
 # Large family
-print(spm_equivalence_scale(3, 4))  # ~1.52
+print(spm_equivalence_scale(3, 4))  # ~1.430
 ```
 
 ## Next Steps

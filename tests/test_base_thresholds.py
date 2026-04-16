@@ -117,6 +117,48 @@ class TestThresholdTrends:
             ), f"{tenure} growth {growth:.1%} outside range"
 
 
+class TestCEThresholdMethodology:
+    """Test core CE-threshold methodology details."""
+
+    def test_calculate_base_thresholds_applies_fcsuti_inflation(
+        self, monkeypatch
+    ):
+        import pandas as pd
+
+        import spm_calculator.ce_threshold as ce_threshold
+
+        sample = pd.DataFrame(
+            {
+                "CUTENURE": [2, 2],
+                "PERSLT18": [2, 2],
+                "ADULT": [2, 2],
+                "ce_year": [2022, 2023],
+            }
+        )
+
+        monkeypatch.setattr(
+            ce_threshold, "download_ce_pumd_years", lambda years: sample.copy()
+        )
+        monkeypatch.setattr(
+            ce_threshold,
+            "calculate_fcsuti",
+            lambda df: pd.Series([100.0, 100.0], index=df.index),
+        )
+        monkeypatch.setattr(
+            ce_threshold,
+            "get_fcsuti_inflation_factor",
+            lambda from_year, to_year: {2022: 2.0, 2023: 1.0}[from_year],
+        )
+
+        thresholds = ce_threshold.calculate_base_thresholds(
+            years=[2022, 2023],
+            target_year=2024,
+            use_published_fallback=False,
+        )
+
+        assert thresholds["renter"] == pytest.approx(124.5)
+
+
 # TODO: Add integration tests that actually download CE data
 # These would be slower and require network access
 class TestCEDataDownload:

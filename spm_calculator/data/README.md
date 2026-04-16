@@ -1,8 +1,8 @@
 # Bundled data
 
-## Congressional district GEOADJ (`cd_geoadj_2023.json`)
+## Congressional district rents (`cd_geoadj_2023.json`)
 
-Pre-computed geographic adjustment factors (GEOADJ) for all 436 congressional districts (118th Congress).
+Bundled congressional district rent data for all 436 congressional districts (118th Congress).
 
 ### Source
 
@@ -12,19 +12,31 @@ Pre-computed geographic adjustment factors (GEOADJ) for all 436 congressional di
 
 ### Methodology
 
-GEOADJ is calculated using the standard SPM formula:
+The package converts these rents into a tenure-specific SPM adjustment at runtime:
 
 ```
-GEOADJ = (local_median_rent / national_median_rent) × 0.492 + 0.508
+GEOADJ_t = (local_median_rent / national_median_rent) × housing_share_t + (1 - housing_share_t)
 ```
 
 Where:
 - `local_median_rent` = Median 2-bedroom rent for the congressional district
 - `national_median_rent` = National median 2-bedroom rent ($1,338 in 2023)
-- `0.492` = Housing share of SPM threshold for renters
-- `0.508` = Non-housing share (1 - 0.492)
+- `housing_share_t` is tenure-specific (`0.443` renter, `0.434` owner with mortgage, `0.323` owner without mortgage)
 
 Values are clamped to the range [0.70, 1.50] to match Census Bureau practice.
+
+## Metro thresholds (`metro_geoadj_2024.json`)
+
+Bundled official Census metro threshold data for 2024.
+
+### Source
+
+- **Census workbook**: `SPM-pov-threshold-2024.xlsx`
+- **Table**: `Thresholds 2024`
+- **Contents**:
+  - raw median-rent index
+  - tenure-specific reference-family threshold adjustments
+  - tenure-specific 2-adult, 2-child thresholds
 
 ### References
 

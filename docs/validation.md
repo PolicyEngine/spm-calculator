@@ -1,6 +1,7 @@
 # Validation
 
-This document describes how the spm-calculator is validated against official sources.
+This document describes how `spm-calculator` is validated against official
+threshold sources and the package's own deterministic formulas.
 
 ## Base Threshold Validation
 
@@ -19,40 +20,44 @@ We validate base thresholds against BLS published values:
 
 Source: [BLS SPM Thresholds](https://www.bls.gov/pir/spm/spm_thresholds_2024.htm)
 
-### CE Survey Calculation
+### CE Survey Reconstruction
 
-When calculating from CE Survey data (for forecasting beyond published years), we target:
+When reconstructing thresholds from CE Survey data, we target:
 
 - Within 2% of published values when using the same data years
-- Consistent ranking across tenure types (owner w/o mortgage < owner w/ mortgage ≈ renter)
+- Consistent ranking across tenure types: owner without mortgage < owner with mortgage approximately renter
+- Correct use of the FCSUti CPI adjustment into threshold-year dollars
 
 ## GEOADJ Validation
 
-### Expected Ranges
+### Official Metro Thresholds
 
-GEOADJ values should fall within the range observed in Census data:
+For metro areas and nonmetro areas, we validate against the published Census
+2024 workbook of 2-adult, 2-child thresholds.
 
-| Statistic | Expected | Observed |
-|-----------|----------|----------|
-| Minimum | ~0.84 (WV) | [TO BE VALIDATED] |
-| Maximum | ~1.27 (HI) | [TO BE VALIDATED] |
-| National mean | 1.00 | 1.00 (by definition) |
-| Std deviation | ~0.10 | [TO BE VALIDATED] |
+| Geography | Tenure | Census published | Calculator | Difference |
+|-----------|--------|------------------|------------|------------|
+| Alabama Nonmetro | Renter | $31,622 | $31,622 | 0% |
+| New York metro | Renter | $45,736 | $45,736 | 0% |
+| San Jose metro | Renter | $59,815 | $59,815 | 0% |
 
-### State-Level Validation
+The bundled metro data also preserves the raw Census rent index separately from
+the tenure-specific threshold adjustment.
 
-Cross-check against Census published GEOADJ values:
+### ACS-Derived Geographies
 
-| State | Census GEOADJ | Calculator | Difference |
-|-------|--------------|------------|------------|
-| California | ~1.15 | [TO BE VALIDATED] | - |
-| Hawaii | ~1.27 | [TO BE VALIDATED] | - |
-| West Virginia | ~0.84 | [TO BE VALIDATED] | - |
-| Texas | ~0.95 | [TO BE VALIDATED] | - |
+For states, counties, congressional districts, PUMAs, and tracts, we validate
+the transformation itself:
+
+```python
+GEOADJ_t = (local_rent / national_rent) * housing_share_t + (1 - housing_share_t)
+```
+
+where `housing_share_t` is tenure-specific.
 
 ## Equivalence Scale Validation
 
-The three-parameter equivalence scale is deterministic:
+The Betson three-parameter equivalence scale is deterministic:
 
 ```python
 from spm_calculator import spm_equivalence_scale
@@ -61,36 +66,15 @@ from spm_calculator import spm_equivalence_scale
 assert spm_equivalence_scale(2, 2) == 1.0
 
 # Known values
-assert abs(spm_equivalence_scale(1, 0) - 1.0/2.1) < 0.001
-assert abs(spm_equivalence_scale(2, 0) - 1.5/2.1) < 0.001
+assert abs(spm_equivalence_scale(1, 0) - 0.4634630568) < 1e-9
+assert abs(spm_equivalence_scale(2, 0) - 0.6534829100) < 1e-9
 ```
-
-## Poverty Rate Validation
-
-### National SPM Rate
-
-When applied to CPS microdata, calculated thresholds should produce SPM poverty rates consistent with Census publications:
-
-| Year | Census SPM Rate | Calculated | Difference |
-|------|----------------|------------|------------|
-| 2023 | 12.9% | [TO BE VALIDATED] | - |
-| 2022 | 12.4% | [TO BE VALIDATED] | - |
-
-### State-Level Rates
-
-State-level poverty rates should be directionally consistent:
-
-- High-cost states (CA, NY, HI) should have different relative poverty rates when using local thresholds vs. national thresholds
-- Low-cost states (WV, MS, AR) should similarly differ
 
 ## Running Validation Tests
 
 ```bash
-# Run all tests including validation
+# Run all tests
 pytest tests/ -v
-
-# Run only validation tests
-pytest tests/test_validation.py -v
 
 # Run with coverage
 pytest tests/ --cov=spm_calculator --cov-report=html
@@ -101,15 +85,14 @@ pytest tests/ --cov=spm_calculator --cov-report=html
 Every PR runs validation tests against:
 
 1. Published BLS threshold values
-2. Expected GEOADJ ranges
-3. Equivalence scale formulas
-
-See `.github/workflows/ci.yaml` for CI configuration.
+2. Official Census metro thresholds
+3. Tenure-specific GEOADJ formulas
+4. Equivalence scale formulas
 
 ## Reporting Issues
 
 If you find discrepancies between calculated and expected values:
 
-1. Check the data year - ACS and CE data are released with lags
-2. Verify the geography identifier format
-3. Open an issue at [GitHub Issues](https://github.com/PolicyEngine/spm-calculator/issues)
+1. Check the data year. ACS and CE data are released with lags.
+2. Verify the geography identifier format.
+3. Open an issue at [GitHub Issues](https://github.com/PolicyEngine/spm-calculator/issues).
