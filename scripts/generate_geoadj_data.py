@@ -22,10 +22,9 @@ def _read_package_version() -> str:
     pyproject = (repo_root / "pyproject.toml").read_text()
     match = re.search(r'^version\s*=\s*"([^"]+)"', pyproject, re.MULTILINE)
     if not match:
-        raise RuntimeError(
-            "Could not find a version field in pyproject.toml"
-        )
+        raise RuntimeError("Could not find a version field in pyproject.toml")
     return match.group(1)
+
 
 HISTORICAL_THRESHOLDS = {
     "2015": {
