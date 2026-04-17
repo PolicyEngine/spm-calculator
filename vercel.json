@@ -9,6 +9,10 @@
       "destination": "/"
     },
     {
+      "source": "/us/spm-calculator/",
+      "destination": "/"
+    },
+    {
       "source": "/us/spm-calculator/:path*",
       "destination": "/:path*"
     }
