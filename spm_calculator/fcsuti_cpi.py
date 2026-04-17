@@ -205,23 +205,29 @@ def compute_fcsuti_weights_from_ce(
     return {component: value / total for component, value in totals.items()}
 
 
+_STATIC_WEIGHTS_WARNING = (
+    "Using static FCSUti weights approximation. For BLS-fidelity "
+    "inflation adjustment, derive weights from the CE sample via "
+    "compute_fcsuti_weights_from_ce() or supply an explicit "
+    "weights= dict keyed by component name."
+)
+
+
 def _resolve_weights(
     weights: Optional[Mapping[str, float]],
 ) -> dict[str, float]:
-    """Return effective weights, warning when the static fallback is used."""
-    if weights is not None:
-        if not weights:
-            raise ValueError("weights mapping is empty")
-        return dict(weights)
-    warnings.warn(
-        "Using static FCSUti weights approximation. For BLS-fidelity "
-        "inflation adjustment, derive weights from the CE sample via "
-        "compute_fcsuti_weights_from_ce() or supply an explicit "
-        "weights= dict keyed by component name.",
-        RuntimeWarning,
-        stacklevel=3,
-    )
-    return dict(FCSUTI_WEIGHTS)
+    """Normalize a supplied ``weights`` mapping (never warns).
+
+    The fallback-use RuntimeWarning is emitted by the public
+    entry-point functions (``get_fcsuti_cpi``,
+    ``get_fcsuti_inflation_factor``) so that ``stacklevel=2`` attributes
+    the warning to the user regardless of which entry point is called.
+    """
+    if weights is None:
+        return dict(FCSUTI_WEIGHTS)
+    if not weights:
+        raise ValueError("weights mapping is empty")
+    return dict(weights)
 
 
 @lru_cache(maxsize=8)
@@ -302,6 +308,12 @@ def get_fcsuti_cpi(
     Returns:
         Annual FCSUti CPI index with base ``base_year`` = 100.
     """
+    if weights is None:
+        warnings.warn(
+            _STATIC_WEIGHTS_WARNING,
+            RuntimeWarning,
+            stacklevel=2,
+        )
     resolved = _resolve_weights(weights)
     return _cached_fcsuti_cpi(
         start_year,
@@ -329,6 +341,13 @@ def get_fcsuti_inflation_factor(
         dollars. Falls back to a ~4%/yr estimate if the BLS series
         fetch fails, and emits a :class:`RuntimeWarning` in that case.
     """
+    if weights is None:
+        warnings.warn(
+            _STATIC_WEIGHTS_WARNING,
+            RuntimeWarning,
+            stacklevel=2,
+        )
+        weights = FCSUTI_WEIGHTS
     try:
         fcsuti = get_fcsuti_cpi(
             start_year=min(from_year, to_year) - 1,
