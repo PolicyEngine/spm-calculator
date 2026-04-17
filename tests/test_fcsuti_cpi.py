@@ -250,9 +250,10 @@ class TestStaticWeightsShape:
 
 class TestPrecomputedFactor:
     def test_returns_direct_pair(self):
-        assert get_precomputed_fcsuti_factor(
-            2023, 2024
-        ) == PRECOMPUTED_FCSUTI_FACTORS[(2023, 2024)]
+        assert (
+            get_precomputed_fcsuti_factor(2023, 2024)
+            == PRECOMPUTED_FCSUTI_FACTORS[(2023, 2024)]
+        )
 
     def test_returns_none_when_missing(self):
         assert get_precomputed_fcsuti_factor(2001, 2099) is None
@@ -276,9 +277,9 @@ class TestComposedFactor:
         direct_19_24 = PRECOMPUTED_FCSUTI_FACTORS[(2019, 2024)]
         direct_22_24 = PRECOMPUTED_FCSUTI_FACTORS[(2022, 2024)]
         expected = direct_19_24 * (1.0 / direct_22_24)
-        assert _compose_precomputed_fcsuti_factor(
-            2019, 2022
-        ) == pytest.approx(expected)
+        assert _compose_precomputed_fcsuti_factor(2019, 2022) == pytest.approx(
+            expected
+        )
 
     def test_returns_none_when_no_pivot_works(self):
         assert _compose_precomputed_fcsuti_factor(1985, 1990) is None
@@ -315,9 +316,9 @@ class TestInflationFactorOfflineFallback:
         monkeypatch.setattr(mod, "fetch_bls_cpi_series", fail_fetch)
 
         factor = get_fcsuti_inflation_factor(2019, 2022)
-        composed = PRECOMPUTED_FCSUTI_FACTORS[
-            (2019, 2024)
-        ] * (1.0 / PRECOMPUTED_FCSUTI_FACTORS[(2022, 2024)])
+        composed = PRECOMPUTED_FCSUTI_FACTORS[(2019, 2024)] * (
+            1.0 / PRECOMPUTED_FCSUTI_FACTORS[(2022, 2024)]
+        )
         assert factor == pytest.approx(composed)
 
     def test_falls_back_to_4pct_when_nothing_precomputed_matches(
