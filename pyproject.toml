@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "spm-calculator"
-version = "0.2.0"
+version = "0.2.1"
 description = "Calculate SPM (Supplemental Poverty Measure) thresholds for any US geography and year"
 readme = "README.md"
 license = "MIT"
