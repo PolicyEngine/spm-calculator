@@ -291,7 +291,7 @@ class TestInflationFactorOfflineFallback:
         consult `PRECOMPUTED_FCSUTI_FACTORS` before the 4%/yr estimate."""
         import spm_calculator.fcsuti_cpi as mod
 
-        mod.get_fcsuti_cpi.cache_clear()
+        mod._cached_fcsuti_cpi.cache_clear()
 
         def fail_fetch(*args, **kwargs):
             raise RuntimeError("no network")
@@ -308,7 +308,7 @@ class TestInflationFactorOfflineFallback:
         used before the 4%/yr estimate."""
         import spm_calculator.fcsuti_cpi as mod
 
-        mod.get_fcsuti_cpi.cache_clear()
+        mod._cached_fcsuti_cpi.cache_clear()
 
         def fail_fetch(*args, **kwargs):
             raise RuntimeError("no network")
@@ -330,7 +330,7 @@ class TestInflationFactorOfflineFallback:
 
         import spm_calculator.fcsuti_cpi as mod
 
-        mod.get_fcsuti_cpi.cache_clear()
+        mod._cached_fcsuti_cpi.cache_clear()
         monkeypatch.setattr(
             mod,
             "fetch_bls_cpi_series",
