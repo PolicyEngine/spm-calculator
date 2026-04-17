@@ -83,10 +83,14 @@ function fmtPercent(value) {
 }
 
 function getRawEquivalenceScale(adults, children, methodology) {
-  if (adults === 0 && children === 0) return 0;
+  // Child-only ("0 adults, N children") units aren't valid SPM households,
+  // so we return 0 rather than synthesising a single-parent scale from a
+  // ghost adult. This matches the Python helper in
+  // `spm_calculator.equivalence_scale.spm_equivalence_scale`.
+  if (adults === 0) return 0;
 
   if (children > 0) {
-    if (adults <= 1) {
+    if (adults === 1) {
       return (
         1 +
         methodology.equivalenceScale.singleAdultFirstChild +
@@ -99,20 +103,20 @@ function getRawEquivalenceScale(adults, children, methodology) {
     ) ** methodology.equivalenceScale.economiesOfScale;
   }
 
-  if (adults <= 1) return 1;
+  if (adults === 1) return 1;
   if (adults === 2) return methodology.equivalenceScale.twoAdultNoChild;
   return adults ** methodology.equivalenceScale.economiesOfScale;
 }
 
 function describeEquivalenceFormula(adults, children) {
-  if (adults === 0 && children === 0) return "0";
+  if (adults === 0) return "0";
   if (children > 0) {
-    if (adults <= 1) {
+    if (adults === 1) {
       return `(1 + 0.8 + 0.5 * (${children} - 1))^0.7`;
     }
     return `(${adults} + 0.5 * ${children})^0.7`;
   }
-  if (adults <= 1) return "1.0";
+  if (adults === 1) return "1.0";
   if (adults === 2) return "1.41";
   return `${adults}^0.7`;
 }
