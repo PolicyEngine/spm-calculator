@@ -1,30 +1,37 @@
-"""
-FCSUti CPI-U Composite Index calculation.
+"""FCSUti CPI-U Composite Index for SPM threshold inflation adjustment.
 
-The FCSUti (Food, Clothing, Shelter, Utilities, telephone, internet) price
-index is used to adjust CE expenditure data to threshold-year dollars.
+The FCSUti composite re-weights five CPI-U component series (food, apparel,
+shelter, utilities, telephone, and — for post-2018 vintages — internet) in
+proportion to the FCSUti expenditure shares of consumer units with children.
+It replaces the All-Items CPI-U used in the pre-2021 SPM methodology.
 
-This replaces the All Items CPI-U that was used in earlier SPM methodology.
+BLS re-derives the component weights from the CE expenditure sample used
+for the target-year threshold itself, so the weights roll with the 5-year
+lagged window. This module supports three ways of supplying weights:
 
-Components and approximate weights (based on CE expenditure shares):
-- Food (at home + away): ~30%
-- Apparel: ~5%
-- Shelter: ~45%
-- Utilities (fuel and utilities): ~12%
-- Telephone and internet services: ~8%
+1. Pass a ``weights`` dict explicitly (highest precedence).
+2. Compute weights from a CE FMLI DataFrame with
+   :func:`compute_fcsuti_weights_from_ce`.
+3. Fall back to :data:`FCSUTI_WEIGHTS`, a static approximation. A
+   :class:`RuntimeWarning` is emitted in this case so runs using the
+   fallback are visible in logs.
 
-Reference:
-- BLS SPM Thresholds methodology
-- https://www.bls.gov/pir/spm/spm_thresholds_2024.htm
+References
+----------
+- Garner, T. (2021). *Alternative Measures of the Extent and Severity
+  of Poverty: A Review and Data Users' Guide to the Supplemental
+  Poverty Measure.* BLS, https://www.bls.gov/pir/spm/garner_spm_choices_03_15_21.pdf
+- BLS SPM Thresholds: https://www.bls.gov/pir/spm/spm_thresholds_2024.htm
 """
 
 import warnings
 from functools import lru_cache
-from typing import Optional
+from typing import Mapping, Optional
 
+import numpy as np
 import pandas as pd
 
-# BLS CPI series IDs for FCSUti components
+# BLS CPI series IDs for FCSUti components.
 # Source: https://www.bls.gov/cpi/data.htm
 CPI_SERIES = {
     "food": "CUUR0000SAF",  # Food
@@ -34,14 +41,16 @@ CPI_SERIES = {
     "shelter": "CUUR0000SAH1",  # Shelter
     "utilities": "CUUR0000SAH2",  # Fuels and utilities
     "telephone": "CUUR0000SEED",  # Telephone services
-    "internet": "CUUR0000SEEE",  # Internet services and electronic info
-    "all_items": "CUUR0000SA0",  # All items (for reference)
+    "internet": "CUUR0000SEEE",  # Internet services
+    "all_items": "CUUR0000SA0",  # All items (reference only)
 }
 
-# Approximate expenditure weights for FCSUti composite
-# These are based on CE Survey expenditure shares for consumer units with children
-# Weights should sum to 1.0
-FCSUTI_WEIGHTS = {
+# Static fallback FCSUti expenditure shares for consumer units with
+# children. These are a rough approximation of CE shares; BLS re-derives
+# them annually from the 5-year CE sample used for each threshold year.
+# Prefer supplying ``weights=`` explicitly or deriving via
+# :func:`compute_fcsuti_weights_from_ce`.
+FCSUTI_WEIGHTS: dict[str, float] = {
     "food": 0.30,
     "apparel": 0.05,
     "shelter": 0.45,
@@ -50,156 +59,296 @@ FCSUTI_WEIGHTS = {
     "internet": 0.04,
 }
 
+# FMLI expenditure-column pairs (PQ = previous quarter, CQ = current
+# quarter) for each FCSUti component. Used by
+# :func:`compute_fcsuti_weights_from_ce`.
+_FMLI_EXPENDITURE_COLUMNS: dict[str, tuple[str, str]] = {
+    "food": ("FOODPQ", "FOODCQ"),
+    "apparel": ("APPARPQ", "APPARCQ"),
+    "shelter": ("SHELTPQ", "SHELTCQ"),
+    "utilities": ("UTILPQ", "UTILCQ"),
+    "telephone": ("TELEPHPQ", "TELEPHCQ"),
+    "internet": ("INFOTECHPQ", "INFOTECHCQ"),
+}
+
+_MORTGAGE_PRINCIPAL_COLUMNS: tuple[str, str] = ("MRTPRINPQ", "MRTPRINCQ")
+
 
 def fetch_bls_cpi_series(
     series_id: str,
     start_year: int = 2010,
     end_year: int = 2024,
 ) -> pd.Series:
-    """
-    Fetch CPI series data from BLS API.
+    """Fetch an annual-average CPI series from the BLS public API.
 
     Args:
-        series_id: BLS series ID (e.g., "CUUR0000SA0")
-        start_year: Start year for data
-        end_year: End year for data
+        series_id: BLS series ID (e.g. ``"CUUR0000SA0"``).
+        start_year: Inclusive start year.
+        end_year: Inclusive end year.
 
     Returns:
-        Series with annual average CPI values indexed by year
+        Series of annual-average CPI values indexed by calendar year.
     """
     import requests
 
-    # BLS Public Data API (no registration required for small requests)
     url = "https://api.bls.gov/publicAPI/v2/timeseries/data/"
-
     payload = {
         "seriesid": [series_id],
         "startyear": str(start_year),
         "endyear": str(end_year),
         "annualaverage": True,
     }
-
     response = requests.post(url, json=payload, timeout=30)
     response.raise_for_status()
-
     data = response.json()
-
     if data["status"] != "REQUEST_SUCCEEDED":
         raise ValueError(
             f"BLS API error: {data.get('message', 'Unknown error')}"
         )
 
-    # Extract annual averages
     series_data = data["Results"]["series"][0]["data"]
-
-    # Filter to annual averages (period = "M13")
+    # Filter to annual averages (period code M13).
     annual = [d for d in series_data if d["period"] == "M13"]
-
-    result = pd.Series(
+    return pd.Series(
         {int(d["year"]): float(d["value"]) for d in annual},
         name=series_id,
     ).sort_index()
 
-    return result
+
+def compute_fcsuti_weights_from_ce(
+    ce_df: pd.DataFrame,
+    weight_col: str = "FINLWT21",
+    children_col: str = "PERSLT18",
+    subtract_mortgage_principal: bool = True,
+) -> dict[str, float]:
+    """Derive FCSUti expenditure shares from a CE FMLI DataFrame.
+
+    For each FCSUti component, computes the survey-weighted total
+    expenditure across consumer units with at least one child, then
+    normalizes so the returned shares sum to 1.0. Matches the BLS
+    Garner (2021) methodology where the composite weights are derived
+    from the same CE sample used to compute the threshold itself.
+
+    The ``shelter`` component follows the SPM convention of excluding
+    mortgage principal (investment, not consumption) when the
+    ``MRTPRINPQ``/``MRTPRINCQ`` columns are present.
+
+    Args:
+        ce_df: CE FMLI DataFrame (one row per CU-interview).
+        weight_col: Column with the CU's calibrated survey weight.
+            Defaults to ``FINLWT21`` (standard FMLI name).
+        children_col: Column with the number of persons under 18 in
+            the CU. Defaults to ``PERSLT18``.
+        subtract_mortgage_principal: When True (default) and
+            ``MRTPRINPQ``/``MRTPRINCQ`` are in ``ce_df``, subtract
+            mortgage principal from shelter expenditure.
+
+    Returns:
+        Dict mapping each FCSUti component present in ``ce_df`` to a
+        share in ``[0, 1]``. Shares sum to 1.0. Components without
+        their expenditure columns in the data are omitted.
+
+    Raises:
+        ValueError: If ``ce_df`` is missing ``weight_col`` or
+            ``children_col``, or if no CUs have children, or if no
+            FCSUti component columns are present.
+    """
+    if weight_col not in ce_df.columns:
+        raise ValueError(
+            f"CE DataFrame is missing weight column '{weight_col}'"
+        )
+    if children_col not in ce_df.columns:
+        raise ValueError(
+            f"CE DataFrame is missing children column '{children_col}'"
+        )
+
+    with_children = ce_df[ce_df[children_col] > 0]
+    if len(with_children) == 0:
+        raise ValueError("No consumer units with children in CE DataFrame")
+
+    weights = with_children[weight_col].astype(float).to_numpy()
+
+    def _weighted_expenditure(pq: str, cq: str) -> Optional[float]:
+        if pq not in with_children.columns or cq not in with_children.columns:
+            return None
+        values = (
+            with_children[pq].fillna(0).to_numpy()
+            + with_children[cq].fillna(0).to_numpy()
+        )
+        return float(np.sum(values * weights))
+
+    shelter_principal_offset: Optional[float] = None
+    if subtract_mortgage_principal:
+        shelter_principal_offset = _weighted_expenditure(
+            *_MORTGAGE_PRINCIPAL_COLUMNS
+        )
+
+    totals: dict[str, float] = {}
+    for component, (pq, cq) in _FMLI_EXPENDITURE_COLUMNS.items():
+        exp = _weighted_expenditure(pq, cq)
+        if exp is None:
+            continue
+        if component == "shelter" and shelter_principal_offset is not None:
+            exp = max(exp - shelter_principal_offset, 0.0)
+        totals[component] = exp
+
+    if not totals:
+        raise ValueError(
+            "CE DataFrame has no FCSUti expenditure columns "
+            f"({list(_FMLI_EXPENDITURE_COLUMNS)})"
+        )
+
+    total = sum(totals.values())
+    if total <= 0:
+        raise ValueError("Total FCSUti expenditure is zero or negative")
+
+    return {component: value / total for component, value in totals.items()}
+
+
+def _resolve_weights(
+    weights: Optional[Mapping[str, float]],
+) -> dict[str, float]:
+    """Return effective weights, warning when the static fallback is used."""
+    if weights is not None:
+        if not weights:
+            raise ValueError("weights mapping is empty")
+        return dict(weights)
+    warnings.warn(
+        "Using static FCSUti weights approximation. For BLS-fidelity "
+        "inflation adjustment, derive weights from the CE sample via "
+        "compute_fcsuti_weights_from_ce() or supply an explicit "
+        "weights= dict keyed by component name.",
+        RuntimeWarning,
+        stacklevel=3,
+    )
+    return dict(FCSUTI_WEIGHTS)
 
 
 @lru_cache(maxsize=8)
-def get_fcsuti_cpi(
-    start_year: int = 2010,
-    end_year: int = 2024,
-    base_year: int = 2024,
+def _cached_fcsuti_cpi(
+    start_year: int,
+    end_year: int,
+    base_year: int,
+    weights_items: tuple[tuple[str, float], ...],
 ) -> pd.Series:
-    """
-    Calculate the FCSUti composite CPI index.
-
-    Args:
-        start_year: Start year for index
-        end_year: End year for index
-        base_year: Year to set index = 100
-
-    Returns:
-        Series with FCSUti CPI values indexed by year
-    """
-    components = {}
-
-    # Fetch each component series
-    for component, series_id in CPI_SERIES.items():
-        if component in FCSUTI_WEIGHTS:
-            try:
-                components[component] = fetch_bls_cpi_series(
-                    series_id, start_year, end_year
-                )
-            except Exception as e:
-                warnings.warn(
-                    f"Could not fetch {component} CPI: {e}",
-                    RuntimeWarning,
-                    stacklevel=2,
-                )
+    """Immutable-inputs worker for :func:`get_fcsuti_cpi`."""
+    weights = dict(weights_items)
+    components: dict[str, pd.Series] = {}
+    for component in weights:
+        series_id = CPI_SERIES.get(component)
+        if series_id is None:
+            warnings.warn(
+                f"No CPI series known for component '{component}'; skipping.",
+                RuntimeWarning,
+                stacklevel=2,
+            )
+            continue
+        try:
+            components[component] = fetch_bls_cpi_series(
+                series_id, start_year, end_year
+            )
+        except Exception as e:
+            warnings.warn(
+                f"Could not fetch {component} CPI: {e}",
+                RuntimeWarning,
+                stacklevel=2,
+            )
 
     if not components:
         raise ValueError("Could not fetch any CPI component data")
 
-    # Combine into DataFrame
     df = pd.DataFrame(components)
+    used_weights = {c: weights[c] for c in df.columns if c in weights}
+    if not used_weights:
+        raise ValueError(
+            "None of the requested FCSUti components returned CPI data"
+        )
 
-    # Calculate weighted composite
+    denom = sum(used_weights.values())
+    if denom <= 0:
+        raise ValueError("Requested FCSUti weights sum to zero")
+    # Renormalize over the components we actually have so dropped series
+    # don't shrink the composite.
+    renormalized = {c: w / denom for c, w in used_weights.items()}
+
     fcsuti = pd.Series(0.0, index=df.index)
-    total_weight = 0.0
+    for component, weight in renormalized.items():
+        fcsuti += df[component] * weight
 
-    for component, weight in FCSUTI_WEIGHTS.items():
-        if component in df.columns:
-            fcsuti += df[component] * weight
-            total_weight += weight
-
-    # Normalize if we didn't get all components
-    if total_weight < 1.0:
-        fcsuti = fcsuti / total_weight
-
-    # Rebase to base_year = 100
     if base_year in fcsuti.index:
         fcsuti = fcsuti / fcsuti[base_year] * 100
-
     fcsuti.name = "FCSUti CPI-U"
     return fcsuti
+
+
+def get_fcsuti_cpi(
+    start_year: int = 2010,
+    end_year: int = 2024,
+    base_year: int = 2024,
+    weights: Optional[Mapping[str, float]] = None,
+) -> pd.Series:
+    """Compute the FCSUti composite CPI index.
+
+    Args:
+        start_year: Inclusive start year for the index.
+        end_year: Inclusive end year for the index.
+        base_year: Year normalized to 100.
+        weights: Optional component-share mapping (e.g. the output of
+            :func:`compute_fcsuti_weights_from_ce`). When None, falls
+            back to :data:`FCSUTI_WEIGHTS` with a
+            :class:`RuntimeWarning` so callers notice when the static
+            approximation is in use.
+
+    Returns:
+        Annual FCSUti CPI index with base ``base_year`` = 100.
+    """
+    resolved = _resolve_weights(weights)
+    return _cached_fcsuti_cpi(
+        start_year,
+        end_year,
+        base_year,
+        tuple(sorted(resolved.items())),
+    )
 
 
 def get_fcsuti_inflation_factor(
     from_year: int,
     to_year: int,
+    weights: Optional[Mapping[str, float]] = None,
 ) -> float:
-    """
-    Get inflation adjustment factor between two years using FCSUti CPI.
+    """Inflation factor between two years via the FCSUti composite.
 
     Args:
-        from_year: Base year
-        to_year: Target year
+        from_year: Starting year (sets the index base).
+        to_year: Target year.
+        weights: Optional FCSUti component shares. See
+            :func:`get_fcsuti_cpi`.
 
     Returns:
-        Inflation factor (multiply from_year values by this to get to_year values)
+        Factor to multiply ``from_year`` dollars by to get ``to_year``
+        dollars. Falls back to a ~4%/yr estimate if the BLS series
+        fetch fails, and emits a :class:`RuntimeWarning` in that case.
     """
     try:
         fcsuti = get_fcsuti_cpi(
             start_year=min(from_year, to_year) - 1,
             end_year=max(from_year, to_year) + 1,
             base_year=from_year,
+            weights=weights,
         )
         return fcsuti[to_year] / 100.0
     except Exception as e:
-        # Fallback to simple estimate if BLS API unavailable.
-        # Use ~4% annual inflation (recent FCSUti average).
         warnings.warn(
             f"Could not get FCSUti CPI ({e}); falling back to 4%/yr estimate.",
             RuntimeWarning,
             stacklevel=2,
         )
-        years_diff = to_year - from_year
-        return 1.04**years_diff
+        return 1.04 ** (to_year - from_year)
 
 
-# Pre-computed FCSUti inflation factors for common year pairs
-# These can be used when BLS API is unavailable
+# Pre-computed FCSUti inflation factors for common year pairs. Retained
+# for offline use when the BLS API is unavailable.
 PRECOMPUTED_FCSUTI_FACTORS = {
-    # (from_year, to_year): factor
     (2018, 2024): 1.26,  # ~4.0% annual
     (2019, 2024): 1.22,  # ~4.1% annual
     (2020, 2024): 1.19,  # ~4.5% annual (pandemic effects)
@@ -213,9 +362,5 @@ def get_precomputed_fcsuti_factor(
     from_year: int,
     to_year: int,
 ) -> Optional[float]:
-    """
-    Get pre-computed FCSUti inflation factor if available.
-
-    Returns None if not pre-computed.
-    """
+    """Return the pre-computed inflation factor for a year pair, or None."""
     return PRECOMPUTED_FCSUTI_FACTORS.get((from_year, to_year))

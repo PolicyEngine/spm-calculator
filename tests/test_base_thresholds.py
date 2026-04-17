@@ -133,6 +133,16 @@ class TestCEThresholdMethodology:
                 "PERSLT18": [2, 2],
                 "ADULT": [2, 2],
                 "ce_year": [2022, 2023],
+                # FINLWT21 lets compute_fcsuti_weights_from_ce run, but
+                # the stubbed `get_fcsuti_inflation_factor` ignores the
+                # derived weights anyway.
+                "FINLWT21": [1000.0, 1000.0],
+                # Minimal expenditure columns so the weight derivation
+                # has something to normalize (values arbitrary).
+                "FOODPQ": [100.0, 100.0],
+                "FOODCQ": [100.0, 100.0],
+                "SHELTPQ": [300.0, 300.0],
+                "SHELTCQ": [300.0, 300.0],
             }
         )
 
@@ -147,7 +157,10 @@ class TestCEThresholdMethodology:
         monkeypatch.setattr(
             ce_threshold,
             "get_fcsuti_inflation_factor",
-            lambda from_year, to_year: {2022: 2.0, 2023: 1.0}[from_year],
+            lambda from_year, to_year, weights=None: {
+                2022: 2.0,
+                2023: 1.0,
+            }[from_year],
         )
 
         thresholds = ce_threshold.calculate_base_thresholds(
