@@ -212,9 +212,10 @@ def generate_data():
         },
     }
 
-    with open(web_data_dir / "base_thresholds.json", "w") as f:
-        json.dump(all_thresholds, f, indent=2)
-
+    # `base_thresholds.json` used to be written here alongside
+    # `spm_config.json`, but the web app only reads the config file
+    # (which already carries `baseThresholds`). Dropping the duplicate
+    # file avoids a drift risk if someone updates one without the other.
     with open(web_data_dir / "spm_config.json", "w") as f:
         json.dump(config, f, indent=2)
 

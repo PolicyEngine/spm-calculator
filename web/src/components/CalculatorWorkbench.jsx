@@ -108,17 +108,23 @@ function getRawEquivalenceScale(adults, children, methodology) {
   return adults ** methodology.equivalenceScale.economiesOfScale;
 }
 
-function describeEquivalenceFormula(adults, children) {
-  if (adults === 0) return "0";
+function describeEquivalenceFormula(adults, children, methodology) {
+  const {
+    singleAdultFirstChild,
+    additionalChild,
+    economiesOfScale,
+    twoAdultNoChild,
+  } = methodology.equivalenceScale;
+  if (adults === 0 && children === 0) return "0";
   if (children > 0) {
-    if (adults === 1) {
-      return `(1 + 0.8 + 0.5 * (${children} - 1))^0.7`;
+    if (adults <= 1) {
+      return `(1 + ${singleAdultFirstChild} + ${additionalChild} * (${children} - 1))^${economiesOfScale}`;
     }
-    return `(${adults} + 0.5 * ${children})^0.7`;
+    return `(${adults} + ${additionalChild} * ${children})^${economiesOfScale}`;
   }
-  if (adults === 1) return "1.0";
-  if (adults === 2) return "1.41";
-  return `${adults}^0.7`;
+  if (adults <= 1) return "1.0";
+  if (adults === 2) return String(twoAdultNoChild);
+  return `${adults}^${economiesOfScale}`;
 }
 
 function getCeSurveyYears(thresholdYear) {
@@ -801,7 +807,7 @@ print(f"SPM threshold: \${threshold:,.0f}")`;
                     <div className="flex justify-between">
                       <Text className="text-muted-foreground">Formula</Text>
                       <Text className="font-mono text-xs font-medium">
-                        {describeEquivalenceFormula(numAdults, numChildren)}
+                        {describeEquivalenceFormula(numAdults, numChildren, methodology)}
                       </Text>
                     </div>
                     <div className="flex justify-between">

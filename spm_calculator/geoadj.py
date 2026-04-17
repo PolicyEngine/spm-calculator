@@ -49,6 +49,22 @@ _DATA_DIR = Path(__file__).parent / "data"
 _geoadj_cache: dict[tuple[str, int, Optional[str], str], pd.DataFrame] = {}
 
 
+def _iter_state_fips() -> list[str]:
+    """Zero-padded FIPS codes for the 50 states plus DC and PR.
+
+    Previously every `_fetch_acs_median_rent` sub-geography iterated
+    ``range(1, 57)`` and swallowed exceptions for the 5 non-existent
+    codes ({3, 7, 14, 43, 52}). That's harmless for correctness but
+    costs one wasted round-trip each; the canonical list from the
+    `us` package (already a dependency) is both faster and explicit
+    about which codes we expect to work.
+    """
+    import us
+
+    states = list(us.STATES) + [us.states.DC, us.states.PR]
+    return sorted(f"{int(state.fips):02d}" for state in states if state.fips)
+
+
 def _validate_tenure(tenure: str) -> None:
     if tenure not in VALID_TENURE_TYPES:
         raise ValueError(
@@ -434,16 +450,13 @@ def _fetch_acs_median_rent(
             )
         else:
             all_data = []
-            for st in range(1, 57):
-                try:
-                    data = c.acs5.get(
-                        [variable],
-                        {"for": "county:*", "in": f"state:{st:02d}"},
-                        year=year,
-                    )
-                    all_data.extend(data)
-                except Exception:
-                    pass
+            for st in _iter_state_fips():
+                data = c.acs5.get(
+                    [variable],
+                    {"for": "county:*", "in": f"state:{st}"},
+                    year=year,
+                )
+                all_data.extend(data)
             data = all_data
         df = pd.DataFrame(data)
         df["geography_id"] = df["state"].str.zfill(2) + df["county"].str.zfill(
@@ -452,19 +465,16 @@ def _fetch_acs_median_rent(
 
     elif geography_type == "congressional_district":
         all_data = []
-        for st in range(1, 57):
-            try:
-                data = c.acs5.get(
-                    [variable],
-                    {
-                        "for": "congressional district:*",
-                        "in": f"state:{st:02d}",
-                    },
-                    year=year,
-                )
-                all_data.extend(data)
-            except Exception:
-                pass
+        for st in _iter_state_fips():
+            data = c.acs5.get(
+                [variable],
+                {
+                    "for": "congressional district:*",
+                    "in": f"state:{st}",
+                },
+                year=year,
+            )
+            all_data.extend(data)
         df = pd.DataFrame(all_data)
         df["geography_id"] = df["state"].str.zfill(2) + df[
             "congressional district"
@@ -472,19 +482,16 @@ def _fetch_acs_median_rent(
 
     elif geography_type == "puma":
         all_data = []
-        for st in range(1, 57):
-            try:
-                data = c.acs5.get(
-                    [variable],
-                    {
-                        "for": "public use microdata area:*",
-                        "in": f"state:{st:02d}",
-                    },
-                    year=year,
-                )
-                all_data.extend(data)
-            except Exception:
-                pass
+        for st in _iter_state_fips():
+            data = c.acs5.get(
+                [variable],
+                {
+                    "for": "public use microdata area:*",
+                    "in": f"state:{st}",
+                },
+                year=year,
+            )
+            all_data.extend(data)
         df = pd.DataFrame(all_data)
         df["geography_id"] = df["state"].str.zfill(2) + df[
             "public use microdata area"
