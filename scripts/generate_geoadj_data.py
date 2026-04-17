@@ -5,10 +5,26 @@ Generate bundled metro data and static web assets for the SPM calculator.
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 import openpyxl
 import requests
+
+
+def _read_package_version() -> str:
+    """Read spm-calculator's version from pyproject.toml.
+
+    Keeps the web bundle's ``packageVersion`` field in lockstep with
+    the Python package's release tag without requiring tomllib.
+    """
+    repo_root = Path(__file__).resolve().parent.parent
+    pyproject = (repo_root / "pyproject.toml").read_text()
+    match = re.search(r'^version\s*=\s*"([^"]+)"', pyproject, re.MULTILINE)
+    if not match:
+        raise RuntimeError("Could not find a version field in pyproject.toml")
+    return match.group(1)
+
 
 HISTORICAL_THRESHOLDS = {
     "2015": {
@@ -167,6 +183,7 @@ def generate_data():
         json.dump(metro_data, f, indent=2)
 
     config = {
+        "packageVersion": _read_package_version(),
         "baseThresholds": all_thresholds,
         "methodology": {
             "referenceRawScale": REFERENCE_RAW_SCALE,

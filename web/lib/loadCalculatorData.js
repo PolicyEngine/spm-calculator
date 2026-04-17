@@ -5,5 +5,8 @@ export async function loadCalculatorData() {
   return {
     ...spmConfig,
     metroAreas: metroData.metroAreas,
+    metroDataYear: metroData.year,
+    metroSource: metroData.source,
+    metroSourceUrl: metroData.sourceUrl,
   };
 }
