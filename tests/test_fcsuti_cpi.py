@@ -2,9 +2,13 @@
 
 Covers the pure-function helpers that run without hitting the BLS API:
 ``compute_fcsuti_weights_from_ce`` and the ``weights`` plumbing on the
-composite-CPI builders. End-to-end tests that actually fetch BLS data
-are network-gated in ``test_ce_validation.py``.
+composite-CPI builders, plus the offline fallback paths (precomputed
+factors, composed factors) and the BLS registration-key plumbing.
+End-to-end tests that actually fetch BLS data are network-gated in
+``test_ce_validation.py``.
 """
+
+from __future__ import annotations
 
 import warnings
 
@@ -14,9 +18,14 @@ import pytest
 from spm_calculator import fcsuti_cpi
 from spm_calculator.fcsuti_cpi import (
     FCSUTI_WEIGHTS,
+    PRECOMPUTED_FCSUTI_FACTORS,
+    _compose_precomputed_fcsuti_factor,
+    _directed_precomputed_factor,
     compute_fcsuti_weights_from_ce,
+    fetch_bls_cpi_series,
     get_fcsuti_cpi,
     get_fcsuti_inflation_factor,
+    get_precomputed_fcsuti_factor,
 )
 
 
@@ -237,3 +246,219 @@ class TestStaticWeightsShape:
         """The fallback dict is a rough approximation but the shares
         should still integrate to 1.0 to within normal rounding."""
         assert sum(FCSUTI_WEIGHTS.values()) == pytest.approx(1.0, abs=0.01)
+
+
+class TestPrecomputedFactor:
+    def test_returns_direct_pair(self):
+        assert get_precomputed_fcsuti_factor(
+            2023, 2024
+        ) == PRECOMPUTED_FCSUTI_FACTORS[(2023, 2024)]
+
+    def test_returns_none_when_missing(self):
+        assert get_precomputed_fcsuti_factor(2001, 2099) is None
+
+
+class TestDirectedPrecomputedFactor:
+    def test_inverts_stored_reverse_pair(self):
+        forward = PRECOMPUTED_FCSUTI_FACTORS[(2022, 2024)]
+        assert _directed_precomputed_factor(2024, 2022) == pytest.approx(
+            1.0 / forward
+        )
+
+    def test_same_year_returns_one(self):
+        assert _directed_precomputed_factor(2020, 2020) == 1.0
+
+
+class TestComposedFactor:
+    def test_chains_through_pivot(self):
+        """(2019, 2022) is not directly baked, but (2019, 2024) and
+        (2022, 2024) are; composing inverts the second and multiplies."""
+        direct_19_24 = PRECOMPUTED_FCSUTI_FACTORS[(2019, 2024)]
+        direct_22_24 = PRECOMPUTED_FCSUTI_FACTORS[(2022, 2024)]
+        expected = direct_19_24 * (1.0 / direct_22_24)
+        assert _compose_precomputed_fcsuti_factor(
+            2019, 2022
+        ) == pytest.approx(expected)
+
+    def test_returns_none_when_no_pivot_works(self):
+        assert _compose_precomputed_fcsuti_factor(1985, 1990) is None
+
+
+class TestInflationFactorOfflineFallback:
+    def test_uses_precomputed_when_api_fails(self, monkeypatch):
+        """With the BLS fetch stubbed to raise, the resolver should
+        consult `PRECOMPUTED_FCSUTI_FACTORS` before the 4%/yr estimate."""
+        import spm_calculator.fcsuti_cpi as mod
+
+        mod.get_fcsuti_cpi.cache_clear()
+
+        def fail_fetch(*args, **kwargs):
+            raise RuntimeError("no network")
+
+        monkeypatch.setattr(mod, "fetch_bls_cpi_series", fail_fetch)
+
+        factor = get_fcsuti_inflation_factor(2023, 2024)
+        assert factor == pytest.approx(
+            PRECOMPUTED_FCSUTI_FACTORS[(2023, 2024)]
+        )
+
+    def test_uses_composition_when_direct_not_available(self, monkeypatch):
+        """Without an exact direct pair, composition through 2024 is
+        used before the 4%/yr estimate."""
+        import spm_calculator.fcsuti_cpi as mod
+
+        mod.get_fcsuti_cpi.cache_clear()
+
+        def fail_fetch(*args, **kwargs):
+            raise RuntimeError("no network")
+
+        monkeypatch.setattr(mod, "fetch_bls_cpi_series", fail_fetch)
+
+        factor = get_fcsuti_inflation_factor(2019, 2022)
+        composed = PRECOMPUTED_FCSUTI_FACTORS[
+            (2019, 2024)
+        ] * (1.0 / PRECOMPUTED_FCSUTI_FACTORS[(2022, 2024)])
+        assert factor == pytest.approx(composed)
+
+    def test_falls_back_to_4pct_when_nothing_precomputed_matches(
+        self, monkeypatch
+    ):
+        """For year pairs outside the precomputed universe, the 4%/yr
+        estimate is the last resort (and emits a RuntimeWarning)."""
+        import warnings
+
+        import spm_calculator.fcsuti_cpi as mod
+
+        mod.get_fcsuti_cpi.cache_clear()
+        monkeypatch.setattr(
+            mod,
+            "fetch_bls_cpi_series",
+            lambda *a, **kw: (_ for _ in ()).throw(RuntimeError("x")),
+        )
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            factor = get_fcsuti_inflation_factor(1985, 1990)
+        assert factor == pytest.approx(1.04**5)
+        assert any("4%/yr" in str(w.message) for w in caught)
+
+    def test_same_year_returns_identity(self):
+        assert get_fcsuti_inflation_factor(2024, 2024) == 1.0
+
+
+class TestRegistrationKey:
+    def test_fetch_passes_registration_key_when_provided(self, monkeypatch):
+        """When a registrationkey is supplied, it must be part of the
+        POST payload. Without one, callers are capped at 25 BLS queries
+        per IP per day (which is four `get_fcsuti_cpi` calls)."""
+        import requests
+
+        captured = {}
+
+        class FakeResponse:
+            def raise_for_status(self):
+                pass
+
+            def json(self):
+                return {
+                    "status": "REQUEST_SUCCEEDED",
+                    "Results": {
+                        "series": [
+                            {
+                                "data": [
+                                    {
+                                        "year": "2024",
+                                        "period": "M13",
+                                        "value": "100.0",
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                }
+
+        def fake_post(url, json=None, timeout=None):
+            captured["json"] = json
+            return FakeResponse()
+
+        monkeypatch.setattr(requests, "post", fake_post)
+        fetch_bls_cpi_series(
+            "CUUR0000SAF", 2023, 2024, registration_key="abc123"
+        )
+        assert captured["json"]["registrationkey"] == "abc123"
+
+    def test_fetch_reads_registration_key_from_env(self, monkeypatch):
+        """If no explicit key is passed, BLS_API_KEY is picked up from
+        the environment so CI runners can register silently."""
+        import requests
+
+        captured = {}
+
+        class FakeResponse:
+            def raise_for_status(self):
+                pass
+
+            def json(self):
+                return {
+                    "status": "REQUEST_SUCCEEDED",
+                    "Results": {
+                        "series": [
+                            {
+                                "data": [
+                                    {
+                                        "year": "2024",
+                                        "period": "M13",
+                                        "value": "100.0",
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                }
+
+        def fake_post(url, json=None, timeout=None):
+            captured["json"] = json
+            return FakeResponse()
+
+        monkeypatch.setenv("BLS_API_KEY", "env-key")
+        monkeypatch.setattr(requests, "post", fake_post)
+        fetch_bls_cpi_series("CUUR0000SAF", 2023, 2024)
+        assert captured["json"]["registrationkey"] == "env-key"
+
+    def test_fetch_omits_registration_key_when_absent(self, monkeypatch):
+        """No key, no `registrationkey` field (so we don't send an
+        empty string that some clients might reject)."""
+        import requests
+
+        captured = {}
+
+        class FakeResponse:
+            def raise_for_status(self):
+                pass
+
+            def json(self):
+                return {
+                    "status": "REQUEST_SUCCEEDED",
+                    "Results": {
+                        "series": [
+                            {
+                                "data": [
+                                    {
+                                        "year": "2024",
+                                        "period": "M13",
+                                        "value": "100.0",
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                }
+
+        def fake_post(url, json=None, timeout=None):
+            captured["json"] = json
+            return FakeResponse()
+
+        monkeypatch.delenv("BLS_API_KEY", raising=False)
+        monkeypatch.setattr(requests, "post", fake_post)
+        fetch_bls_cpi_series("CUUR0000SAF", 2023, 2024)
+        assert "registrationkey" not in captured["json"]

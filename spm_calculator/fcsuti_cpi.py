@@ -24,6 +24,7 @@ References
 - BLS SPM Thresholds: https://www.bls.gov/pir/spm/spm_thresholds_2024.htm
 """
 
+import os
 import warnings
 from functools import lru_cache
 from typing import Mapping, Optional
@@ -78,6 +79,7 @@ def fetch_bls_cpi_series(
     series_id: str,
     start_year: int = 2010,
     end_year: int = 2024,
+    registration_key: Optional[str] = None,
 ) -> pd.Series:
     """Fetch an annual-average CPI series from the BLS public API.
 
@@ -85,12 +87,20 @@ def fetch_bls_cpi_series(
         series_id: BLS series ID (e.g. ``"CUUR0000SA0"``).
         start_year: Inclusive start year.
         end_year: Inclusive end year.
+        registration_key: Optional BLS v2 registration key. Defaults to
+            ``$BLS_API_KEY`` if set. Without a key, BLS rate-limits
+            unauthenticated requests to 25 queries per IP per day —
+            enough to break `get_fcsuti_cpi` (six component series) after
+            four calls.
 
     Returns:
         Series of annual-average CPI values indexed by calendar year.
     """
     import requests
 
+    # BLS Public Data API v2. Registered access is documented at
+    # https://www.bls.gov/developers/; registered callers get 500
+    # queries/day per key with ten-year history and annual averages.
     url = "https://api.bls.gov/publicAPI/v2/timeseries/data/"
     payload = {
         "seriesid": [series_id],
@@ -98,6 +108,10 @@ def fetch_bls_cpi_series(
         "endyear": str(end_year),
         "annualaverage": True,
     }
+    key = registration_key or os.environ.get("BLS_API_KEY")
+    if key:
+        payload["registrationkey"] = key
+
     response = requests.post(url, json=payload, timeout=30)
     response.raise_for_status()
     data = response.json()
@@ -330,6 +344,18 @@ def get_fcsuti_inflation_factor(
 ) -> float:
     """Inflation factor between two years via the FCSUti composite.
 
+    Resolution order when the BLS API is unreachable:
+
+    1. Consult `PRECOMPUTED_FCSUTI_FACTORS` for an exact year pair.
+       These are baked from published BLS FCSUti indices and are
+       materially better than the 4% constant-growth estimate when
+       they match.
+    2. Compose two precomputed factors through a common target year
+       (e.g. `(2019, 2024)` × `(2024, 2026)` when only direct pairs
+       to 2024 are baked). This extends the precomputed coverage
+       across the full range without shipping a quadratic table.
+    3. Fall back to 4% annual growth.
+
     Args:
         from_year: Starting year (sets the index base).
         to_year: Target year.
@@ -341,6 +367,9 @@ def get_fcsuti_inflation_factor(
         dollars. Falls back to a ~4%/yr estimate if the BLS series
         fetch fails, and emits a :class:`RuntimeWarning` in that case.
     """
+    if from_year == to_year:
+        return 1.0
+
     if weights is None:
         warnings.warn(
             _STATIC_WEIGHTS_WARNING,
@@ -348,6 +377,7 @@ def get_fcsuti_inflation_factor(
             stacklevel=2,
         )
         weights = FCSUTI_WEIGHTS
+
     try:
         fcsuti = get_fcsuti_cpi(
             start_year=min(from_year, to_year) - 1,
@@ -357,12 +387,70 @@ def get_fcsuti_inflation_factor(
         )
         return fcsuti[to_year] / 100.0
     except Exception as e:
+        direct = get_precomputed_fcsuti_factor(from_year, to_year)
+        if direct is not None:
+            warnings.warn(
+                f"Could not fetch FCSUti CPI ({e}); using precomputed "
+                f"factor for ({from_year}, {to_year}).",
+                RuntimeWarning,
+                stacklevel=2,
+            )
+            return direct
+
+        composed = _compose_precomputed_fcsuti_factor(from_year, to_year)
+        if composed is not None:
+            warnings.warn(
+                f"Could not fetch FCSUti CPI ({e}); using composed "
+                f"precomputed factors for ({from_year}, {to_year}).",
+                RuntimeWarning,
+                stacklevel=2,
+            )
+            return composed
+
         warnings.warn(
-            f"Could not get FCSUti CPI ({e}); falling back to 4%/yr estimate.",
+            f"Could not fetch FCSUti CPI ({e}); no precomputed factor "
+            f"matches ({from_year}, {to_year}), falling back to 4%/yr estimate.",
             RuntimeWarning,
             stacklevel=2,
         )
         return 1.04 ** (to_year - from_year)
+
+
+def _compose_precomputed_fcsuti_factor(
+    from_year: int,
+    to_year: int,
+) -> Optional[float]:
+    """Chain two precomputed factors through a common pivot year.
+
+    Returns ``factor[(from_year, pivot)] * factor[(pivot, to_year)]`` if
+    a single pivot year closes the gap. Inverts stored factors as needed
+    so we don't need to double the table size to cover both directions.
+    """
+    pivots = {pair[1] for pair in PRECOMPUTED_FCSUTI_FACTORS} | {
+        pair[0] for pair in PRECOMPUTED_FCSUTI_FACTORS
+    }
+    for pivot in pivots:
+        first = _directed_precomputed_factor(from_year, pivot)
+        second = _directed_precomputed_factor(pivot, to_year)
+        if first is not None and second is not None:
+            return first * second
+    return None
+
+
+def _directed_precomputed_factor(
+    from_year: int, to_year: int
+) -> Optional[float]:
+    """Precomputed factor in either direction (invert if stored the
+    other way). Returns None if neither direction is stored."""
+    if from_year == to_year:
+        return 1.0
+    direct = PRECOMPUTED_FCSUTI_FACTORS.get((from_year, to_year))
+    if direct is not None:
+        return direct
+    reverse = PRECOMPUTED_FCSUTI_FACTORS.get((to_year, from_year))
+    if reverse is not None and reverse != 0:
+        return 1.0 / reverse
+    return None
 
 
 # Pre-computed FCSUti inflation factors for common year pairs. Retained
