@@ -42,9 +42,7 @@ class TestForecastHorizonWarning:
             warnings.simplefilter("always")
             forecast_thresholds(target)
         matching = [
-            w
-            for w in caught
-            if "Forecasting SPM thresholds" in str(w.message)
+            w for w in caught if "Forecasting SPM thresholds" in str(w.message)
         ]
         assert matching, "Expected a RuntimeWarning past the horizon"
 
@@ -111,6 +109,6 @@ def test_cpi_projections_end_year_referenced_in_warning():
         warnings.simplefilter("always")
         forecast_thresholds(target)
     texts = [str(w.message) for w in caught]
-    assert any(str(end) in text for text in texts), (
-        f"Expected CPI projection end year {end} in warning"
-    )
+    assert any(
+        str(end) in text for text in texts
+    ), f"Expected CPI projection end year {end} in warning"
