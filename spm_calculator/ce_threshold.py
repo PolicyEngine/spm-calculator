@@ -28,7 +28,10 @@ import pandas as pd
 import requests
 
 from .equivalence_scale import REFERENCE_RAW_SCALE, spm_equivalence_scale
-from .fcsuti_cpi import get_fcsuti_inflation_factor
+from .fcsuti_cpi import (
+    compute_fcsuti_weights_from_ce,
+    get_fcsuti_inflation_factor,
+)
 
 # BLS CE Survey PUMD base URL
 CE_PUMD_BASE_URL = "https://www.bls.gov/cex/pumd/data/comma"
@@ -302,10 +305,29 @@ def calculate_base_thresholds(
 
         ce["fcsuti"] = calculate_fcsuti(ce)
 
+        # Derive FCSUti composite weights from this CE sample itself,
+        # matching BLS Garner (2021): the weights roll with the 5-year
+        # window rather than being held static across years. Fall back
+        # to the package default (with its own RuntimeWarning) only if
+        # the CE sample has no usable expenditure columns.
+        try:
+            fcsuti_weights = compute_fcsuti_weights_from_ce(ce)
+        except ValueError as e:
+            warnings.warn(
+                f"Could not derive FCSUti weights from CE ({e}); "
+                "using static defaults.",
+                RuntimeWarning,
+                stacklevel=2,
+            )
+            fcsuti_weights = None
+
         # Inflate each CU's FCSUti to target-year dollars using the
-        # FCSUti composite CPI.
+        # FCSUti composite CPI built from the derived (or default)
+        # weights.
         inflation_factors = {
-            year: get_fcsuti_inflation_factor(year, target_year)
+            year: get_fcsuti_inflation_factor(
+                year, target_year, weights=fcsuti_weights
+            )
             for year in ce["ce_year"].dropna().astype(int).unique()
         }
         ce["inflation_factor"] = (

@@ -27,7 +27,12 @@ Get the pieces separately:
 from .calculator import SPMCalculator, spm_threshold
 from .ce_threshold import calculate_base_thresholds, get_published_thresholds
 from .equivalence_scale import spm_equivalence_scale
-from .fcsuti_cpi import get_fcsuti_cpi, get_fcsuti_inflation_factor
+from .fcsuti_cpi import (
+    FCSUTI_WEIGHTS,
+    compute_fcsuti_weights_from_ce,
+    get_fcsuti_cpi,
+    get_fcsuti_inflation_factor,
+)
 from .forecast import (
     HISTORICAL_THRESHOLDS,
     forecast_thresholds,
@@ -87,6 +92,8 @@ __all__ = [
     "spm_equivalence_scale",
     "get_fcsuti_cpi",
     "get_fcsuti_inflation_factor",
+    "compute_fcsuti_weights_from_ce",
+    "FCSUTI_WEIGHTS",
     "forecast_thresholds",
     "get_thresholds",
     "get_threshold_with_metadata",
