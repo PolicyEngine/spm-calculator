@@ -44,10 +44,22 @@ class TestPublishedThresholds:
         assert thresholds["owner_with_mortgage"] == 32949
         assert thresholds["owner_without_mortgage"] == 27679
 
+    def test_published_thresholds_cover_full_historical_range(self):
+        """`get_published_thresholds` must expose the same years as
+        `forecast.HISTORICAL_THRESHOLDS` (2015–2024), not just 2022–2024
+        as an older hardcoded dict used to."""
+        from spm_calculator.forecast import HISTORICAL_THRESHOLDS
+
+        for year in HISTORICAL_THRESHOLDS:
+            assert (
+                get_published_thresholds(year)
+                == HISTORICAL_THRESHOLDS[year]
+            ), f"get_published_thresholds({year}) drifted from HISTORICAL_THRESHOLDS"
+
     def test_unavailable_year_raises(self):
-        """Requesting unavailable year should raise ValueError."""
+        """Pre-2015 and far-future years are genuinely unavailable."""
         with pytest.raises(ValueError, match="not available"):
-            get_published_thresholds(2015)
+            get_published_thresholds(2010)
 
     def test_returns_copy(self):
         """Should return a copy, not the original dict."""
@@ -157,6 +169,39 @@ class TestCEThresholdMethodology:
         )
 
         assert thresholds["renter"] == pytest.approx(124.5)
+
+    def test_calculate_base_thresholds_requires_perslt18(self, monkeypatch):
+        """Regression: without `PERSLT18`, the old fallback
+        `FAM_SIZE > PERSOT64` silently matched any CU with a non-elderly
+        member, including two-adult / zero-child units — a methodology
+        error. The function now refuses rather than producing a wrong
+        number."""
+        import pandas as pd
+
+        import spm_calculator.ce_threshold as ce_threshold
+
+        # A two-adult no-child CU would pass the old fallback
+        # (FAM_SIZE=2 > PERSOT64=0) but must not be included.
+        sample = pd.DataFrame(
+            {
+                "CUTENURE": [2, 2],
+                "FAM_SIZE": [2, 2],
+                "PERSOT64": [0, 0],
+                "ADULT": [2, 2],
+                "ce_year": [2022, 2023],
+            }
+        )
+
+        monkeypatch.setattr(
+            ce_threshold, "download_ce_pumd_years", lambda years: sample.copy()
+        )
+
+        with pytest.raises(ValueError, match="PERSLT18"):
+            ce_threshold.calculate_base_thresholds(
+                years=[2022, 2023],
+                target_year=2024,
+                use_published_fallback=False,
+            )
 
 
 # TODO: Add integration tests that actually download CE data

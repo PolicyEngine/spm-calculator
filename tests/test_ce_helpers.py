@@ -101,7 +101,12 @@ class TestCalculateFCSUti:
 class TestGetTenureType:
     def test_modern_cutenure_codes_split_owners(self):
         """Post-2013 FMLI: 1=owner w/mortgage, 2=owner w/o, 3=renter."""
-        df = pd.DataFrame({"CUTENURE": [1, 2, 3, 4]})
+        df = pd.DataFrame(
+            {
+                "CUTENURE": [1, 2, 3, 4],
+                "ce_year": [2020, 2020, 2020, 2020],
+            }
+        )
         tenure = get_tenure_type(df)
         assert tenure.tolist() == [
             "owner_with_mortgage",
@@ -117,6 +122,7 @@ class TestGetTenureType:
                 # No row uses the modern code 2 for owner-without; the
                 # branch falls back to mortgage-expenditure detection.
                 "CUTENURE": [1, 1, 2],
+                "ce_year": [2010, 2010, 2010],
                 "MRTPRINPQ": [500, 0, 0],
                 "MRTPRINCQ": [500, 0, 0],
                 "MRTINTPQ": [0, 0, 0],
@@ -129,6 +135,42 @@ class TestGetTenureType:
             "owner_without_mortgage",
             "renter",
         ]
+
+    def test_owners_only_modern_subset_labels_by_schema_not_observed_codes(
+        self,
+    ):
+        """Regression: filtering a modern CE vintage down to owners-only
+        (CUTENURE ∈ {1, 2}) used to trip the observed-code heuristic
+        (`(cutenure >= 3).any() == False`) and misclassify rows as
+        legacy-schema, relabelling `CUTENURE == 2` as renter. With
+        schema derived from `ce_year`, owners-only subsets on the modern
+        schema classify correctly."""
+        df = pd.DataFrame(
+            {
+                "CUTENURE": [1, 2, 1, 2],
+                "ce_year": [2020, 2020, 2020, 2020],
+            }
+        )
+        tenure = get_tenure_type(df)
+        assert tenure.tolist() == [
+            "owner_with_mortgage",
+            "owner_without_mortgage",
+            "owner_with_mortgage",
+            "owner_without_mortgage",
+        ]
+
+    def test_mixed_vintage_raises_on_schema_ambiguity(self):
+        """Mixing pre-2013 and post-2013 rows in a single frame would
+        apply the wrong CUTENURE interpretation to at least one side;
+        we refuse rather than silently coerce."""
+        df = pd.DataFrame(
+            {
+                "CUTENURE": [1, 2],
+                "ce_year": [2010, 2020],
+            }
+        )
+        with pytest.raises(ValueError, match="mixes pre-2013 and post-2013"):
+            get_tenure_type(df)
 
 
 class TestWeightedPercentile:
@@ -175,6 +217,19 @@ class TestWeightedPercentile:
             _weighted_percentile(
                 np.array([1.0, 2.0, 3.0]),
                 np.array([0.0, 0.0, 0.0]),
+                50.0,
+            )
+        )
+
+    def test_returns_nan_on_empty_input(self):
+        """Previously the function indexed `cumulative[-1]` on an empty
+        array and raised `IndexError`. This path is reachable when a
+        tenure bucket drops to zero rows after `dropna` and the pooled
+        fallback is also empty."""
+        assert np.isnan(
+            _weighted_percentile(
+                np.array([]),
+                np.array([]),
                 50.0,
             )
         )
