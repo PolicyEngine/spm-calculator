@@ -154,12 +154,73 @@ class TestGeoAdjLookupTable:
 class TestBundledCDData:
     """Test bundled congressional district data derived from ACS rents."""
 
+    def test_bundled_cd_json_has_no_legacy_geoadj_field(self):
+        """Every bundled CD entry must carry `median_2br_rent` and must
+        *not* carry a precomputed `geoadj`. The precomputed field was
+        baked with the old single housing-share constant (0.492) and
+        was only ever a dead fallback in the runtime lookup; shipping
+        it invites a future maintainer to trust it over the tenure-
+        specific recomputation."""
+        import json
+        from pathlib import Path
+
+        data_path = (
+            Path(__file__).resolve().parent.parent
+            / "spm_calculator"
+            / "data"
+            / "cd_geoadj_2023.json"
+        )
+        with open(data_path) as f:
+            data = json.load(f)
+
+        cds = data["congressional_districts"]
+        assert cds, "Expected bundled CD entries"
+        missing_rent = [
+            cd for cd, entry in cds.items() if "median_2br_rent" not in entry
+        ]
+        leftover_geoadj = [
+            cd for cd, entry in cds.items() if "geoadj" in entry
+        ]
+        assert (
+            not missing_rent
+        ), f"Entries without median_2br_rent: {missing_rent[:5]}"
+        assert not leftover_geoadj, (
+            f"Legacy precomputed geoadj still present in: "
+            f"{leftover_geoadj[:5]}"
+        )
+
     def test_get_cd_geoadj_basic(self):
         from spm_calculator import get_cd_geoadj
 
         result = get_cd_geoadj("612", tenure="renter")
         assert result > 1.2
         assert result <= 1.5
+
+    def test_get_cd_geoadj_raises_on_entry_missing_rent(self, monkeypatch):
+        """Runtime lookup must raise rather than silently fall back
+        when an entry lacks `median_2br_rent`."""
+        from spm_calculator import geoadj as geoadj_module
+
+        # Clear the lru_cache before monkeypatching so the patched
+        # function is actually consulted (and because the lambda
+        # replacement doesn't carry cache_clear itself).
+        geoadj_module._load_bundled_cd_data.cache_clear()
+
+        fake_data = {
+            "year": 2023,
+            "national_median_2br_rent": 1338.0,
+            "congressional_districts": {
+                "999": {"name": "Test District"},  # no median_2br_rent
+            },
+        }
+        monkeypatch.setattr(
+            geoadj_module,
+            "_load_bundled_cd_data",
+            lambda year=2023: fake_data,
+        )
+
+        with pytest.raises(ValueError, match="missing 'median_2br_rent'"):
+            geoadj_module.get_cd_geoadj("999", tenure="renter")
 
     def test_get_cd_geoadj_is_tenure_specific(self):
         from spm_calculator import get_cd_geoadj
@@ -227,9 +288,15 @@ class TestBundledCDData:
         data = get_bundled_cd_data()
         cd_612 = data["congressional_districts"]["612"]
 
-        assert "geoadj" in cd_612
+        # Entries carry name + median_2br_rent only; the runtime
+        # lookup recomputes geoadj from the rent with tenure-specific
+        # shares. A precomputed `geoadj` field used to ship but was
+        # baked with the old single housing-share constant and has
+        # been removed; any new occurrence of that key would be a
+        # regression.
         assert "name" in cd_612
         assert "median_2br_rent" in cd_612
+        assert "geoadj" not in cd_612
 
     def test_invalid_year_raises(self):
         from spm_calculator import get_cd_geoadj

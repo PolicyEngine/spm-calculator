@@ -154,15 +154,18 @@ def get_cd_geoadj(
     cd_str = _normalize_cd_geoid(cd_geoid, cds)
     entry = cds[cd_str]
 
-    if "median_2br_rent" in entry:
-        return calculate_geoadj_from_rent(
-            entry["median_2br_rent"],
-            data["national_median_2br_rent"],
-            tenure=tenure,
+    if "median_2br_rent" not in entry:
+        raise ValueError(
+            f"Bundled CD entry for {cd_str} is missing 'median_2br_rent'. "
+            "This should never happen for the 118th-Congress bundle; "
+            "regenerate the JSON from ACS Table B25031 or open an issue."
         )
 
-    # Backward-compatible fallback for older bundled files.
-    return entry["geoadj"]
+    return calculate_geoadj_from_rent(
+        entry["median_2br_rent"],
+        data["national_median_2br_rent"],
+        tenure=tenure,
+    )
 
 
 def get_cd_geoadj_batch(
