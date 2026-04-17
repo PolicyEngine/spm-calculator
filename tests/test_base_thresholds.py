@@ -52,8 +52,7 @@ class TestPublishedThresholds:
 
         for year in HISTORICAL_THRESHOLDS:
             assert (
-                get_published_thresholds(year)
-                == HISTORICAL_THRESHOLDS[year]
+                get_published_thresholds(year) == HISTORICAL_THRESHOLDS[year]
             ), f"get_published_thresholds({year}) drifted from HISTORICAL_THRESHOLDS"
 
     def test_unavailable_year_raises(self):

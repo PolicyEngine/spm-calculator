@@ -206,9 +206,10 @@ def get_tenure_type(df: pd.DataFrame) -> pd.Series:
     if "ce_year" in df.columns and len(df) > 0:
         ce_year = df["ce_year"]
         is_modern_schema = (ce_year.astype(int) >= MODERN_CUTENURE_YEAR).all()
-        if not is_modern_schema and not (
-            ce_year.astype(int) < MODERN_CUTENURE_YEAR
-        ).all():
+        if (
+            not is_modern_schema
+            and not (ce_year.astype(int) < MODERN_CUTENURE_YEAR).all()
+        ):
             raise ValueError(
                 "Dataset mixes pre-2013 and post-2013 CE vintages "
                 "(CUTENURE schema changed in 2013). Split by `ce_year` "
