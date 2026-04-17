@@ -91,5 +91,5 @@ jobs:
 
       - name: Build web (subpath deploy)
         env:
-          NEXT_PUBLIC_BASE_PATH: /spm-calculator
+          NEXT_PUBLIC_BASE_PATH: /us/spm-calculator
         run: bun run build
