@@ -389,6 +389,31 @@ class TestBundledMetroData:
             get_metro_geoadj("35620", year=2010, tenure="renter")
 
 
+class TestStateFipsCanonicalList:
+    """Regression: the three multi-state ACS loops used to iterate
+    `range(1, 57)` linearly, hitting non-existent FIPS codes
+    ({3, 7, 14, 43, 52}) and silently catching the resulting API
+    errors. The canonical list from the `us` package (already a
+    dependency) is both faster and explicit about which codes we
+    expect to work."""
+
+    def test_iter_state_fips_is_50_states_plus_dc_and_pr(self):
+        from spm_calculator.geoadj import _iter_state_fips
+
+        fips = _iter_state_fips()
+        assert len(fips) == 52, "Expected 50 states + DC + PR"
+        assert all(len(code) == 2 for code in fips), "All codes zero-padded"
+        # Codes that would have been wasted calls under the old
+        # `range(1, 57)` loop:
+        for bad in ("03", "07", "14", "43", "52"):
+            assert bad not in fips, f"FIPS {bad} is non-existent"
+        # Canonical inclusions:
+        for good in ("01", "06", "11", "36", "56", "72"):
+            assert (
+                good in fips
+            ), f"FIPS {good} (state/DC/PR) must be in canonical list"
+
+
 class TestInvalidInputs:
     """Test error handling for invalid inputs."""
 
