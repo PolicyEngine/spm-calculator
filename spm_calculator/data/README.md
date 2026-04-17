@@ -23,8 +23,6 @@ Where:
 - `national_median_rent` = National median 2-bedroom rent ($1,338 in 2023)
 - `housing_share_t` is tenure-specific (`0.443` renter, `0.434` owner with mortgage, `0.323` owner without mortgage)
 
-Values are clamped to the range [0.70, 1.50] to match Census Bureau practice.
-
 ## Metro thresholds (`metro_geoadj_2024.json`)
 
 Bundled official Census metro threshold data for 2024.
