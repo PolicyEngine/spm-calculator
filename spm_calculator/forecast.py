@@ -8,6 +8,7 @@ The BLS typically publishes thresholds with a 1-2 year lag, so forecasting
 is necessary for current and future year calculations.
 """
 
+import warnings
 from typing import Optional
 
 # Historical BLS published thresholds
@@ -81,6 +82,12 @@ CPI_PROJECTIONS = {
 # Default long-run inflation assumption
 DEFAULT_INFLATION = 0.020  # 2.0% Fed target
 
+# Forecasts compound inflation off the latest published year. Past this
+# horizon the cumulative drift from the hardcoded base is large enough
+# that callers should know they are past the region where the forecast
+# is even approximately reliable — we emit a RuntimeWarning.
+FORECAST_WARNING_HORIZON = 5
+
 
 def get_inflation_rate(year: int) -> float:
     """
@@ -135,20 +142,27 @@ def forecast_thresholds(
                          instead of projections.
 
     Returns:
-        Dict with forecasted threshold values by tenure type
+        Dict with forecasted threshold values by tenure type. Values
+        retain sub-dollar precision; the previous implementation cast
+        to ``int`` before composition with equivalence and geographic
+        adjustments, introducing ~$1 drift vs. the mathematically exact
+        product.
     """
+    available = sorted(HISTORICAL_THRESHOLDS.keys())
     if year <= LATEST_PUBLISHED_YEAR:
         if year in HISTORICAL_THRESHOLDS:
             return HISTORICAL_THRESHOLDS[year].copy()
-        else:
-            raise ValueError(
-                f"Year {year} not in historical data. "
-                f"Available: {sorted(HISTORICAL_THRESHOLDS.keys())}"
-            )
+        raise ValueError(
+            f"Year {year} is below the earliest supported year "
+            f"({available[0]}). Historical SPM thresholds are only "
+            f"available for {available[0]}–{LATEST_PUBLISHED_YEAR}."
+        )
 
     # Use latest published year as base
     if base_year is None:
         base_year = LATEST_PUBLISHED_YEAR
+
+    _maybe_warn_far_forecast(year, base_year)
 
     base_thresholds = HISTORICAL_THRESHOLDS[base_year]
 
@@ -159,13 +173,35 @@ def forecast_thresholds(
     else:
         inflation_factor = calculate_cumulative_inflation(base_year, year)
 
-    # Apply inflation to all tenure types
+    # Keep float precision through the forecast multiply. Downstream
+    # code composes this with `equiv_scale * geoadj`, so rounding to
+    # int early introduces up to ~$1 drift vs. the exact product.
     forecasted = {
-        tenure: int(round(value * inflation_factor))
+        tenure: float(value * inflation_factor)
         for tenure, value in base_thresholds.items()
     }
 
     return forecasted
+
+
+def _maybe_warn_far_forecast(year: int, base_year: int) -> None:
+    """Emit a RuntimeWarning once the forecast horizon exceeds N years.
+
+    Silently compounding decades of 2% inflation off a hardcoded 2024
+    base is not useful output; the warning gives downstream code a
+    chance to surface the uncertainty to users. `get_threshold_with_metadata`
+    also exposes this horizon via the returned dict.
+    """
+    horizon = year - base_year
+    if horizon > FORECAST_WARNING_HORIZON:
+        warnings.warn(
+            f"Forecasting SPM thresholds {horizon} years past the latest "
+            f"published year ({base_year}); values compound default "
+            f"inflation beyond the published CPI projection window "
+            f"({max(CPI_PROJECTIONS)}). Treat results as illustrative.",
+            RuntimeWarning,
+            stacklevel=3,
+        )
 
 
 def get_thresholds(
@@ -254,6 +290,13 @@ def get_threshold_with_metadata(
         result["inflation_rate"] = (
             custom_inflation if custom_inflation else get_inflation_rate(year)
         )
+        # Tell callers whether we're past the point where the
+        # forecast is even approximately reliable. Matches the
+        # RuntimeWarning emitted by `forecast_thresholds`.
+        result["horizon_years"] = year - base_year
+        result["beyond_reliable_horizon"] = (
+            year - base_year
+        ) > FORECAST_WARNING_HORIZON
 
     return result
 
