@@ -2,5 +2,15 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "cd web && bun install --frozen-lockfile && NEXT_PUBLIC_BASE_PATH=/us/spm-calculator bun run build",
   "outputDirectory": "web/out",
-  "installCommand": "cd web && bun install --frozen-lockfile"
+  "installCommand": "cd web && bun install --frozen-lockfile",
+  "rewrites": [
+    {
+      "source": "/us/spm-calculator",
+      "destination": "/"
+    },
+    {
+      "source": "/us/spm-calculator/:path*",
+      "destination": "/:path*"
+    }
+  ]
 }
