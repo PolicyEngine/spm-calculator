@@ -49,24 +49,29 @@ def spm_equivalence_scale(
     )
 
     raw = np.zeros_like(adults, dtype=float)
-    has_people = (adults + children) > 0
-    with_children = has_people & (children > 0)
+    # A "child-only" unit (0 adults with children > 0) is not a valid SPM
+    # unit — every SPM unit is headed by at least one reference person
+    # aged 15+. Treat it like the zero-person case and leave `raw` at 0.0
+    # so the calculator surfaces the impossibility downstream rather than
+    # synthesising a single-parent scale from a ghost adult.
+    has_adults = adults > 0
+    with_children = has_adults & (children > 0)
 
-    single_adult_with_children = with_children & (adults <= 1)
+    single_adult_with_children = with_children & (adults == 1)
     raw[single_adult_with_children] = (
         1.0
         + 0.8
         + 0.5 * np.maximum(children[single_adult_with_children] - 1, 0)
     ) ** 0.7
 
-    multi_adult_with_children = with_children & ~single_adult_with_children
+    multi_adult_with_children = with_children & (adults > 1)
     raw[multi_adult_with_children] = (
         adults[multi_adult_with_children]
         + 0.5 * children[multi_adult_with_children]
     ) ** 0.7
 
-    no_children = has_people & ~with_children
-    one_adult = no_children & (adults <= 1)
+    no_children = has_adults & (children == 0)
+    one_adult = no_children & (adults == 1)
     two_adults = no_children & (adults == 2)
     larger_adult_units = no_children & (adults > 2)
 

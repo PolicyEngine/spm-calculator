@@ -123,8 +123,14 @@ class TestEquivalenceScaleFromPersons:
         )
         assert result == pytest.approx((1.0 + 0.8) ** 0.7)
 
-    def test_more_children_than_persons_treated_like_single_parent(self):
+    def test_more_children_than_persons_returns_zero(self):
+        """An SPM unit with more children than total persons is not a
+        valid household — it would imply zero (or negative) adults. The
+        helper clamps adults at zero and a zero-adult unit returns scale
+        0 rather than synthesising a single-parent scale from a ghost
+        adult. Users who want the old "single parent of N children"
+        reading should call ``spm_equivalence_scale(1, N)`` explicitly."""
         result = equivalence_scale_from_persons(
             num_persons=2, num_children=5, normalize=False
         )
-        assert result == pytest.approx((1.0 + 0.8 + 0.5 * 4) ** 0.7)
+        assert result == pytest.approx(0.0)

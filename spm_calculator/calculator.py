@@ -21,6 +21,30 @@ from .geoadj import (
 )
 
 
+def _validate_household_composition(
+    num_adults: Union[int, np.ndarray],
+    num_children: Union[int, np.ndarray],
+) -> None:
+    """Reject obviously-impossible SPM unit compositions.
+
+    SPM units are headed by a reference person aged 15+, so every unit has
+    at least one adult. Negative counts are meaningless. Both scalar and
+    batch paths share this guard so `calculate_thresholds` can't silently
+    emit zero for a child-only row the scalar API would have raised on.
+    """
+    adults = np.asarray(num_adults)
+    children = np.asarray(num_children)
+    if np.any(adults < 0) or np.any(children < 0):
+        raise ValueError("Number of persons cannot be negative")
+    child_only = (adults == 0) & (children > 0)
+    if np.any(child_only):
+        raise ValueError(
+            "SPM units must have at least one adult. "
+            "Received num_adults=0 with num_children>0, which is not a valid "
+            "SPM unit."
+        )
+
+
 class SPMCalculator:
     """Calculator for SPM thresholds."""
 
@@ -86,8 +110,7 @@ class SPMCalculator:
                 f"Must be one of: {VALID_TENURE_TYPES}"
             )
 
-        if num_adults < 0 or num_children < 0:
-            raise ValueError("Number of persons cannot be negative")
+        _validate_household_composition(num_adults, num_children)
 
         if num_adults == 0 and num_children == 0:
             return 0.0
@@ -132,6 +155,8 @@ class SPMCalculator:
                     f"Invalid tenure type: {tenure_type}. "
                     f"Must be one of: {VALID_TENURE_TYPES}"
                 )
+
+        _validate_household_composition(num_adults, num_children)
 
         base_thresholds = self.get_base_thresholds()
         equiv_scales = spm_equivalence_scale(num_adults, num_children)

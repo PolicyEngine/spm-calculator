@@ -184,6 +184,62 @@ class TestThresholdCalculation:
         assert 0.75 < ratio < 0.90
 
 
+class TestHouseholdValidation:
+    """Guards against child-only and negative-count SPM unit inputs."""
+
+    def test_zero_adults_with_children_raises_scalar(self):
+        from spm_calculator import SPMCalculator
+
+        calc = SPMCalculator(year=2024)
+        with pytest.raises(ValueError, match="at least one adult"):
+            calc.calculate_threshold(
+                num_adults=0,
+                num_children=2,
+                tenure="renter",
+                geography_type="nation",
+                geography_id="US",
+            )
+
+    def test_zero_adults_with_children_raises_batch(self):
+        from spm_calculator import SPMCalculator
+
+        calc = SPMCalculator(year=2024)
+        with pytest.raises(ValueError, match="at least one adult"):
+            calc.calculate_thresholds(
+                num_adults=np.array([1, 0, 2]),
+                num_children=np.array([0, 2, 2]),
+                tenure="renter",
+                geography_type="nation",
+                geography_ids="US",
+            )
+
+    def test_negative_counts_raise_batch(self):
+        from spm_calculator import SPMCalculator
+
+        calc = SPMCalculator(year=2024)
+        with pytest.raises(ValueError, match="cannot be negative"):
+            calc.calculate_thresholds(
+                num_adults=np.array([-1, 2]),
+                num_children=np.array([0, 2]),
+                tenure="renter",
+                geography_type="nation",
+                geography_ids="US",
+            )
+
+    def test_negative_children_raises_batch(self):
+        from spm_calculator import SPMCalculator
+
+        calc = SPMCalculator(year=2024)
+        with pytest.raises(ValueError, match="cannot be negative"):
+            calc.calculate_thresholds(
+                num_adults=np.array([2, 2]),
+                num_children=np.array([0, -1]),
+                tenure="renter",
+                geography_type="nation",
+                geography_ids="US",
+            )
+
+
 class TestBatchCalculation:
     """Test batch/vectorized threshold calculation."""
 
