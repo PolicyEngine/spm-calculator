@@ -1,4 +1,5 @@
 {
+  "packageVersion": "0.3.0",
   "baseThresholds": {
     "2015": {
       "renter": 25155,

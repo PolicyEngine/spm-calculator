@@ -124,7 +124,15 @@ function getCeSurveyYears(thresholdYear) {
 
 export default function CalculatorWorkbench({ data }) {
   const searchParams = useSearchParams();
-  const { baseThresholds, methodology, forecast, metroAreas } = data;
+  const {
+    baseThresholds,
+    methodology,
+    forecast,
+    metroAreas,
+    packageVersion,
+    metroSource,
+    metroSourceUrl,
+  } = data;
   const isEmbedded =
     searchParams.get("embed") === "true" ||
     searchParams.get("embedded") === "true";
@@ -831,6 +839,70 @@ print(f"SPM threshold: \${threshold:,.0f}")`;
 
             <Separator />
 
+            {/* Methodology explainer */}
+            <Card data-testid="methodology-card">
+              <CardHeader>
+                <CardTitle>How this is calculated</CardTitle>
+                <CardDescription>
+                  Official Census SPM methodology
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm leading-6">
+                <p>
+                  Threshold = <code className="font-mono">base[tenure]</code>{" "}
+                  × <code className="font-mono">equivalence_scale</code> ×{" "}
+                  <code className="font-mono">geoadj[tenure]</code>
+                </p>
+                <ul className="list-disc space-y-1 pl-6 text-muted-foreground">
+                  <li>
+                    <strong>Base</strong>: BLS-published FCSUti thresholds
+                    for the reference family (2 adults, 2 children), by
+                    tenure. National 2024 renter base ={" "}
+                    <span className="font-mono">$39,430</span>.
+                  </li>
+                  <li>
+                    <strong>Equivalence scale</strong>: Betson
+                    three-parameter. Single-adult with K children:{" "}
+                    <code className="font-mono">
+                      (1 + 0.8 + 0.5·(K−1))^0.7
+                    </code>
+                    . Multi-adult with children:{" "}
+                    <code className="font-mono">(A + 0.5·K)^0.7</code>.
+                    Reference 2A2C = <code className="font-mono">3^0.7</code>.
+                  </li>
+                  <li>
+                    <strong>GEOADJ</strong>: for metros, the Census 2024
+                    SPM workbook's per-tenure reference thresholds. For
+                    other geographies, a rent-based adjustment using
+                    tenure-specific housing shares (renter 0.443,
+                    owner-with-mortgage 0.434, owner-without-mortgage
+                    0.323).
+                  </li>
+                </ul>
+                <p className="text-xs text-muted-foreground">
+                  Census methodology:{" "}
+                  <a
+                    className="underline"
+                    href="https://www.bls.gov/pir/spm/garner_spm_choices_03_15_21.pdf"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Garner (2021)
+                  </a>
+                  . Metro workbook:{" "}
+                  <a
+                    className="underline"
+                    href="https://www.census.gov/library/publications/2025/demo/p60-287.html"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    P60-287
+                  </a>
+                  .
+                </p>
+              </CardContent>
+            </Card>
+
             {/* Python package */}
             <Card>
               <CardHeader>
@@ -861,6 +933,37 @@ print(f"SPM threshold: \${threshold:,.0f}")`;
                 </div>
               </CardContent>
             </Card>
+
+            {/* Version + data vintage footer */}
+            <footer
+              data-testid="version-footer"
+              className="pt-2 text-xs text-muted-foreground"
+            >
+              <p>
+                Based on{" "}
+                <a
+                  className="underline"
+                  href={metroSourceUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {metroSource}
+                </a>
+                {packageVersion ? (
+                  <>
+                    {" · "}
+                    <a
+                      className="underline"
+                      href={PYPI_URL}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      spm-calculator {packageVersion}
+                    </a>
+                  </>
+                ) : null}
+              </p>
+            </footer>
           </div>
         </ResultsPanel>
       </SidebarLayout>
