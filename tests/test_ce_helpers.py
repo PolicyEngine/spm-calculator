@@ -132,13 +132,34 @@ class TestGetTenureType:
 
 
 class TestWeightedPercentile:
-    def test_uniform_weights_match_numpy(self):
+    def test_uniform_weights_median_is_center_for_odd_length(self):
+        """At p=50 on an odd-length array with uniform weights, the
+        midpoint-CDF convention returns the center element — this is
+        the one percentile where it coincides with numpy.percentile."""
         values = np.array([10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0])
         weights = np.ones_like(values)
         got = _weighted_percentile(values, weights, 50.0)
-        # The midpoint CDF convention places the median on the center
-        # element, matching numpy's default for odd-length arrays.
         assert got == pytest.approx(40.0)
+
+    def test_midpoint_cdf_convention_differs_from_numpy_default(self):
+        """Regression guard: document that this helper uses the
+        midpoint-CDF convention, not numpy's default ``linear``.
+
+        For uniform weights on ``[10, 20, ..., 70]``:
+        - numpy default at p=25 → 25.0 (linear: 25 = 10 + 0.25·60)
+        - midpoint-CDF at p=25 → 22.5 (each obs sits at CDF ~= 0.5/7,
+          1.5/7, ..., 6.5/7; interpolating p=0.25 lands between 20 and
+          30 at 22.5).
+        If someone "fixes" this helper to match numpy default, this
+        test fails and they re-read the docstring."""
+        values = np.array([10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0])
+        weights = np.ones_like(values)
+        assert _weighted_percentile(values, weights, 25.0) == pytest.approx(
+            22.5
+        )
+        assert _weighted_percentile(values, weights, 75.0) == pytest.approx(
+            57.5
+        )
 
     def test_weights_move_the_median(self):
         """A CU with large weight should dominate the median."""

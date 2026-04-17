@@ -217,9 +217,18 @@ def _weighted_percentile(
 ) -> float:
     """Compute a weighted percentile without external deps.
 
-    Matches ``numpy.percentile`` for uniform weights. Uses the same
-    linear-interpolation rule on the weighted CDF that BLS applies when
-    computing SPM threshold percentiles.
+    Uses the midpoint-CDF convention: each observation is placed at
+    ``(cum_weight - w_i/2) / total_weight`` and the requested
+    percentile is linearly interpolated between surrounding
+    observations. For odd-length uniform-weight arrays this agrees
+    with ``numpy.percentile`` at the median but not at other
+    percentiles (numpy's default ``linear`` interpolation places
+    observations at ``i / (n - 1)``, which is a different convention).
+
+    This matches the weighted-median convention used in survey
+    statistics packages (e.g., R's ``Hmisc::wtd.quantile`` with
+    ``type='i/n'``) and is the sensible extension of BLS's
+    percentile-range threshold approach to weighted CU data.
     """
     order = np.argsort(values)
     values = np.asarray(values)[order]
