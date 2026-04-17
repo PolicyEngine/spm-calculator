@@ -182,6 +182,7 @@ def generate_data():
     with open(web_data_dir / "metro_geoadj.json", "w") as f:
         json.dump(metro_data, f, indent=2)
 
+    metro_year = int(metro_data["year"])
     config = {
         "packageVersion": _read_package_version(),
         "baseThresholds": all_thresholds,
@@ -199,6 +200,15 @@ def generate_data():
         "forecast": {
             "latestPublishedYear": LATEST_PUBLISHED_YEAR,
             "cpiProjections": {str(k): v for k, v in CPI_PROJECTIONS.items()},
+        },
+        # Web mirrors the Python rule: historical years (< earliest
+        # bundled) must raise rather than silently apply current-year
+        # rent indices to earlier base thresholds; forecast years
+        # (> latest bundled) warn-and-pin to the most recent vintage.
+        "metroData": {
+            "availableYears": [metro_year],
+            "earliestYear": metro_year,
+            "latestYear": metro_year,
         },
     }
 
