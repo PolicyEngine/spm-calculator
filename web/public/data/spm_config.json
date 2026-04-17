@@ -107,5 +107,12 @@
       "2029": 0.02,
       "2030": 0.02
     }
+  },
+  "metroData": {
+    "availableYears": [
+      2024
+    ],
+    "earliestYear": 2024,
+    "latestYear": 2024
   }
 }

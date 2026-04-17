@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import os
+import warnings
 from datetime import date
 from functools import lru_cache
 from pathlib import Path
@@ -100,17 +101,51 @@ def _available_bundled_metro_years() -> list[int]:
     return sorted(years)
 
 
+def get_available_metro_years() -> list[int]:
+    """Return the list of years with bundled metro rent-index data."""
+    return _available_bundled_metro_years()
+
+
+def get_latest_bundled_metro_year() -> int:
+    """Return the most recent year with bundled metro rent-index data."""
+    years = _available_bundled_metro_years()
+    if not years:
+        raise ValueError("No bundled metro data available.")
+    return years[-1]
+
+
 def _resolve_bundled_metro_year(year: int) -> int:
+    """Resolve a requested metro-data year to the nearest bundled vintage.
+
+    Only forward extrapolation is allowed: for forecast years (beyond the
+    latest bundled vintage) we pin to the most recent data and emit a
+    warning so the caller knows the metro rent index is not contemporary
+    with the threshold year. For historical years we raise, because
+    silently reusing a current-year rent index to "back-cast" a metro
+    threshold produces numbers that do not match any published BLS or
+    Census table.
+    """
     available = _available_bundled_metro_years()
     if not available:
         raise ValueError("No bundled metro data available.")
     if year in available:
         return year
-    if year > available[-1]:
-        return available[-1]
+    latest = available[-1]
+    if year > latest:
+        warnings.warn(
+            f"No bundled metro data for year {year}; using {latest} metro "
+            f"rent indices. The returned metro adjustment reflects {latest} "
+            f"housing costs applied to the requested year's base threshold.",
+            RuntimeWarning,
+            stacklevel=3,
+        )
+        return latest
     raise ValueError(
         f"No bundled metro data for year {year}. "
-        f"Available: {available or 'none'}"
+        f"Metro thresholds are only published for {available}; pre-{available[0]} "
+        f"historical estimates are not supported because back-casting a "
+        f"current rent index to earlier years does not match any published "
+        f"BLS or Census table."
     )
 
 
@@ -188,6 +223,25 @@ def get_bundled_cd_data(year: int = 2023) -> dict:
     return dict(_load_bundled_cd_data(year))
 
 
+def _require_rent_index(info: dict) -> float:
+    """Return a bundled metro entry's ``rentIndex`` or raise.
+
+    The legacy ``geoadj`` field was removed in v0.2.2 because it meant a
+    precomputed *adjustment* (not a *rent index*) and interpreting it as
+    a rent index silently compounds the tenure housing share twice. Any
+    bundle that ships without ``rentIndex`` is a regeneration bug and
+    must fail loudly rather than fall back to a field with different
+    semantics.
+    """
+    if "rentIndex" not in info:
+        name = info.get("name", "<unknown metro>")
+        raise ValueError(
+            f"Bundled metro entry for {name!r} is missing 'rentIndex'. "
+            f"Regenerate metro data from the Census SPM workbook."
+        )
+    return float(info["rentIndex"])
+
+
 @lru_cache(maxsize=8)
 def _load_bundled_metro_data(year: int = 2024) -> dict:
     resolved_year = _resolve_bundled_metro_year(year)
@@ -202,7 +256,7 @@ def _load_bundled_metro_data(year: int = 2024) -> dict:
         data["nationalThresholds"] = national_thresholds
         data["housingShares"] = TENURE_HOUSING_SHARES.copy()
         for info in data["metroAreas"].values():
-            rent_index = info.get("rentIndex", info.get("geoadj"))
+            rent_index = _require_rent_index(info)
             info["rentIndex"] = rent_index
             info["referenceThresholds"] = {
                 tenure: round(
@@ -249,14 +303,14 @@ def get_metro_rent_index(
                 f"Metro area '{metro_code}' not found in bundled data."
             )
         info = metros[metro_code]
-        return info.get("rentIndex", info.get("geoadj"))
+        return _require_rent_index(info)
 
     results = np.zeros(len(metro_code), dtype=np.float64)
     for i, code in enumerate(metro_code):
         if code not in metros:
             raise ValueError(f"Metro area '{code}' not found in bundled data.")
         info = metros[code]
-        results[i] = info.get("rentIndex", info.get("geoadj"))
+        results[i] = _require_rent_index(info)
     return results
 
 
@@ -293,7 +347,7 @@ def get_metro_geoadj(
         info = metros[metro_code]
         if "adjustments" in info:
             return info["adjustments"][tenure_str]
-        rent_index = info.get("rentIndex", info.get("geoadj"))
+        rent_index = _require_rent_index(info)
         return calculate_geoadj_from_rent(rent_index, 1.0, tenure=tenure_str)
 
     tenure_list = _broadcast_scalar_or_sequence(tenure, len(metro_code))
@@ -306,7 +360,7 @@ def get_metro_geoadj(
         if "adjustments" in info:
             results[i] = info["adjustments"][tenure_value]
         else:
-            rent_index = info.get("rentIndex", info.get("geoadj"))
+            rent_index = _require_rent_index(info)
             results[i] = calculate_geoadj_from_rent(
                 rent_index, 1.0, tenure=tenure_value
             )
@@ -327,7 +381,7 @@ def list_metro_areas(year: int = 2024) -> list[dict]:
             {
                 "code": code,
                 "name": info["name"],
-                "rentIndex": info.get("rentIndex", info.get("geoadj")),
+                "rentIndex": _require_rent_index(info),
                 "adjustments": info.get("adjustments"),
                 "referenceThresholds": info.get("referenceThresholds"),
             }
@@ -505,7 +559,7 @@ def _create_bundled_metro_lookup(year: int, tenure: str) -> pd.DataFrame:
         rows.append(
             {
                 "geography_id": code,
-                "rent_index": info.get("rentIndex", info.get("geoadj")),
+                "rent_index": _require_rent_index(info),
                 "geoadj": get_metro_geoadj(code, tenure=tenure, year=year),
             }
         )

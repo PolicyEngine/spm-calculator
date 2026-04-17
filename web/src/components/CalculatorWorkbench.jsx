@@ -133,6 +133,7 @@ export default function CalculatorWorkbench({ data }) {
     methodology,
     forecast,
     metroAreas,
+    metroData,
     packageVersion,
     metroSource,
     metroSourceUrl,
@@ -141,6 +142,13 @@ export default function CalculatorWorkbench({ data }) {
     searchParams.get("embed") === "true" ||
     searchParams.get("embedded") === "true";
   const latestPublishedYear = forecast.latestPublishedYear;
+  // Metro rent indices ship as a single Census vintage. Historical years
+  // (< earliestMetroYear) are unsupported for metros because back-casting
+  // a current rent index to earlier base thresholds does not match any
+  // published BLS or Census table. Forecast years (> latestMetroYear)
+  // pin to the latest bundled vintage and surface a warning badge.
+  const earliestMetroYear = metroData?.earliestYear ?? latestPublishedYear;
+  const latestMetroYear = metroData?.latestYear ?? latestPublishedYear;
   const availableYears = Object.keys(baseThresholds).sort(
     (left, right) => Number(right) - Number(left),
   );
@@ -338,8 +346,18 @@ export default function CalculatorWorkbench({ data }) {
     return null;
   }, [geographyType, selectedCustomLocation, selectedGeographyId, selectedMetroData]);
 
+  // Metros only support years >= earliestMetroYear. Older years come back
+  // as an error state (mirrors Python's ValueError in
+  // `_resolve_bundled_metro_year`) so the UI doesn't silently compound a
+  // 2024 rent index against a 2015 base threshold.
+  const metroYearIsHistorical =
+    geographyType === "metro_area" && Number(year) < earliestMetroYear;
+  const metroYearIsForecast =
+    geographyType === "metro_area" && Number(year) > latestMetroYear;
+
   const geoadj = useMemo(() => {
     if (geographyType === "nation") return 1;
+    if (geographyType === "metro_area" && metroYearIsHistorical) return null;
     if (selectedMetroData) return selectedMetroData.adjustments[tenure];
     if (selectedCustomLocation && acsLookup.nationalMedianRent) {
       return calculateCustomGeoadj({
@@ -354,10 +372,16 @@ export default function CalculatorWorkbench({ data }) {
     acsLookup.nationalMedianRent,
     geographyType,
     methodology.housingShares,
+    metroYearIsHistorical,
     selectedCustomLocation,
     selectedMetroData,
     tenure,
   ]);
+
+  const metroYearError = metroYearIsHistorical
+    ? `Metro rent indices are only published for ${earliestMetroYear} and later. ` +
+      `Select a national or custom ACS geography for ${year}, or choose ${earliestMetroYear} or later.`
+    : "";
 
   const threshold = geoadj === null ? null : base * equivalenceScale * geoadj;
   const monthlyThreshold = threshold === null ? null : threshold / 12;
@@ -381,13 +405,18 @@ export default function CalculatorWorkbench({ data }) {
     geographyType !== "metro_area" &&
     geographyType !== "nation" &&
     acsLookup.status === "loading";
-  const locationError = acsLookup.status === "error" ? acsLookup.error : "";
+  const locationError =
+    acsLookup.status === "error"
+      ? acsLookup.error
+      : metroYearError || "";
 
   const tenureComparisonData = TENURE_OPTIONS.map((option) => {
     let adjustment = 1;
     let isReady = geographyType === "nation" || Boolean(selectedMetroData);
 
-    if (selectedMetroData) {
+    if (metroYearIsHistorical) {
+      isReady = false;
+    } else if (selectedMetroData) {
       adjustment = selectedMetroData.adjustments[option.value];
     } else if (selectedCustomLocation && acsLookup.nationalMedianRent) {
       adjustment = calculateCustomGeoadj({
@@ -682,6 +711,11 @@ print(f"SPM threshold: \${threshold:,.0f}")`;
                 </Badge>
                 {yearIsForecast && (
                   <Badge variant="warning">Forecast</Badge>
+                )}
+                {metroYearIsForecast && (
+                  <Badge variant="warning">
+                    {latestMetroYear} metro rent index
+                  </Badge>
                 )}
               </div>
 

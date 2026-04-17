@@ -388,6 +388,62 @@ class TestBundledMetroData:
         with pytest.raises(ValueError, match="No bundled metro data"):
             get_metro_geoadj("35620", year=2010, tenure="renter")
 
+    def test_historical_metro_year_raises_with_actionable_message(self):
+        """Pre-bundle historical years must raise and point the caller at
+        the supported range; silently applying a 2024 rent index to a 2015
+        base would fabricate a number that matches no published table."""
+        from spm_calculator import SPMCalculator
+
+        calc = SPMCalculator(year=2015)
+        with pytest.raises(ValueError, match="back-casting"):
+            calc.calculate_threshold(
+                num_adults=2,
+                num_children=2,
+                tenure="renter",
+                geography_type="metro_area",
+                geography_id="35620",
+            )
+
+    def test_forecast_metro_year_warns_and_pins_to_latest(self):
+        """Forecast years pin to the latest bundled metro vintage and
+        emit a RuntimeWarning so callers know the rent index is not
+        contemporary with the threshold year."""
+        import warnings
+
+        from spm_calculator import SPMCalculator
+        from spm_calculator.geoadj import (
+            _load_bundled_metro_data,
+            get_latest_bundled_metro_year,
+        )
+
+        _load_bundled_metro_data.cache_clear()
+        latest = get_latest_bundled_metro_year()
+        forecast_year = latest + 2
+
+        calc = SPMCalculator(year=forecast_year)
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            threshold = calc.calculate_threshold(
+                num_adults=2,
+                num_children=2,
+                tenure="renter",
+                geography_type="metro_area",
+                geography_id="35620",
+            )
+        assert any(
+            "No bundled metro data" in str(w.message) for w in caught
+        ), "Expected a RuntimeWarning about the pinned metro year"
+        assert threshold > 0
+
+    def test_require_rent_index_raises_when_missing(self):
+        """Any bundle without 'rentIndex' must fail loudly rather than
+        fall back to the legacy 'geoadj' field, which carries different
+        semantics (precomputed adjustment vs. raw rent index)."""
+        from spm_calculator.geoadj import _require_rent_index
+
+        with pytest.raises(ValueError, match="missing 'rentIndex'"):
+            _require_rent_index({"name": "Fake MSA"})
+
 
 class TestInvalidInputs:
     """Test error handling for invalid inputs."""
