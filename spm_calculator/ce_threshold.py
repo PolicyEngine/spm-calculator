@@ -19,6 +19,7 @@ Reference:
 """
 
 import io
+import warnings
 import zipfile
 from typing import Optional
 
@@ -110,98 +111,128 @@ def download_ce_pumd_years(years: list[int]) -> pd.DataFrame:
     return pd.concat(dfs, ignore_index=True)
 
 
-def calculate_fcsuti(df: pd.DataFrame) -> pd.Series:
-    """
-    Calculate FCSUti (Food, Clothing, Shelter, Utilities, telephone, internet).
+def _sum_pair(df: pd.DataFrame, pq: str, cq: str) -> pd.Series:
+    """Sum a PQ/CQ expenditure pair, returning zeros if either is missing."""
+    if pq in df.columns and cq in df.columns:
+        return df[pq].fillna(0) + df[cq].fillna(0)
+    return pd.Series(0.0, index=df.index)
 
-    These are the expenditure categories used in the SPM threshold.
+
+def calculate_fcsuti(df: pd.DataFrame) -> pd.Series:
+    """Calculate annualized FCSUti (Food, Clothing, Shelter, Utilities,
+    telephone, internet) consumption from a CE FMLI DataFrame.
+
+    Each FMLI record reports previous-quarter (``*PQ``) and
+    current-quarter (``*CQ``) expenditures, so the pair sums to six
+    months of spending. Multiplying by 2 annualizes.
+
+    For owner CUs, mortgage principal is subtracted from shelter because
+    BLS SPM treats principal as investment, not consumption. The
+    principal variables (``MRTPRINPQ``/``MRTPRINCQ``) exist only in
+    vintages that split them out; we fall back to zero if missing.
+
+    Post-2019 CE vintages separate "information technology" spending
+    (``INFOTECHPQ``/``INFOTECHCQ``) covering internet services, which
+    BLS includes alongside telephone in FCSUti.
 
     Args:
-        df: CE Survey FMLI DataFrame
+        df: CE Survey FMLI DataFrame (one row per CU-interview)
 
     Returns:
-        Series with FCSUti values (annual)
+        Series with annualized FCSUti values in the CU's interview-year
+        dollars (inflation adjustment happens downstream).
     """
-    # CE variable names for expenditure categories
-    # Note: Variable names may vary slightly by year
-    # These are quarterly values, multiply by 4 for annual
+    food = _sum_pair(df, "FOODPQ", "FOODCQ")
+    apparel = _sum_pair(df, "APPARPQ", "APPARCQ")
+    shelter = _sum_pair(df, "SHELTPQ", "SHELTCQ")
+    utilities = _sum_pair(df, "UTILPQ", "UTILCQ")
+    telephone = _sum_pair(df, "TELEPHPQ", "TELEPHCQ")
+    # "Information technology" includes internet services (post-2018).
+    info_tech = _sum_pair(df, "INFOTECHPQ", "INFOTECHCQ")
 
-    # Food (at home + away)
-    food_cols = ["FOODPQ", "FOODCQ"]  # Previous quarter, current quarter
-    food = df[food_cols].sum(axis=1) if all(c in df for c in food_cols) else 0
+    # Exclude mortgage principal from owner shelter: it's investment,
+    # not consumption. Variable names vary across vintages.
+    mortgage_principal = _sum_pair(df, "MRTPRINPQ", "MRTPRINCQ")
+    shelter = (shelter - mortgage_principal).clip(lower=0)
 
-    # Clothing/Apparel
-    apparel_cols = ["APPARPQ", "APPARCQ"]
-    apparel = (
-        df[apparel_cols].sum(axis=1)
-        if all(c in df for c in apparel_cols)
-        else 0
-    )
-
-    # Shelter (rent or mortgage + property taxes + insurance)
-    shelter_cols = ["SHELTPQ", "SHELTCQ"]
-    shelter = (
-        df[shelter_cols].sum(axis=1)
-        if all(c in df for c in shelter_cols)
-        else 0
-    )
-
-    # Utilities (electricity, gas, water, etc.)
-    util_cols = ["UTILPQ", "UTILCQ"]
-    utilities = (
-        df[util_cols].sum(axis=1) if all(c in df for c in util_cols) else 0
-    )
-
-    # Telephone
-    phone_cols = ["TELEPHPQ", "TELEPHCQ"]
-    telephone = (
-        df[phone_cols].sum(axis=1) if all(c in df for c in phone_cols) else 0
-    )
-
-    # Internet (may be included in utilities or telephone in some years)
-    # Starting ~2019, there's a separate internet category
-    internet = 0
-
-    # Sum components - these are already quarterly averages in FMLI
-    # Multiply by 4 to annualize
-    fcsuti = (food + apparel + shelter + utilities + telephone + internet) * 4
-
-    return fcsuti
+    # PQ + CQ covers two quarters; multiply by 2 to annualize.
+    return (food + apparel + shelter + utilities + telephone + info_tech) * 2
 
 
 def get_tenure_type(df: pd.DataFrame) -> pd.Series:
-    """
-    Determine housing tenure type from CE data.
+    """Determine housing tenure type (renter, owner_with_mortgage,
+    owner_without_mortgage) from CE FMLI data.
+
+    CUTENURE codes:
+        1 = Owned with mortgage
+        2 = Owned without mortgage
+        3 = Rented
+        4 = Occupied without payment
+        5 = Student housing
+
+    BLS expanded the CUTENURE codes in 2013 to split owners by mortgage
+    status, so CUTENURE alone is authoritative in modern vintages. For
+    older vintages (where CUTENURE == 1 meant any owner), we fall back
+    to presence of mortgage interest/principal expenditure.
 
     Args:
         df: CE Survey FMLI DataFrame
 
     Returns:
-        Series with tenure type: 'renter', 'owner_with_mortgage',
-        'owner_without_mortgage'
+        Series of tenure strings aligned with ``df.index``.
     """
-    # CUTENURE: 1=Owned, 2=Rented, 3=Occupied without payment, 4=Student housing
-    # For owners, check mortgage status via QOWNED or property values
+    tenure = pd.Series("renter", index=df.index, dtype=object)
+    cutenure = df["CUTENURE"]
 
-    tenure = pd.Series(index=df.index, dtype=str)
+    # Modern CUTENURE codes span {1, 2, 3, 4, 5}; the legacy pre-2013
+    # codes only used {1, 2}. If any row uses a code >= 3, the dataset
+    # is on the modern schema.
+    is_modern_schema = (cutenure >= 3).any()
 
-    is_renter = df["CUTENURE"] == 2
-    is_owner = df["CUTENURE"] == 1
-
-    # Check for mortgage - various indicators
-    # OWNYRSTW: Years owned (0 if renting)
-    # QOWNED: Quarter first owned
-    # Look at shelter costs composition for mortgage indicator
-    has_mortgage = is_owner & (
-        df.get("OWNYRTHH", 0) < 30
-    )  # Proxy: owned < 30 years
-
-    tenure[is_renter] = "renter"
-    tenure[is_owner & has_mortgage] = "owner_with_mortgage"
-    tenure[is_owner & ~has_mortgage] = "owner_without_mortgage"
-    tenure[tenure == ""] = "renter"  # Default fallback
+    if is_modern_schema:
+        # 1 = owner w/ mortgage, 2 = owner w/o, 3 = renter.
+        tenure[cutenure == 1] = "owner_with_mortgage"
+        tenure[cutenure == 2] = "owner_without_mortgage"
+        tenure[cutenure == 3] = "renter"
+    else:
+        # Legacy CUTENURE where only owners (1) and renters (2) are split.
+        # Detect mortgage status from expenditure presence.
+        is_owner = cutenure == 1
+        is_renter = cutenure == 2
+        mortgage_activity = _sum_pair(
+            df, "MRTPRINPQ", "MRTPRINCQ"
+        ) + _sum_pair(df, "MRTINTPQ", "MRTINTCQ")
+        has_mortgage = is_owner & (mortgage_activity > 0)
+        tenure[is_renter] = "renter"
+        tenure[is_owner & has_mortgage] = "owner_with_mortgage"
+        tenure[is_owner & ~has_mortgage] = "owner_without_mortgage"
 
     return tenure
+
+
+def _weighted_percentile(
+    values: np.ndarray,
+    weights: np.ndarray,
+    percentile: float,
+) -> float:
+    """Compute a weighted percentile without external deps.
+
+    Matches ``numpy.percentile`` for uniform weights. Uses the same
+    linear-interpolation rule on the weighted CDF that BLS applies when
+    computing SPM threshold percentiles.
+    """
+    order = np.argsort(values)
+    values = np.asarray(values)[order]
+    weights = np.asarray(weights, dtype=float)[order]
+    cumulative = np.cumsum(weights)
+    total = cumulative[-1]
+    if total <= 0:
+        return float("nan")
+    # Shift to the "midpoint" convention so that p=50 returns the
+    # weighted median.
+    cdf = (cumulative - weights / 2) / total
+    target = percentile / 100.0
+    return float(np.interp(target, cdf, values))
 
 
 def calculate_base_thresholds(
@@ -209,48 +240,61 @@ def calculate_base_thresholds(
     target_year: int = 2024,
     use_published_fallback: bool = True,
 ) -> dict[str, float]:
-    """
-    Calculate SPM base thresholds by tenure type from CE Survey.
+    """Calculate SPM base thresholds by tenure from CE Survey PUMD.
 
-    Following current BLS methodology:
-    - Use 5 years of data, lagged by 1 year
-    - Filter to consumer units with children
-    - Update spending to threshold-year dollars using the FCSUti CPI-U
-    - Calculate 83% of the median-range expenditure by tenure
+    Implements the BLS methodology documented in Garner (2021):
+
+    1. 5 years of CE Interview Survey data, lagged by 1 year (for a
+       target year of 2024, use 2018–2022 CE microdata).
+    2. Restrict to consumer units with at least one child under 18.
+    3. Compute FCSUti (Food, Clothing, Shelter, Utilities, telephone,
+       internet) per CU, annualized from the ``*PQ``/``*CQ`` quarterly
+       pair and excluding mortgage principal from owner shelter.
+    4. Inflate each CU's FCSUti to the target year using the FCSUti
+       composite CPI index.
+    5. Normalize to the 2-adult, 2-child reference family by dividing
+       by the Betson three-parameter equivalence scale.
+    6. Compute 83% of the CE weight-weighted median (approximated by
+       the mean of the 47th and 53rd percentiles) separately by
+       tenure.
+
+    Survey weights (``FINLWT21``) are applied throughout. If the
+    download or any downstream step fails and
+    ``use_published_fallback`` is set, returns published BLS values
+    for the target year when available (2015–2024).
 
     Args:
-        years: Specific years to use. If None, uses 5 years lagged by 1.
-        target_year: The year for which thresholds are being calculated.
-        use_published_fallback: If True, return published BLS values when
-                               CE data is unavailable or calculation fails.
+        years: Specific CE years to use. Defaults to the 5-year BLS
+            lagged window.
+        target_year: The year these thresholds represent.
+        use_published_fallback: If True, fall back to the BLS
+            published-thresholds dict (``HISTORICAL_THRESHOLDS`` via
+            ``forecast.get_thresholds``) when CE computation fails and
+            the target year has a published value.
 
     Returns:
-        Dict with keys 'renter', 'owner_with_mortgage', 'owner_without_mortgage'
-        and threshold values in dollars.
+        Dict with ``renter``, ``owner_with_mortgage``,
+        ``owner_without_mortgage`` threshold values for a 2A2C
+        reference family in ``target_year`` dollars.
     """
     if years is None:
-        # Standard BLS methodology: 5 years lagged by 1
-        # For 2024 thresholds, use 2018-2022 data
         years = list(range(target_year - 6, target_year - 1))
 
     try:
         ce = download_ce_pumd_years(years)
 
-        # Filter to consumer units with children
-        # PERSLT18: Number of persons under 18
         if "PERSLT18" in ce.columns:
-            ce = ce[ce["PERSLT18"] > 0]
+            ce = ce[ce["PERSLT18"] > 0].copy()
         elif "FAM_SIZE" in ce.columns and "PERSOT64" in ce.columns:
-            # Alternative: infer from family composition
-            ce = ce[ce["FAM_SIZE"] > ce.get("PERSOT64", 0)]
+            ce = ce[ce["FAM_SIZE"] > ce.get("PERSOT64", 0)].copy()
 
         if len(ce) == 0:
             raise ValueError("No consumer units with children found")
 
-        # Calculate FCSUti
         ce["fcsuti"] = calculate_fcsuti(ce)
 
-        # Update each observation to threshold-year dollars.
+        # Inflate each CU's FCSUti to target-year dollars using the
+        # FCSUti composite CPI.
         inflation_factors = {
             year: get_fcsuti_inflation_factor(year, target_year)
             for year in ce["ce_year"].dropna().astype(int).unique()
@@ -260,56 +304,63 @@ def calculate_base_thresholds(
         )
         ce["fcsuti_threshold_year"] = ce["fcsuti"] * ce["inflation_factor"]
 
-        # Get equivalence scale
+        # Normalize to the 2A2C reference family via the Betson scale.
         num_adults = ce.get("ADULT", 2)
         num_children = ce.get("PERSLT18", 0)
         ce["equiv_scale"] = spm_equivalence_scale(
             num_adults, num_children, normalize=False
         )
-
-        # Convert to the official 2-adult, 2-child reference family.
         ce["fcsuti_2a2c"] = ce["fcsuti_threshold_year"] * (
             REFERENCE_RAW_SCALE / ce["equiv_scale"]
         )
 
-        # Get tenure type
         ce["tenure_type"] = get_tenure_type(ce)
 
-        # Calculate 83% of median (47th-53rd percentile average) by tenure
-        # This is the methodology used since September 2021
-        # Previously used 33rd percentile (30th-36th range)
-        base_thresholds = {}
-        for tenure in [
+        # CE survey weights. FMLI publishes FINLWT21 as the calibrated
+        # CU weight. If a vintage is missing it, fall back to uniform.
+        if "FINLWT21" in ce.columns:
+            ce["ce_weight"] = ce["FINLWT21"].astype(float)
+        else:
+            ce["ce_weight"] = 1.0
+
+        base_thresholds: dict[str, float] = {}
+        for tenure in (
             "renter",
             "owner_with_mortgage",
             "owner_without_mortgage",
-        ]:
-            subset = ce[ce["tenure_type"] == tenure]["fcsuti_2a2c"].dropna()
-            if len(subset) > 0:
-                # 83% of median approximation: average of 47th-53rd percentiles
-                p47 = np.percentile(subset, 47)
-                p53 = np.percentile(subset, 53)
-                median_range = (p47 + p53) / 2
-                base_thresholds[tenure] = 0.83 * median_range
-            else:
-                # Fallback to overall if specific tenure not available
-                subset = ce["fcsuti_2a2c"].dropna()
-                p47 = np.percentile(subset, 47)
-                p53 = np.percentile(subset, 53)
-                median_range = (p47 + p53) / 2
-                base_thresholds[tenure] = 0.83 * median_range
+        ):
+            subset = ce[ce["tenure_type"] == tenure]
+            subset = subset.dropna(subset=["fcsuti_2a2c"])
+            if len(subset) == 0:
+                # Fall back to pooled distribution if a tenure bucket is
+                # empty in this vintage.
+                subset = ce.dropna(subset=["fcsuti_2a2c"])
+
+            values = subset["fcsuti_2a2c"].to_numpy()
+            weights = subset["ce_weight"].to_numpy()
+            p47 = _weighted_percentile(values, weights, 47.0)
+            p53 = _weighted_percentile(values, weights, 53.0)
+            base_thresholds[tenure] = 0.83 * (p47 + p53) / 2
 
         return base_thresholds
 
     except Exception as e:
-        if use_published_fallback and target_year == 2024:
-            print(
-                f"Warning: CE calculation failed ({e}), "
-                "using published BLS thresholds"
-            )
-            return BLS_PUBLISHED_THRESHOLDS_2024.copy()
-        else:
-            raise
+        if use_published_fallback:
+            try:
+                # Lazy import avoids a circular import at module load.
+                from .forecast import get_thresholds
+
+                fallback = get_thresholds(target_year, allow_forecast=False)
+                warnings.warn(
+                    f"CE calculation failed ({e}); using published BLS "
+                    f"thresholds for {target_year}.",
+                    RuntimeWarning,
+                    stacklevel=2,
+                )
+                return fallback
+            except ValueError:
+                pass
+        raise
 
 
 def get_published_thresholds(year: int) -> dict[str, float]:
