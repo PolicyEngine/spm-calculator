@@ -929,7 +929,7 @@ print(f"SPM threshold: \${threshold:,.0f}")`;
                     className="underline"
                     href="https://www.bls.gov/pir/spm/garner_spm_choices_03_15_21.pdf"
                     target="_blank"
-                    rel="noreferrer"
+                    rel="noopener noreferrer"
                   >
                     Garner (2021)
                   </a>
@@ -938,7 +938,7 @@ print(f"SPM threshold: \${threshold:,.0f}")`;
                     className="underline"
                     href="https://www.census.gov/library/publications/2025/demo/p60-287.html"
                     target="_blank"
-                    rel="noreferrer"
+                    rel="noopener noreferrer"
                   >
                     P60-287
                   </a>
@@ -989,7 +989,7 @@ print(f"SPM threshold: \${threshold:,.0f}")`;
                   className="underline"
                   href={metroSourceUrl}
                   target="_blank"
-                  rel="noreferrer"
+                  rel="noopener noreferrer"
                 >
                   {metroSource}
                 </a>
@@ -1000,7 +1000,7 @@ print(f"SPM threshold: \${threshold:,.0f}")`;
                       className="underline"
                       href={PYPI_URL}
                       target="_blank"
-                      rel="noreferrer"
+                      rel="noopener noreferrer"
                     >
                       spm-calculator {packageVersion}
                     </a>

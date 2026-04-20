@@ -3,21 +3,76 @@ import "./globals.css";
 
 const GA_ID = "G-2YHG89FY0N";
 const TOOL_NAME = "spm-calculator";
+const SITE_URL = "https://policyengine.org/us/spm-calculator";
 
 export const metadata = {
-  title: "SPM threshold calculator | PolicyEngine",
+  title: "SPM Threshold Calculator | PolicyEngine",
   description:
-    "Calculate Supplemental Poverty Measure thresholds across metros, states, counties, and congressional districts.",
+    "Calculate Supplemental Poverty Measure (SPM) thresholds for any household size, housing tenure, and geography — including metros, states, counties, and congressional districts.",
   icons: { icon: "/favicon.svg" },
+  alternates: {
+    canonical: SITE_URL,
+  },
+  openGraph: {
+    title: "SPM Threshold Calculator | PolicyEngine",
+    description:
+      "Calculate Supplemental Poverty Measure (SPM) thresholds for any household size, housing tenure, and geography — including metros, states, counties, and congressional districts.",
+    url: SITE_URL,
+    siteName: "PolicyEngine",
+    type: "website",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary",
+    title: "SPM Threshold Calculator | PolicyEngine",
+    description:
+      "Calculate Supplemental Poverty Measure (SPM) thresholds for any household size, housing tenure, and geography.",
+    site: "@ThePolicyEngine",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
+        />
         <link
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
           rel="stylesheet"
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebApplication",
+              name: "SPM Threshold Calculator",
+              url: SITE_URL,
+              description:
+                "Calculate Supplemental Poverty Measure (SPM) thresholds for any household size, housing tenure, and geography — including metros, states, counties, and congressional districts.",
+              applicationCategory: "FinanceApplication",
+              operatingSystem: "All",
+              offers: {
+                "@type": "Offer",
+                price: "0",
+                priceCurrency: "USD",
+              },
+              author: {
+                "@type": "Organization",
+                name: "PolicyEngine",
+                url: "https://policyengine.org",
+              },
+            }),
+          }}
         />
         <Script
           src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}

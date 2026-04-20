@@ -7,8 +7,13 @@ export default async function Page() {
   const data = await loadCalculatorData();
 
   return (
-    <Suspense fallback={null}>
-      <CalculatorWorkbench data={data} />
-    </Suspense>
+    <main>
+      <h1 className="sr-only">
+        SPM Threshold Calculator — Supplemental Poverty Measure by PolicyEngine
+      </h1>
+      <Suspense fallback={null}>
+        <CalculatorWorkbench data={data} />
+      </Suspense>
+    </main>
   );
 }
