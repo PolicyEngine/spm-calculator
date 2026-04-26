@@ -61,7 +61,7 @@ jobs:
 
       - name: Build docs
         run: |
-          myst build docs --html
+          cd docs && myst build --html
 
       - name: Upload docs artifact
         uses: actions/upload-artifact@v7
