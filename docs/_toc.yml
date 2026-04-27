@@ -7,4 +7,5 @@ chapters:
       - file: api/calculator
       - file: api/geoadj
       - file: api/equivalence_scale
+      - file: api/units
   - file: validation

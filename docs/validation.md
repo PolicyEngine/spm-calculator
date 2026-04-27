@@ -70,6 +70,24 @@ assert abs(spm_equivalence_scale(1, 0) - 0.4634630568) < 1e-9
 assert abs(spm_equivalence_scale(2, 0) - 0.6534829100) < 1e-9
 ```
 
+## SPM Unit ID Validation
+
+SPM unit IDs are arbitrary labels, so validation compares the person partition
+within each household rather than the literal ID values. `spm_unit_id_match`
+reports household and person-weighted household match rates.
+
+An optional ASEC parity test runs when `SPM_CALCULATOR_ASEC_H5` points to a
+Census CPS ASEC HDFStore:
+
+```bash
+SPM_CALCULATOR_ASEC_H5=/path/to/census_cps_2024.h5 pytest tests/test_asec_parity.py
+```
+
+The default floor is a 99% household partition match rate. If the HDFStore
+contains `PECOHAB`, the test requires exact partition parity. With the full raw
+2025 CPS ASEC person columns for the 2024 data year, including `PECOHAB`, the
+default reconstruction matched all 55,762 household partitions.
+
 ## Running Validation Tests
 
 ```bash

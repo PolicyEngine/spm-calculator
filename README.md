@@ -76,6 +76,44 @@ Official metro thresholds are bundled with the package. For custom ACS-based
 geographies like states, counties, congressional districts, PUMAs, and tracts,
 set `CENSUS_API_KEY` to fetch current median rents.
 
+### SPM unit IDs
+
+If your data does not already include Census SPM resource-unit IDs, use
+`spm_unit_id` to create person-level IDs before calculating thresholds:
+
+```python
+from spm_calculator import spm_unit_id
+
+ids, diagnostics = spm_unit_id(persons, diagnostics=True)
+```
+
+The function preserves native `person_spm_unit_id`, `spm_unit_id`, or `SPM_ID`
+columns when present. Otherwise, it reconstructs units from the smallest
+available person-level inputs:
+
+| Input class | Columns recognized by default |
+|-------------|-------------------------------|
+| Required | `household_id`, `person_household_id`, `H_SEQ`, or `PH_SEQ` |
+| Strongly recommended | `family_id`, `person_family_id`, or `PF_SEQ`; `age` or `A_AGE` |
+| Person pointers | `line_number`, `person_line_number`, or `A_LINENO`; `parent_id`, `mother_id`, `father_id`, `PEPAR1`, `PEPAR2`; `spouse_id` or `A_SPOUSE`; `unmarried_partner_id`, `partner_id`, `cohabiting_partner_id`, or `PECOHAB` |
+| Census SPM assignment flags | `SPM_WFOSTER22`, `SPM_WUI_LT15`, and `SPM_WNEWPARENT`; `SPM_WCOHABIT` is used only when no direct cohabiting partner pointer such as `PECOHAB` is available |
+| Generic fallback flags | `relationship_to_head`, `family_relationship`, or `A_FAMREL`; `is_foster_child` or `foster_child` |
+
+Diagnostics describe assignment provenance and missing recommended inputs; they
+do not summarize the resulting unit distribution.
+
+For parity checks against Census/native IDs or published thresholds:
+
+```python
+from spm_calculator import spm_threshold_match, spm_unit_id_match
+
+id_report = spm_unit_id_match(persons)
+threshold_report = spm_threshold_match(calculated, reference, atol=1.0)
+```
+
+The optional ASEC parity tests run against a real Census CPS ASEC HDFStore when
+`SPM_CALCULATOR_ASEC_H5=/path/to/census_cps_2024.h5` is set.
+
 ## Supported Geographies
 
 - `nation` - National average

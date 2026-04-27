@@ -55,6 +55,8 @@ from .geoadj import (
     get_metro_rent_index,
     list_metro_areas,
 )
+from .units import spm_unit_id
+from .validation import spm_threshold_match, spm_unit_id_match
 
 try:
     from importlib.metadata import (
@@ -104,4 +106,7 @@ __all__ = [
     "get_available_years",
     "get_latest_published_year",
     "HISTORICAL_THRESHOLDS",
+    "spm_unit_id",
+    "spm_unit_id_match",
+    "spm_threshold_match",
 ]
