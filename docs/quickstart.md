@@ -170,6 +170,6 @@ print(spm_equivalence_scale(3, 4))  # ~1.430
 
 ## Next Steps
 
-- See {doc}`methodology` for details on how thresholds are calculated
-- See {doc}`api/calculator` for full API documentation
-- See {doc}`validation` for validation against published values
+- See [methodology](methodology.md) for details on how thresholds are calculated
+- See [API documentation](api/calculator.md) for full API documentation
+- See [validation](validation.md) for validation against published values
