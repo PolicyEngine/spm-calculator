@@ -688,19 +688,9 @@ print(f"SPM threshold: \${threshold:,.0f}")`;
   return (
     <DashboardShell>
       <Header
-        variant="dark"
-        logo={
-          <img
-            src={logos.whiteWordmark}
-            alt="PolicyEngine"
-            className="h-5"
-          />
-        }
-        actions={
-          <span className="text-sm font-semibold text-white/90">
-            SPM threshold calculator
-          </span>
-        }
+        navItems={[]}
+        logoSrc={logos.whiteWordmark}
+        logoHref="/"
       />
 
       <SidebarLayout sidebar={sidebar} sidebarWidth="320px">
