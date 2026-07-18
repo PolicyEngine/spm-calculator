@@ -61,18 +61,28 @@ FCSUTI_WEIGHTS: dict[str, float] = {
 }
 
 # FMLI expenditure-column pairs (PQ = previous quarter, CQ = current
-# quarter) for each FCSUti component. Used by
-# :func:`compute_fcsuti_weights_from_ce`.
+# quarter) for each directly-summable FCSUti component. Utilities and
+# telephone are handled specially in
+# :func:`compute_fcsuti_weights_from_ce` because the FMLI ``UTIL``
+# summary already contains ``TELEPH`` (UTIL = NTLGAS + ELCTRC + ALLFUL
+# + TELEPH + WATRPS): the utilities weight uses UTIL minus TELEPH so
+# telephone is not double-counted. Home internet has no FMLI summary
+# variable; CE-derived weights omit it (the static fallback keeps a
+# small internet share for the CPI composite).
 _FMLI_EXPENDITURE_COLUMNS: dict[str, tuple[str, str]] = {
     "food": ("FOODPQ", "FOODCQ"),
     "apparel": ("APPARPQ", "APPARCQ"),
     "shelter": ("SHELTPQ", "SHELTCQ"),
     "utilities": ("UTILPQ", "UTILCQ"),
     "telephone": ("TELEPHPQ", "TELEPHCQ"),
-    "internet": ("INFOTECHPQ", "INFOTECHCQ"),
 }
 
-_MORTGAGE_PRINCIPAL_COLUMNS: tuple[str, str] = ("MRTPRINPQ", "MRTPRINCQ")
+# Owner mortgage-principal outlay columns (owned home + owned vacation
+# home); added to the shelter weight to match the SPM outlays concept.
+_MORTGAGE_PRINCIPAL_COLUMNS: tuple[tuple[str, str], ...] = (
+    ("EMRTPNOP", "EMRTPNOC"),
+    ("MRTPRNOP", "MRTPRNOC"),
+)
 
 
 def fetch_bls_cpi_series(
@@ -133,7 +143,7 @@ def compute_fcsuti_weights_from_ce(
     ce_df: pd.DataFrame,
     weight_col: str = "FINLWT21",
     children_col: str = "PERSLT18",
-    subtract_mortgage_principal: bool = True,
+    include_mortgage_principal: bool = True,
 ) -> dict[str, float]:
     """Derive FCSUti expenditure shares from a CE FMLI DataFrame.
 
@@ -143,9 +153,11 @@ def compute_fcsuti_weights_from_ce(
     Garner (2021) methodology where the composite weights are derived
     from the same CE sample used to compute the threshold itself.
 
-    The ``shelter`` component follows the SPM convention of excluding
-    mortgage principal (investment, not consumption) when the
-    ``MRTPRINPQ``/``MRTPRINCQ`` columns are present.
+    Component construction (see :data:`_FMLI_EXPENDITURE_COLUMNS`):
+    the utilities share is ``UTIL - TELEPH`` because the FMLI ``UTIL``
+    summary already contains telephone; the telephone share is
+    ``TELEPH``; shelter adds owner mortgage-principal outlays (SPM
+    outlays concept) when ``include_mortgage_principal`` is set.
 
     Args:
         ce_df: CE FMLI DataFrame (one row per CU-interview).
@@ -153,9 +165,8 @@ def compute_fcsuti_weights_from_ce(
             Defaults to ``FINLWT21`` (standard FMLI name).
         children_col: Column with the number of persons under 18 in
             the CU. Defaults to ``PERSLT18``.
-        subtract_mortgage_principal: When True (default) and
-            ``MRTPRINPQ``/``MRTPRINCQ`` are in ``ce_df``, subtract
-            mortgage principal from shelter expenditure.
+        include_mortgage_principal: When True (default), add owner
+            mortgage-principal outlays to the shelter share.
 
     Returns:
         Dict mapping each FCSUti component present in ``ce_df`` to a
@@ -191,20 +202,32 @@ def compute_fcsuti_weights_from_ce(
         )
         return float(np.sum(values * weights))
 
-    shelter_principal_offset: Optional[float] = None
-    if subtract_mortgage_principal:
-        shelter_principal_offset = _weighted_expenditure(
-            *_MORTGAGE_PRINCIPAL_COLUMNS
-        )
-
     totals: dict[str, float] = {}
     for component, (pq, cq) in _FMLI_EXPENDITURE_COLUMNS.items():
         exp = _weighted_expenditure(pq, cq)
+        if exp is None and component == "food":
+            # Post-2023 food-redesign vintages drop the FOOD summary;
+            # rebuild it from food-at-home + food-away.
+            home = _weighted_expenditure("FDHOMEPQ", "FDHOMECQ")
+            away = _weighted_expenditure("FDAWAYPQ", "FDAWAYCQ")
+            if home is not None or away is not None:
+                exp = (home or 0.0) + (away or 0.0)
         if exp is None:
             continue
-        if component == "shelter" and shelter_principal_offset is not None:
-            exp = max(exp - shelter_principal_offset, 0.0)
         totals[component] = exp
+
+    # UTIL contains TELEPH; carve telephone out of utilities so the
+    # composite weights don't double-count it.
+    if "utilities" in totals and "telephone" in totals:
+        totals["utilities"] = max(
+            totals["utilities"] - totals["telephone"], 0.0
+        )
+
+    if include_mortgage_principal and "shelter" in totals:
+        for pq, cq in _MORTGAGE_PRINCIPAL_COLUMNS:
+            principal = _weighted_expenditure(pq, cq)
+            if principal is not None:
+                totals["shelter"] += principal
 
     if not totals:
         raise ValueError(

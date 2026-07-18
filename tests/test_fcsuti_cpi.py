@@ -88,44 +88,48 @@ class TestComputeFcsutiWeightsFromCE:
         shelter = 6000 * 100 + 8000 * 200 + 3600 * 50
         util = 1000 * 100 + 1600 * 200 + 600 * 50
         tele = 400 * 100 + 500 * 200 + 300 * 50
-        total = food + apparel + shelter + util + tele
+        # UTIL already contains TELEPH, so the FCSUti total is
+        # food + apparel + shelter + util — adding tele on top would
+        # reproduce the pre-0.4 double-count.
+        total = food + apparel + shelter + util
 
         weights = compute_fcsuti_weights_from_ce(ce)
         assert weights["food"] == pytest.approx(food / total)
         assert weights["apparel"] == pytest.approx(apparel / total)
         assert weights["shelter"] == pytest.approx(shelter / total)
-        assert weights["utilities"] == pytest.approx(util / total)
+        # UTIL contains TELEPH; the utilities share carves telephone
+        # out so the composite doesn't double-count it. The total is
+        # unchanged because (UTIL - TELEPH) + TELEPH == UTIL.
+        assert weights["utilities"] == pytest.approx((util - tele) / total)
         assert weights["telephone"] == pytest.approx(tele / total)
 
-    def test_subtracts_mortgage_principal_from_shelter(self):
-        """When MRTPRIN columns are present, shelter is net of principal."""
+    def test_adds_mortgage_principal_to_shelter(self):
+        """Principal outlay columns (EMRTPNO*/MRTPRNO*) are added to
+        the shelter share under the SPM outlays concept."""
         ce = _sample_ce_df(
             {
-                "MRTPRINPQ": [500.0, 1000.0, 200.0, 0.0],
-                "MRTPRINCQ": [500.0, 1000.0, 200.0, 0.0],
+                "EMRTPNOP": [500.0, 1000.0, 200.0, 0.0],
+                "EMRTPNOC": [500.0, 1000.0, 200.0, 0.0],
             }
         )
-        with_subtraction = compute_fcsuti_weights_from_ce(
-            ce, subtract_mortgage_principal=True
+        with_principal = compute_fcsuti_weights_from_ce(
+            ce, include_mortgage_principal=True
         )
-        without_subtraction = compute_fcsuti_weights_from_ce(
-            ce, subtract_mortgage_principal=False
+        without_principal = compute_fcsuti_weights_from_ce(
+            ce, include_mortgage_principal=False
         )
-        # Shelter share shrinks when principal is subtracted out.
-        assert with_subtraction["shelter"] < without_subtraction["shelter"]
-        # Other components' shares rise (same numerator, smaller denominator).
-        assert with_subtraction["food"] > without_subtraction["food"]
+        # Shelter share grows when principal outlays are added.
+        assert with_principal["shelter"] > without_principal["shelter"]
+        # Other components' shares shrink (same numerator, larger
+        # denominator).
+        assert with_principal["food"] < without_principal["food"]
 
-    def test_includes_internet_when_infotech_columns_present(self):
-        ce = _sample_ce_df(
-            {
-                "INFOTECHPQ": [300.0, 400.0, 200.0, 180.0],
-                "INFOTECHCQ": [300.0, 400.0, 200.0, 180.0],
-            }
-        )
-        weights = compute_fcsuti_weights_from_ce(ce)
-        assert "internet" in weights
-        assert weights["internet"] > 0
+    def test_no_internet_component_from_ce(self):
+        """FMLI has no internet summary variable, so CE-derived
+        weights omit internet (the static fallback still carries a
+        small internet share for the CPI composite)."""
+        weights = compute_fcsuti_weights_from_ce(_sample_ce_df())
+        assert "internet" not in weights
 
     def test_missing_component_column_silently_dropped(self):
         """If a component's expenditure columns aren't present, the

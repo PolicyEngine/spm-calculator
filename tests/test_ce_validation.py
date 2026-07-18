@@ -22,50 +22,52 @@ class TestCECalculation:
     @pytest.mark.slow
     def test_calculate_2024_thresholds_from_ce(self):
         """
-        Calculate 2024 thresholds from CE 2018-2022 data and compare to BLS.
+        Replicate 2024 thresholds from CE PUMD and compare to the
+        corrected BLS series.
 
-        BLS Published 2024 thresholds:
-        - Renter: $39,430
-        - Owner with mortgage: $39,068
-        - Owner without mortgage: $32,586
+        Corrected 2024 thresholds (published 2026-07-17):
+        - Renter: $39,219.89
+        - Owner with mortgage: $39,231.00
+        - Owner without mortgage: $32,878.59
 
-        Note: This test downloads ~100MB of CE data and takes several minutes.
+        Measured replication fidelity (scripts/benchmark_bls_replication
+        .py, see docs/bls-2026-correction.md): the faithful variant
+        (BLS quarter window, principal-inclusive shelter, quarter4
+        annualization, 82% anchor) lands within ~4% per tenure for
+        2024. The 6% tolerance leaves headroom for CE re-releases and
+        CPI revisions without masking structural regressions — the
+        pre-0.4 replication was 20-60% off and would fail loudly.
+
+        Known gaps keeping this from ~1%: BLS adds imputed in-kind
+        benefits (broadband, LIHEAP, NSLP, WIC, rental assistance) to
+        CU-level FCSUti, and FMLI has no internet summary variable.
+
+        Note: downloads ~600MB of CE bundles on first run (cached).
         """
         from spm_calculator.ce_threshold import calculate_base_thresholds
+        from spm_calculator.forecast import get_thresholds
 
-        # Calculate from CE data (5 years lagged by 1: 2018-2022 for 2024)
         calculated = calculate_base_thresholds(
-            years=[2018, 2019, 2020, 2021, 2022],
             target_year=2024,
             use_published_fallback=False,
         )
+        corrected = get_thresholds(2024, allow_forecast=False)
 
-        # BLS published values
-        published = {
-            "renter": 39430,
-            "owner_with_mortgage": 39068,
-            "owner_without_mortgage": 32586,
-        }
+        tolerance = 0.06
 
-        # Allow 5% tolerance due to:
-        # - Rounding differences
-        # - FCSUti CPI-U vs All Items CPI-U adjustment
-        # - Possible methodology details we haven't replicated exactly
-        tolerance = 0.05
-
-        for tenure in published:
+        for tenure, reference in corrected.items():
             calc_value = calculated[tenure]
-            pub_value = published[tenure]
-            pct_diff = abs(calc_value - pub_value) / pub_value
+            pct_diff = abs(calc_value - reference) / reference
 
             print(f"{tenure}:")
             print(f"  Calculated: ${calc_value:,.0f}")
-            print(f"  Published:  ${pub_value:,.0f}")
+            print(f"  Corrected:  ${reference:,.0f}")
             print(f"  Difference: {pct_diff:.1%}")
 
             assert pct_diff < tolerance, (
                 f"{tenure} threshold differs by {pct_diff:.1%} "
-                f"(calculated=${calc_value:,.0f}, published=${pub_value:,.0f})"
+                f"(calculated=${calc_value:,.0f}, "
+                f"corrected=${reference:,.0f})"
             )
 
     @pytest.mark.slow
@@ -74,7 +76,6 @@ class TestCECalculation:
         from spm_calculator.ce_threshold import calculate_base_thresholds
 
         calculated = calculate_base_thresholds(
-            years=[2018, 2019, 2020, 2021, 2022],
             target_year=2024,
             use_published_fallback=False,
         )

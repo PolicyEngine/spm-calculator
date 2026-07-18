@@ -1,0 +1,62 @@
+name: BLS drift watch
+
+# Weekly check that the packaged threshold series still matches what
+# BLS publishes. BLS reissued 2019-2024 thresholds on 2026-07-17 after
+# finding errors in its own generation code (its second such correction
+# — P60-280 documents an earlier one affecting the 2022 in-kind benefit
+# estimation), and this package previously carried hand-entry errors of
+# its own for years. A scheduled diff turns both failure modes into a
+# GitHub issue within a week.
+
+on:
+  schedule:
+    - cron: "17 13 * * 1" # Mondays 13:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install package and checker dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e . curl-cffi openpyxl
+
+      - name: Compare packaged series against bls.gov
+        id: drift
+        run: |
+          set +e
+          python scripts/check_bls_drift.py | tee drift.log
+          code=$?
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          # 0 = match, 78 = BLS unreachable (neutral skip), 1 = drift
+          if [ "$code" -eq 1 ] || [ "$code" -eq 0 ] || [ "$code" -eq 78 ]; then
+            exit 0
+          fi
+          exit "$code"
+
+      - name: Open or update drift issue
+        if: steps.drift.outputs.exit_code == '1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          title="BLS SPM threshold series has diverged from the packaged data"
+          body_file=drift.log
+          existing=$(gh issue list --state open --search "\"$title\" in:title" --json number --jq '.[0].number')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body-file "$body_file"
+          else
+            gh issue create --title "$title" --body-file "$body_file" \
+              --label "data"
+          fi
