@@ -56,21 +56,31 @@ def annual(cpi: dict, series_key: str, year: int) -> float:
     return cpi[CPI_SERIES[series_key]][str(year)]
 
 
+REBASE_YEAR = 2019
+
+
 def fcsuti_composite(cpi: dict, year: int) -> float:
     """Static-weight composite over the components in the store.
 
-    Renormalizes over available components (mirrors get_fcsuti_cpi);
-    the internet series is absent from the store and carries a 0.04
-    weight, so dropping it barely moves year-over-year ratios.
+    Each component is rebased to REBASE_YEAR = 100 before weighting —
+    raw CPI levels carry different reference bases, and summing them
+    directly weights components by level as well as share (a
+    construction error caught by cross-model review 2026-07-18).
+    Renormalizes over available components (mirrors get_fcsuti_cpi).
     """
     available = {
         c: w
         for c, w in FCSUTI_WEIGHTS.items()
-        if c in CPI_SERIES and str(year) in cpi.get(CPI_SERIES[c], {})
+        if c in CPI_SERIES
+        and str(year) in cpi.get(CPI_SERIES[c], {})
+        and str(REBASE_YEAR) in cpi.get(CPI_SERIES[c], {})
     }
     total_weight = sum(available.values())
     return (
-        sum(w * annual(cpi, c, year) for c, w in available.items())
+        sum(
+            w * annual(cpi, c, year) / annual(cpi, c, REBASE_YEAR) * 100
+            for c, w in available.items()
+        )
         / total_weight
     )
 

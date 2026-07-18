@@ -62,14 +62,24 @@ def install_cpi_disk_cache() -> None:
 
 
 def price_ratio(store: dict, year: int, base_year: int) -> float:
+    """Composite ratio with each component rebased to base_year = 100
+    before weighting (raw CPI levels have different reference bases;
+    summing them directly distorts the effective weights — caught by
+    cross-model review 2026-07-18)."""
+
     def composite(y: int) -> float:
         available = {
             c: w
             for c, w in FCSUTI_WEIGHTS.items()
-            if c in CPI_SERIES and str(y) in store.get(CPI_SERIES[c], {})
+            if c in CPI_SERIES
+            and str(y) in store.get(CPI_SERIES[c], {})
+            and str(base_year) in store.get(CPI_SERIES[c], {})
         }
         return sum(
-            w * store[CPI_SERIES[c]][str(y)] for c, w in available.items()
+            w
+            * store[CPI_SERIES[c]][str(y)]
+            / store[CPI_SERIES[c]][str(base_year)]
+            for c, w in available.items()
         ) / sum(available.values())
 
     return composite(year) / composite(base_year)

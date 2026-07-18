@@ -295,9 +295,13 @@ class TestInflationFactorOfflineFallback:
         total = sum(weights.values())
 
         def composite(year):
+            # Components rebased to the base year (2023) before
+            # weighting, matching the corrected construction.
             return (
                 sum(
-                    w * store[mod.CPI_SERIES[c]][str(year)]
+                    w
+                    * store[mod.CPI_SERIES[c]][str(year)]
+                    / store[mod.CPI_SERIES[c]]["2023"]
                     for c, w in weights.items()
                 )
                 / total

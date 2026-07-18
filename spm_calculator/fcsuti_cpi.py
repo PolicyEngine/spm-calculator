@@ -374,6 +374,25 @@ def _cached_fcsuti_cpi(
             "None of the requested FCSUti components returned CPI data"
         )
 
+    # Each CPI series carries its own reference base, so raw levels are
+    # not commensurate: summing them weights each component by its
+    # level as well as its share (with 2024 levels, shelter's effective
+    # weight was 55 percent against a stated 47, telephone's 1.2
+    # against 4 — caught by cross-model review 2026-07-18). Rebase
+    # every component to the composite's base year before weighting so
+    # the stated expenditure shares are the effective ones.
+    rebase_year = base_year if base_year in df.index else df.index.min()
+    rebasable = [c for c in used_weights if pd.notna(df[c].get(rebase_year))]
+    dropped = set(used_weights) - set(rebasable)
+    if dropped:
+        warnings.warn(
+            f"Components missing {rebase_year} values dropped from the "
+            f"FCSUti composite: {sorted(dropped)}",
+            RuntimeWarning,
+            stacklevel=2,
+        )
+    used_weights = {c: used_weights[c] for c in rebasable}
+
     denom = sum(used_weights.values())
     if denom <= 0:
         raise ValueError("Requested FCSUti weights sum to zero")
@@ -383,7 +402,8 @@ def _cached_fcsuti_cpi(
 
     fcsuti = pd.Series(0.0, index=df.index)
     for component, weight in renormalized.items():
-        fcsuti += df[component] * weight
+        rebased = df[component] / df[component][rebase_year] * 100
+        fcsuti += rebased * weight
 
     if base_year in fcsuti.index:
         fcsuti = fcsuti / fcsuti[base_year] * 100
@@ -465,12 +485,20 @@ def get_fcsuti_inflation_factor(
         )
         weights = FCSUTI_WEIGHTS
 
-    fcsuti = get_fcsuti_cpi(
-        start_year=min(from_year, to_year) - 1,
-        end_year=max(from_year, to_year) + 1,
-        base_year=from_year,
-        weights=weights,
-    )
+    try:
+        fcsuti = get_fcsuti_cpi(
+            start_year=min(from_year, to_year) - 1,
+            end_year=max(from_year, to_year) + 1,
+            base_year=from_year,
+            weights=weights,
+        )
+    except ValueError as error:
+        raise ValueError(
+            f"FCSUti composite unavailable for ({from_year}, "
+            f"{to_year}): {error}. Regenerate the packaged CPI store "
+            "(scripts/build_cpi_store.py) if the requested year has "
+            "since been published."
+        ) from error
     if to_year not in fcsuti.index or from_year not in fcsuti.index:
         raise ValueError(
             f"FCSUti composite unavailable for ({from_year}, "

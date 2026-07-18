@@ -21,9 +21,9 @@ export function makeCalculatorData(overrides = {}) {
         owner_without_mortgage: 32586,
       },
       "2025": {
-        renter: 40791.72,
-        owner_with_mortgage: 41099.57,
-        owner_without_mortgage: 34250.7,
+        renter: 40755.98,
+        owner_with_mortgage: 41036.34,
+        owner_without_mortgage: 34135.99,
       },
     },
     methodology: {
@@ -52,15 +52,15 @@ export function makeCalculatorData(overrides = {}) {
         base_year: 2024,
         base_series: "bls-corrected-2026-07-17",
         values: {
-          renter: 40791.72,
-          owner_with_mortgage: 41099.57,
-          owner_without_mortgage: 34250.7,
+          renter: 40755.98,
+          owner_with_mortgage: 41036.34,
+          owner_without_mortgage: 34135.99,
         },
         components: {
           renter: {
-            replication_ratio: 1.04556,
-            price_ratio: 1.0346,
-            blend_ratio: 1.04008,
+            replication_ratio: 1.04619,
+            price_ratio: 1.03215,
+            blend_ratio: 1.03917,
           },
         },
       },
