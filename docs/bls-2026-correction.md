@@ -93,3 +93,28 @@ One further check the replication does support: at matched anchors, the 83% vari
 - Home internet has no FMLI summary variable; adding it requires UCC-level MTBI aggregation.
 - The bundled metro geographic adjustments derive from the pre-correction Census metro workbook; composed metro thresholds equal the workbook rescaled onto the corrected national base until Census re-releases it.
 - CE PUMD through 2024 supports a genuine 2025 threshold nowcast (BLS publishes 2025 thresholds in late 2026); the corrected-methodology replication makes this feasible at the fidelity measured above.
+
+## Projecting thresholds past the published years
+
+BLS does not age thresholds by a price index — each year is re-estimated from the rolling five-year CE window, so the published series moves with consumption as well as prices. We backtested three projection rules over 2020–2024, standing at each year's corrected prior-year base and scoring against the corrected actual (`scripts/backtest_threshold_projection.py`):
+
+| Rule | Mean abs error/yr | Worst year |
+|---|---|---|
+| All-Items CPI-U aging (status quo in policyengine-us) | 2.23% | 3.99% (2023) |
+| FCSUti-composite CPI aging (realized) | 1.40% | 2.27% (2024) |
+| CE replication growth ratio | 1.58% | 2.73% (2023) |
+| **50/50 blend of the last two** | **1.35%** | **2.44% (2023)** |
+
+Every rule was biased low in 2022–2024 — real FCSUti consumption growth and in-kind benefit changes are not captured by prices alone, and only partially by the five-year-window replication. The CPI rules use realized index values; a true forward forecast would also carry CPI-forecast error (2022's CPI surprise was ~5 points), which the replication ratio avoids entirely because CE microdata for a nowcast year is published before BLS's thresholds for that year.
+
+The packaged **2025 nowcast** (`nowcast_thresholds(2025)`, `spm_calculator/data/nowcast/nowcast_2025.json`) applies the blend to the corrected 2024 base:
+
+| Tenure | Replication ratio | FCSUti CPI ratio | Blend | Nowcast 2025 |
+|---|---|---|---|---|
+| Owner w/ mortgage | 1.0607 | 1.0346 | 1.0476 | $41,099.57 |
+| Owner w/o mortgage | 1.0489 | 1.0346 | 1.0417 | $34,250.70 |
+| Renter | 1.0456 | 1.0346 | 1.0401 | $40,791.72 |
+
+Two data notes. 2025 CPI annual averages are 11-month means — BLS canceled the October 2025 CPI release during the federal shutdown. And computing the replicated 2025 threshold surfaced one more schema break: from the 2024Q2 files, CE replaces the `FOOD`/`FDHOME` summaries with `GROCER` (all grocery purchases, food and nonfood); food at home is 80% of `GROCER` per the BLS errata, the same allocation BLS uses for the official thresholds. Before the per-row vintage-aware construction, pooled windows silently zeroed food for redesign-era quarters and replicated 2025 thresholds *fell* 4–5% nominal — the same silent-schema-drift failure class as everything else on this page.
+
+BLS publishes actual 2025 thresholds around September 2026; the nowcast is superseded that day, and the miss will be recorded here.

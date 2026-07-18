@@ -55,7 +55,12 @@ packages = ["spm_calculator"]
 include-package-data = true
 
 [tool.setuptools.package-data]
-spm_calculator = ["data/*.json", "data/bls/*.json", "data/bls/*.xlsx"]
+spm_calculator = [
+    "data/*.json",
+    "data/bls/*.json",
+    "data/bls/*.xlsx",
+    "data/nowcast/*.json",
+]
 
 [tool.black]
 line-length = 79

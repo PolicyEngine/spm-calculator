@@ -179,7 +179,7 @@ Packaged thresholds come from the official BLS workbook (bundled with recorded S
 | Owner w/ mortgage | $39,231.00 | $39,231.00 |
 | Owner w/o mortgage | $32,878.59 | $32,878.59 |
 
-A weekly [drift-watch CI job](.github/workflows/bls-drift-watch.yaml) re-downloads the BLS workbook and opens an issue if the packaged series diverges. The independent CE-PUMD replication reproduces official thresholds within 1-4.5% (no in-kind benefit imputation); measured fidelity by year is in [docs/bls-2026-correction.md](docs/bls-2026-correction.md).
+A weekly [drift-watch CI job](.github/workflows/bls-drift-watch.yaml) re-downloads the BLS workbook and opens an issue if the packaged series diverges. For 2025 — a year whose CE data and CPI are published but whose BLS thresholds are not — `nowcast_thresholds(2025)` provides a consumption-based nowcast (backtested at 1.35%/yr mean absolute error vs 2.23% for CPI-U aging; see [docs/bls-2026-correction.md](docs/bls-2026-correction.md)). The independent CE-PUMD replication reproduces official thresholds within 1-4.5% (no in-kind benefit imputation); measured fidelity by year is in [docs/bls-2026-correction.md](docs/bls-2026-correction.md).
 
 Official metro thresholds are validated against [Census SPM Thresholds by Metro Area: 2024](https://www2.census.gov/programs-surveys/demo/tables/p60/287/SPM-pov-threshold-2024.xlsx) (pre-correction vintage; composed metro thresholds rescale onto the corrected national base until Census re-releases the workbook).
 

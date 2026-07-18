@@ -257,3 +257,43 @@ class TestWeightedPercentile:
         p50 = _weighted_percentile(values, weights, 50.0)
         p53 = _weighted_percentile(values, weights, 53.0)
         assert p47 <= p50 <= p53
+
+
+class TestFoodRedesign:
+    """The April 2023 CE food redesign (GROCER-based vintages)."""
+
+    def test_grocer_rows_use_eighty_percent_allocation(self):
+        """Redesign rows: food = 0.8 x GROCER + FDAWAY (BLS errata)."""
+        df = _fcsuti_frame(GROCERPQ=[1000], GROCERCQ=[500])
+        df = df.drop(columns=["FOODPQ", "FOODCQ"])
+        df["FDAWAYPQ"] = [200.0]
+        df["FDAWAYCQ"] = [100.0]
+        # (0.8 * 1500 + 300) * 4 = 6000
+        assert calculate_fcsuti(df).iloc[0] == pytest.approx(6000)
+
+    def test_mixed_vintage_window_is_rowwise(self):
+        """Pooled windows mix legacy-FOOD and GROCER schemas; food must
+        resolve per row. A frame-wide column check zeroes food for one
+        vintage — the artifact that made replicated 2025 thresholds
+        fall 4-5% nominal before this construction existed."""
+        import numpy as np
+
+        df = pd.DataFrame(
+            {
+                "FOODPQ": [1000.0, np.nan],
+                "FOODCQ": [500.0, np.nan],
+                "GROCERPQ": [np.nan, 1000.0],
+                "GROCERCQ": [np.nan, 500.0],
+                "FDAWAYPQ": [np.nan, 200.0],
+                "FDAWAYCQ": [np.nan, 100.0],
+                "APPARPQ": [0.0, 0.0],
+                "APPARCQ": [0.0, 0.0],
+                "SHELTPQ": [0.0, 0.0],
+                "SHELTCQ": [0.0, 0.0],
+                "UTILPQ": [0.0, 0.0],
+                "UTILCQ": [0.0, 0.0],
+            }
+        )
+        result = calculate_fcsuti(df)
+        assert result.iloc[0] == pytest.approx(6000)  # legacy: 1500*4
+        assert result.iloc[1] == pytest.approx(6000)  # 0.8*1500+300, *4

@@ -110,33 +110,46 @@ def fetch_bls_cpi_series(
 
     # BLS Public Data API v2. Registered access is documented at
     # https://www.bls.gov/developers/; registered callers get 500
-    # queries/day per key with ten-year history and annual averages.
+    # queries/day per key with twenty-year history and annual averages.
+    #
+    # The API caps each request's span (10 years unregistered, 20
+    # registered) and silently returns only the FIRST years of an
+    # over-long span rather than erroring — a 2005-2025 unregistered
+    # request comes back as 2005-2014. Chunk long spans so callers get
+    # the range they asked for.
     url = "https://api.bls.gov/publicAPI/v2/timeseries/data/"
-    payload = {
-        "seriesid": [series_id],
-        "startyear": str(start_year),
-        "endyear": str(end_year),
-        "annualaverage": True,
-    }
     key = registration_key or os.environ.get("BLS_API_KEY")
-    if key:
-        payload["registrationkey"] = key
+    max_span = 20 if key else 10
 
-    response = requests.post(url, json=payload, timeout=30)
-    response.raise_for_status()
-    data = response.json()
-    if data["status"] != "REQUEST_SUCCEEDED":
-        raise ValueError(
-            f"BLS API error: {data.get('message', 'Unknown error')}"
-        )
+    values: dict[int, float] = {}
+    chunk_start = start_year
+    while chunk_start <= end_year:
+        chunk_end = min(chunk_start + max_span - 1, end_year)
+        payload = {
+            "seriesid": [series_id],
+            "startyear": str(chunk_start),
+            "endyear": str(chunk_end),
+            "annualaverage": True,
+        }
+        if key:
+            payload["registrationkey"] = key
 
-    series_data = data["Results"]["series"][0]["data"]
-    # Filter to annual averages (period code M13).
-    annual = [d for d in series_data if d["period"] == "M13"]
-    return pd.Series(
-        {int(d["year"]): float(d["value"]) for d in annual},
-        name=series_id,
-    ).sort_index()
+        response = requests.post(url, json=payload, timeout=30)
+        response.raise_for_status()
+        data = response.json()
+        if data["status"] != "REQUEST_SUCCEEDED":
+            raise ValueError(
+                f"BLS API error: {data.get('message', 'Unknown error')}"
+            )
+
+        series_data = data["Results"]["series"][0]["data"]
+        # Filter to annual averages (period code M13).
+        for d in series_data:
+            if d["period"] == "M13":
+                values[int(d["year"])] = float(d["value"])
+        chunk_start = chunk_end + 1
+
+    return pd.Series(values, name=series_id).sort_index()
 
 
 def compute_fcsuti_weights_from_ce(
@@ -204,14 +217,19 @@ def compute_fcsuti_weights_from_ce(
 
     totals: dict[str, float] = {}
     for component, (pq, cq) in _FMLI_EXPENDITURE_COLUMNS.items():
+        if component == "food":
+            # Row-wise construction robust to the April 2023 CE food
+            # redesign (GROCER-based vintages mixed with legacy FOOD
+            # vintages in pooled windows). Lazy import avoids a
+            # circular import at module load.
+            from .ce_threshold import _food_expenditure
+
+            food_values = _food_expenditure(with_children).to_numpy()
+            exp = float(np.sum(food_values * weights))
+            if exp > 0:
+                totals[component] = exp
+            continue
         exp = _weighted_expenditure(pq, cq)
-        if exp is None and component == "food":
-            # Post-2023 food-redesign vintages drop the FOOD summary;
-            # rebuild it from food-at-home + food-away.
-            home = _weighted_expenditure("FDHOMEPQ", "FDHOMECQ")
-            away = _weighted_expenditure("FDAWAYPQ", "FDAWAYCQ")
-            if home is not None or away is not None:
-                exp = (home or 0.0) + (away or 0.0)
         if exp is None:
             continue
         totals[component] = exp

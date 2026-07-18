@@ -66,6 +66,15 @@ MEDIAN_SHARE_PRE_CORRECTION = 0.83
 _PRINCIPAL_MODES = ("exclude", "include")
 _ANNUALIZATION_MODES = ("quarter4", "pqcq2")
 
+# Share of "all grocery purchases" (UCC 790210, food and nonfood
+# combined) allocated to food at home for CE vintages after the April
+# 2023 food-question redesign. BLS's FMLI Food at Home errata
+# (September 2024) sets this to 80%, "using the 2022 proportion of the
+# total expense of grocery store purchases to food purchased at grocery
+# stores"; BLS applies the same allocation in producing the official
+# 2024+ SPM thresholds.
+FOOD_AT_HOME_GROCERY_SHARE = 0.80
+
 # FMLI mortgage-principal outlay columns (owned home + owned vacation
 # home). CE's expenditure-concept SHELT summary excludes principal;
 # these memo columns let us add it back for the SPM outlays concept.
@@ -331,6 +340,44 @@ def _single(df: pd.DataFrame, col: str) -> pd.Series:
     return pd.Series(0.0, index=df.index)
 
 
+def _food_expenditure(df: pd.DataFrame) -> pd.Series:
+    """Quarterly food expenditure per CU, robust to mixed CE vintages.
+
+    The April 2023 CE food redesign replaced the ``FOOD``/``FDHOME``
+    summaries with ``GROCER`` (all grocery purchases, food and nonfood
+    combined) starting with the 2024Q2 files, so a pooled multi-year
+    window mixes schemas row by row. Construction, per row:
+
+    - rows carrying ``GROCER`` data (redesign vintages): food =
+      :data:`FOOD_AT_HOME_GROCERY_SHARE` x GROCER + FDAWAY, the BLS
+      errata allocation used for the official 2024+ thresholds;
+    - otherwise, the legacy ``FOOD`` summary when its columns exist,
+      falling back to ``FDHOME + FDAWAY``.
+
+    A frame-wide column check would zero food for whichever vintage
+    lacks the checked columns — exactly the artifact this per-row
+    construction exists to prevent.
+    """
+    legacy = _sum_pair(df, "FOODPQ", "FOODCQ")
+    if "FOODPQ" not in df.columns or "FOODCQ" not in df.columns:
+        home_away = _sum_pair(df, "FDHOMEPQ", "FDHOMECQ") + _sum_pair(
+            df, "FDAWAYPQ", "FDAWAYCQ"
+        )
+        legacy = legacy.where(legacy > 0, home_away)
+
+    if "GROCERPQ" not in df.columns and "GROCERCQ" not in df.columns:
+        return legacy
+
+    has_grocer = pd.Series(False, index=df.index)
+    for col in ("GROCERPQ", "GROCERCQ"):
+        if col in df.columns:
+            has_grocer |= df[col].notna()
+    redesign = FOOD_AT_HOME_GROCERY_SHARE * _sum_pair(
+        df, "GROCERPQ", "GROCERCQ"
+    ) + _sum_pair(df, "FDAWAYPQ", "FDAWAYCQ")
+    return redesign.where(has_grocer, legacy)
+
+
 def calculate_fcsuti(
     df: pd.DataFrame,
     mortgage_principal: str = "include",
@@ -393,11 +440,7 @@ def calculate_fcsuti(
 
     factor = 4.0 if annualization == "quarter4" else 2.0
 
-    food = _sum_pair(df, "FOODPQ", "FOODCQ")
-    if "FOODPQ" not in df.columns or "FOODCQ" not in df.columns:
-        food = _sum_pair(df, "FDHOMEPQ", "FDHOMECQ") + _sum_pair(
-            df, "FDAWAYPQ", "FDAWAYCQ"
-        )
+    food = _food_expenditure(df)
     apparel = _sum_pair(df, "APPARPQ", "APPARCQ")
     shelter = _sum_pair(df, "SHELTPQ", "SHELTCQ")
     utilities = _sum_pair(df, "UTILPQ", "UTILCQ")
