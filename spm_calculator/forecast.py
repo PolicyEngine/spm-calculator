@@ -26,8 +26,9 @@ Three series ship with the package:
 The BLS publishes thresholds with a lag, so projection is necessary
 for current and future year calculations. ``forecast_thresholds``
 compounds CPI projections off the latest published base (price-only —
-it under-projected by 2.2%/yr on average over 2020-2024 because the
-published series also moves with consumption); for years whose CE data
+it missed by 2.2%/yr on average in absolute value over 2020-2024,
+understating growth in four of five years, because the published
+series also moves with consumption); for years whose CE data
 and CPI are already published, prefer the consumption-based
 :func:`spm_calculator.nowcast.nowcast_thresholds` (backtested at
 1.35%/yr mean absolute error).
