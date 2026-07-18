@@ -123,8 +123,15 @@ HISTORICAL_THRESHOLDS: dict[int, dict[str, float]] = _flatten_series(
 # maintained by hand.
 LATEST_PUBLISHED_YEAR = max(HISTORICAL_THRESHOLDS)
 
-# CPI-U annual inflation projections (from CBO/Federal Reserve forecasts)
-# These should be updated periodically based on latest forecasts
+# Forward inflation assumptions for years past the latest published
+# threshold. These are stated modeling ASSUMPTIONS, not sourced data:
+# no citable forecast vintage backs the year-by-year values, and after
+# the 2026-07-17 audit they are the only hand-entered numeric table
+# left in the package. They apply only to years the consumption-based
+# nowcast does not cover (see spm_calculator.nowcast); far-horizon use
+# already triggers a RuntimeWarning. Replace with a provenance-stamped
+# CBO projection file when one can be fetched reproducibly
+# (cbo.gov currently blocks non-browser clients).
 CPI_PROJECTIONS = {
     2025: 0.025,  # 2.5% projected inflation
     2026: 0.023,  # 2.3%
