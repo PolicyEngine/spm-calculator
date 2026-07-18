@@ -8,7 +8,7 @@
  * doesn't regress.
  */
 
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import CalculatorWorkbench from "../src/components/CalculatorWorkbench";
@@ -78,5 +78,28 @@ describe("CalculatorWorkbench", () => {
         'a[href*="census.gov/library/publications/2025/demo/p60-287"]',
       ),
     ).not.toBeNull();
+  });
+});
+
+describe("nowcast year", () => {
+  it("labels nowcast years in the year selector and shows the badge", () => {
+    render(<CalculatorWorkbench data={makeCalculatorData()} />);
+
+    const option = screen.getByRole("option", { name: "2025 (nowcast)" });
+    fireEvent.change(option.closest("select"), {
+      target: { value: "2025" },
+    });
+
+    expect(screen.getAllByText(/Nowcast/).length).toBeGreaterThan(0);
+    const disclaimer = screen.getByTestId("nowcast-disclaimer");
+    expect(disclaimer.textContent).toContain("NOT a BLS publication");
+    expect(
+      screen.getAllByRole("link", { name: /working paper/i }).length,
+    ).toBeGreaterThan(0);
+  });
+
+  it("does not show the nowcast disclaimer for published years", () => {
+    render(<CalculatorWorkbench data={makeCalculatorData()} />);
+    expect(screen.queryByTestId("nowcast-disclaimer")).toBeNull();
   });
 });
