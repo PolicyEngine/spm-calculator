@@ -26,7 +26,10 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from build_threshold_series import parse_workbook  # noqa: E402
 
-from spm_calculator.forecast import HISTORICAL_THRESHOLDS  # noqa: E402
+from spm_calculator.forecast import (  # noqa: E402
+    HISTORICAL_THRESHOLDS,
+    get_thresholds,
+)
 
 TOLERANCE = 0.005  # dollars; workbook values are exact to the cent
 
@@ -57,6 +60,43 @@ def fetch_workbook() -> bytes | None:
             return r.content
         print(f"{url}: status {r.status_code}, not a workbook")
     return None
+
+
+def check_page_vintage(latest_year: int) -> list[str]:
+    """Warn when the per-year BLS page serves superseded values.
+
+    Observed 2026-08-06: spm_thresholds_2024.htm again displayed the
+    pre-correction values with no correction notice, while the
+    corrected workbook carried different numbers. The workbook
+    comparison above cannot see that, so this checks the page text for
+    the pre-correction vintage. Non-fatal: the inconsistency is on
+    BLS's side, so it warns rather than fails.
+    """
+    try:
+        from curl_cffi import requests as cr
+    except ImportError:
+        return []
+    url = f"https://www.bls.gov/pir/spm/spm_thresholds_{latest_year}.htm"
+    try:
+        r = cr.get(url, impersonate="chrome", timeout=120)
+    except Exception:  # noqa: BLE001
+        return []
+    if r.status_code != 200:
+        return []
+    superseded = get_thresholds(
+        latest_year, series="census-published-pre-correction"
+    )
+    stale = [
+        f"{tenure} ${value:,.0f}"
+        for tenure, value in superseded.items()
+        if f"{value:,.0f}" in r.text
+    ]
+    if not stale:
+        return []
+    return [
+        f"WARNING: {url} displays pre-correction {latest_year} values "
+        f"({'; '.join(stale)}) — superseded by the corrected workbook"
+    ]
 
 
 def flatten(published: dict, revised: dict) -> dict[int, dict[str, float]]:
@@ -113,6 +153,9 @@ def main() -> int:
         for line in divergences:
             print(f"  - {line}")
         return 1
+
+    for warning in check_page_vintage(max(live)):
+        print(warning)
 
     print(f"No drift: {len(live)} years match bls.gov within ${TOLERANCE}.")
     return 0
