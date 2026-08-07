@@ -120,21 +120,23 @@ class TestThresholdCalculation:
             geography_id="1002",
         )
 
-        assert threshold == pytest.approx(31622)
+        assert threshold == pytest.approx(
+            31622 * _correction_rescale("renter")
+        )
 
     def test_spm_threshold_matches_census_workbook(self):
         from spm_calculator import spm_threshold
 
         assert spm_threshold(
             2, 2, tenure="renter", metro="35620", year=2024
-        ) == pytest.approx(45736)
+        ) == pytest.approx(45736 * _correction_rescale("renter"))
         assert spm_threshold(
             2,
             2,
             tenure="owner_with_mortgage",
             metro="35620",
             year=2024,
-        ) == pytest.approx(45189)
+        ) == pytest.approx(45189 * _correction_rescale("owner_with_mortgage"))
 
     def test_spm_threshold_accepts_metro_name(self):
         """Metro can be a CBSA code or a name; both must resolve."""
@@ -146,7 +148,7 @@ class TestThresholdCalculation:
         by_name = spm_threshold(
             2, 2, tenure="renter", metro="San Jose", year=2024
         )
-        assert by_code == pytest.approx(59815)
+        assert by_code == pytest.approx(59815 * _correction_rescale("renter"))
         assert by_name == pytest.approx(by_code)
 
         alabama = spm_threshold(
@@ -156,7 +158,10 @@ class TestThresholdCalculation:
             metro="Alabama Nonmetro",
             year=2024,
         )
-        assert alabama == pytest.approx(12921.81, rel=1e-4)
+        assert alabama == pytest.approx(
+            12921.81 * _correction_rescale("owner_without_mortgage"),
+            rel=1e-4,
+        )
 
     def test_tenure_affects_threshold(self):
         from spm_calculator import SPMCalculator
@@ -297,13 +302,30 @@ class TestBatchCalculation:
             geography_ids=["1002", "1002", "1002"],
         )
 
-        np.testing.assert_allclose(results, np.array([31622, 31489, 27881]))
+        np.testing.assert_allclose(
+            results,
+            np.array(
+                [
+                    31622 * _correction_rescale("renter"),
+                    31489 * _correction_rescale("owner_with_mortgage"),
+                    27881 * _correction_rescale("owner_without_mortgage"),
+                ]
+            ),
+        )
 
 
 # Published 2024 reference thresholds from the Census SPM metro workbook,
 # for a 2-adult, 2-child reference family. Pins every tenure across a range
 # of cost levels so a regression in rent index, tenure share, or base
 # threshold in any direction is caught.
+#
+# The workbook predates the 2026-07-17 BLS correction: its absolute
+# levels embed the pre-correction national base. The bundled geoadj
+# ratios (metro / national, same pre-correction vintage) are still
+# internally consistent, so composed thresholds now equal the workbook
+# value rescaled by (corrected national / published national) for the
+# tenure — see `_correction_rescale`. When Census re-releases the metro
+# workbook, regenerate the geoadj data and drop the rescale.
 CENSUS_2024_METRO_REFERENCE_THRESHOLDS = [
     # (metro_geoid, name, renter, owner_with_mortgage, owner_without_mortgage)
     ("41940", "San Jose (high cost)", 59815, 58855, 44869),
@@ -313,6 +335,15 @@ CENSUS_2024_METRO_REFERENCE_THRESHOLDS = [
     ("16980", "Chicago", 40094, 39712, 32986),
     ("1002", "Alabama Nonmetro (low cost)", 31622, 31489, 27881),
 ]
+
+
+def _correction_rescale(tenure: str) -> float:
+    """Corrected / pre-correction 2024 national base for a tenure."""
+    from spm_calculator.forecast import get_thresholds
+
+    corrected = get_thresholds(2024, allow_forecast=False)
+    published = get_thresholds(2024, series="census-published-pre-correction")
+    return corrected[tenure] / published[tenure]
 
 
 @pytest.mark.parametrize(
@@ -327,16 +358,21 @@ def test_metro_reference_thresholds_match_published_2024(
     owner_with_mortgage,
     owner_without_mortgage,
 ):
-    """All three tenure-specific thresholds for a 2A2C reference family must
-    match the Census Bureau's published 2024 SPM metro workbook exactly."""
+    """All three tenure-specific thresholds for a 2A2C reference family
+    must match the Census 2024 SPM metro workbook rescaled onto the
+    corrected national base."""
     from spm_calculator import spm_threshold
 
     assert spm_threshold(
         2, 2, tenure="renter", metro=metro_geoid, year=2024
-    ) == pytest.approx(renter)
+    ) == pytest.approx(renter * _correction_rescale("renter"))
     assert spm_threshold(
         2, 2, tenure="owner_with_mortgage", metro=metro_geoid, year=2024
-    ) == pytest.approx(owner_with_mortgage)
+    ) == pytest.approx(
+        owner_with_mortgage * _correction_rescale("owner_with_mortgage")
+    )
     assert spm_threshold(
         2, 2, tenure="owner_without_mortgage", metro=metro_geoid, year=2024
-    ) == pytest.approx(owner_without_mortgage)
+    ) == pytest.approx(
+        owner_without_mortgage * _correction_rescale("owner_without_mortgage")
+    )

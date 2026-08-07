@@ -55,6 +55,11 @@ from .geoadj import (
     get_metro_rent_index,
     list_metro_areas,
 )
+from .nowcast import (
+    get_nowcast_years,
+    nowcast_thresholds,
+    nowcast_with_metadata,
+)
 from .units import spm_unit_id
 from .validation import spm_threshold_match, spm_unit_id_match
 
@@ -80,6 +85,9 @@ except PackageNotFoundError:  # pragma: no cover - running from source tree
 
 __all__ = [
     "spm_threshold",
+    "nowcast_thresholds",
+    "nowcast_with_metadata",
+    "get_nowcast_years",
     "SPMCalculator",
     "calculate_base_thresholds",
     "get_published_thresholds",

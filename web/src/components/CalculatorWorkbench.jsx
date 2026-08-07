@@ -127,9 +127,11 @@ function describeEquivalenceFormula(adults, children, methodology) {
   return `${adults}^${economiesOfScale}`;
 }
 
-function getCeSurveyYears(thresholdYear) {
-  const endYear = Number(thresholdYear) - 2;
-  return Array.from({ length: 5 }, (_, index) => endYear - 4 + index);
+function getCeSurveyWindow(thresholdYear) {
+  // BLS revised-methodology window: collection quarters (T-5)Q2
+  // through (T)Q1 (corrected workbook, footnote 3).
+  const t = Number(thresholdYear);
+  return `${t - 5}Q2\u2013${t}Q1`;
 }
 
 export default function CalculatorWorkbench({ data }) {
@@ -138,6 +140,8 @@ export default function CalculatorWorkbench({ data }) {
     baseThresholds,
     methodology,
     forecast,
+    nowcast = {},
+    paperUrl,
     metroAreas,
     metroData,
     packageVersion,
@@ -187,8 +191,11 @@ export default function CalculatorWorkbench({ data }) {
     () => getAcsYearForThresholdYear(Number(year)),
     [year],
   );
-  const yearIsForecast = Number(year) > latestPublishedYear;
-  const ceSurveyYears = getCeSurveyYears(year);
+  const yearNowcast = nowcast[year] ?? null;
+  const yearIsNowcast = Boolean(yearNowcast);
+  const yearIsForecast =
+    Number(year) > latestPublishedYear && !yearIsNowcast;
+  const ceSurveyWindow = getCeSurveyWindow(year);
 
   useEffect(() => {
     if (geographyType === "metro_area") {
@@ -484,9 +491,15 @@ print(f"SPM threshold: \${threshold:,.0f}")`;
     () =>
       availableYears.map((y) => ({
         value: y,
-        label: `${y} ${Number(y) > latestPublishedYear ? "(forecast)" : ""}`.trim(),
+        label: `${y} ${
+          nowcast[y]
+            ? "(nowcast)"
+            : Number(y) > latestPublishedYear
+              ? "(forecast)"
+              : ""
+        }`.trim(),
       })),
-    [availableYears, latestPublishedYear],
+    [availableYears, latestPublishedYear, nowcast],
   );
 
   // ── Render ──────────────────────────────────────────────────
@@ -708,6 +721,9 @@ print(f"SPM threshold: \${threshold:,.0f}")`;
                 {yearIsForecast && (
                   <Badge variant="warning">Forecast</Badge>
                 )}
+                {yearIsNowcast && (
+                  <Badge variant="warning">Nowcast — not BLS</Badge>
+                )}
                 {metroYearIsForecast && (
                   <Badge variant="warning">
                     {latestMetroYear} metro rent index
@@ -777,10 +793,42 @@ print(f"SPM threshold: \${threshold:,.0f}")`;
                     </div>
                     <div className="flex justify-between">
                       <Text className="text-muted-foreground">Status</Text>
-                      <Badge variant={yearIsForecast ? "warning" : "secondary"} className="text-xs">
-                        {yearIsForecast ? "Forecast" : "Published"}
+                      <Badge
+                        variant={
+                          yearIsForecast || yearIsNowcast
+                            ? "warning"
+                            : "secondary"
+                        }
+                        className="text-xs"
+                      >
+                        {yearIsNowcast
+                          ? "Nowcast"
+                          : yearIsForecast
+                            ? "Forecast"
+                            : "Published"}
                       </Badge>
                     </div>
+                    {yearIsNowcast && (
+                      <p
+                        className="pt-1 text-xs text-muted-foreground"
+                        data-testid="nowcast-disclaimer"
+                      >
+                        {yearNowcast.label}. Blend of consumption growth
+                        from Consumer Expenditure microdata and composite
+                        price aging, backtested at 1.35% mean absolute
+                        error per year.{" "}
+                        {paperUrl && (
+                          <a
+                            className="underline"
+                            href={paperUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            Working paper
+                          </a>
+                        )}
+                      </p>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -889,10 +937,16 @@ print(f"SPM threshold: \${threshold:,.0f}")`;
                 </p>
                 <ul className="list-disc space-y-1 pl-6 text-muted-foreground">
                   <li>
-                    <strong>Base</strong>: BLS-published FCSUti thresholds
-                    for the reference family (2 adults, 2 children), by
-                    tenure. National 2024 renter base ={" "}
-                    <span className="font-mono">$39,430</span>.
+                    <strong>Base</strong>: BLS FCSUti thresholds for the
+                    reference family (2 adults, 2 children), by tenure,
+                    from the corrected series BLS published July 17,
+                    2026, estimated over CE quarters {ceSurveyWindow}.
+                    National 2024 renter base ={" "}
+                    <span className="font-mono">
+                      {fmtCurrency(baseThresholds["2024"].renter)}
+                    </span>
+                    . 2025 values are a PolicyEngine nowcast, not a BLS
+                    publication.
                   </li>
                   <li>
                     <strong>Equivalence scale</strong>: Betson
@@ -931,6 +985,15 @@ print(f"SPM threshold: \${threshold:,.0f}")`;
                     rel="noopener noreferrer"
                   >
                     P60-287
+                  </a>
+                  . Corrected thresholds and 2025 nowcast:{" "}
+                  <a
+                    className="underline"
+                    href={paperUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    working paper
                   </a>
                   .
                 </p>

@@ -10,3 +10,4 @@ chapters:
       - file: api/equivalence_scale
       - file: api/units
   - file: validation
+  - file: bls-2026-correction

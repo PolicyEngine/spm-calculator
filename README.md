@@ -55,7 +55,7 @@ calc = SPMCalculator(year=2024)
 
 # Get base thresholds by tenure (national, before geographic adjustment)
 base = calc.get_base_thresholds()
-# {'renter': 39430, 'owner_with_mortgage': 39068, 'owner_without_mortgage': 32586}
+# {'renter': 39219.89, 'owner_with_mortgage': 39231.0, 'owner_without_mortgage': 32878.59}
 
 # Get GEOADJ for a specific location
 geoadj = calc.get_geoadj("metro_area", "35620", tenure="renter")  # New York metro
@@ -134,12 +134,12 @@ The optional ASEC parity tests run against a real Census CPS ASEC HDFStore when
 
 ### Base Threshold Calculation
 
-Following BLS methodology (updated September 2021):
-1. Download 5 years of CE Survey PUMD (Public Use Microdata)
+Following BLS methodology (updated September 2021, corrected July 17, 2026):
+1. Load CE Interview PUMD collection quarters (T−5)Q2 through (T)Q1 for target year T (cached year bundles)
 2. Filter to consumer units with children
-3. Calculate FCSUti expenditures
+3. Calculate FCSUti expenditures (shelter includes owner mortgage-principal outlays; UTIL already contains telephone)
 4. Convert to reference family (2 adults, 2 children) using equivalence scale
-5. Calculate 83% of median (47th-53rd percentile average) by tenure type
+5. Apply the BLS formula over the 47th-53rd percentile estimation sample: `0.82 × (1.2 × FCSUti_E − SU_E + SU_Eh)` (82% anchor since the 2026 correction; 83% before)
 
 ### Geographic Adjustment (GEOADJ)
 
@@ -165,17 +165,23 @@ The SPM uses the official Betson three-parameter scale:
 - Three or more adults without children: `adults^0.7`
 - Normalized to the reference family `(2 adults, 2 children) = 3^0.7`
 
-## Validation
+## Data provenance and validation
 
-Base thresholds are validated against [BLS published values](https://www.bls.gov/pir/spm/spm_thresholds_2024.htm):
+Packaged thresholds come from the official BLS workbook (bundled with recorded SHA-256, parsed by `scripts/build_threshold_series.py` — never hand-edited). Three series ship with the package:
 
-| Tenure | 2024 BLS | Calculator |
-|--------|----------|------------|
-| Renter | $39,430 | $39,430 |
-| Owner w/ mortgage | $39,068 | $39,068 |
-| Owner w/o mortgage | $32,586 | $32,586 |
+- `bls-corrected-2026-07-17` (default): the corrected series BLS published on July 17, 2026, full precision, 2005-2024, with standard errors and tenure shares
+- `census-published-pre-correction`: what every published 2019-2024 SPM statistic used, cross-verified against the Census P60 reports
+- `package-legacy-0.3`: values shipped in spm-calculator ≤ 0.3.1, retained for reproducibility (2019-2023 contained hand-entry errors of up to 8% — see [docs/bls-2026-correction.md](docs/bls-2026-correction.md))
 
-Official metro thresholds are validated against [Census SPM Thresholds by Metro Area: 2024](https://www2.census.gov/programs-surveys/demo/tables/p60/287/SPM-pov-threshold-2024.xlsx).
+| Tenure | 2024 corrected BLS | Package |
+|--------|--------------------|---------|
+| Renter | $39,219.89 | $39,219.89 |
+| Owner w/ mortgage | $39,231.00 | $39,231.00 |
+| Owner w/o mortgage | $32,878.59 | $32,878.59 |
+
+A weekly [drift-watch CI job](.github/workflows/bls-drift-watch.yaml) re-downloads the BLS workbook and opens an issue if the packaged series diverges. For 2025 — a year whose CE data and CPI are published but whose BLS thresholds are not — `nowcast_thresholds(2025)` provides a consumption-based nowcast (backtested at 1.35%/yr mean absolute error vs 2.23% for CPI-U aging; see [docs/bls-2026-correction.md](docs/bls-2026-correction.md)). The independent CE-PUMD replication reproduces official thresholds within 1-4.5% (no in-kind benefit imputation); measured fidelity by year is in [docs/bls-2026-correction.md](docs/bls-2026-correction.md).
+
+Official metro thresholds are validated against [Census SPM Thresholds by Metro Area: 2024](https://www2.census.gov/programs-surveys/demo/tables/p60/287/SPM-pov-threshold-2024.xlsx) (pre-correction vintage; composed metro thresholds rescale onto the corrected national base until Census re-releases the workbook).
 
 ## License
 

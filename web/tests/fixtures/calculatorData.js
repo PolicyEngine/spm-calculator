@@ -20,6 +20,11 @@ export function makeCalculatorData(overrides = {}) {
         owner_with_mortgage: 39068,
         owner_without_mortgage: 32586,
       },
+      "2025": {
+        renter: 40755.98,
+        owner_with_mortgage: 41036.34,
+        owner_without_mortgage: 34135.99,
+      },
     },
     methodology: {
       referenceRawScale: 3 ** 0.7,
@@ -40,6 +45,27 @@ export function makeCalculatorData(overrides = {}) {
       latestPublishedYear: 2024,
       cpiProjections: { "2025": 0.025, "2026": 0.023 },
     },
+    nowcast: {
+      "2025": {
+        label:
+          "PolicyEngine nowcast of 2025 SPM thresholds — NOT a BLS publication",
+        base_year: 2024,
+        base_series: "bls-corrected-2026-07-17",
+        values: {
+          renter: 40755.98,
+          owner_with_mortgage: 41036.34,
+          owner_without_mortgage: 34135.99,
+        },
+        components: {
+          renter: {
+            replication_ratio: 1.04619,
+            price_ratio: 1.03215,
+            blend_ratio: 1.03917,
+          },
+        },
+      },
+    },
+    paperUrl: "https://spm-threshold-paper.vercel.app",
     metroAreas: {
       "35620": {
         name: "New York-Newark-Jersey City, NY-NJ-PA MSA",

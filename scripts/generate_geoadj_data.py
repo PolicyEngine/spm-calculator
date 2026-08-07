@@ -26,95 +26,53 @@ def _read_package_version() -> str:
     return match.group(1)
 
 
+from spm_calculator.equivalence_scale import REFERENCE_RAW_SCALE
+from spm_calculator.forecast import (
+    CPI_PROJECTIONS,
+    LATEST_PUBLISHED_YEAR,
+    forecast_thresholds,
+    get_thresholds,
+)
+from spm_calculator.forecast import (
+    HISTORICAL_THRESHOLDS as _PACKAGE_THRESHOLDS,
+)
+from spm_calculator.nowcast import get_nowcast_years, nowcast_with_metadata
+
+# The web bundle uses string year keys throughout.
 HISTORICAL_THRESHOLDS = {
-    "2015": {
-        "renter": 25155,
-        "owner_with_mortgage": 24859,
-        "owner_without_mortgage": 20639,
-    },
-    "2016": {
-        "renter": 25558,
-        "owner_with_mortgage": 25248,
-        "owner_without_mortgage": 20943,
-    },
-    "2017": {
-        "renter": 26213,
-        "owner_with_mortgage": 25897,
-        "owner_without_mortgage": 21527,
-    },
-    "2018": {
-        "renter": 26905,
-        "owner_with_mortgage": 26565,
-        "owner_without_mortgage": 22095,
-    },
-    "2019": {
-        "renter": 27515,
-        "owner_with_mortgage": 27172,
-        "owner_without_mortgage": 22600,
-    },
-    "2020": {
-        "renter": 28881,
-        "owner_with_mortgage": 28533,
-        "owner_without_mortgage": 23948,
-    },
-    "2021": {
-        "renter": 31453,
-        "owner_with_mortgage": 31089,
-        "owner_without_mortgage": 26022,
-    },
-    "2022": {
-        "renter": 33402,
-        "owner_with_mortgage": 32949,
-        "owner_without_mortgage": 27679,
-    },
-    "2023": {
-        "renter": 36606,
-        "owner_with_mortgage": 36192,
-        "owner_without_mortgage": 30347,
-    },
-    "2024": {
-        "renter": 39430,
-        "owner_with_mortgage": 39068,
-        "owner_without_mortgage": 32586,
-    },
+    str(year): dict(tenures) for year, tenures in _PACKAGE_THRESHOLDS.items()
 }
 
-CPI_PROJECTIONS = {
-    2025: 0.025,
-    2026: 0.023,
-    2027: 0.022,
-    2028: 0.020,
-    2029: 0.020,
-    2030: 0.020,
-}
-
-LATEST_PUBLISHED_YEAR = 2024
-REFERENCE_RAW_SCALE = 3**0.7
 TENURE_HOUSING_SHARES = {
+    "renter": 0.443,
     "owner_with_mortgage": 0.434,
     "owner_without_mortgage": 0.323,
-    "renter": 0.443,
 }
+
 METRO_SOURCE_URL = (
     "https://www2.census.gov/programs-surveys/demo/tables/p60/287/"
     "SPM-pov-threshold-2024.xlsx"
 )
 
-
-def forecast_thresholds(year: int) -> dict:
-    base = HISTORICAL_THRESHOLDS[str(LATEST_PUBLISHED_YEAR)]
-    factor = 1.0
-    for y in range(LATEST_PUBLISHED_YEAR + 1, year + 1):
-        factor *= 1 + CPI_PROJECTIONS.get(y, 0.020)
-    return {
-        tenure: int(round(value * factor)) for tenure, value in base.items()
-    }
+PAPER_URL = "https://spm-threshold-paper.vercel.app"
 
 
 def generate_all_thresholds():
+    """Published thresholds, the packaged nowcast, then price forecasts.
+
+    Nowcast years use the consumption-based estimate (see
+    ``spm_calculator.nowcast``); remaining future years fall back to
+    the package's CPI-projection path.
+    """
     all_thresholds = dict(HISTORICAL_THRESHOLDS)
+    nowcast_years = set(get_nowcast_years())
     for year in range(LATEST_PUBLISHED_YEAR + 1, 2031):
-        all_thresholds[str(year)] = forecast_thresholds(year)
+        if year in nowcast_years:
+            all_thresholds[str(year)] = dict(
+                nowcast_with_metadata(year)["values"]
+            )
+        else:
+            all_thresholds[str(year)] = forecast_thresholds(year)
     return all_thresholds
 
 
@@ -125,12 +83,35 @@ def _load_workbook_from_bytes(content: bytes):
 
 
 def generate_metro_data() -> dict:
-    response = requests.get(METRO_SOURCE_URL, timeout=60)
-    response.raise_for_status()
+    try:
+        response = requests.get(METRO_SOURCE_URL, timeout=60)
+        response.raise_for_status()
+    except Exception as error:
+        fallback = (
+            Path(__file__).resolve().parent.parent
+            / "web"
+            / "public"
+            / "data"
+            / "metro_geoadj.json"
+        )
+        print(
+            f"Census metro workbook unavailable ({error}); reusing "
+            f"committed {fallback.name}"
+        )
+        return json.loads(fallback.read_text())
     workbook = _load_workbook_from_bytes(response.content)
     sheet = workbook["Thresholds 2024"]
 
-    national_thresholds = HISTORICAL_THRESHOLDS["2024"]
+    # The Census metro workbook predates the 2026-07-17 correction, so
+    # its per-tenure metro thresholds embed the pre-correction national
+    # base. Ratios must use the same-vintage denominator: dividing by
+    # the corrected national would silently mix vintages inside each
+    # adjustment factor. Composed thresholds therefore equal the
+    # workbook rescaled onto the corrected base until Census re-releases
+    # the metro workbook (see tests/test_calculator.py).
+    national_thresholds = get_thresholds(
+        2024, series="census-published-pre-correction"
+    )
     metro_areas = {}
 
     for row in sheet.iter_rows(min_row=3, values_only=True):
@@ -201,6 +182,15 @@ def generate_data():
             "latestPublishedYear": LATEST_PUBLISHED_YEAR,
             "cpiProjections": {str(k): v for k, v in CPI_PROJECTIONS.items()},
         },
+        # Consumption-based nowcasts for years whose CE data and CPI are
+        # published but whose BLS thresholds are not. Carries the full
+        # packaged document (values, components, method, caveats, label)
+        # so UI disclaimers derive from the artifact.
+        "nowcast": {
+            str(year): nowcast_with_metadata(year)
+            for year in get_nowcast_years()
+        },
+        "paperUrl": PAPER_URL,
         # Web mirrors the Python rule: historical years (< earliest
         # bundled) must raise rather than silently apply current-year
         # rent indices to earlier base thresholds; forecast years

@@ -88,16 +88,13 @@ class TestForecastPrecision:
         # the decimal point.
         assert isinstance(forecast["renter"], float)
 
-    def test_historical_year_still_returns_int_values(self):
-        """Historical published values stay as integers (the BLS
-        tables report whole-dollar thresholds); only the forecast
-        path keeps floats."""
+    def test_historical_year_keeps_full_precision(self):
+        """Published values carry the BLS workbook's full precision —
+        BLS states all significant digits are necessary for
+        calculations. (Before the 2026-07-17 correction release this
+        package stored whole-dollar approximations.)"""
         values = forecast_thresholds(LATEST_PUBLISHED_YEAR)
-        for tenure, amount in values.items():
-            assert amount == int(amount), (
-                f"Published {tenure} threshold drifted from "
-                f"HISTORICAL_THRESHOLDS"
-            )
+        assert any(amount != int(amount) for amount in values.values())
 
 
 def test_cpi_projections_end_year_referenced_in_warning():

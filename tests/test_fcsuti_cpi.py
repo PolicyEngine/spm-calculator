@@ -2,8 +2,8 @@
 
 Covers the pure-function helpers that run without hitting the BLS API:
 ``compute_fcsuti_weights_from_ce`` and the ``weights`` plumbing on the
-composite-CPI builders, plus the offline fallback paths (precomputed
-factors, composed factors) and the BLS registration-key plumbing.
+composite-CPI builders, plus the offline fallback to the packaged CPI
+store and the BLS registration-key plumbing.
 End-to-end tests that actually fetch BLS data are network-gated in
 ``test_ce_validation.py``.
 """
@@ -18,14 +18,11 @@ import pytest
 from spm_calculator import fcsuti_cpi
 from spm_calculator.fcsuti_cpi import (
     FCSUTI_WEIGHTS,
-    PRECOMPUTED_FCSUTI_FACTORS,
-    _compose_precomputed_fcsuti_factor,
-    _directed_precomputed_factor,
     compute_fcsuti_weights_from_ce,
     fetch_bls_cpi_series,
     get_fcsuti_cpi,
     get_fcsuti_inflation_factor,
-    get_precomputed_fcsuti_factor,
+    get_packaged_cpi_series,
 )
 
 
@@ -88,44 +85,48 @@ class TestComputeFcsutiWeightsFromCE:
         shelter = 6000 * 100 + 8000 * 200 + 3600 * 50
         util = 1000 * 100 + 1600 * 200 + 600 * 50
         tele = 400 * 100 + 500 * 200 + 300 * 50
-        total = food + apparel + shelter + util + tele
+        # UTIL already contains TELEPH, so the FCSUti total is
+        # food + apparel + shelter + util — adding tele on top would
+        # reproduce the pre-0.4 double-count.
+        total = food + apparel + shelter + util
 
         weights = compute_fcsuti_weights_from_ce(ce)
         assert weights["food"] == pytest.approx(food / total)
         assert weights["apparel"] == pytest.approx(apparel / total)
         assert weights["shelter"] == pytest.approx(shelter / total)
-        assert weights["utilities"] == pytest.approx(util / total)
+        # UTIL contains TELEPH; the utilities share carves telephone
+        # out so the composite doesn't double-count it. The total is
+        # unchanged because (UTIL - TELEPH) + TELEPH == UTIL.
+        assert weights["utilities"] == pytest.approx((util - tele) / total)
         assert weights["telephone"] == pytest.approx(tele / total)
 
-    def test_subtracts_mortgage_principal_from_shelter(self):
-        """When MRTPRIN columns are present, shelter is net of principal."""
+    def test_adds_mortgage_principal_to_shelter(self):
+        """Principal outlay columns (EMRTPNO*/MRTPRNO*) are added to
+        the shelter share under the SPM outlays concept."""
         ce = _sample_ce_df(
             {
-                "MRTPRINPQ": [500.0, 1000.0, 200.0, 0.0],
-                "MRTPRINCQ": [500.0, 1000.0, 200.0, 0.0],
+                "EMRTPNOP": [500.0, 1000.0, 200.0, 0.0],
+                "EMRTPNOC": [500.0, 1000.0, 200.0, 0.0],
             }
         )
-        with_subtraction = compute_fcsuti_weights_from_ce(
-            ce, subtract_mortgage_principal=True
+        with_principal = compute_fcsuti_weights_from_ce(
+            ce, include_mortgage_principal=True
         )
-        without_subtraction = compute_fcsuti_weights_from_ce(
-            ce, subtract_mortgage_principal=False
+        without_principal = compute_fcsuti_weights_from_ce(
+            ce, include_mortgage_principal=False
         )
-        # Shelter share shrinks when principal is subtracted out.
-        assert with_subtraction["shelter"] < without_subtraction["shelter"]
-        # Other components' shares rise (same numerator, smaller denominator).
-        assert with_subtraction["food"] > without_subtraction["food"]
+        # Shelter share grows when principal outlays are added.
+        assert with_principal["shelter"] > without_principal["shelter"]
+        # Other components' shares shrink (same numerator, larger
+        # denominator).
+        assert with_principal["food"] < without_principal["food"]
 
-    def test_includes_internet_when_infotech_columns_present(self):
-        ce = _sample_ce_df(
-            {
-                "INFOTECHPQ": [300.0, 400.0, 200.0, 180.0],
-                "INFOTECHCQ": [300.0, 400.0, 200.0, 180.0],
-            }
-        )
-        weights = compute_fcsuti_weights_from_ce(ce)
-        assert "internet" in weights
-        assert weights["internet"] > 0
+    def test_no_internet_component_from_ce(self):
+        """FMLI has no internet summary variable, so CE-derived
+        weights omit internet (the static fallback still carries a
+        small internet share for the CPI composite)."""
+        weights = compute_fcsuti_weights_from_ce(_sample_ce_df())
+        assert "internet" not in weights
 
     def test_missing_component_column_silently_dropped(self):
         """If a component's expenditure columns aren't present, the
@@ -248,47 +249,30 @@ class TestStaticWeightsShape:
         assert sum(FCSUTI_WEIGHTS.values()) == pytest.approx(1.0, abs=0.01)
 
 
-class TestPrecomputedFactor:
-    def test_returns_direct_pair(self):
-        assert (
-            get_precomputed_fcsuti_factor(2023, 2024)
-            == PRECOMPUTED_FCSUTI_FACTORS[(2023, 2024)]
-        )
+class TestPackagedCpiStore:
+    def test_serves_known_series_and_range(self):
+        series = get_packaged_cpi_series("CUUR0000SA0", 2020, 2025)
+        assert list(series.index) == [2020, 2021, 2022, 2023, 2024, 2025]
+        # 2025 annual average matches BLS's official eleven-month value.
+        assert series[2025] == pytest.approx(321.943, abs=0.01)
 
-    def test_returns_none_when_missing(self):
-        assert get_precomputed_fcsuti_factor(2001, 2099) is None
+    def test_unknown_series_raises_keyerror(self):
+        with pytest.raises(KeyError, match="not in the packaged CPI store"):
+            get_packaged_cpi_series("CUUR0000FAKE", 2020, 2024)
 
+    def test_store_carries_provenance(self):
+        import spm_calculator.fcsuti_cpi as mod
 
-class TestDirectedPrecomputedFactor:
-    def test_inverts_stored_reverse_pair(self):
-        forward = PRECOMPUTED_FCSUTI_FACTORS[(2022, 2024)]
-        assert _directed_precomputed_factor(2024, 2022) == pytest.approx(
-            1.0 / forward
-        )
-
-    def test_same_year_returns_one(self):
-        assert _directed_precomputed_factor(2020, 2020) == 1.0
-
-
-class TestComposedFactor:
-    def test_chains_through_pivot(self):
-        """(2019, 2022) is not directly baked, but (2019, 2024) and
-        (2022, 2024) are; composing inverts the second and multiplies."""
-        direct_19_24 = PRECOMPUTED_FCSUTI_FACTORS[(2019, 2024)]
-        direct_22_24 = PRECOMPUTED_FCSUTI_FACTORS[(2022, 2024)]
-        expected = direct_19_24 * (1.0 / direct_22_24)
-        assert _compose_precomputed_fcsuti_factor(2019, 2022) == pytest.approx(
-            expected
-        )
-
-    def test_returns_none_when_no_pivot_works(self):
-        assert _compose_precomputed_fcsuti_factor(1985, 1990) is None
+        doc = mod._packaged_cpi_store()
+        assert doc["generated_by"] == "scripts/build_cpi_store.py"
+        assert "sources" in doc and doc["series"]
 
 
 class TestInflationFactorOfflineFallback:
-    def test_uses_precomputed_when_api_fails(self, monkeypatch):
-        """With the BLS fetch stubbed to raise, the resolver should
-        consult `PRECOMPUTED_FCSUTI_FACTORS` before the 4%/yr estimate."""
+    def test_uses_packaged_store_when_api_fails(self, monkeypatch):
+        """With the BLS fetch stubbed to raise, the composite builds
+        from the packaged CPI store and the factor matches a direct
+        computation from the same store."""
         import spm_calculator.fcsuti_cpi as mod
 
         mod._cached_fcsuti_cpi.cache_clear()
@@ -298,14 +282,37 @@ class TestInflationFactorOfflineFallback:
 
         monkeypatch.setattr(mod, "fetch_bls_cpi_series", fail_fetch)
 
-        factor = get_fcsuti_inflation_factor(2023, 2024)
-        assert factor == pytest.approx(
-            PRECOMPUTED_FCSUTI_FACTORS[(2023, 2024)]
-        )
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            factor = get_fcsuti_inflation_factor(2023, 2024)
 
-    def test_uses_composition_when_direct_not_available(self, monkeypatch):
-        """Without an exact direct pair, composition through 2024 is
-        used before the 4%/yr estimate."""
+        store = mod._packaged_cpi_store()["series"]
+        weights = {
+            c: w
+            for c, w in FCSUTI_WEIGHTS.items()
+            if mod.CPI_SERIES[c] in store
+        }
+        total = sum(weights.values())
+
+        def composite(year):
+            # Components rebased to the base year (2023) before
+            # weighting, matching the corrected construction.
+            return (
+                sum(
+                    w
+                    * store[mod.CPI_SERIES[c]][str(year)]
+                    / store[mod.CPI_SERIES[c]]["2023"]
+                    for c, w in weights.items()
+                )
+                / total
+            )
+
+        assert factor == pytest.approx(composite(2024) / composite(2023))
+        mod._cached_fcsuti_cpi.cache_clear()
+
+    def test_raises_for_years_outside_all_sources(self, monkeypatch):
+        """No hand-entered table and no flat-percent guess remain: a
+        year outside every source raises instead of fabricating."""
         import spm_calculator.fcsuti_cpi as mod
 
         mod._cached_fcsuti_cpi.cache_clear()
@@ -315,36 +322,11 @@ class TestInflationFactorOfflineFallback:
 
         monkeypatch.setattr(mod, "fetch_bls_cpi_series", fail_fetch)
 
-        factor = get_fcsuti_inflation_factor(2019, 2022)
-        composed = PRECOMPUTED_FCSUTI_FACTORS[(2019, 2024)] * (
-            1.0 / PRECOMPUTED_FCSUTI_FACTORS[(2022, 2024)]
-        )
-        assert factor == pytest.approx(composed)
-
-    def test_falls_back_to_4pct_when_nothing_precomputed_matches(
-        self, monkeypatch
-    ):
-        """For year pairs outside the precomputed universe, the 4%/yr
-        estimate is the last resort (and emits a RuntimeWarning)."""
-        import warnings
-
-        import spm_calculator.fcsuti_cpi as mod
-
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            with pytest.raises(ValueError, match="unavailable"):
+                get_fcsuti_inflation_factor(1985, 1990)
         mod._cached_fcsuti_cpi.cache_clear()
-        monkeypatch.setattr(
-            mod,
-            "fetch_bls_cpi_series",
-            lambda *a, **kw: (_ for _ in ()).throw(RuntimeError("x")),
-        )
-
-        with warnings.catch_warnings(record=True) as caught:
-            warnings.simplefilter("always")
-            factor = get_fcsuti_inflation_factor(1985, 1990)
-        assert factor == pytest.approx(1.04**5)
-        assert any("4%/yr" in str(w.message) for w in caught)
-
-    def test_same_year_returns_identity(self):
-        assert get_fcsuti_inflation_factor(2024, 2024) == 1.0
 
 
 class TestRegistrationKey:

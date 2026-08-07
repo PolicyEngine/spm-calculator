@@ -1,93 +1,143 @@
 {
-  "packageVersion": "0.3.0",
+  "packageVersion": "0.4.0",
   "baseThresholds": {
+    "2005": {
+      "owner_with_mortgage": 21064.41,
+      "owner_without_mortgage": 17642.67,
+      "renter": 20640.57
+    },
+    "2006": {
+      "owner_with_mortgage": 22009.65,
+      "owner_without_mortgage": 18300.52,
+      "renter": 21278.03
+    },
+    "2007": {
+      "owner_with_mortgage": 22771.56,
+      "owner_without_mortgage": 19206.41,
+      "renter": 22417.62
+    },
+    "2008": {
+      "owner_with_mortgage": 24258.63,
+      "owner_without_mortgage": 20385.96,
+      "renter": 23472.44
+    },
+    "2009": {
+      "owner_with_mortgage": 24450.46,
+      "owner_without_mortgage": 20298.15,
+      "renter": 23873.79
+    },
+    "2010": {
+      "owner_with_mortgage": 25018.26,
+      "owner_without_mortgage": 20590.22,
+      "renter": 24390.5
+    },
+    "2011": {
+      "owner_with_mortgage": 25703.41,
+      "owner_without_mortgage": 21175.19,
+      "renter": 25221.52
+    },
+    "2012": {
+      "owner_with_mortgage": 25784.217451574375,
+      "owner_without_mortgage": 21399.50704050622,
+      "renter": 25105.072483651067
+    },
+    "2013": {
+      "owner_with_mortgage": 25639.41,
+      "owner_without_mortgage": 21397.38,
+      "renter": 25144.31
+    },
+    "2014": {
+      "owner_with_mortgage": 25844.455332,
+      "owner_without_mortgage": 21380.306455,
+      "renter": 25459.570533
+    },
     "2015": {
-      "renter": 25155,
-      "owner_with_mortgage": 24859,
-      "owner_without_mortgage": 20639
+      "owner_with_mortgage": 25929.883367,
+      "owner_without_mortgage": 21806.488776,
+      "renter": 25583.069953
     },
     "2016": {
-      "renter": 25558,
-      "owner_with_mortgage": 25248,
-      "owner_without_mortgage": 20943
+      "owner_with_mortgage": 26335.619055,
+      "owner_without_mortgage": 22298.214204,
+      "renter": 26104.306345
     },
     "2017": {
-      "renter": 26213,
-      "owner_with_mortgage": 25897,
-      "owner_without_mortgage": 21527
+      "owner_with_mortgage": 27085.067001,
+      "owner_without_mortgage": 23260.655432,
+      "renter": 27004.994983
     },
     "2018": {
-      "renter": 26905,
-      "owner_with_mortgage": 26565,
-      "owner_without_mortgage": 22095
+      "owner_with_mortgage": 28343.504154,
+      "owner_without_mortgage": 24174.464503,
+      "renter": 28167.730141
     },
     "2019": {
-      "renter": 27515,
-      "owner_with_mortgage": 27172,
-      "owner_without_mortgage": 22600
+      "owner_with_mortgage": 29076.17484,
+      "owner_without_mortgage": 24514.952286,
+      "renter": 28913.050035
     },
     "2020": {
-      "renter": 28881,
-      "owner_with_mortgage": 28533,
-      "owner_without_mortgage": 23948
+      "owner_with_mortgage": 29814.550519,
+      "owner_without_mortgage": 25249.135101,
+      "renter": 29978.900071
     },
     "2021": {
-      "renter": 31453,
-      "owner_with_mortgage": 31089,
-      "owner_without_mortgage": 26022
+      "owner_with_mortgage": 30983.241762,
+      "owner_without_mortgage": 26055.401211,
+      "renter": 31216.693518
     },
     "2022": {
-      "renter": 33402,
-      "owner_with_mortgage": 32949,
-      "owner_without_mortgage": 27679
+      "owner_with_mortgage": 33978.493165,
+      "owner_without_mortgage": 28454.915504,
+      "renter": 34140.062994
     },
     "2023": {
-      "renter": 36606,
-      "owner_with_mortgage": 36192,
-      "owner_without_mortgage": 30347
+      "owner_with_mortgage": 36966.23764,
+      "owner_without_mortgage": 30587.725238,
+      "renter": 37230.752855
     },
     "2024": {
-      "renter": 39430,
-      "owner_with_mortgage": 39068,
-      "owner_without_mortgage": 32586
+      "owner_with_mortgage": 39230.994457,
+      "owner_without_mortgage": 32878.594848,
+      "renter": 39219.893902
     },
     "2025": {
-      "renter": 40416,
-      "owner_with_mortgage": 40045,
-      "owner_without_mortgage": 33401
+      "owner_with_mortgage": 41036.33884031702,
+      "owner_without_mortgage": 34135.98684075608,
+      "renter": 40755.97769114958
     },
     "2026": {
-      "renter": 41345,
-      "owner_with_mortgage": 40966,
-      "owner_without_mortgage": 34169
+      "owner_with_mortgage": 41136.640012748765,
+      "owner_without_mortgage": 34475.6725927416,
+      "renter": 41125.000248289645
     },
     "2027": {
-      "renter": 42255,
-      "owner_with_mortgage": 41867,
-      "owner_without_mortgage": 34921
+      "owner_with_mortgage": 42041.64609302924,
+      "owner_without_mortgage": 35234.13738978191,
+      "renter": 42029.75025375201
     },
     "2028": {
-      "renter": 43100,
-      "owner_with_mortgage": 42704,
-      "owner_without_mortgage": 35619
+      "owner_with_mortgage": 42882.479014889825,
+      "owner_without_mortgage": 35938.820137577546,
+      "renter": 42870.34525882705
     },
     "2029": {
-      "renter": 43962,
-      "owner_with_mortgage": 43558,
-      "owner_without_mortgage": 36331
+      "owner_with_mortgage": 43740.12859518762,
+      "owner_without_mortgage": 36657.5965403291,
+      "renter": 43727.7521640036
     },
     "2030": {
-      "renter": 44841,
-      "owner_with_mortgage": 44430,
-      "owner_without_mortgage": 37058
+      "owner_with_mortgage": 44614.931167091374,
+      "owner_without_mortgage": 37390.74847113568,
+      "renter": 44602.30720728367
     }
   },
   "methodology": {
     "referenceRawScale": 2.157669279974593,
     "housingShares": {
+      "renter": 0.443,
       "owner_with_mortgage": 0.434,
-      "owner_without_mortgage": 0.323,
-      "renter": 0.443
+      "owner_without_mortgage": 0.323
     },
     "equivalenceScale": {
       "singleAdultFirstChild": 0.8,
@@ -108,6 +158,43 @@
       "2030": 0.02
     }
   },
+  "nowcast": {
+    "2025": {
+      "generated_by": "scripts/compute_nowcast_2025.py",
+      "label": "PolicyEngine nowcast of 2025 SPM thresholds \u2014 NOT a BLS publication",
+      "method": "50/50 blend of realized FCSUti-composite CPI aging and CE replication growth ratio, applied to the corrected 2024 base. Selected by backtest over 2020-2024 (see docs/bls-2026-correction.md): mean absolute error 1.35%/yr vs 2.23% for All-Items CPI-U aging.",
+      "caveats": [
+        "BLS publishes actual 2025 thresholds ~September 2026; this nowcast is superseded the day they do.",
+        "2025 CPI annual averages are 11-month means (October 2025 release canceled during the federal shutdown).",
+        "All projection rules tested were biased low in 2022-2024 (real FCSUti consumption growth and in-kind benefit changes are not fully captured); the blend's backtest errors ranged -0.6% to -2.4% by year."
+      ],
+      "base_year": 2024,
+      "base_series": "bls-corrected-2026-07-17",
+      "values": {
+        "owner_with_mortgage": 41036.33884031702,
+        "owner_without_mortgage": 34135.98684075608,
+        "renter": 40755.97769114958
+      },
+      "components": {
+        "owner_with_mortgage": {
+          "replication_ratio": 1.0598909421226619,
+          "price_ratio": 1.0321456941291063,
+          "blend_ratio": 1.046018318125884
+        },
+        "owner_without_mortgage": {
+          "replication_ratio": 1.044341272456241,
+          "price_ratio": 1.0321456941291063,
+          "blend_ratio": 1.0382434832926737
+        },
+        "renter": {
+          "replication_ratio": 1.046186174538761,
+          "price_ratio": 1.0321456941291063,
+          "blend_ratio": 1.0391659343339337
+        }
+      }
+    }
+  },
+  "paperUrl": "https://spm-threshold-paper.vercel.app",
   "metroData": {
     "availableYears": [
       2024

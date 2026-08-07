@@ -38,24 +38,26 @@ The threshold is based on spending on:
 | **S**helter | SHELTPQ, SHELTCQ |
 | **U**tilities | UTILPQ, UTILCQ |
 | **t**elephone | TELEPHPQ, TELEPHCQ |
-| **i**nternet | (included in utilities) |
+| **i**nternet | (no FMLI summary variable; documented gap) |
 
 ### Calculation Method
 
-1. Sum FCSUti expenditures for each consumer unit
-2. Convert quarterly to annual (× 4)
+1. Sum FCSUti expenditures for each consumer unit (shelter includes owner mortgage-principal outlays; UTIL already contains telephone)
+2. Convert each quarterly recall window to annual (× 4)
 3. Normalize to reference family (2A2C) using equivalence scale
-4. Calculate 83% of the median-range expenditure (47th-53rd percentile average) by tenure type
+4. Apply the BLS formula over the estimation sample E (consumer units inside the 47th-53rd percentile range of equivalized FCSUti): `0.82 × (1.2 × FCSUti_E − SU_E + SU_Eh)`, where SU is shelter + utilities excluding telephone and h indexes housing tenure. The anchor was 83% before the July 17, 2026 correction (see [The 2026 BLS threshold correction](bls-2026-correction.md))
 
 ### 2024 Base Thresholds
 
+Corrected series published July 17, 2026:
+
 | Tenure | Threshold |
 |--------|-----------|
-| Renter | $39,430 |
-| Owner with mortgage | $39,068 |
-| Owner without mortgage | $32,586 |
+| Renter | $39,219.89 |
+| Owner with mortgage | $39,231.00 |
+| Owner without mortgage | $32,878.59 |
 
-Source: [BLS SPM Thresholds 2024](https://www.bls.gov/pir/spm/spm_thresholds_2024.htm)
+Source: [Corrected SPM Thresholds](https://www.bls.gov/pir/spm/spm_thresholds_2024_correction.htm) (workbook bundled in the package with recorded SHA-256; see [The 2026 BLS threshold correction](bls-2026-correction.md))
 
 ## Component 2: Equivalence Scale
 
