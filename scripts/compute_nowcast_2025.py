@@ -1,9 +1,10 @@
 """Compute the packaged 2025 threshold nowcast.
 
-Method (selected by scripts/backtest_threshold_projection.py — mean
-absolute error 1.35%/yr over 2020-2024, vs 2.23% for All-Items CPI-U
-aging): apply to the corrected 2024 base, per tenure, the 50/50 blend
-of
+Method (committed via scripts/backtest_threshold_projection.py — mean
+absolute error 0.76%/yr over 2020-2024, vs 2.23% for All-Items CPI-U
+aging; the repaired backtest ranks the replication ratio alone first
+at 0.41%, and the blend stays the committed primary): apply to the
+corrected 2024 base, per tenure, the 50/50 blend of
 
 - the realized FCSUti-composite CPI ratio (static package weights,
   renormalized over available components; 2025 annual averages are
@@ -136,10 +137,14 @@ def main() -> None:
                 "method": (
                     "50/50 blend of realized FCSUti-composite CPI "
                     "aging and CE replication growth ratio, applied "
-                    "to the corrected 2024 base. Selected by backtest "
-                    "over 2020-2024 (see docs/bls-2026-correction.md): "
-                    "mean absolute error 1.35%/yr vs 2.23% for "
-                    "All-Items CPI-U aging."
+                    "to the corrected 2024 base. Committed via the "
+                    "2020-2024 backtest (see "
+                    "docs/bls-2026-correction.md): mean absolute "
+                    "error 0.76%/yr vs 2.23% for All-Items CPI-U "
+                    "aging after the 2026-07-18 composite repair, "
+                    "which ranks the replication ratio alone first "
+                    "(0.41%); the blend remains the committed "
+                    "primary."
                 ),
                 "caveats": [
                     "BLS publishes actual 2025 thresholds ~September "
@@ -147,11 +152,13 @@ def main() -> None:
                     "2025 CPI annual averages are 11-month means "
                     "(October 2025 release canceled during the federal "
                     "shutdown).",
-                    "All projection rules tested were biased low in "
-                    "2022-2024 (real FCSUti consumption growth and "
-                    "in-kind benefit changes are not fully captured); "
-                    "the blend's backtest errors ranged -0.6% to "
-                    "-2.4% by year.",
+                    "Both price rules ran low in nearly every "
+                    "backtest year (real FCSUti consumption growth "
+                    "and in-kind benefit changes are not fully "
+                    "captured by prices); the replication ratio is "
+                    "near-unbiased (+0.1%/yr signed mean), and the "
+                    "blend's annual signed errors ranged -0.1% to "
+                    "-1.4%.",
                 ],
                 "base_year": 2024,
                 "base_series": "bls-corrected-2026-07-17",

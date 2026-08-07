@@ -218,8 +218,7 @@ def main() -> None:
         "series": {
             "bls-corrected-2026-07-17": {
                 "label": (
-                    "BLS SPM thresholds, corrected series published "
-                    "2026-07-17"
+                    "BLS SPM thresholds, corrected series published 2026-07-17"
                 ),
                 "provenance": {
                     "source_url": SOURCE_URL,

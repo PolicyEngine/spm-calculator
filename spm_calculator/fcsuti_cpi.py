@@ -58,8 +58,7 @@ def get_packaged_cpi_series(
     store = _packaged_cpi_store()["series"]
     if series_id not in store:
         raise KeyError(
-            f"{series_id} is not in the packaged CPI store "
-            f"({sorted(store)})"
+            f"{series_id} is not in the packaged CPI store ({sorted(store)})"
         )
     series = pd.Series(
         {int(y): v for y, v in store[series_id].items()},

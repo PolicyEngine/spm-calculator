@@ -18,9 +18,13 @@ and applies them to the corrected published base:
   thresholds from identical code, so replication level biases largely
   cancel).
 
-Backtest mean absolute error: 1.35%/yr (blend) vs 1.40% (FCSUti CPI
-alone), 1.58% (replication ratio alone), 2.23% (All-Items CPI-U aging,
-the ``forecast_thresholds`` behavior).
+Backtest mean absolute error (post composite repair, 2026-07-18):
+0.76%/yr (blend) vs 1.57% (FCSUti CPI alone), 0.41% (replication
+ratio alone), 2.23% (All-Items CPI-U aging, the
+``forecast_thresholds`` behavior). The repaired backtest ranks the
+replication ratio first; the blend remains the committed primary
+because it was selected before the repair and re-selecting on a
+second look at five backtest years would be selection on noise.
 
 Nowcasts are PolicyEngine model output, NOT BLS publications; each
 packaged nowcast records its method, components, and caveats, and is
@@ -43,8 +47,7 @@ def _nowcast_doc(year: int) -> dict:
         return json.loads(ref.read_text())
     except FileNotFoundError:
         raise ValueError(
-            f"No packaged nowcast for {year}. "
-            f"Available: {list(NOWCAST_YEARS)}"
+            f"No packaged nowcast for {year}. Available: {list(NOWCAST_YEARS)}"
         ) from None
 
 

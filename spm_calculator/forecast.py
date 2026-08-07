@@ -31,7 +31,7 @@ understating growth in four of five years, because the published
 series also moves with consumption); for years whose CE data
 and CPI are already published, prefer the consumption-based
 :func:`spm_calculator.nowcast.nowcast_thresholds` (backtested at
-1.35%/yr mean absolute error).
+0.76%/yr mean absolute error).
 """
 
 import json
