@@ -1,5 +1,11 @@
 {
   "generated_by": "scripts/compute_nowcast_2025.py",
+  "cpi_store": "spm_calculator/data/bls/cpi_annual.json",
+  "superseded_by": {
+    "source": "BLS published 2025 SPM thresholds",
+    "source_url": "https://www.bls.gov/pir/spm/spm_thresholds_2025.htm",
+    "accessor": "spm_calculator.forecast.get_thresholds(2025)"
+  },
   "label": "PolicyEngine nowcast of 2025 SPM thresholds \u2014 NOT a BLS publication",
   "method": "50/50 blend of realized FCSUti-composite CPI aging and CE replication growth ratio, applied to the corrected 2024 base. Committed via the 2020-2024 backtest (see docs/bls-2026-correction.md): mean absolute error 0.76%/yr vs 2.23% for All-Items CPI-U aging after the 2026-07-18 composite repair, which ranks the replication ratio alone first (0.41%); the blend remains the committed primary.",
   "caveats": [
@@ -10,25 +16,25 @@
   "base_year": 2024,
   "base_series": "bls-corrected-2026-07-17",
   "values": {
-    "owner_with_mortgage": 41036.33884031702,
-    "owner_without_mortgage": 34135.98684075608,
-    "renter": 40755.97769114958
+    "owner_with_mortgage": 41036.338840317025,
+    "owner_without_mortgage": 34135.986840756086,
+    "renter": 40755.97769114959
   },
   "components": {
     "owner_with_mortgage": {
       "replication_ratio": 1.0598909421226619,
-      "price_ratio": 1.0321456941291063,
-      "blend_ratio": 1.046018318125884
+      "price_ratio": 1.0321456941291065,
+      "blend_ratio": 1.0460183181258842
     },
     "owner_without_mortgage": {
       "replication_ratio": 1.044341272456241,
-      "price_ratio": 1.0321456941291063,
-      "blend_ratio": 1.0382434832926737
+      "price_ratio": 1.0321456941291065,
+      "blend_ratio": 1.038243483292674
     },
     "renter": {
       "replication_ratio": 1.046186174538761,
-      "price_ratio": 1.0321456941291063,
-      "blend_ratio": 1.0391659343339337
+      "price_ratio": 1.0321456941291065,
+      "blend_ratio": 1.039165934333934
     }
   }
 }

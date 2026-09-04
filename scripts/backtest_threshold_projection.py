@@ -21,11 +21,17 @@ replication ratio still wins, the conclusion is conservative.
 
 Inputs (produced by scripts/benchmark_bls_replication.py):
     benchmark_output/replication_results.json
-    benchmark_output/bls_cpi_series.json
+
+CPI inputs default to the tracked package store:
+    spm_calculator/data/bls/cpi_annual.json
+
+Pass ``--use-benchmark-cpi-store`` to explicitly use the older
+``benchmark_output/bls_cpi_series.json`` diagnostic cache instead.
 """
 
 from __future__ import annotations
 
+import argparse
 import json
 from pathlib import Path
 
@@ -34,12 +40,16 @@ from spm_calculator.forecast import get_thresholds
 
 REPO = Path(__file__).resolve().parent.parent
 OUT_DIR = REPO / "benchmark_output"
+TRACKED_CPI_STORE = (
+    REPO / "spm_calculator" / "data" / "bls" / "cpi_annual.json"
+)
+BENCHMARK_CPI_STORE = OUT_DIR / "bls_cpi_series.json"
 
 TENURES = ("owner_with_mortgage", "owner_without_mortgage", "renter")
 TARGETS = range(2020, 2025)
 
 
-def load_inputs():
+def load_inputs(*, use_benchmark_store: bool = False):
     results = json.loads((OUT_DIR / "replication_results.json").read_text())
     replicated = {
         r["target_year"]: r["calculated"]
@@ -48,7 +58,11 @@ def load_inputs():
         and r["annualization"] == "quarter4"
         and r["anchor"] == "82"
     }
-    cpi = json.loads((OUT_DIR / "bls_cpi_series.json").read_text())
+    cpi_path = (
+        BENCHMARK_CPI_STORE if use_benchmark_store else TRACKED_CPI_STORE
+    )
+    cpi_doc = json.loads(cpi_path.read_text())
+    cpi = cpi_doc if use_benchmark_store else cpi_doc["series"]
     return replicated, cpi
 
 
@@ -85,8 +99,8 @@ def fcsuti_composite(cpi: dict, year: int) -> float:
     )
 
 
-def main() -> None:
-    replicated, cpi = load_inputs()
+def main(*, use_benchmark_store: bool = False) -> None:
+    replicated, cpi = load_inputs(use_benchmark_store=use_benchmark_store)
 
     rows = []
     for target in TARGETS:
@@ -149,4 +163,14 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--use-benchmark-cpi-store",
+        action="store_true",
+        help=(
+            "explicitly use benchmark_output/bls_cpi_series.json instead "
+            "of the tracked packaged CPI store"
+        ),
+    )
+    args = parser.parse_args()
+    main(use_benchmark_store=args.use_benchmark_cpi_store)

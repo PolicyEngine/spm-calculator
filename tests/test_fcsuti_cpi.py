@@ -123,10 +123,12 @@ class TestComputeFcsutiWeightsFromCE:
 
     def test_no_internet_component_from_ce(self):
         """FMLI has no internet summary variable, so CE-derived
-        weights omit internet (the static fallback still carries a
-        small internet share for the CPI composite)."""
+        weights omit internet, as does the static fallback pending a
+        decision on the correct CPI series for the 2026 method."""
         weights = compute_fcsuti_weights_from_ce(_sample_ce_df())
         assert "internet" not in weights
+        assert "internet" not in FCSUTI_WEIGHTS
+        assert "internet" not in fcsuti_cpi.CPI_SERIES
 
     def test_missing_component_column_silently_dropped(self):
         """If a component's expenditure columns aren't present, the
@@ -187,9 +189,9 @@ class TestGetFcsutiCpiWeightsPlumbing:
             for r in records
             if issubclass(r.category, RuntimeWarning)
         ]
-        assert any(
-            "static FCSUti weights" in m for m in messages
-        ), f"Expected static-weights warning, got: {messages}"
+        assert any("static FCSUti weights" in m for m in messages), (
+            f"Expected static-weights warning, got: {messages}"
+        )
 
     def test_explicit_weights_suppress_warning(self, monkeypatch):
         """Supplying ``weights`` explicitly is the opt-in path and
@@ -267,8 +269,32 @@ class TestPackagedCpiStore:
         assert doc["generated_by"] == "scripts/build_cpi_store.py"
         assert "sources" in doc and doc["series"]
 
+    def test_store_omits_misidentified_internet_series(self):
+        """SEEE is broader IT, not the SEEE03 internet series."""
+        import spm_calculator.fcsuti_cpi as mod
+
+        doc = mod._packaged_cpi_store()
+        assert "CUUR0000SEEE" not in doc["sources"]
+        assert "CUUR0000SEEE" not in doc["series"]
+
 
 class TestInflationFactorOfflineFallback:
+    def test_committed_2025_factor_from_tracked_store(self, monkeypatch):
+        """The default five-series composite reproduces the nowcast."""
+        import spm_calculator.fcsuti_cpi as mod
+
+        mod._cached_fcsuti_cpi.cache_clear()
+
+        def fail_fetch(*args, **kwargs):
+            raise RuntimeError("no network")
+
+        monkeypatch.setattr(mod, "fetch_bls_cpi_series", fail_fetch)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            factor = get_fcsuti_inflation_factor(2024, 2025)
+        assert factor == pytest.approx(1.0321456941, abs=1e-9)
+        mod._cached_fcsuti_cpi.cache_clear()
+
     def test_uses_packaged_store_when_api_fails(self, monkeypatch):
         """With the BLS fetch stubbed to raise, the composite builds
         from the packaged CPI store and the factor matches a direct

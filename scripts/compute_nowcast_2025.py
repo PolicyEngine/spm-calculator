@@ -22,6 +22,7 @@ Usage:
 
 from __future__ import annotations
 
+import argparse
 import json
 import warnings
 from pathlib import Path
@@ -38,14 +39,28 @@ from spm_calculator.fcsuti_cpi import CPI_SERIES, FCSUTI_WEIGHTS
 from spm_calculator.forecast import get_thresholds
 
 REPO = Path(__file__).resolve().parent.parent
-CPI_STORE = REPO / "benchmark_output" / "bls_cpi_series.json"
+TRACKED_CPI_STORE = (
+    REPO / "spm_calculator" / "data" / "bls" / "cpi_annual.json"
+)
+BENCHMARK_CPI_STORE = REPO / "benchmark_output" / "bls_cpi_series.json"
 OUT = REPO / "spm_calculator" / "data" / "nowcast" / "nowcast_2025.json"
 
 TENURES = ("owner_with_mortgage", "owner_without_mortgage", "renter")
 
 
-def install_cpi_disk_cache() -> None:
-    store = json.loads(CPI_STORE.read_text())
+def load_cpi_store(*, use_benchmark_store: bool = False) -> tuple[dict, Path]:
+    """Load CPI inputs, using the tracked package store by default.
+
+    The older benchmark cache remains available only as an explicit
+    diagnostic input. It must never silently replace the reproducible,
+    checked-in package store.
+    """
+    path = BENCHMARK_CPI_STORE if use_benchmark_store else TRACKED_CPI_STORE
+    doc = json.loads(path.read_text())
+    return (doc if use_benchmark_store else doc["series"]), path
+
+
+def install_cpi_disk_cache(store: dict) -> None:
     original = fcsuti_cpi.fetch_bls_cpi_series
 
     def cached(series_id, start_year=2010, end_year=2024, **kwargs):
@@ -86,9 +101,9 @@ def price_ratio(store: dict, year: int, base_year: int) -> float:
     return composite(year) / composite(base_year)
 
 
-def main() -> None:
-    install_cpi_disk_cache()
-    store = json.loads(CPI_STORE.read_text())
+def main(*, use_benchmark_store: bool = False) -> None:
+    store, store_path = load_cpi_store(use_benchmark_store=use_benchmark_store)
+    install_cpi_disk_cache(store)
 
     replicated = {}
     for target in (2024, 2025):
@@ -130,6 +145,17 @@ def main() -> None:
         json.dumps(
             {
                 "generated_by": "scripts/compute_nowcast_2025.py",
+                "cpi_store": str(store_path.relative_to(REPO)),
+                "superseded_by": {
+                    "source": "BLS published 2025 SPM thresholds",
+                    "series": "bls-published-2025",
+                    "source_url": (
+                        "https://www.bls.gov/pir/spm/spm_thresholds_2025.htm"
+                    ),
+                    "accessor": (
+                        "spm_calculator.forecast.get_thresholds(2025)"
+                    ),
+                },
                 "label": (
                     "PolicyEngine nowcast of 2025 SPM thresholds — "
                     "NOT a BLS publication"
@@ -173,4 +199,14 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--use-benchmark-cpi-store",
+        action="store_true",
+        help=(
+            "explicitly use benchmark_output/bls_cpi_series.json instead "
+            "of the tracked packaged CPI store"
+        ),
+    )
+    args = parser.parse_args()
+    main(use_benchmark_store=args.use_benchmark_cpi_store)

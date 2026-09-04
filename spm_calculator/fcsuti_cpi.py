@@ -1,8 +1,8 @@
 """FCSUti CPI-U Composite Index for SPM threshold inflation adjustment.
 
 The FCSUti composite re-weights five CPI-U component series (food, apparel,
-shelter, utilities, telephone, and — for post-2018 vintages — internet) in
-proportion to the FCSUti expenditure shares of consumer units with children.
+shelter, utilities, and telephone) in proportion to the FCSUti expenditure
+shares of consumer units with children.
 It replaces the All-Items CPI-U used in the pre-2021 SPM methodology.
 
 BLS re-derives the component weights from the CE expenditure sample used
@@ -77,9 +77,13 @@ CPI_SERIES = {
     "shelter": "CUUR0000SAH1",  # Shelter
     "utilities": "CUUR0000SAH2",  # Fuels and utilities
     "telephone": "CUUR0000SEED",  # Telephone services
-    "internet": "CUUR0000SEEE",  # Internet services
     "all_items": "CUUR0000SA0",  # All items (reference only)
 }
+
+# TODO(2026 method): decide whether and how to add home internet using
+# CUUR0000SEEE03 (Internet services and electronic information providers).
+# CUUR0000SEEE is the broader Information technology, hardware and services
+# series, so it must not be used as a home-internet proxy.
 
 # Static fallback FCSUti expenditure shares for consumer units with
 # children. These are a rough approximation of CE shares; BLS re-derives
@@ -87,12 +91,13 @@ CPI_SERIES = {
 # Prefer supplying ``weights=`` explicitly or deriving via
 # :func:`compute_fcsuti_weights_from_ce`.
 FCSUTI_WEIGHTS: dict[str, float] = {
-    "food": 0.30,
-    "apparel": 0.05,
-    "shelter": 0.45,
-    "utilities": 0.12,
-    "telephone": 0.04,
-    "internet": 0.04,
+    # The five valid legacy weights are normalized over their 0.96 total
+    # after removing the erroneous 0.04 SEEE-as-internet allocation.
+    "food": 0.30 / 0.96,
+    "apparel": 0.05 / 0.96,
+    "shelter": 0.45 / 0.96,
+    "utilities": 0.12 / 0.96,
+    "telephone": 0.04 / 0.96,
 }
 
 # FMLI expenditure-column pairs (PQ = previous quarter, CQ = current
@@ -102,8 +107,8 @@ FCSUTI_WEIGHTS: dict[str, float] = {
 # summary already contains ``TELEPH`` (UTIL = NTLGAS + ELCTRC + ALLFUL
 # + TELEPH + WATRPS): the utilities weight uses UTIL minus TELEPH so
 # telephone is not double-counted. Home internet has no FMLI summary
-# variable; CE-derived weights omit it (the static fallback keeps a
-# small internet share for the CPI composite).
+# variable; CE-derived and static weights omit it pending the 2026-method
+# decision documented beside :data:`CPI_SERIES`.
 _FMLI_EXPENDITURE_COLUMNS: dict[str, tuple[str, str]] = {
     "food": ("FOODPQ", "FOODCQ"),
     "apparel": ("APPARPQ", "APPARCQ"),
