@@ -56,8 +56,8 @@ class TestPublishedThresholds:
 
     def test_published_thresholds_cover_full_historical_range(self):
         """`get_published_thresholds` must expose the same years as
-        `forecast.HISTORICAL_THRESHOLDS` (2005–2024 since the corrected
-        workbook), not a hardcoded subset."""
+        `forecast.HISTORICAL_THRESHOLDS` (2005–2025 across the corrected
+        and current workbooks), not a hardcoded subset."""
         from spm_calculator.forecast import HISTORICAL_THRESHOLDS
 
         assert min(HISTORICAL_THRESHOLDS) == 2005

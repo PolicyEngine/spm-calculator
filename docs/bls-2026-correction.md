@@ -52,7 +52,7 @@ Two conclusions follow. First, the package's own data errors were several times 
 
 ## What 0.4 changes
 
-- **Provenance-tracked series.** `scripts/build_threshold_series.py` is the only writer of the packaged data. It parses the official BLS workbook (bundled, SHA-256 recorded) and emits full-precision thresholds, standard errors, and tenure shares for 2005–2024.
+- **Provenance-tracked series.** `scripts/build_threshold_series.py` is the only writer of the packaged data. It parses the frozen corrected 2005–2024 workbook and BLS's bundled current workbook, records both SHA-256 digests, and emits full-precision thresholds, standard errors, and tenure shares through 2025.
 - **Three bundled series.** `bls-corrected-2026-07-17` (default), `census-published-pre-correction` (what every published 2019–2024 SPM statistic used, cross-verified against two consecutive P60 reports per year), and `package-legacy-0.3` (verbatim, for reproducing results from earlier releases).
 - **Drift watch.** A weekly CI job re-downloads the BLS workbook and diffs it against the packaged series, opening an issue on divergence. Either failure mode above — ours or theirs — now surfaces within a week.
 - **Replication fixes.** Benchmarking the CE-based replication against both reference series surfaced four bugs in our own methodology code, detailed below.
