@@ -87,34 +87,39 @@ What does catch that class of error on day one is mechanical: diffing published 
 
 One further check the replication does support: at matched anchors, the 83% variant fits the published series about as well as the 82% variant fits the corrected one — independent confirmation that BLS's re-anchoring preserved series continuity, as intended.
 
-## Remaining gaps
+## 2025 published
 
-- In-kind benefit imputation (broadband, LIHEAP, NSLP, WIC, rental assistance) is not replicated; it requires pooling CPS ASEC with CE, per the BLS imputation methodology.
-- Home internet has no FMLI summary variable; adding it requires UCC-level MTBI aggregation.
-- The bundled metro geographic adjustments derive from the pre-correction Census metro workbook; composed metro thresholds equal the workbook rescaled onto the corrected national base until Census re-releases it.
-- CE PUMD through 2024 supports a genuine 2025 threshold nowcast (BLS publishes 2025 thresholds in late 2026); the corrected-methodology replication makes this feasible at the fidelity measured above.
+BLS finalized the 2025 research SPM thresholds on August 24, 2026. The current workbook provides full-precision thresholds, standard errors, and tenure shares; its thresholds round to the values on the BLS publication page:
+
+| Tenure | Full-precision workbook | BLS page | Growth from corrected 2024 |
+|---|---:|---:|---:|
+| Owner w/ mortgage | $41,322.71 | $41,323 | 5.332% |
+| Owner w/o mortgage | $34,326.00 | $34,326 | 4.402% |
+| Renter | $41,700.56 | $41,701 | 6.325% |
+
+The package's committed nowcast is now an evaluation artifact rather than a current estimate. Against the full-precision actuals, it missed by −0.69%, −0.55%, and −2.27% respectively, for a **1.17% mean absolute error** across tenures. For comparison, aging the corrected 2024 base by CPI-U missed by 2.58%, the CE replication ratio alone missed by 0.75%, and the original pre-composite-repair nowcast missed by 0.98%. The renter estimate accounted for most of the committed nowcast's error.
 
 ## Projecting thresholds past the published years
 
-BLS does not age thresholds by a price index — each year is re-estimated from the rolling five-year CE window, so the published series moves with consumption as well as prices. We backtested three projection rules over 2020–2024, standing at each year's corrected prior-year base and scoring against the corrected actual (`scripts/backtest_threshold_projection.py`):
+BLS does not age thresholds by a price index — each year is re-estimated from the rolling five-year CE window, so the published series moves with consumption as well as prices. We backtested four executable projection rules over 2020–2024, standing at each year's corrected prior-year base and scoring against the corrected actual (`scripts/backtest_threshold_projection.py`). The tracked result, including annual errors and input provenance, is `spm_calculator/data/nowcast/backtest_2020_2024.json`.
 
 | Rule | Mean abs error/yr | Worst year |
 |---|---|---|
 | All-Items CPI-U aging (status quo in policyengine-us) | 2.23% | 3.99% (2023) |
-| FCSUti-composite CPI aging (realized) | 1.40% | 2.27% (2024) |
-| CE replication growth ratio | 1.58% | 2.73% (2023) |
-| **50/50 blend of the last two** | **1.35%** | **2.44% (2023)** |
+| FCSUti-composite CPI aging (realized) | 1.57% | 2.59% (2024) |
+| CE replication growth ratio | **0.41%** | **0.65% (2020)** |
+| 50/50 blend of the last two | 0.76% | 1.39% (2023) |
 
-Every rule was biased low in 2022–2024 — real FCSUti consumption growth and in-kind benefit changes are not captured by prices alone, and only partially by the five-year-window replication. The CPI rules use realized index values; a true forward forecast would also carry CPI-forecast error (2022's CPI surprise was ~5 points), which the replication ratio avoids entirely because CE microdata for a nowcast year is published before BLS's thresholds for that year.
+The price-aging rules were generally below the corrected actuals in the later backtest years because prices alone do not capture real FCSUti consumption growth or in-kind benefit changes. The CPI rules use realized index values; a true forward forecast would also carry CPI-forecast error (2022's CPI surprise was ~5 points), which the replication ratio avoids because CE microdata for a nowcast year is published before BLS's thresholds for that year. The repaired backtest ranks replication first; the blend remains the committed 2025 method because it was selected before that repair, and reselecting on a second look at five years would select on noise.
 
 The packaged **2025 nowcast** (`nowcast_thresholds(2025)`, `spm_calculator/data/nowcast/nowcast_2025.json`) applies the blend to the corrected 2024 base:
 
 | Tenure | Replication ratio | FCSUti CPI ratio | Blend | Nowcast 2025 |
 |---|---|---|---|---|
-| Owner w/ mortgage | 1.0607 | 1.0346 | 1.0476 | $41,099.57 |
-| Owner w/o mortgage | 1.0489 | 1.0346 | 1.0417 | $34,250.70 |
-| Renter | 1.0456 | 1.0346 | 1.0401 | $40,791.72 |
+| Owner w/ mortgage | 1.0599 | 1.0321 | 1.0460 | $41,036.34 |
+| Owner w/o mortgage | 1.0443 | 1.0321 | 1.0382 | $34,135.99 |
+| Renter | 1.0462 | 1.0321 | 1.0392 | $40,755.98 |
 
 Two data notes. 2025 CPI annual averages are 11-month means — BLS canceled the October 2025 CPI release during the federal shutdown. And computing the replicated 2025 threshold surfaced one more schema break: from the 2024Q2 files, CE replaces the `FOOD`/`FDHOME` summaries with `GROCER` (all grocery purchases, food and nonfood); food at home is 80% of `GROCER` per the BLS errata, the same allocation BLS uses for the official thresholds. Before the per-row vintage-aware construction, pooled windows silently zeroed food for redesign-era quarters and replicated 2025 thresholds *fell* 4–5% nominal — the same silent-schema-drift failure class as everything else on this page.
 
-BLS publishes actual 2025 thresholds around September 2026; the nowcast is superseded that day, and the miss will be recorded here.
+BLS published the actual 2025 thresholds on August 24, 2026. `nowcast_thresholds(2025)` deliberately preserves the table above for evaluation, emits a warning, and directs current calculations to `get_thresholds(2025)`.

@@ -169,7 +169,7 @@ The SPM uses the official Betson three-parameter scale:
 
 Packaged thresholds come from the official BLS workbook (bundled with recorded SHA-256, parsed by `scripts/build_threshold_series.py` — never hand-edited). Three series ship with the package:
 
-- `bls-corrected-2026-07-17` (default): the corrected series BLS published on July 17, 2026, full precision, 2005-2024, with standard errors and tenure shares
+- `bls-corrected-2026-07-17` (default): the corrected series BLS published on July 17, 2026, spliced to BLS's published 2025 continuation from the current workbook; full precision, 2005-2025, with standard errors and tenure shares
 - `census-published-pre-correction`: what every published 2019-2024 SPM statistic used, cross-verified against the Census P60 reports
 - `package-legacy-0.3`: values shipped in spm-calculator ≤ 0.3.1, retained for reproducibility (2019-2023 contained hand-entry errors of up to 8% — see [docs/bls-2026-correction.md](docs/bls-2026-correction.md))
 
@@ -179,7 +179,9 @@ Packaged thresholds come from the official BLS workbook (bundled with recorded S
 | Owner w/ mortgage | $39,231.00 | $39,231.00 |
 | Owner w/o mortgage | $32,878.59 | $32,878.59 |
 
-A weekly [drift-watch CI job](.github/workflows/bls-drift-watch.yaml) re-downloads the BLS workbook and opens an issue if the packaged series diverges. For 2025 — a year whose CE data and CPI are published but whose BLS thresholds are not — `nowcast_thresholds(2025)` provides a consumption-based nowcast (backtested at 1.35%/yr mean absolute error vs 2.23% for CPI-U aging; see [docs/bls-2026-correction.md](docs/bls-2026-correction.md)). The independent CE-PUMD replication reproduces official thresholds within 1-4.5% (no in-kind benefit imputation); measured fidelity by year is in [docs/bls-2026-correction.md](docs/bls-2026-correction.md).
+The full-precision BLS 2025 thresholds are $41,322.71 for owners with mortgages, $34,326.00 for owners without mortgages, and $41,700.56 for renters. The BLS publication page displays these as $41,323, $34,326, and $41,701.
+
+A weekly [drift-watch CI job](.github/workflows/bls-drift-watch.yaml) checks the frozen correction workbook, BLS's current workbook, and the rounded 2025 page table, opening an issue if the packaged series diverges. `get_thresholds(2025)` now returns published BLS values. The superseded `nowcast_thresholds(2025)` remains available as a historical forecasting commitment and warns callers to use the published series; its realized mean absolute error was 1.17%. The four-rule 2020-2024 backtest and the 2025 evaluation are recorded in [docs/bls-2026-correction.md](docs/bls-2026-correction.md). The independent CE-PUMD replication reproduces official threshold levels within 1-4.5% (without the in-kind benefit imputations); measured fidelity by year is documented there as well.
 
 Official metro thresholds are validated against [Census SPM Thresholds by Metro Area: 2024](https://www2.census.gov/programs-surveys/demo/tables/p60/287/SPM-pov-threshold-2024.xlsx) (pre-correction vintage; composed metro thresholds rescale onto the corrected national base until Census re-releases the workbook).
 
