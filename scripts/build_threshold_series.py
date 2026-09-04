@@ -232,9 +232,7 @@ def build_document() -> dict:
     _validate_complete(published, expected_published)
     _validate_complete(revised, expected_revised)
     _validate_complete(current_published, expected_published)
-    _validate_complete(
-        current_revised, set(str(y) for y in range(2019, 2026))
-    )
+    _validate_complete(current_revised, set(str(y) for y in range(2019, 2026)))
 
     # The permanent 2005--2024 source remains the correction-vintage
     # workbook. Refuse to regenerate if BLS's rolling workbook disagrees;
@@ -255,9 +253,9 @@ def build_document() -> dict:
         growth = (
             workbook_value / revised["2024"][tenure]["threshold"] - 1
         ) * 100
-        assert round(growth, 3) == page_2025["bls_stated_growth_percent"][
-            tenure
-        ], (tenure, growth)
+        assert (
+            round(growth, 3) == page_2025["bls_stated_growth_percent"][tenure]
+        ), (tenure, growth)
 
     doc = {
         "generated_by": "scripts/build_threshold_series.py",

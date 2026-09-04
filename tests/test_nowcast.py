@@ -33,7 +33,9 @@ class TestNowcast2025:
         with pytest.warns(UserWarning) as caught:
             values = nowcast_thresholds(2025)
         assert str(caught[0].message) == NOWCAST_SUPERSEDED_WARNING
-        assert {tenure: round(value, 2) for tenure, value in values.items()} == {
+        assert {
+            tenure: round(value, 2) for tenure, value in values.items()
+        } == {
             "owner_with_mortgage": 41036.34,
             "owner_without_mortgage": 34135.99,
             "renter": 40755.98,

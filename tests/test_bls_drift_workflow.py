@@ -2,10 +2,7 @@
 
 from pathlib import Path
 
-
-WORKFLOW = (
-    Path(__file__).parents[1] / ".github/workflows/bls-drift-watch.yaml"
-)
+WORKFLOW = Path(__file__).parents[1] / ".github/workflows/bls-drift-watch.yaml"
 
 
 def test_drift_workflow_preserves_checker_exit_status():
