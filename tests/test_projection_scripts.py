@@ -14,6 +14,16 @@ def test_nowcast_uses_tracked_cpi_store_by_default():
     assert "CUUR0000SEEE" not in store
 
 
+def test_nowcast_uses_frozen_historical_replication_inputs():
+    replicated, path = compute_nowcast_2025.load_replication_thresholds()
+
+    assert path == compute_nowcast_2025.REPLICATION_STORE
+    assert replicated[2024]["owner_with_mortgage"] == pytest.approx(
+        38062.370366534655
+    )
+    assert replicated[2025]["renter"] == pytest.approx(40280.4784303999)
+
+
 def test_backtest_uses_tracked_cpi_store_by_default():
     store, path = backtest_threshold_projection.load_cpi_store()
 
@@ -44,6 +54,26 @@ def test_benchmark_cpi_store_requires_explicit_opt_in(monkeypatch, tmp_path):
     assert nowcast_path == benchmark_path
     assert backtest_path == benchmark_path
     assert "CUUR0000SAF11" not in backtest_store
+
+
+def test_nowcast_script_reproduces_committed_values(monkeypatch, tmp_path):
+    output = tmp_path / "nowcast_2025.json"
+    monkeypatch.setattr(compute_nowcast_2025, "OUT", output)
+
+    compute_nowcast_2025.main()
+
+    doc = json.loads(output.read_text())
+    assert doc["cpi_store"] == "spm_calculator/data/bls/cpi_annual.json"
+    assert doc["replication_store"] == (
+        "spm_calculator/data/nowcast/replication_thresholds_2024_2025.json"
+    )
+    assert doc["values"] == pytest.approx(
+        {
+            "owner_with_mortgage": 41036.338840317025,
+            "owner_without_mortgage": 34135.986840756086,
+            "renter": 40755.97769114959,
+        }
+    )
 
 
 def _backtest_artifact():

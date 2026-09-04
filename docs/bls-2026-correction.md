@@ -54,7 +54,7 @@ Two conclusions follow. First, the package's own data errors were several times 
 
 - **Provenance-tracked series.** `scripts/build_threshold_series.py` is the only writer of the packaged data. It parses the frozen corrected 2005–2024 workbook and BLS's bundled current workbook, records both SHA-256 digests, and emits full-precision thresholds, standard errors, and tenure shares through 2025.
 - **Three bundled series.** `bls-corrected-2026-07-17` (default), `census-published-pre-correction` (what every published 2019–2024 SPM statistic used, cross-verified against two consecutive P60 reports per year), and `package-legacy-0.3` (verbatim, for reproducing results from earlier releases).
-- **Drift watch.** A weekly CI job re-downloads the BLS workbook and diffs it against the packaged series, opening an issue on divergence. Either failure mode above — ours or theirs — now surfaces within a week.
+- **Drift watch.** A weekly CI job checks the frozen corrected workbook, BLS's rolling current workbook, and the live 2025 Chart 1 data page against the packaged series, opening an issue on divergence. Either failure mode above — ours or theirs — now surfaces within a week.
 - **Replication fixes.** Benchmarking the CE-based replication against both reference series surfaced four bugs in our own methodology code, detailed below.
 
 ## Could an independent replication have caught the BLS bug?
@@ -99,6 +99,8 @@ BLS finalized the 2025 research SPM thresholds on August 24, 2026. The current w
 
 The package's committed nowcast is now an evaluation artifact rather than a current estimate. Against the full-precision actuals, it missed by −0.69%, −0.55%, and −2.27% respectively, for a **1.17% mean absolute error** across tenures. For comparison, aging the corrected 2024 base by CPI-U missed by 2.58%, the CE replication ratio alone missed by 0.75%, and the original pre-composite-repair nowcast missed by 0.98%. The renter estimate accounted for most of the committed nowcast's error.
 
+Reproduction uses a tracked snapshot of the 2024 and 2025 CE-replication levels that defined the original forecasting commitment. This intentionally preserves the estimate after later corrections to the package's general CE tenure mapping and validation rules; the snapshot is evaluation provenance, not a current-method CE result.
+
 ## Known approximations
 
 The CE replication remains approximate in four known ways:
@@ -131,6 +133,6 @@ The packaged **2025 nowcast** (`nowcast_thresholds(2025)`, `spm_calculator/data/
 | Owner w/o mortgage | 1.0443 | 1.0321 | 1.0382 | $34,135.99 |
 | Renter | 1.0462 | 1.0321 | 1.0392 | $40,755.98 |
 
-Two data notes. 2025 CPI annual averages are 11-month means — BLS canceled the October 2025 CPI release during the federal shutdown. And computing the replicated 2025 threshold surfaced one more schema break: from the 2024Q2 files, CE replaces the `FOOD`/`FDHOME` summaries with `GROCER` (all grocery purchases, food and nonfood); food at home is 80% of `GROCER` per the BLS errata, the same allocation BLS uses for the official thresholds. Before the per-row vintage-aware construction, pooled windows silently zeroed food for redesign-era quarters and replicated 2025 thresholds *fell* 4–5% nominal — the same silent-schema-drift failure class as everything else on this page.
+Two data notes. 2025 CPI annual averages are 11-month means — BLS canceled the October 2025 CPI release during the federal shutdown. And computing the replicated 2025 threshold surfaced one more schema break: from the 2024Q2 files, CE replaces the `FOOD`/`FDHOME` summaries with `GROCER` (all grocery purchases, food and nonfood). The package currently approximates food at home as 80% of all `GROCER`; as noted below, BLS applies the 80% factor only to UCC 790210, so this is not an exact replication. Before the per-row vintage-aware construction, pooled windows silently zeroed food for redesign-era quarters and replicated 2025 thresholds *fell* 4–5% nominal — the same silent-schema-drift failure class as everything else on this page.
 
 BLS published the actual 2025 thresholds on August 24, 2026. `nowcast_thresholds(2025)` deliberately preserves the table above for evaluation, emits a warning, and directs current calculations to `get_thresholds(2025)`.

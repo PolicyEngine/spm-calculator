@@ -1,4 +1,4 @@
-"""Compute the packaged 2025 threshold nowcast.
+"""Reproduce the packaged historical 2025 threshold nowcast.
 
 Method (committed via scripts/backtest_threshold_projection.py — mean
 absolute error 0.76%/yr over 2020-2024, vs 2.23% for All-Items CPI-U
@@ -10,9 +10,10 @@ corrected 2024 base, per tenure, the 50/50 blend of
   renormalized over available components; 2025 annual averages are
   11-month means because BLS canceled the October 2025 CPI release
   during the federal shutdown), and
-- the CE replication growth ratio: replicated 2025 / replicated 2024
-  thresholds, both computed with identical code over their BLS windows
-  (2020Q2-2025Q1 and 2019Q2-2024Q1) so level biases largely cancel.
+- the CE replication growth ratio from a tracked snapshot of the
+  replicated 2025 / replicated 2024 thresholds. The snapshot freezes the
+  original forecasting commitment so later corrections to the general CE
+  replication code cannot rewrite the estimate being evaluated.
 
 Writes spm_calculator/data/nowcast/nowcast_2025.json.
 
@@ -24,17 +25,11 @@ from __future__ import annotations
 
 import argparse
 import json
-import warnings
 from pathlib import Path
 
 import pandas as pd
 
 import spm_calculator.fcsuti_cpi as fcsuti_cpi
-from spm_calculator.ce_threshold import (
-    bls_quarter_window,
-    calculate_base_thresholds,
-    load_ce_quarters,
-)
 from spm_calculator.fcsuti_cpi import CPI_SERIES, FCSUTI_WEIGHTS
 from spm_calculator.forecast import get_thresholds
 
@@ -43,6 +38,13 @@ TRACKED_CPI_STORE = (
     REPO / "spm_calculator" / "data" / "bls" / "cpi_annual.json"
 )
 BENCHMARK_CPI_STORE = REPO / "benchmark_output" / "bls_cpi_series.json"
+REPLICATION_STORE = (
+    REPO
+    / "spm_calculator"
+    / "data"
+    / "nowcast"
+    / "replication_thresholds_2024_2025.json"
+)
 OUT = REPO / "spm_calculator" / "data" / "nowcast" / "nowcast_2025.json"
 
 TENURES = ("owner_with_mortgage", "owner_without_mortgage", "renter")
@@ -77,6 +79,24 @@ def install_cpi_disk_cache(store: dict) -> None:
     fcsuti_cpi.fetch_bls_cpi_series = cached
 
 
+def load_replication_thresholds() -> tuple[dict[int, dict[str, float]], Path]:
+    """Load the frozen inputs that define the historical commitment."""
+    doc = json.loads(REPLICATION_STORE.read_text())
+    thresholds = {
+        int(year): values for year, values in doc["thresholds"].items()
+    }
+    if set(thresholds) != {2024, 2025}:
+        raise ValueError(
+            "Committed replication store must contain 2024 and 2025"
+        )
+    for year, values in thresholds.items():
+        if set(values) != set(TENURES):
+            raise ValueError(
+                f"Committed replication store has invalid tenures for {year}"
+            )
+    return thresholds, REPLICATION_STORE
+
+
 def price_ratio(store: dict, year: int, base_year: int) -> float:
     """Composite ratio with each component rebased to base_year = 100
     before weighting (raw CPI levels have different reference bases;
@@ -104,17 +124,8 @@ def price_ratio(store: dict, year: int, base_year: int) -> float:
 def main(*, use_benchmark_store: bool = False) -> None:
     store, store_path = load_cpi_store(use_benchmark_store=use_benchmark_store)
     install_cpi_disk_cache(store)
-
-    replicated = {}
+    replicated, replication_path = load_replication_thresholds()
     for target in (2024, 2025):
-        ce = load_ce_quarters(bls_quarter_window(target))
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            replicated[target] = calculate_base_thresholds(
-                target_year=target,
-                ce=ce,
-                use_published_fallback=False,
-            )
         print(
             f"replicated {target}:",
             {k: round(v) for k, v in replicated[target].items()},
@@ -146,6 +157,7 @@ def main(*, use_benchmark_store: bool = False) -> None:
             {
                 "generated_by": "scripts/compute_nowcast_2025.py",
                 "cpi_store": str(store_path.relative_to(REPO)),
+                "replication_store": str(replication_path.relative_to(REPO)),
                 "superseded_by": {
                     "source": "BLS published 2025 SPM thresholds",
                     "series": "bls-published-2025",
@@ -173,11 +185,16 @@ def main(*, use_benchmark_store: bool = False) -> None:
                     "primary."
                 ),
                 "caveats": [
-                    "BLS publishes actual 2025 thresholds ~September "
-                    "2026; this nowcast is superseded the day they do.",
+                    "BLS published the actual 2025 thresholds on August "
+                    "24, 2026; this nowcast is retained only as a "
+                    "historical forecasting commitment.",
                     "2025 CPI annual averages are 11-month means "
                     "(October 2025 release canceled during the federal "
                     "shutdown).",
+                    "The CE replication levels are frozen at the original "
+                    "commitment vintage; they predate later corrections to "
+                    "the package's general-purpose CE tenure and input "
+                    "validation code.",
                     "Both price rules ran low in nearly every "
                     "backtest year (real FCSUti consumption growth "
                     "and in-kind benefit changes are not fully "
