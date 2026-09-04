@@ -13,6 +13,7 @@ from importlib import resources
 
 import pytest
 
+from scripts.build_threshold_series import build_document
 from spm_calculator.forecast import (
     DEFAULT_SERIES,
     LEGACY_SERIES,
@@ -22,6 +23,13 @@ from spm_calculator.forecast import (
     get_standard_errors,
     get_tenure_shares,
     get_thresholds,
+)
+
+TRUSTED_CORRECTED_WORKBOOK_SHA256 = (
+    "e7931a1f2540d52877d6fd14a8ed1e421e977a85c952ae1b6f690a04d904f2cb"
+)
+TRUSTED_CURRENT_WORKBOOK_SHA256 = (
+    "95f39fb5479ee5c196de627e06e10efd59af5148cf1c8466924e3fb2e5e2bd3b"
 )
 
 
@@ -46,15 +54,23 @@ class TestCorrectedSeries:
             2024, series=DEFAULT_SERIES
         )
 
-    def test_workbook_sha256_matches_bundled_file(self):
-        """The provenance SHA-256 must match the actual bundled
-        workbook — the JSON cannot silently drift from its source."""
+    def test_workbook_sha256_matches_trusted_literal(self):
+        """Neither the workbook nor its JSON stamp can redefine trust."""
         provenance = get_series_provenance()
         workbook = resources.files("spm_calculator").joinpath(
             "data/bls/spm_threshold_200524_corrected.xlsx"
         )
         digest = hashlib.sha256(workbook.read_bytes()).hexdigest()
-        assert provenance["sha256"] == digest
+        assert digest == TRUSTED_CORRECTED_WORKBOOK_SHA256
+        assert provenance["sha256"] == TRUSTED_CORRECTED_WORKBOOK_SHA256
+
+        current_workbook = resources.files("spm_calculator").joinpath(
+            "data/bls/spm_thresholds.xlsx"
+        )
+        current_digest = hashlib.sha256(
+            current_workbook.read_bytes()
+        ).hexdigest()
+        assert current_digest == TRUSTED_CURRENT_WORKBOOK_SHA256
 
     def test_2019_uses_revised_column(self):
         """The canonical splice takes the workbook's "2019 Revised"
@@ -181,10 +197,11 @@ class TestLegacySeries:
         assert "match" in note and "no BLS or Census publication" in note
 
     def test_json_is_regenerable(self):
-        """The packaged JSON must declare its generator so the next
-        revision is a regeneration, not archaeology."""
+        """Regeneration must deep-match every threshold, SE, and share."""
         ref = resources.files("spm_calculator").joinpath(
             "data/bls/threshold_series.json"
         )
-        doc = json.loads(ref.read_text())
-        assert doc["generated_by"] == "scripts/build_threshold_series.py"
+        packaged = json.loads(ref.read_text())
+        regenerated = build_document()
+        assert packaged["generated_by"] == "scripts/build_threshold_series.py"
+        assert regenerated == packaged
