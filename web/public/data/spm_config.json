@@ -102,34 +102,34 @@
       "renter": 39219.893902
     },
     "2025": {
-      "owner_with_mortgage": 41036.33884031702,
-      "owner_without_mortgage": 34135.98684075608,
-      "renter": 40755.97769114958
+      "owner_with_mortgage": 41322.707394,
+      "owner_without_mortgage": 34325.99772,
+      "renter": 41700.555713
     },
     "2026": {
-      "owner_with_mortgage": 41136.640012748765,
-      "owner_without_mortgage": 34475.6725927416,
-      "renter": 41125.000248289645
+      "owner_with_mortgage": 42273.12966406199,
+      "owner_without_mortgage": 35115.49566756,
+      "renter": 42659.668494399
     },
     "2027": {
-      "owner_with_mortgage": 42041.64609302924,
-      "owner_without_mortgage": 35234.13738978191,
-      "renter": 42029.75025375201
+      "owner_with_mortgage": 43203.13851667135,
+      "owner_without_mortgage": 35888.03657224631,
+      "renter": 43598.18120127577
     },
     "2028": {
-      "owner_with_mortgage": 42882.479014889825,
-      "owner_without_mortgage": 35938.820137577546,
-      "renter": 42870.34525882705
+      "owner_with_mortgage": 44067.20128700478,
+      "owner_without_mortgage": 36605.79730369124,
+      "renter": 44470.144825301286
     },
     "2029": {
-      "owner_with_mortgage": 43740.12859518762,
-      "owner_without_mortgage": 36657.5965403291,
-      "renter": 43727.7521640036
+      "owner_with_mortgage": 44948.54531274488,
+      "owner_without_mortgage": 37337.913249765064,
+      "renter": 45359.547721807314
     },
     "2030": {
-      "owner_with_mortgage": 44614.931167091374,
-      "owner_without_mortgage": 37390.74847113568,
-      "renter": 44602.30720728367
+      "owner_with_mortgage": 45847.51621899977,
+      "owner_without_mortgage": 38084.67151476036,
+      "renter": 46266.738676243454
     }
   },
   "methodology": {
@@ -148,9 +148,8 @@
     }
   },
   "forecast": {
-    "latestPublishedYear": 2024,
+    "latestPublishedYear": 2025,
     "cpiProjections": {
-      "2025": 0.025,
       "2026": 0.023,
       "2027": 0.022,
       "2028": 0.02,
@@ -158,38 +157,28 @@
       "2030": 0.02
     }
   },
-  "nowcast": {
+  "nowcast": {},
+  "nowcastEvaluation": {
     "2025": {
-      "generated_by": "scripts/compute_nowcast_2025.py",
-      "label": "PolicyEngine nowcast of 2025 SPM thresholds \u2014 NOT a BLS publication",
-      "method": "50/50 blend of realized FCSUti-composite CPI aging and CE replication growth ratio, applied to the corrected 2024 base. Selected by backtest over 2020-2024 (see docs/bls-2026-correction.md): mean absolute error 1.35%/yr vs 2.23% for All-Items CPI-U aging.",
-      "caveats": [
-        "BLS publishes actual 2025 thresholds ~September 2026; this nowcast is superseded the day they do.",
-        "2025 CPI annual averages are 11-month means (October 2025 release canceled during the federal shutdown).",
-        "All projection rules tested were biased low in 2022-2024 (real FCSUti consumption growth and in-kind benefit changes are not fully captured); the blend's backtest errors ranged -0.6% to -2.4% by year."
-      ],
-      "base_year": 2024,
-      "base_series": "bls-corrected-2026-07-17",
-      "values": {
-        "owner_with_mortgage": 41036.33884031702,
-        "owner_without_mortgage": 34135.98684075608,
-        "renter": 40755.97769114958
-      },
-      "components": {
+      "label": "Archived 2025 nowcast evaluation against published BLS thresholds",
+      "actual_series": "bls-published-2025",
+      "source_url": "https://www.bls.gov/pir/spm/spm_thresholds_2025.htm",
+      "mean_absolute_percentage_error": 1.170566081645456,
+      "tenures": {
         "owner_with_mortgage": {
-          "replication_ratio": 1.0598909421226619,
-          "price_ratio": 1.0321456941291063,
-          "blend_ratio": 1.046018318125884
+          "nowcast": 41036.338840317025,
+          "actual": 41322.707394,
+          "percentage_error": -0.6930053032405015
         },
         "owner_without_mortgage": {
-          "replication_ratio": 1.044341272456241,
-          "price_ratio": 1.0321456941291063,
-          "blend_ratio": 1.0382434832926737
+          "nowcast": 34135.986840756086,
+          "actual": 34325.99772,
+          "percentage_error": -0.5535480156872552
         },
         "renter": {
-          "replication_ratio": 1.046186174538761,
-          "price_ratio": 1.0321456941291063,
-          "blend_ratio": 1.0391659343339337
+          "nowcast": 40755.97769114959,
+          "actual": 41700.555713,
+          "percentage_error": -2.265144926008611
         }
       }
     }

@@ -21,9 +21,9 @@ export function makeCalculatorData(overrides = {}) {
         owner_without_mortgage: 32586,
       },
       "2025": {
-        renter: 40755.98,
-        owner_with_mortgage: 41036.34,
-        owner_without_mortgage: 34135.99,
+        renter: 41700.555713,
+        owner_with_mortgage: 41322.707394,
+        owner_without_mortgage: 34325.99772,
       },
     },
     methodology: {
@@ -42,25 +42,29 @@ export function makeCalculatorData(overrides = {}) {
       },
     },
     forecast: {
-      latestPublishedYear: 2024,
-      cpiProjections: { "2025": 0.025, "2026": 0.023 },
+      latestPublishedYear: 2025,
+      cpiProjections: { "2026": 0.023 },
     },
-    nowcast: {
+    nowcast: {},
+    nowcastEvaluation: {
       "2025": {
-        label:
-          "PolicyEngine nowcast of 2025 SPM thresholds — NOT a BLS publication",
-        base_year: 2024,
-        base_series: "bls-corrected-2026-07-17",
-        values: {
-          renter: 40755.98,
-          owner_with_mortgage: 41036.34,
-          owner_without_mortgage: 34135.99,
-        },
-        components: {
+        label: "Archived 2025 nowcast evaluation",
+        mean_absolute_percentage_error: 1.170566081645456,
+        tenures: {
           renter: {
-            replication_ratio: 1.04619,
-            price_ratio: 1.03215,
-            blend_ratio: 1.03917,
+            nowcast: 40755.98,
+            actual: 41700.555713,
+            percentage_error: -2.265144926008611,
+          },
+          owner_with_mortgage: {
+            nowcast: 41036.34,
+            actual: 41322.707394,
+            percentage_error: -0.6930053032405015,
+          },
+          owner_without_mortgage: {
+            nowcast: 34135.99,
+            actual: 34325.99772,
+            percentage_error: -0.5535480156872552,
           },
         },
       },

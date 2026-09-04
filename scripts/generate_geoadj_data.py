@@ -58,11 +58,12 @@ PAPER_URL = "https://spm-threshold-paper.vercel.app"
 
 
 def generate_all_thresholds():
-    """Published thresholds, the packaged nowcast, then price forecasts.
+    """Published thresholds, active nowcasts, then price forecasts.
 
-    Nowcast years use the consumption-based estimate (see
-    ``spm_calculator.nowcast``); remaining future years fall back to
-    the package's CPI-projection path.
+    Only nowcasts later than the latest published year are active. An
+    archived nowcast remains packaged for evaluation after BLS publishes
+    that year, but it must never replace the published threshold in the
+    web bundle.
     """
     all_thresholds = dict(HISTORICAL_THRESHOLDS)
     nowcast_years = set(get_nowcast_years())
@@ -74,6 +75,42 @@ def generate_all_thresholds():
         else:
             all_thresholds[str(year)] = forecast_thresholds(year)
     return all_thresholds
+
+
+def generate_nowcast_evaluations() -> dict[str, dict]:
+    """Compare superseded committed nowcasts with published BLS values."""
+    evaluations = {}
+    for year in get_nowcast_years():
+        if year > LATEST_PUBLISHED_YEAR:
+            continue
+
+        nowcast = nowcast_with_metadata(year)
+        actual = get_thresholds(year, allow_forecast=False)
+        tenures = {}
+        absolute_errors = []
+        for tenure, nowcast_value in nowcast["values"].items():
+            actual_value = actual[tenure]
+            percentage_error = (nowcast_value / actual_value - 1) * 100
+            absolute_errors.append(abs(percentage_error))
+            tenures[tenure] = {
+                "nowcast": nowcast_value,
+                "actual": actual_value,
+                "percentage_error": percentage_error,
+            }
+
+        superseded_by = nowcast.get("superseded_by", {})
+        evaluations[str(year)] = {
+            "label": (
+                f"Archived {year} nowcast evaluation against published "
+                "BLS thresholds"
+            ),
+            "actual_series": superseded_by.get("series"),
+            "source_url": superseded_by.get("source_url"),
+            "mean_absolute_percentage_error": sum(absolute_errors)
+            / len(absolute_errors),
+            "tenures": tenures,
+        }
+    return evaluations
 
 
 def _load_workbook_from_bytes(content: bytes):
@@ -182,14 +219,18 @@ def generate_data():
             "latestPublishedYear": LATEST_PUBLISHED_YEAR,
             "cpiProjections": {str(k): v for k, v in CPI_PROJECTIONS.items()},
         },
-        # Consumption-based nowcasts for years whose CE data and CPI are
-        # published but whose BLS thresholds are not. Carries the full
-        # packaged document (values, components, method, caveats, label)
-        # so UI disclaimers derive from the artifact.
+        # Consumption-based nowcasts only for years whose CE data and CPI
+        # are published but whose BLS thresholds are not. Archived
+        # nowcasts are excluded so published years cannot receive a
+        # nowcast badge or replace their BLS values.
         "nowcast": {
             str(year): nowcast_with_metadata(year)
             for year in get_nowcast_years()
+            if year > LATEST_PUBLISHED_YEAR
         },
+        # Evaluation is kept separately from active nowcasts: it records
+        # the historical forecasting commitment without mislabeling 2025.
+        "nowcastEvaluation": generate_nowcast_evaluations(),
         "paperUrl": PAPER_URL,
         # Web mirrors the Python rule: historical years (< earliest
         # bundled) must raise rather than silently apply current-year

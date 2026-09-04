@@ -141,6 +141,7 @@ export default function CalculatorWorkbench({ data }) {
     methodology,
     forecast,
     nowcast = {},
+    nowcastEvaluation = {},
     paperUrl,
     metroAreas,
     metroData,
@@ -192,6 +193,7 @@ export default function CalculatorWorkbench({ data }) {
     [year],
   );
   const yearNowcast = nowcast[year] ?? null;
+  const yearNowcastEvaluation = nowcastEvaluation[year] ?? null;
   const yearIsNowcast = Boolean(yearNowcast);
   const yearIsForecast =
     Number(year) > latestPublishedYear && !yearIsNowcast;
@@ -813,10 +815,7 @@ print(f"SPM threshold: \${threshold:,.0f}")`;
                         className="pt-1 text-xs text-muted-foreground"
                         data-testid="nowcast-disclaimer"
                       >
-                        {yearNowcast.label}. Blend of consumption growth
-                        from Consumer Expenditure microdata and composite
-                        price aging, backtested at 1.35% mean absolute
-                        error per year.{" "}
+                        {yearNowcast.label}. {yearNowcast.method}{" "}
                         {paperUrl && (
                           <a
                             className="underline"
@@ -827,6 +826,28 @@ print(f"SPM threshold: \${threshold:,.0f}")`;
                             Working paper
                           </a>
                         )}
+                      </p>
+                    )}
+                    {yearNowcastEvaluation && (
+                      <p
+                        className="pt-1 text-xs text-muted-foreground"
+                        data-testid="nowcast-evaluation"
+                      >
+                        {yearNowcastEvaluation.label}. For{" "}
+                        {selectedTenureLabel.toLowerCase()}, the archived
+                        estimate was{" "}
+                        {fmtCurrency(
+                          yearNowcastEvaluation.tenures[tenure].nowcast,
+                        )}
+                        ,{" "}
+                        {yearNowcastEvaluation.tenures[
+                          tenure
+                        ].percentage_error.toFixed(2)}
+                        % versus BLS; mean absolute error across tenures was{" "}
+                        {yearNowcastEvaluation.mean_absolute_percentage_error.toFixed(
+                          2,
+                        )}
+                        %.
                       </p>
                     )}
                   </div>
@@ -939,14 +960,15 @@ print(f"SPM threshold: \${threshold:,.0f}")`;
                   <li>
                     <strong>Base</strong>: BLS FCSUti thresholds for the
                     reference family (2 adults, 2 children), by tenure,
-                    from the corrected series BLS published July 17,
-                    2026, estimated over CE quarters {ceSurveyWindow}.
-                    National 2024 renter base ={" "}
+                    from BLS, estimated over CE quarters {ceSurveyWindow}.
+                    The 2019–2024 values use the corrected workbook BLS
+                    published July 17, 2026, and 2025 uses the current
+                    workbook published August 24, 2026. National 2025
+                    renter base ={" "}
                     <span className="font-mono">
-                      {fmtCurrency(baseThresholds["2024"].renter)}
+                      {fmtCurrency(baseThresholds["2025"].renter)}
                     </span>
-                    . 2025 values are a PolicyEngine nowcast, not a BLS
-                    publication.
+                    .
                   </li>
                   <li>
                     <strong>Equivalence scale</strong>: Betson
@@ -986,7 +1008,7 @@ print(f"SPM threshold: \${threshold:,.0f}")`;
                   >
                     P60-287
                   </a>
-                  . Corrected thresholds and 2025 nowcast:{" "}
+                  . Corrected thresholds and nowcast evaluation:{" "}
                   <a
                     className="underline"
                     href={paperUrl}

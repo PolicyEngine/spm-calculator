@@ -81,13 +81,23 @@ describe("CalculatorWorkbench", () => {
   });
 });
 
-describe("nowcast year", () => {
-  it("labels nowcast years in the year selector and shows the badge", () => {
-    render(<CalculatorWorkbench data={makeCalculatorData()} />);
+describe("published and nowcast years", () => {
+  it("keeps the nowcast label and disclaimer machinery for future years", () => {
+    const data = makeCalculatorData();
+    data.baseThresholds["2026"] = {
+      renter: 42660,
+      owner_with_mortgage: 42273,
+      owner_without_mortgage: 35116,
+    };
+    data.nowcast["2026"] = {
+      label: "PolicyEngine nowcast of 2026 thresholds — NOT a BLS publication",
+      method: "Illustrative consumption-growth method.",
+    };
+    render(<CalculatorWorkbench data={data} />);
 
-    const option = screen.getByRole("option", { name: "2025 (nowcast)" });
+    const option = screen.getByRole("option", { name: "2026 (nowcast)" });
     fireEvent.change(option.closest("select"), {
-      target: { value: "2025" },
+      target: { value: "2026" },
     });
 
     expect(screen.getAllByText(/Nowcast/).length).toBeGreaterThan(0);
@@ -98,8 +108,19 @@ describe("nowcast year", () => {
     ).toBeGreaterThan(0);
   });
 
-  it("does not show the nowcast disclaimer for published years", () => {
+  it("marks 2025 published and surfaces its archived evaluation", () => {
     render(<CalculatorWorkbench data={makeCalculatorData()} />);
+
+    expect(screen.getByRole("option", { name: "2025" })).not.toBeNull();
+    expect(
+      screen.queryByRole("option", { name: /2025 \(nowcast\)/ }),
+    ).toBeNull();
     expect(screen.queryByTestId("nowcast-disclaimer")).toBeNull();
+    expect(screen.queryByText("Nowcast — not BLS")).toBeNull();
+    expect(screen.getAllByText("Published").length).toBeGreaterThan(0);
+    const evaluation = screen.getByTestId("nowcast-evaluation");
+    expect(evaluation.textContent).toMatch(/\$40,756/);
+    expect(evaluation.textContent).toMatch(/-2\.27% versus BLS/);
+    expect(evaluation.textContent).toMatch(/1\.17%/);
   });
 });
