@@ -636,7 +636,7 @@ def _weighted_percentile(
 def calculate_base_thresholds(
     years: Optional[list[int]] = None,
     target_year: int = 2024,
-    use_published_fallback: bool = True,
+    use_published_fallback: bool = False,
     quarters: Optional[Sequence[tuple[int, int]]] = None,
     median_share: Optional[float] = None,
     mortgage_principal: str = "include",
@@ -664,19 +664,21 @@ def calculate_base_thresholds(
        indexes housing tenure. ``median_share`` defaults to 82%, the
        corrected anchor.
 
-    Survey weights (``FINLWT21``) are applied throughout. If loading
-    or any downstream step fails and ``use_published_fallback`` is
-    set, returns published BLS values for the target year when
-    available (2005-2024).
+    Survey weights (``FINLWT21``) are applied throughout. Loading and
+    calculation failures raise by default so a failed replication can
+    never look like an exact result. For legacy callers that explicitly
+    set ``use_published_fallback=True``, a failure returns published BLS
+    values for the target year when available and emits a warning.
 
     Args:
         years: Specific CE collection years to use (Q1-Q4 each).
             Overrides the default BLS quarter window; retained for
             backwards compatibility.
         target_year: The year these thresholds represent.
-        use_published_fallback: If True, fall back to the BLS
-            published-thresholds series when CE computation fails and
-            the target year has a published value.
+        use_published_fallback: Explicit legacy opt-in to fall back to
+            the BLS published-thresholds series when CE computation
+            fails and the target year has a published value. Defaults
+            to False so replication failures remain visible.
         quarters: Explicit ``(year, quarter)`` collection quarters.
             Overrides both ``years`` and the default window.
         median_share: Share of the median-range average defining the

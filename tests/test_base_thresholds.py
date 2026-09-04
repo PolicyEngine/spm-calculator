@@ -263,6 +263,31 @@ class TestCEThresholdMethodology:
                 use_published_fallback=False,
             )
 
+    def test_calculation_failure_raises_by_default(self):
+        """A failed replication must not masquerade as an exact match."""
+        import pandas as pd
+
+        import spm_calculator.ce_threshold as ce_threshold
+
+        with pytest.raises(ValueError, match="PERSLT18"):
+            ce_threshold.calculate_base_thresholds(
+                ce=pd.DataFrame({"CUTENURE": [4]}),
+                target_year=2024,
+            )
+
+    def test_published_fallback_requires_explicit_opt_in(self):
+        import pandas as pd
+
+        import spm_calculator.ce_threshold as ce_threshold
+
+        with pytest.warns(RuntimeWarning, match="using published BLS"):
+            result = ce_threshold.calculate_base_thresholds(
+                ce=pd.DataFrame({"CUTENURE": [4]}),
+                target_year=2024,
+                use_published_fallback=True,
+            )
+        assert result == ce_threshold.get_published_thresholds(2024)
+
     def test_calculate_base_thresholds_requires_finlwt21(self):
         import spm_calculator.ce_threshold as ce_threshold
 
