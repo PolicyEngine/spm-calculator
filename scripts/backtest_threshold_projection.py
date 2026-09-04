@@ -1,7 +1,7 @@
 """Backtest threshold-projection rules against the corrected series.
 
 For each target year T in 2020-2024, stand at the corrected T-1 base
-and project T three ways:
+and project T four ways:
 
 - ``cpi_u``: All-Items CPI-U annual-average ratio (what policyengine-us
   aging does today).
@@ -10,6 +10,8 @@ and project T three ways:
 - ``replication_ratio``: replicated_T / replicated_{T-1} from the CE
   replication (include/quarter4 variant; the 82/83 anchor cancels in
   the ratio), applied to the official T-1 base.
+- ``blend``: the 50/50 arithmetic mean of the FCSUti CPI factor and
+  tenure-specific replication factor, applied to the official T-1 base.
 
 Score: percent error vs the corrected actual, per tenure.
 
@@ -44,13 +46,28 @@ TRACKED_CPI_STORE = (
     REPO / "spm_calculator" / "data" / "bls" / "cpi_annual.json"
 )
 BENCHMARK_CPI_STORE = OUT_DIR / "bls_cpi_series.json"
+REPLICATION_RESULTS = OUT_DIR / "replication_results.json"
+TRACKED_RESULTS = (
+    REPO / "spm_calculator" / "data" / "nowcast" / "backtest_2020_2024.json"
+)
+BENCHMARK_RESULTS = OUT_DIR / "projection_backtest.json"
 
 TENURES = ("owner_with_mortgage", "owner_without_mortgage", "renter")
 TARGETS = range(2020, 2025)
 
 
+def load_cpi_store(*, use_benchmark_store: bool = False) -> tuple[dict, Path]:
+    """Return CPI series and their selected on-disk source."""
+    cpi_path = (
+        BENCHMARK_CPI_STORE if use_benchmark_store else TRACKED_CPI_STORE
+    )
+    cpi_doc = json.loads(cpi_path.read_text())
+    cpi = cpi_doc if use_benchmark_store else cpi_doc["series"]
+    return cpi, cpi_path
+
+
 def load_inputs(*, use_benchmark_store: bool = False):
-    results = json.loads((OUT_DIR / "replication_results.json").read_text())
+    results = json.loads(REPLICATION_RESULTS.read_text())
     replicated = {
         r["target_year"]: r["calculated"]
         for r in results
@@ -58,11 +75,7 @@ def load_inputs(*, use_benchmark_store: bool = False):
         and r["annualization"] == "quarter4"
         and r["anchor"] == "82"
     }
-    cpi_path = (
-        BENCHMARK_CPI_STORE if use_benchmark_store else TRACKED_CPI_STORE
-    )
-    cpi_doc = json.loads(cpi_path.read_text())
-    cpi = cpi_doc if use_benchmark_store else cpi_doc["series"]
+    cpi, _ = load_cpi_store(use_benchmark_store=use_benchmark_store)
     return replicated, cpi
 
 
@@ -99,9 +112,8 @@ def fcsuti_composite(cpi: dict, year: int) -> float:
     )
 
 
-def main(*, use_benchmark_store: bool = False) -> None:
-    replicated, cpi = load_inputs(use_benchmark_store=use_benchmark_store)
-
+def calculate_backtest(replicated: dict, cpi: dict) -> tuple[list, dict]:
+    """Execute all four projection rules and return rows plus MAEs."""
     rows = []
     for target in TARGETS:
         base = get_thresholds(target - 1, allow_forecast=False)
@@ -121,10 +133,124 @@ def main(*, use_benchmark_store: bool = False) -> None:
             t: base[t] * replicated[target][t] / replicated[target - 1][t]
             for t in TENURES
         }
+        projections["blend"] = {
+            t: base[t]
+            * (
+                factors["fcsuti_cpi"]
+                + replicated[target][t] / replicated[target - 1][t]
+            )
+            / 2
+            for t in TENURES
+        }
 
         for rule, projected in projections.items():
             errors = {t: projected[t] / actual[t] - 1.0 for t in TENURES}
-            rows.append({"target": target, "rule": rule, "errors": errors})
+            mean_abs = sum(abs(v) for v in errors.values()) / len(TENURES)
+            rows.append(
+                {
+                    "target": target,
+                    "rule": rule,
+                    "errors": errors,
+                    "mean_absolute_error": mean_abs,
+                }
+            )
+
+    grouped: dict[str, list[float]] = {}
+    for row in rows:
+        grouped.setdefault(row["rule"], []).append(row["mean_absolute_error"])
+    summary = {
+        rule: {
+            "mean_absolute_error": sum(values) / len(values),
+            "mean_absolute_error_percent": 100 * sum(values) / len(values),
+        }
+        for rule, values in grouped.items()
+    }
+    return rows, summary
+
+
+def build_results_document(
+    replicated: dict,
+    cpi: dict,
+    cpi_path: Path,
+) -> dict:
+    """Build the tracked, provenance-bearing backtest result."""
+    rows, summary = calculate_backtest(replicated, cpi)
+    cpi_doc = json.loads(cpi_path.read_text())
+    cpi_metadata = (
+        {
+            "generated_by": cpi_doc["generated_by"],
+            "retrieved": cpi_doc["retrieved"],
+            "note": cpi_doc["note"],
+        }
+        if "series" in cpi_doc
+        else {"note": "Explicitly selected git-ignored benchmark cache."}
+    )
+    return {
+        "generated_by": "scripts/backtest_threshold_projection.py",
+        "description": (
+            "Projection errors against corrected BLS SPM thresholds, "
+            "standing at each prior-year corrected base."
+        ),
+        "target_years": list(TARGETS),
+        "tenures": list(TENURES),
+        "score": (
+            "Mean absolute percentage error across three tenures, then "
+            "equally across target years 2020-2024."
+        ),
+        "rules": {
+            "cpi_u": "Prior-year base aged by realized All-Items CPI-U.",
+            "fcsuti_cpi": (
+                "Prior-year base aged by the realized static-weight "
+                "FCSUti CPI composite."
+            ),
+            "replication_ratio": (
+                "Prior-year base aged by the tenure-specific CE "
+                "replicated-threshold growth ratio."
+            ),
+            "blend": (
+                "Prior-year base aged by a 50/50 arithmetic blend of "
+                "the FCSUti CPI and tenure-specific replication factors."
+            ),
+        },
+        "provenance": {
+            "thresholds": {
+                "accessor": (
+                    "spm_calculator.forecast.get_thresholds"
+                    "(year, allow_forecast=False)"
+                ),
+                "series": "bls-corrected-2026-07-17",
+                "years": [2019, 2024],
+            },
+            "cpi": {
+                "path": str(cpi_path.relative_to(REPO)),
+                "rebase_year": REBASE_YEAR,
+                "component_series": {
+                    component: CPI_SERIES[component]
+                    for component in (*FCSUTI_WEIGHTS, "all_items")
+                },
+                **cpi_metadata,
+            },
+            "replication": {
+                "source": "scripts/benchmark_bls_replication.py",
+                "path": str(REPLICATION_RESULTS.relative_to(REPO)),
+                "selection": {
+                    "mortgage_principal": "include",
+                    "annualization": "quarter4",
+                    "anchor_percent": 82,
+                },
+                "selected_thresholds": {
+                    str(year): replicated[year] for year in range(2019, 2025)
+                },
+            },
+        },
+        "annual_results": rows,
+        "summary": summary,
+    }
+
+
+def render_markdown(doc: dict) -> str:
+    """Render the human-readable benchmark table from the JSON result."""
+    rows = doc["annual_results"]
 
     lines = [
         "# Threshold projection backtest",
@@ -136,30 +262,49 @@ def main(*, use_benchmark_store: bool = False) -> None:
         "| Year | Rule | Errors | Mean abs |",
         "|---|---|---|---|",
     ]
-    summary: dict[str, list[float]] = {}
     for row in rows:
         errs = row["errors"]
-        mean_abs = sum(abs(v) for v in errs.values()) / 3
-        summary.setdefault(row["rule"], []).append(mean_abs)
+        mean_abs = row["mean_absolute_error"]
         err_text = " / ".join(f"{errs[t]:+.2%}" for t in TENURES)
         lines.append(
             f"| {row['target']} | {row['rule']} | {err_text} "
             f"| {mean_abs:.2%} |"
         )
-        print(
-            f"{row['target']} {row['rule']:18s} {err_text}  "
-            f"mean|e| {mean_abs:.2%}"
-        )
 
     lines += ["", "| Rule | Mean abs error, 2020-2024 |", "|---|---|"]
-    print()
-    for rule, vals in summary.items():
-        overall = sum(vals) / len(vals)
+    for rule, result in doc["summary"].items():
+        overall = result["mean_absolute_error"]
         lines.append(f"| {rule} | {overall:.2%} |")
-        print(f"OVERALL {rule:18s} {overall:.2%}")
+    return "\n".join(lines) + "\n"
 
-    (OUT_DIR / "projection_backtest.md").write_text("\n".join(lines) + "\n")
-    print(f"\nWrote {OUT_DIR}/projection_backtest.md")
+
+def main(*, use_benchmark_store: bool = False) -> None:
+    replicated, cpi = load_inputs(use_benchmark_store=use_benchmark_store)
+    _, cpi_path = load_cpi_store(use_benchmark_store=use_benchmark_store)
+    doc = build_results_document(replicated, cpi, cpi_path)
+
+    for row in doc["annual_results"]:
+        err_text = " / ".join(
+            f"{row['errors'][tenure]:+.2%}" for tenure in TENURES
+        )
+        print(
+            f"{row['target']} {row['rule']:18s} {err_text}  "
+            f"mean|e| {row['mean_absolute_error']:.2%}"
+        )
+    print()
+    for rule, result in doc["summary"].items():
+        print(f"OVERALL {rule:18s} {result['mean_absolute_error']:.2%}")
+
+    OUT_DIR.mkdir(exist_ok=True)
+    markdown_path = OUT_DIR / "projection_backtest.md"
+    markdown_path.write_text(render_markdown(doc))
+    results_path = (
+        BENCHMARK_RESULTS if use_benchmark_store else TRACKED_RESULTS
+    )
+    results_path.parent.mkdir(parents=True, exist_ok=True)
+    results_path.write_text(json.dumps(doc, indent=2) + "\n")
+    print(f"\nWrote {markdown_path}")
+    print(f"Wrote {results_path}")
 
 
 if __name__ == "__main__":
