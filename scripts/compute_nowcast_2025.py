@@ -18,7 +18,7 @@ corrected 2024 base, per tenure, the 50/50 blend of
 Writes spm_calculator/data/nowcast/nowcast_2025.json.
 
 Usage:
-    uv run --with curl-cffi python scripts/compute_nowcast_2025.py
+    python scripts/compute_nowcast_2025.py
 """
 
 from __future__ import annotations
@@ -27,9 +27,6 @@ import argparse
 import json
 from pathlib import Path
 
-import pandas as pd
-
-import spm_calculator.fcsuti_cpi as fcsuti_cpi
 from spm_calculator.fcsuti_cpi import CPI_SERIES, FCSUTI_WEIGHTS
 from spm_calculator.forecast import get_thresholds
 
@@ -60,23 +57,6 @@ def load_cpi_store(*, use_benchmark_store: bool = False) -> tuple[dict, Path]:
     path = BENCHMARK_CPI_STORE if use_benchmark_store else TRACKED_CPI_STORE
     doc = json.loads(path.read_text())
     return (doc if use_benchmark_store else doc["series"]), path
-
-
-def install_cpi_disk_cache(store: dict) -> None:
-    original = fcsuti_cpi.fetch_bls_cpi_series
-
-    def cached(series_id, start_year=2010, end_year=2024, **kwargs):
-        if series_id not in store:
-            return original(series_id, start_year, end_year, **kwargs)
-        series = pd.Series(
-            {int(y): v for y, v in store[series_id].items()},
-            name=series_id,
-        ).sort_index()
-        return series[
-            (series.index >= start_year) & (series.index <= end_year)
-        ]
-
-    fcsuti_cpi.fetch_bls_cpi_series = cached
 
 
 def load_replication_thresholds() -> tuple[dict[int, dict[str, float]], Path]:
@@ -123,7 +103,6 @@ def price_ratio(store: dict, year: int, base_year: int) -> float:
 
 def main(*, use_benchmark_store: bool = False) -> None:
     store, store_path = load_cpi_store(use_benchmark_store=use_benchmark_store)
-    install_cpi_disk_cache(store)
     replicated, replication_path = load_replication_thresholds()
     for target in (2024, 2025):
         print(
