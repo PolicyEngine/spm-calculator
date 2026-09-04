@@ -99,6 +99,17 @@ BLS finalized the 2025 research SPM thresholds on August 24, 2026. The current w
 
 The package's committed nowcast is now an evaluation artifact rather than a current estimate. Against the full-precision actuals, it missed by −0.69%, −0.55%, and −2.27% respectively, for a **1.17% mean absolute error** across tenures. For comparison, aging the corrected 2024 base by CPI-U missed by 2.58%, the CE replication ratio alone missed by 0.75%, and the original pre-composite-repair nowcast missed by 0.98%. The renter estimate accounted for most of the committed nowcast's error.
 
+## Known approximations
+
+The CE replication remains approximate in four known ways:
+
+- It deflates each interview with an annual-average FCSUti CPI keyed to collection year rather than BLS's quarterly treatment of the terminal Q1.
+- It applies the 80% food allocation to the combined FMLI `GROCER` summary rather than UCC 790210 alone.
+- It omits home-internet expenditures because FMLI has no matching summary.
+- It omits BLS's in-kind imputations for broadband, LIHEAP, NSLP, WIC, and rental assistance.
+
+These are deferred to the 2026-method issue and are not changed in this correction branch. Separately, the bundled metro geographic adjustments still derive from the pre-correction Census metro workbook; composed metro thresholds rescale that workbook onto the corrected national base until Census re-releases it.
+
 ## Projecting thresholds past the published years
 
 BLS does not age thresholds by a price index — each year is re-estimated from the rolling five-year CE window, so the published series moves with consumption as well as prices. We backtested four executable projection rules over 2020–2024, standing at each year's corrected prior-year base and scoring against the corrected actual (`scripts/backtest_threshold_projection.py`). The tracked result, including annual errors and input provenance, is `spm_calculator/data/nowcast/backtest_2020_2024.json`.

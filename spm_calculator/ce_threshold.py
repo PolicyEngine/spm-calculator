@@ -19,12 +19,22 @@ Independent replication of the BLS revised-methodology thresholds
    ``median_share=MEDIAN_SHARE_PRE_CORRECTION`` to reproduce the
    pre-correction anchor.
 
-Known replication gaps (documented, not silently ignored): BLS adds
-imputed in-kind benefits (broadband, LIHEAP, NSLP, WIC, rental
-assistance) to consumer-unit FCSUti before estimating the thresholds;
-this module does not impute them, which biases replicated levels
-downward. See docs/bls-2026-correction.md for measured fidelity by
-year.
+Known approximations (documented, not silently ignored):
+
+- Inflation adjustment uses annual-average FCSUti CPI keyed to each
+  interview's collection year. BLS applies quarterly treatment to the
+  interview quarters, including the terminal Q1, so this shortcut can
+  move replicated nominal levels.
+- For post-redesign rows, the code applies the 80% food allocation to
+  the combined FMLI ``GROCER`` summary. BLS applies 80% to UCC 790210
+  alone, so these constructions are not identical.
+- Home-internet expenditures are omitted because FMLI has no matching
+  summary variable.
+- BLS adds imputed in-kind benefits (broadband, LIHEAP, NSLP, WIC,
+  rental assistance) to consumer-unit FCSUti; this module does not
+  impute them, which biases replicated levels downward.
+
+See docs/bls-2026-correction.md for measured fidelity by year.
 
 Reference:
 - Corrected thresholds: https://www.bls.gov/pir/spm/spm_thresholds_2024_correction.htm
@@ -66,13 +76,11 @@ MEDIAN_SHARE_PRE_CORRECTION = 0.83
 _PRINCIPAL_MODES = ("exclude", "include")
 _ANNUALIZATION_MODES = ("quarter4", "pqcq2")
 
-# Share of "all grocery purchases" (UCC 790210, food and nonfood
-# combined) allocated to food at home for CE vintages after the April
-# 2023 food-question redesign. BLS's FMLI Food at Home errata
-# (September 2024) sets this to 80%, "using the 2022 proportion of the
-# total expense of grocery store purchases to food purchased at grocery
-# stores"; BLS applies the same allocation in producing the official
-# 2024+ SPM thresholds.
+# Share allocated to food at home for CE vintages after the April 2023
+# food-question redesign. BLS's FMLI Food at Home errata (September
+# 2024) applies 80% to UCC 790210 alone. This FMLI-summary replication
+# instead applies it to the combined ``GROCER`` summary, a documented
+# approximation to (not an exact implementation of) the BLS treatment.
 FOOD_AT_HOME_GROCERY_SHARE = 0.80
 
 # FMLI mortgage-principal outlay columns (owned home + owned vacation
@@ -387,8 +395,9 @@ def _food_expenditure(df: pd.DataFrame) -> pd.Series:
     window mixes schemas row by row. Construction, per row:
 
     - rows carrying ``GROCER`` data (redesign vintages): food =
-      :data:`FOOD_AT_HOME_GROCERY_SHARE` x GROCER + FDAWAY, the BLS
-      errata allocation used for the official 2024+ thresholds;
+      :data:`FOOD_AT_HOME_GROCERY_SHARE` x GROCER + FDAWAY. This applies
+      the 80% factor to the combined FMLI summary, whereas BLS applies
+      it to UCC 790210 alone; it is therefore an approximation;
     - otherwise, the legacy ``FOOD`` summary when its columns exist,
       falling back to ``FDHOME + FDAWAY``.
 
@@ -451,7 +460,8 @@ def calculate_fcsuti(
 
     - ``FOOD`` (falling back to ``FDHOME + FDAWAY`` for vintages after
       the 2023 CE food-question redesign that drop the ``FOOD``
-      summary).
+      summary). For ``GROCER`` rows, see :func:`_food_expenditure` for
+      the documented approximation to BLS's UCC 790210 allocation.
     - ``APPAR`` apparel and services.
     - ``SHELT`` shelter. CE's expenditure concept excludes owner
       mortgage principal; ``mortgage_principal="include"`` (default)
@@ -466,8 +476,9 @@ def calculate_fcsuti(
       but the FCSUti *sum* is unchanged.)
 
     Home internet ("computer information services") has no FMLI
-    summary variable and is not included; this is a known replication
-    gap of roughly 1-2% of FCSUti.
+    summary variable and is omitted. Imputed in-kind benefits are also
+    added by BLS downstream but are not constructed in this module.
+    Both omissions lower replicated FCSUti levels.
 
     Args:
         df: CE Survey FMLI DataFrame (one row per CU-interview)
@@ -653,8 +664,9 @@ def calculate_base_thresholds(
     2. Restrict to consumer units with at least one child under 18.
     3. Compute FCSUti per CU (see :func:`calculate_fcsuti` for the
        mortgage-principal and annualization options).
-    4. Inflate each CU's FCSUti to the target year using the FCSUti
-       composite CPI index.
+    4. Inflate each CU's FCSUti to the target year using annual-average
+       FCSUti CPI keyed to its collection year. This is an approximation
+       to BLS's quarterly treatment, notably for the terminal Q1.
     5. Normalize to the 2-adult, 2-child reference family via the
        Betson three-parameter equivalence scale.
     6. Apply the BLS threshold formula over the estimation subsample E
