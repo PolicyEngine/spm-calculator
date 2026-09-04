@@ -113,12 +113,29 @@ class TestCalculateFCSUti:
 
 
 class TestGetTenureType:
-    def test_modern_cutenure_codes_split_owners(self):
-        """Post-2013 FMLI: 1=owner w/mortgage, 2=owner w/o, 3=renter."""
+    def test_six_code_schema(self):
+        """The CE dictionary has one six-code tenure schema."""
         df = pd.DataFrame(
             {
-                "CUTENURE": [1, 2, 3, 4],
-                "ce_year": [2020, 2020, 2020, 2020],
+                "CUTENURE": [1, 2, 3, 4, 5, 6],
+                "ce_year": [1999, 2005, 2010, 2013, 2020, 2024],
+            }
+        )
+        tenure = get_tenure_type(df)
+        assert tenure.iloc[:4].tolist() == [
+            "owner_with_mortgage",
+            "owner_without_mortgage",
+            "owner_with_mortgage",  # Owner, mortgage status unreported.
+            "renter",
+        ]
+        assert tenure.iloc[4:].isna().all()
+
+    def test_schema_does_not_depend_on_year_or_observed_codes(self):
+        """There is no 2013 schema break or observed-code heuristic."""
+        df = pd.DataFrame(
+            {
+                "CUTENURE": [1, 2, 4, 1, 2, 4],
+                "ce_year": [1999, 1999, 1999, 2024, 2024, 2024],
             }
         )
         tenure = get_tenure_type(df)
@@ -126,65 +143,19 @@ class TestGetTenureType:
             "owner_with_mortgage",
             "owner_without_mortgage",
             "renter",
-            "renter",  # Occupied without payment defaults to renter.
-        ]
-
-    def test_legacy_cutenure_uses_mortgage_expenditure(self):
-        """Pre-2013 vintages only split owners (1) vs renters (2)."""
-        df = pd.DataFrame(
-            {
-                # No row uses the modern code 2 for owner-without; the
-                # branch falls back to mortgage-expenditure detection.
-                "CUTENURE": [1, 1, 2],
-                "ce_year": [2010, 2010, 2010],
-                "EMRTPNOP": [500, 0, 0],
-                "EMRTPNOC": [500, 0, 0],
-                "MRTINTPQ": [0, 0, 0],
-                "MRTINTCQ": [0, 0, 0],
-            }
-        )
-        tenure = get_tenure_type(df)
-        assert tenure.tolist() == [
             "owner_with_mortgage",
             "owner_without_mortgage",
             "renter",
         ]
 
-    def test_owners_only_modern_subset_labels_by_schema_not_observed_codes(
-        self,
-    ):
-        """Regression: filtering a modern CE vintage down to owners-only
-        (CUTENURE ∈ {1, 2}) used to trip the observed-code heuristic
-        (`(cutenure >= 3).any() == False`) and misclassify rows as
-        legacy-schema, relabelling `CUTENURE == 2` as renter. With
-        schema derived from `ce_year`, owners-only subsets on the modern
-        schema classify correctly."""
-        df = pd.DataFrame(
-            {
-                "CUTENURE": [1, 2, 1, 2],
-                "ce_year": [2020, 2020, 2020, 2020],
-            }
-        )
-        tenure = get_tenure_type(df)
-        assert tenure.tolist() == [
-            "owner_with_mortgage",
-            "owner_without_mortgage",
-            "owner_with_mortgage",
-            "owner_without_mortgage",
-        ]
+    @pytest.mark.parametrize("value", [0, 7, np.nan, "unknown"])
+    def test_undocumented_code_raises(self, value):
+        with pytest.raises(ValueError, match="CUTENURE"):
+            get_tenure_type(pd.DataFrame({"CUTENURE": [value]}))
 
-    def test_mixed_vintage_raises_on_schema_ambiguity(self):
-        """Mixing pre-2013 and post-2013 rows in a single frame would
-        apply the wrong CUTENURE interpretation to at least one side;
-        we refuse rather than silently coerce."""
-        df = pd.DataFrame(
-            {
-                "CUTENURE": [1, 2],
-                "ce_year": [2010, 2020],
-            }
-        )
-        with pytest.raises(ValueError, match="mixes pre-2013 and post-2013"):
-            get_tenure_type(df)
+    def test_missing_cutenure_raises(self):
+        with pytest.raises(ValueError, match="CUTENURE"):
+            get_tenure_type(pd.DataFrame(index=[0]))
 
 
 class TestWeightedPercentile:

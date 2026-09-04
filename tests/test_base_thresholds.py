@@ -151,7 +151,7 @@ class TestCEThresholdMethodology:
 
         return pd.DataFrame(
             {
-                "CUTENURE": [3, 3, 3],
+                "CUTENURE": [4, 4, 4],
                 "PERSLT18": [2, 2, 2],
                 "FAM_SIZE": [4, 4, 4],
                 "ce_year": [2023, 2023, 2023],
@@ -190,6 +190,39 @@ class TestCEThresholdMethodology:
         # 2A2C renter, so SU terms cancel and the formula reduces to
         # 0.82 * 1.2 * FCSUti = 0.82 * 1.2 * (200 + 600) * 4.
         assert results[1.0]["renter"] == pytest.approx(0.82 * 1.2 * 3200)
+
+    def test_calculate_base_thresholds_excludes_non_spm_tenures(
+        self, monkeypatch
+    ):
+        """Cash-rent-free and student-housing CUs must not affect the
+        pooled percentile band or any tenure-specific threshold."""
+        import pandas as pd
+
+        import spm_calculator.ce_threshold as ce_threshold
+
+        monkeypatch.setattr(
+            ce_threshold,
+            "get_fcsuti_inflation_factor",
+            lambda from_year, to_year, weights=None: 1.0,
+        )
+        baseline = self._renter_sample()
+        excluded = baseline.iloc[:2].copy()
+        excluded["CUTENURE"] = [5, 6]
+        excluded["FOODPQ"] = [1_000_000.0, 2_000_000.0]
+        excluded["FINLWT21"] = [1_000_000.0, 2_000_000.0]
+
+        expected = ce_threshold.calculate_base_thresholds(
+            ce=baseline,
+            target_year=2024,
+            use_published_fallback=False,
+        )
+        actual = ce_threshold.calculate_base_thresholds(
+            ce=pd.concat([baseline, excluded], ignore_index=True),
+            target_year=2024,
+            use_published_fallback=False,
+        )
+
+        assert actual == pytest.approx(expected)
 
     def test_calculate_base_thresholds_requires_perslt18(self, monkeypatch):
         """Regression: without `PERSLT18`, the old fallback

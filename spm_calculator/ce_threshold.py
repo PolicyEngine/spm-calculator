@@ -453,92 +453,79 @@ def calculate_fcsuti(
     return total * factor
 
 
-MODERN_CUTENURE_YEAR = 2013
-
-
 def get_tenure_type(df: pd.DataFrame) -> pd.Series:
     """Determine housing tenure type (renter, owner_with_mortgage,
     owner_without_mortgage) from CE FMLI data.
 
-    CUTENURE codes (post-2013):
-        1 = Owned with mortgage
-        2 = Owned without mortgage
-        3 = Rented
-        4 = Occupied without payment
-        5 = Student housing
+    The BLS CE Interview PUMD dictionary defines one six-code schema
+    throughout the years used here (and documents the same schema as
+    early as 1999):
 
-    BLS expanded the CUTENURE codes in 2013 to split owners by mortgage
-    status. Schema is detected from ``ce_year`` — previously we looked
-    at observed codes (``(cutenure >= 3).any()``), which silently fell
-    into the legacy branch whenever a caller happened to filter to an
-    owners-only subset and re-labelled `CUTENURE == 2` rows as renters
-    even though the modern schema calls them owners-without-mortgage.
+    1. owned with mortgage;
+    2. owned without mortgage;
+    3. owned, mortgage status not reported;
+    4. rented;
+    5. occupied without payment of cash rent; and
+    6. student housing.
 
-    For legacy (pre-2013) vintages, owner-vs-owner-with-mortgage is
-    derived from mortgage interest/principal expenditure.
+    Source: BLS, *Dictionary for Interview and Diary Surveys*,
+    https://www.bls.gov/cex/pumd/ce-pumd-interview-diary-dictionary.xlsx
+    (the archived 1999 dictionary carries the same codes at
+    https://www.bls.gov/cex/1999/cex/csxintvw.pdf).
+
+    The dictionary establishes that code 3 is an owner but does not say
+    which of the two SPM owner groups receives an owner whose mortgage
+    status is unknown. We assign code 3 to ``owner_with_mortgage``: an
+    affirmative no-mortgage report is required for the lower-cost
+    ``owner_without_mortgage`` group. Codes 5 and 6 are excluded (NA),
+    because neither identifies one of the three published SPM tenure
+    groups; in particular, code 5 is not evidence of ownership and code
+    6 identifies student housing rather than a renter CU. Unknown codes
+    raise rather than silently defaulting to renter.
+
+    Level sensitivity: moving code 3 to the no-mortgage group changes
+    the tenure-specific shelter/utilities mean for both owner thresholds.
+    Including codes 5 or 6 changes the pooled percentile band as well as
+    the affected tenure mean, so it can change all three replicated
+    threshold levels. These choices therefore belong in replication
+    provenance, not an implicit fallback.
 
     Args:
-        df: CE Survey FMLI DataFrame. Must contain ``CUTENURE``; for
-            ambiguous vintages (pre-2013) it must also contain
-            ``ce_year`` so the schema can be resolved at load time
-            rather than from observed codes.
+        df: CE Survey FMLI DataFrame. Must contain ``CUTENURE``.
 
     Returns:
-        Series of tenure strings aligned with ``df.index``.
+        Series of tenure strings aligned with ``df.index``. Codes 5 and
+        6 are represented by missing values so callers can exclude them.
+
+    Raises:
+        ValueError: If ``CUTENURE`` is missing or contains a value
+            outside the documented six-code schema.
     """
-    tenure = pd.Series("renter", index=df.index, dtype=object)
-    cutenure = df["CUTENURE"]
+    if "CUTENURE" not in df.columns:
+        raise ValueError("CE data is missing the required 'CUTENURE' column")
 
-    if "ce_year" in df.columns and len(df) > 0:
-        ce_year = df["ce_year"]
-        is_modern_schema = (ce_year.astype(int) >= MODERN_CUTENURE_YEAR).all()
-        if (
-            not is_modern_schema
-            and not (ce_year.astype(int) < MODERN_CUTENURE_YEAR).all()
-        ):
-            raise ValueError(
-                "Dataset mixes pre-2013 and post-2013 CE vintages "
-                "(CUTENURE schema changed in 2013). Split by `ce_year` "
-                "before calling `get_tenure_type`."
-            )
-    elif len(df) == 0:
-        # Empty frame: schema is irrelevant, return the empty series.
-        return tenure
-    else:
-        # No `ce_year` column: fall back to the legacy observed-code
-        # heuristic with an explicit warning, since that's the only
-        # signal left. This path is only for ad-hoc callers passing
-        # bare CE frames; the PUMD download path always annotates
-        # `ce_year`.
-        warnings.warn(
-            "get_tenure_type called without `ce_year` column; falling "
-            "back to observed-code schema detection, which misclassifies "
-            "owners-only subsets on the modern schema. Pass a `ce_year` "
-            "column to disambiguate.",
-            RuntimeWarning,
-            stacklevel=2,
+    try:
+        cutenure = pd.to_numeric(df["CUTENURE"], errors="raise")
+    except (TypeError, ValueError) as error:
+        raise ValueError(
+            "CUTENURE must contain only BLS housing-tenure codes 1-6"
+        ) from error
+
+    valid = cutenure.isin(range(1, 7))
+    if not valid.all():
+        invalid = sorted({repr(value) for value in df.loc[~valid, "CUTENURE"]})
+        raise ValueError(
+            "CUTENURE contains values outside the BLS six-code schema: "
+            f"{invalid}"
         )
-        is_modern_schema = (cutenure >= 3).any()
 
-    if is_modern_schema:
-        # 1 = owner w/ mortgage, 2 = owner w/o, 3 = renter.
-        tenure[cutenure == 1] = "owner_with_mortgage"
-        tenure[cutenure == 2] = "owner_without_mortgage"
-        tenure[cutenure == 3] = "renter"
-    else:
-        # Legacy CUTENURE where only owners (1) and renters (2) are split.
-        # Detect mortgage status from expenditure presence.
-        is_owner = cutenure == 1
-        is_renter = cutenure == 2
-        mortgage_activity = _sum_pair(df, "EMRTPNOP", "EMRTPNOC") + _sum_pair(
-            df, "MRTINTPQ", "MRTINTCQ"
-        )
-        has_mortgage = is_owner & (mortgage_activity > 0)
-        tenure[is_renter] = "renter"
-        tenure[is_owner & has_mortgage] = "owner_with_mortgage"
-        tenure[is_owner & ~has_mortgage] = "owner_without_mortgage"
-
-    return tenure
+    mapping = {
+        1: "owner_with_mortgage",
+        2: "owner_without_mortgage",
+        3: "owner_with_mortgage",
+        4: "renter",
+    }
+    return cutenure.map(mapping).astype(object)
 
 
 def _weighted_percentile(
@@ -680,6 +667,18 @@ def calculate_base_thresholds(
         if len(ce) == 0:
             raise ValueError("No consumer units with children found")
 
+        # CUTENURE 5 (occupied without cash rent) and 6 (student
+        # housing) do not identify one of the three published SPM
+        # tenure groups. ``get_tenure_type`` marks them missing; remove
+        # them before deriving weights or the pooled percentile band so
+        # exclusion means exclusion from the replication sample.
+        ce["tenure_type"] = get_tenure_type(ce)
+        ce = ce[ce["tenure_type"].notna()].copy()
+        if len(ce) == 0:
+            raise ValueError(
+                "No consumer units in a published SPM tenure group found"
+            )
+
         ce["fcsuti"] = calculate_fcsuti(
             ce,
             mortgage_principal=mortgage_principal,
@@ -755,8 +754,6 @@ def calculate_base_thresholds(
             * ce["inflation_factor"]
             * (REFERENCE_RAW_SCALE / ce["equiv_scale"])
         )
-
-        ce["tenure_type"] = get_tenure_type(ce)
 
         # CE survey weights. FMLI publishes FINLWT21 as the calibrated
         # CU weight. If a vintage is missing it, fall back to uniform.
