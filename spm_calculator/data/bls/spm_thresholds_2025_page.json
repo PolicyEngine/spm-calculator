@@ -1,0 +1,21 @@
+{
+  "source_url": "https://www.bls.gov/pir/spm/spm_thresholds_2025.htm",
+  "retrieved": "2026-09-04",
+  "page_last_modified": "2026-08-24",
+  "precision": "whole dollars from the BLS page; full-precision values come from the current BLS workbook bundled as spm_thresholds.xlsx",
+  "thresholds": {
+    "owner_with_mortgage": 41323,
+    "owner_without_mortgage": 34326,
+    "renter": 41701
+  },
+  "bls_stated_growth_percent": {
+    "owner_with_mortgage": 5.332,
+    "owner_without_mortgage": 4.402,
+    "renter": 6.325
+  },
+  "page_2024_thresholds": {
+    "owner_with_mortgage": 39231,
+    "owner_without_mortgage": 32879,
+    "renter": 39220
+  }
+}

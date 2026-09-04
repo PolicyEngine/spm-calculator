@@ -24,6 +24,7 @@ from spm_calculator.forecast import (
     calculate_cumulative_inflation,
     forecast_thresholds,
     get_threshold_with_metadata,
+    get_thresholds,
 )
 
 
@@ -95,6 +96,33 @@ class TestForecastPrecision:
         package stored whole-dollar approximations.)"""
         values = forecast_thresholds(LATEST_PUBLISHED_YEAR)
         assert any(amount != int(amount) for amount in values.values())
+
+
+class TestPublished2025:
+    def test_latest_published_year_is_2025(self):
+        assert LATEST_PUBLISHED_YEAR == 2025
+
+    def test_get_thresholds_returns_bls_workbook_values(self):
+        assert get_thresholds(2025, allow_forecast=False) == pytest.approx(
+            {
+                "owner_with_mortgage": 41322.707394,
+                "owner_without_mortgage": 34325.99772,
+                "renter": 41700.555713,
+            }
+        )
+
+    def test_metadata_identifies_published_2025_segment(self):
+        metadata = get_threshold_with_metadata(2025, allow_forecast=False)
+        assert metadata["source"] == "published"
+        assert metadata["series"] == "bls-corrected-2026-07-17"
+        assert metadata["segment"] == "bls-published-2025"
+        assert metadata["segment_provenance"]["retrieved"] == "2026-09-04"
+
+    def test_2026_forecast_compounds_from_published_2025(self):
+        forecast = forecast_thresholds(2026)
+        base = get_thresholds(2025, allow_forecast=False)
+        for tenure, value in forecast.items():
+            assert value == pytest.approx(base[tenure] * 1.023)
 
 
 def test_cpi_projections_end_year_referenced_in_warning():

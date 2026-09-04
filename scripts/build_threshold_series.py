@@ -1,19 +1,20 @@
-"""Regenerate ``spm_calculator/data/bls/threshold_series.json`` from the
-bundled BLS workbook.
+"""Regenerate ``spm_calculator/data/bls/threshold_series.json`` from BLS.
 
 The packaged threshold series must never be hand-edited: this script is
-the only writer. It parses the official BLS SPM-thresholds workbook
-(bundled next to the output, with its SHA-256 recorded in the output's
-provenance block) and emits the full-precision series — thresholds,
-standard errors, and tenure population shares — for every year BLS
-publishes.
+the only writer. It parses the frozen corrected 2005--2024 workbook and
+the current workbook (both bundled next to the output, with their
+SHA-256 digests recorded in provenance) and emits the full-precision
+series -- thresholds, standard errors, and tenure population shares --
+for every year BLS publishes. A small checked-in JSON source records the
+rounded values and growth rates on BLS's 2025 publication page; the
+generator verifies those against the full-precision workbook values.
 
 Usage:
     uv run --with openpyxl python scripts/build_threshold_series.py
 
-To ingest a future BLS release, drop the new workbook into
-``spm_calculator/data/bls/``, update ``WORKBOOK`` and the provenance
-constants below, and re-run.
+To ingest a future BLS release, replace the bundled current workbook,
+update its page metadata source, and re-run. Never replace the frozen
+correction workbook: it is an immutable source for 2005--2024.
 """
 
 from __future__ import annotations
@@ -27,12 +28,18 @@ import openpyxl
 REPO = Path(__file__).resolve().parent.parent
 DATA_DIR = REPO / "spm_calculator" / "data" / "bls"
 WORKBOOK = DATA_DIR / "spm_threshold_200524_corrected.xlsx"
+CURRENT_WORKBOOK = DATA_DIR / "spm_thresholds.xlsx"
+PAGE_2025_SOURCE = DATA_DIR / "spm_thresholds_2025_page.json"
 OUTPUT = DATA_DIR / "threshold_series.json"
 
 SOURCE_URL = "https://www.bls.gov/pir/spm/spm_threshold_200524_corrected.xlsx"
 LANDING_URL = "https://www.bls.gov/pir/spm/spm_thresholds_2024_correction.htm"
 RETRIEVED = "2026-07-17"
 PUBLISHED = "2026-07-17"
+
+CURRENT_WORKBOOK_URL = "https://www.bls.gov/pir/spm/spm_thresholds.xlsx"
+CURRENT_WORKBOOK_LANDING_URL = "https://www.bls.gov/pir/spmhome.htm"
+CURRENT_WORKBOOK_RETRIEVED = "2026-09-04"
 
 TENURES = {
     "Owners with mortgages": "owner_with_mortgage",
@@ -198,19 +205,59 @@ def parse_workbook(path: Path) -> tuple[dict, dict]:
     return published, revised
 
 
-def main() -> None:
+def _validate_complete(bucket: dict, expected_years: set[str]) -> None:
+    """Validate the years, tenures, and measures parsed from a workbook."""
+    assert set(bucket) == expected_years, sorted(bucket)
+    for year, tenures in bucket.items():
+        assert set(tenures) == set(TENURES.values()), (year, tenures)
+        for measures in tenures.values():
+            assert set(measures) == set(MEASURES.values())
+
+
+def build_document() -> dict:
+    """Build and validate the generated threshold-series document.
+
+    Keeping construction separate from :func:`main` lets tests regenerate
+    the document in memory and compare every workbook-derived value with
+    the committed artifact.
+    """
     sha256 = hashlib.sha256(WORKBOOK.read_bytes()).hexdigest()
     published, revised = parse_workbook(WORKBOOK)
+    current_sha256 = hashlib.sha256(CURRENT_WORKBOOK.read_bytes()).hexdigest()
+    current_published, current_revised = parse_workbook(CURRENT_WORKBOOK)
+    page_2025 = json.loads(PAGE_2025_SOURCE.read_text())
 
     expected_published = set(str(y) for y in range(2005, 2020))
     expected_revised = set(str(y) for y in range(2019, 2025))
-    assert set(published) == expected_published, sorted(published)
-    assert set(revised) == expected_revised, sorted(revised)
-    for bucket in (published, revised):
-        for year, tenures in bucket.items():
-            assert set(tenures) == set(TENURES.values()), (year, tenures)
-            for measures in tenures.values():
-                assert set(measures) == set(MEASURES.values())
+    _validate_complete(published, expected_published)
+    _validate_complete(revised, expected_revised)
+    _validate_complete(current_published, expected_published)
+    _validate_complete(
+        current_revised, set(str(y) for y in range(2019, 2026))
+    )
+
+    # The permanent 2005--2024 source remains the correction-vintage
+    # workbook. Refuse to regenerate if BLS's rolling workbook disagrees;
+    # this guarantees those already-published values remain byte-identical.
+    assert current_published == published
+    assert {
+        year: current_revised[year] for year in expected_revised
+    } == revised
+
+    published_2025 = {"2025": current_revised["2025"]}
+    for tenure, page_value in page_2025["thresholds"].items():
+        workbook_value = published_2025["2025"][tenure]["threshold"]
+        assert round(workbook_value) == page_value, (
+            tenure,
+            workbook_value,
+            page_value,
+        )
+        growth = (
+            workbook_value / revised["2024"][tenure]["threshold"] - 1
+        ) * 100
+        assert round(growth, 3) == page_2025["bls_stated_growth_percent"][
+            tenure
+        ], (tenure, growth)
 
     doc = {
         "generated_by": "scripts/build_threshold_series.py",
@@ -218,7 +265,8 @@ def main() -> None:
         "series": {
             "bls-corrected-2026-07-17": {
                 "label": (
-                    "BLS SPM thresholds, corrected series published 2026-07-17"
+                    "BLS SPM thresholds: corrected 2005-2024 series "
+                    "and published 2025 continuation"
                 ),
                 "provenance": {
                     "source_url": SOURCE_URL,
@@ -236,6 +284,12 @@ def main() -> None:
                         "break. Workbook footnote 1: these are the "
                         "thresholds Census uses to produce SPM poverty "
                         "statistics."
+                    ),
+                    "splice": (
+                        "Published-methodology workbook values through 2018; "
+                        "2019-2024 from the corrected workbook's revised "
+                        "segment; 2025 from the current BLS workbook, "
+                        "cross-checked against the 2025 publication page."
                     ),
                 },
                 "segments": {
@@ -265,6 +319,46 @@ def main() -> None:
                             "ce_window": "(T-5)Q2 through (T)Q1",
                         },
                         "years": revised,
+                    },
+                    "bls-published-2025": {
+                        "provenance": {
+                            "source_url": CURRENT_WORKBOOK_URL,
+                            "landing_url": CURRENT_WORKBOOK_LANDING_URL,
+                            "sha256": current_sha256,
+                            "retrieved": CURRENT_WORKBOOK_RETRIEVED,
+                            "page_source_url": page_2025["source_url"],
+                            "page_retrieved": page_2025["retrieved"],
+                            "page_last_modified": page_2025[
+                                "page_last_modified"
+                            ],
+                            "precision": page_2025["precision"],
+                            "bls_stated_growth_percent": page_2025[
+                                "bls_stated_growth_percent"
+                            ],
+                            "page_whole_dollar_thresholds": page_2025[
+                                "thresholds"
+                            ],
+                            "note": (
+                                "The current BLS workbook supplies full-"
+                                "precision thresholds, standard errors, and "
+                                "tenure shares. Its values round to the "
+                                "whole-dollar values on BLS's 2025 page."
+                            ),
+                        },
+                        "methodology": {
+                            "expenditures": (
+                                "FCSUti out-of-pocket plus imputed in-kind "
+                                "benefits"
+                            ),
+                            "anchor": (
+                                "82% of mean FCSUti within the 47th-53rd "
+                                "percentile range"
+                            ),
+                            "median_share": 0.82,
+                            "price_index": "FCSUti composite CPI-U",
+                            "ce_window": "(T-5)Q2 through (T)Q1",
+                        },
+                        "years": published_2025,
                     },
                 },
             },
@@ -313,9 +407,15 @@ def main() -> None:
         },
     }
 
+    return doc
+
+
+def main() -> None:
+    doc = build_document()
     OUTPUT.write_text(json.dumps(doc, indent=2, sort_keys=False) + "\n")
-    n_years = len(published) + len(revised)
-    print(f"Wrote {OUTPUT} ({n_years} year-columns, sha256 {sha256[:12]}...)")
+    segments = doc["series"]["bls-corrected-2026-07-17"]["segments"]
+    n_years = sum(len(segment["years"]) for segment in segments.values())
+    print(f"Wrote {OUTPUT} ({n_years} year-columns across all segments)")
 
 
 if __name__ == "__main__":

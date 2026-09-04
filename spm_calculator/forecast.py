@@ -9,11 +9,15 @@ Three series ship with the package:
 
 - ``bls-corrected-2026-07-17`` (default): the corrected series BLS
   published on 2026-07-17 after finding errors in the code that produced
-  the 2019-2024 thresholds. Full precision, 2005-2024, including
-  standard errors and tenure population shares. Workbook footnote 1:
-  these are the thresholds Census uses to produce SPM poverty
-  statistics. The revised-methodology segment (2019+) is anchored at
-  82% of the median FCSUti range (83% before the correction).
+  the 2019-2024 thresholds, continued by the ``bls-published-2025``
+  segment from BLS's current workbook. The canonical splice uses the
+  old-methodology values through 2018, corrected revised-methodology
+  values for 2019-2024, and the published 2025 continuation. All values
+  retain workbook precision and include standard errors and tenure
+  population shares. Workbook footnote 1 says these are the thresholds
+  Census uses to produce SPM poverty statistics. The revised-methodology
+  segment (2019+) is anchored at 82% of the median FCSUti range (83%
+  before the correction).
 - ``census-published-pre-correction``: the thresholds as Census
   published them for 2019-2024 (P60 reports) — what every published
   SPM statistic for those years used, retained for reproducing
@@ -24,7 +28,7 @@ Three series ship with the package:
   of up to 8% (see docs/bls-2026-correction.md).
 
 The BLS publishes thresholds with a lag, so projection is necessary
-for current and future year calculations. ``forecast_thresholds``
+for future-year calculations. ``forecast_thresholds``
 compounds CPI projections off the latest published base (price-only —
 it missed by 2.2%/yr on average in absolute value over 2020-2024,
 understating growth in four of five years, because the published
@@ -60,8 +64,9 @@ def _flatten_series(name: str) -> dict[int, dict[str, float]]:
 
     For the corrected BLS series, the canonical view splices the
     old-methodology segment (2005-2018) with the revised-methodology
-    segment (2019-2024, using the workbook's "2019 Revised" column) —
-    the same splice Census uses for its published SPM statistics.
+    segment (2019-2024, using the workbook's "2019 Revised" column),
+    then the BLS-published 2025 segment -- the same splice Census uses
+    for its published SPM statistics.
     """
     doc = _threshold_data()
     try:
@@ -133,7 +138,6 @@ LATEST_PUBLISHED_YEAR = max(HISTORICAL_THRESHOLDS)
 # CBO projection file when one can be fetched reproducibly
 # (cbo.gov currently blocks non-browser clients).
 CPI_PROJECTIONS = {
-    2025: 0.025,  # 2.5% projected inflation
     2026: 0.023,  # 2.3%
     2027: 0.022,  # 2.2%
     2028: 0.020,  # 2.0% (long-run target)
@@ -155,6 +159,18 @@ def _resolve_series(series: Optional[str]) -> dict[int, dict[str, float]]:
     if series is None or series == DEFAULT_SERIES:
         return HISTORICAL_THRESHOLDS
     return _flatten_series(series)
+
+
+def _segment_for_year(name: str, year: int) -> tuple[str, dict] | None:
+    """Return the winning generated segment and its provenance for a year."""
+    entry = _threshold_data()["series"][name]
+    if "segments" not in entry:
+        return None
+    winner = None
+    for segment_name, segment in entry["segments"].items():
+        if str(year) in segment["years"]:
+            winner = (segment_name, dict(segment.get("provenance", {})))
+    return winner
 
 
 def get_available_series() -> list[str]:
@@ -414,6 +430,11 @@ def get_threshold_with_metadata(
         "provenance": get_series_provenance(series_name),
         "source": "forecast" if is_forecast else "published",
     }
+
+    if not is_forecast:
+        segment = _segment_for_year(series_name, year)
+        if segment is not None:
+            result["segment"], result["segment_provenance"] = segment
 
     if is_forecast:
         base_year = latest

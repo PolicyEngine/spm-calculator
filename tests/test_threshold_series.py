@@ -75,11 +75,55 @@ class TestCorrectedSeries:
         assert se["renter"] == pytest.approx(325.113614)
         assert sum(shares.values()) == pytest.approx(1.0, abs=1e-6)
 
-    def test_covers_2005_through_2024(self):
+    def test_2025_continues_corrected_series_at_full_precision(self):
+        values = get_thresholds(2025, allow_forecast=False)
+        assert values == pytest.approx(
+            {
+                "owner_with_mortgage": 41322.707394,
+                "owner_without_mortgage": 34325.99772,
+                "renter": 41700.555713,
+            }
+        )
+        assert {tenure: round(value) for tenure, value in values.items()} == {
+            "owner_with_mortgage": 41323,
+            "owner_without_mortgage": 34326,
+            "renter": 41701,
+        }
+
+    def test_2025_segment_records_page_provenance_and_growth(self):
+        ref = resources.files("spm_calculator").joinpath(
+            "data/bls/threshold_series.json"
+        )
+        segment = json.loads(ref.read_text())["series"][DEFAULT_SERIES][
+            "segments"
+        ]["bls-published-2025"]
+        provenance = segment["provenance"]
+        assert provenance["retrieved"] == "2026-09-04"
+        assert provenance["page_source_url"].endswith(
+            "spm_thresholds_2025.htm"
+        )
+        assert provenance["bls_stated_growth_percent"] == {
+            "owner_with_mortgage": 5.332,
+            "owner_without_mortgage": 4.402,
+            "renter": 6.325,
+        }
+        assert "full-precision" in provenance["precision"]
+
+    def test_2025_standard_errors_and_shares_are_published(self):
+        assert get_standard_errors(2025) == pytest.approx(
+            {
+                "owner_with_mortgage": 327.35414802,
+                "owner_without_mortgage": 560.28664871,
+                "renter": 393.03526083,
+            }
+        )
+        assert sum(get_tenure_shares(2025).values()) == pytest.approx(1.0)
+
+    def test_covers_2005_through_2025(self):
         years = get_available_years()
         assert years[0] == 2005
-        assert years[-1] == 2024
-        assert len(years) == 20
+        assert years[-1] == 2025
+        assert len(years) == 21
 
 
 class TestPublishedPreCorrectionSeries:
