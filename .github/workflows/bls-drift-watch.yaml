@@ -35,10 +35,13 @@ jobs:
 
       - name: Compare packaged series against bls.gov
         id: drift
+        shell: bash
         run: |
           set +e
           python scripts/check_bls_drift.py | tee drift.log
-          code=$?
+          # A pipeline normally reports tee's status; preserve the checker's
+          # status so real drift (exit 1) reaches the issue-opening step.
+          code=${PIPESTATUS[0]}
           echo "exit_code=$code" >> "$GITHUB_OUTPUT"
           # 0 = match, 78 = BLS unreachable (neutral skip), 1 = drift
           if [ "$code" -eq 1 ] || [ "$code" -eq 0 ] || [ "$code" -eq 78 ]; then
