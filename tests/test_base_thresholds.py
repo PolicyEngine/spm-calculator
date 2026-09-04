@@ -61,7 +61,7 @@ class TestPublishedThresholds:
         from spm_calculator.forecast import HISTORICAL_THRESHOLDS
 
         assert min(HISTORICAL_THRESHOLDS) == 2005
-        assert max(HISTORICAL_THRESHOLDS) == 2024
+        assert max(HISTORICAL_THRESHOLDS) == 2025
         for year in HISTORICAL_THRESHOLDS:
             assert (
                 get_published_thresholds(year) == HISTORICAL_THRESHOLDS[year]
