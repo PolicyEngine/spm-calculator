@@ -2,7 +2,7 @@
 
 ## State
 
-Core implementation is complete on `max/bls-2026-threshold-correction`; documentation of known approximations, integration review, and the full verification bar remain.
+Implementation and verification are complete on `max/bls-2026-threshold-correction`. The branch is ready for review; it has not been pushed or merged.
 
 ## Done
 
@@ -17,9 +17,11 @@ Core implementation is complete on `max/bls-2026-threshold-correction`; document
 - Made published-threshold fallback an explicit opt-in (review J).
 - Regenerated the web configuration so 2025 is published, preserved future-nowcast UI machinery, and added the archived 2025 evaluation.
 - Updated the correction narrative and README, and added the towncrier fragment.
+- Froze the original CE-replication levels as tracked evaluation provenance so the corrected CE classifier cannot rewrite the historical 2025 forecasting commitment.
+- Documented all requested CE replication approximations and completed the final requirements audit.
+- Reproduced the threshold series, four-rule backtest, nowcast, and web configuration from their generators without uncommitted differences.
+- Passed the final verification bar: 235 Python tests passed and 18 skipped; Ruff format/check passed; 6 web tests passed; the stale-marker guard passed; and the nowcast script reproduced $41,036.34 / $34,135.99 / $40,755.98 from tracked inputs.
 
 ## Next
 
-- Finish review K's approximation docstrings and matching documentation section.
-- Run the requirements audit and full Python, Ruff, nowcast, stale-marker, and web verification.
-- Record final hashes/statistics here and write the requested final report.
+- Review the commits and open/update PR #32 when ready. No implementation work remains in this lane.
