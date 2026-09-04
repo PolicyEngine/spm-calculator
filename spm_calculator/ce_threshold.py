@@ -274,15 +274,40 @@ def bls_quarter_window(target_year: int) -> list[tuple[int, int]]:
 def load_ce_quarters(
     quarters: Sequence[tuple[int, int]],
     cache_dir: Optional[Path] = None,
+    *,
+    allow_partial: bool = False,
 ) -> pd.DataFrame:
-    """Load and concatenate a set of CE collection quarters."""
+    """Load and concatenate a set of CE collection quarters.
+
+    Every requested quarter is required by default: silently continuing
+    with a shorter window changes both the expenditure distribution and
+    its CPI weights. ``allow_partial=True`` is an explicit diagnostic
+    mode that warns and returns the quarters that could be loaded; its
+    output must not be treated as a threshold replication.
+
+    Args:
+        quarters: Collection-year and quarter pairs to load.
+        cache_dir: Bundle cache directory override.
+        allow_partial: Continue after an individual quarter fails. This
+            is intended only for diagnosing download/data availability.
+
+    Raises:
+        RuntimeError: If a requested quarter cannot be loaded in the
+            default strict mode.
+        ValueError: If diagnostic partial mode loads no quarters.
+    """
     frames = []
     for year, quarter in quarters:
         try:
             frames.append(load_ce_quarter(year, quarter, cache_dir=cache_dir))
-        except Exception as e:  # noqa: BLE001 - surface but continue
+        except Exception as error:  # noqa: BLE001 - add quarter context
+            if not allow_partial:
+                raise RuntimeError(
+                    f"Could not load required CE quarter {year}Q{quarter}"
+                ) from error
             warnings.warn(
-                f"Could not load CE {year}Q{quarter}: {e}",
+                f"Diagnostic partial load skipped CE {year}Q{quarter}: "
+                f"{error}",
                 RuntimeWarning,
                 stacklevel=2,
             )
@@ -328,16 +353,29 @@ def download_ce_pumd_years(years: list[int]) -> pd.DataFrame:
 
 
 def _sum_pair(df: pd.DataFrame, pq: str, cq: str) -> pd.Series:
-    """Sum a PQ/CQ expenditure pair, returning zeros if either is missing."""
-    if pq in df.columns and cq in df.columns:
-        return df[pq].fillna(0) + df[cq].fillna(0)
-    return pd.Series(0.0, index=df.index)
+    """Sum a required PQ/CQ expenditure pair.
+
+    A missing column raises because replacing an absent pair member with
+    zero understates expenditures. Row-level missing values remain zero:
+    those are respondent/item values inside an otherwise valid CE schema,
+    rather than evidence that the requested variable was not loaded.
+    """
+    missing = [column for column in (pq, cq) if column not in df.columns]
+    if missing:
+        raise ValueError(
+            f"CE data is missing required expenditure column(s) {missing} "
+            f"from the {pq}/{cq} pair"
+        )
+    return df[pq].fillna(0) + df[cq].fillna(0)
 
 
-def _single(df: pd.DataFrame, col: str) -> pd.Series:
-    if col in df.columns:
-        return df[col].fillna(0)
-    return pd.Series(0.0, index=df.index)
+def _sum_pair_if_present(
+    df: pd.DataFrame, pq: str, cq: str
+) -> Optional[pd.Series]:
+    """Sum an optional pair, while still rejecting a partial pair."""
+    if pq not in df.columns and cq not in df.columns:
+        return None
+    return _sum_pair(df, pq, cq)
 
 
 def _food_expenditure(df: pd.DataFrame) -> pd.Series:
@@ -358,23 +396,45 @@ def _food_expenditure(df: pd.DataFrame) -> pd.Series:
     lacks the checked columns — exactly the artifact this per-row
     construction exists to prevent.
     """
-    legacy = _sum_pair(df, "FOODPQ", "FOODCQ")
-    if "FOODPQ" not in df.columns or "FOODCQ" not in df.columns:
-        home_away = _sum_pair(df, "FDHOMEPQ", "FDHOMECQ") + _sum_pair(
-            df, "FDAWAYPQ", "FDAWAYCQ"
-        )
-        legacy = legacy.where(legacy > 0, home_away)
+    food = _sum_pair_if_present(df, "FOODPQ", "FOODCQ")
+    food_at_home = _sum_pair_if_present(df, "FDHOMEPQ", "FDHOMECQ")
+    food_away = _sum_pair_if_present(df, "FDAWAYPQ", "FDAWAYCQ")
+    groceries = _sum_pair_if_present(df, "GROCERPQ", "GROCERCQ")
 
-    if "GROCERPQ" not in df.columns and "GROCERCQ" not in df.columns:
+    legacy_available = food is not None or (
+        food_at_home is not None and food_away is not None
+    )
+    if food is not None:
+        legacy = food
+    elif food_at_home is not None and food_away is not None:
+        legacy = food_at_home + food_away
+    else:
+        # A redesign-only frame needs no legacy columns when every row
+        # has GROCER data. The row-level check below rejects any row
+        # that would otherwise receive this placeholder.
+        legacy = pd.Series(0.0, index=df.index)
+
+    if groceries is None:
+        if not legacy_available:
+            raise ValueError(
+                "CE data has no complete food expenditure schema; expected "
+                "FOODPQ/FOODCQ, FDHOMEPQ/FDHOMECQ plus "
+                "FDAWAYPQ/FDAWAYCQ, or GROCERPQ/GROCERCQ plus "
+                "FDAWAYPQ/FDAWAYCQ"
+            )
         return legacy
 
-    has_grocer = pd.Series(False, index=df.index)
-    for col in ("GROCERPQ", "GROCERCQ"):
-        if col in df.columns:
-            has_grocer |= df[col].notna()
-    redesign = FOOD_AT_HOME_GROCERY_SHARE * _sum_pair(
-        df, "GROCERPQ", "GROCERCQ"
-    ) + _sum_pair(df, "FDAWAYPQ", "FDAWAYCQ")
+    if food_away is None:
+        raise ValueError(
+            "GROCER-based CE data requires the complete FDAWAYPQ/FDAWAYCQ pair"
+        )
+    has_grocer = df[["GROCERPQ", "GROCERCQ"]].notna().any(axis=1)
+    if not legacy_available and (~has_grocer).any():
+        raise ValueError(
+            "CE data has rows without GROCER values and no complete legacy "
+            "food expenditure pair"
+        )
+    redesign = FOOD_AT_HOME_GROCERY_SHARE * groceries + food_away
     return redesign.where(has_grocer, legacy)
 
 
@@ -447,7 +507,9 @@ def calculate_fcsuti(
 
     if mortgage_principal == "include":
         for pq, cq in _PRINCIPAL_COLUMNS:
-            shelter = shelter + _sum_pair(df, pq, cq)
+            principal = _sum_pair_if_present(df, pq, cq)
+            if principal is not None:
+                shelter = shelter + principal
 
     total = food + apparel + shelter + utilities
     return total * factor
@@ -687,19 +749,10 @@ def calculate_base_thresholds(
 
         # Derive FCSUti composite weights from this CE sample itself,
         # matching BLS Garner (2021): the weights roll with the 5-year
-        # window rather than being held static across years. Fall back
-        # to the package default (with its own RuntimeWarning) only if
-        # the CE sample has no usable expenditure columns.
-        try:
-            fcsuti_weights = compute_fcsuti_weights_from_ce(ce)
-        except ValueError as e:
-            warnings.warn(
-                f"Could not derive FCSUti weights from CE ({e}); "
-                "using static defaults.",
-                RuntimeWarning,
-                stacklevel=2,
-            )
-            fcsuti_weights = None
+        # window rather than being held static across years. Failure is
+        # fatal; substituting static weights would make the output look
+        # like a CE replication when it is not one.
+        fcsuti_weights = compute_fcsuti_weights_from_ce(ce)
 
         # Inflate each CU's FCSUti to target-year dollars using the
         # FCSUti composite CPI built from the derived (or default)
@@ -721,13 +774,30 @@ def calculate_base_thresholds(
         # read a nonexistent column and silently treated every CU as
         # two-adult, understating equivalized spending for
         # single-parent CUs.)
-        num_children = ce.get("PERSLT18", 0)
-        if "FAM_SIZE" in ce.columns:
-            num_adults = (
-                ce["FAM_SIZE"].fillna(0) - ce["PERSLT18"].fillna(0)
-            ).clip(lower=1)
-        else:
-            num_adults = 2
+        if "FAM_SIZE" not in ce.columns:
+            raise ValueError(
+                "CE data is missing the 'FAM_SIZE' column required to "
+                "derive the number of adults"
+            )
+        try:
+            family_size = pd.to_numeric(ce["FAM_SIZE"], errors="raise")
+            num_children = pd.to_numeric(ce["PERSLT18"], errors="raise")
+        except (TypeError, ValueError) as error:
+            raise ValueError(
+                "FAM_SIZE and PERSLT18 must contain numeric values"
+            ) from error
+        valid_family = (
+            np.isfinite(family_size)
+            & np.isfinite(num_children)
+            & (family_size >= num_children + 1)
+        )
+        if not valid_family.all():
+            bad_rows = list(ce.index[~valid_family])
+            raise ValueError(
+                "FAM_SIZE must be finite and at least PERSLT18 + 1 "
+                f"(one adult); invalid row indices: {bad_rows[:10]}"
+            )
+        num_adults = family_size - num_children
         ce["equiv_scale"] = spm_equivalence_scale(
             num_adults, num_children, normalize=False
         )
@@ -746,7 +816,9 @@ def calculate_base_thresholds(
         )
         if mortgage_principal == "include":
             for pq, cq in _PRINCIPAL_COLUMNS:
-                su = su + _sum_pair(ce, pq, cq)
+                principal = _sum_pair_if_present(ce, pq, cq)
+                if principal is not None:
+                    su = su + principal
         annual_factor = 4.0 if annualization == "quarter4" else 2.0
         ce["su_2a2c"] = (
             su
@@ -755,12 +827,10 @@ def calculate_base_thresholds(
             * (REFERENCE_RAW_SCALE / ce["equiv_scale"])
         )
 
-        # CE survey weights. FMLI publishes FINLWT21 as the calibrated
-        # CU weight. If a vintage is missing it, fall back to uniform.
-        if "FINLWT21" in ce.columns:
-            ce["ce_weight"] = ce["FINLWT21"].astype(float)
-        else:
-            ce["ce_weight"] = 1.0
+        # ``compute_fcsuti_weights_from_ce`` already validated these as
+        # finite and strictly positive; retain the calibrated CE weights
+        # for percentiles and within-band averages.
+        ce["ce_weight"] = ce["FINLWT21"].astype(float)
 
         ce = ce.dropna(subset=["fcsuti_2a2c", "su_2a2c"])
         if len(ce) == 0:

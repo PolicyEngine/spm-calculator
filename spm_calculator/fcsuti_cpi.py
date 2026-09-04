@@ -229,7 +229,8 @@ def compute_fcsuti_weights_from_ce(
     Raises:
         ValueError: If ``ce_df`` is missing ``weight_col`` or
             ``children_col``, or if no CUs have children, or if no
-            FCSUti component columns are present.
+            FCSUti component columns are present, or if a survey weight
+            is nonnumeric, nonfinite, or not strictly positive.
     """
     if weight_col not in ce_df.columns:
         raise ValueError(
@@ -244,11 +245,35 @@ def compute_fcsuti_weights_from_ce(
     if len(with_children) == 0:
         raise ValueError("No consumer units with children in CE DataFrame")
 
-    weights = with_children[weight_col].astype(float).to_numpy()
+    try:
+        weights = pd.to_numeric(
+            with_children[weight_col], errors="raise"
+        ).to_numpy(dtype=float)
+    except (TypeError, ValueError) as error:
+        raise ValueError(
+            f"CE survey weights in '{weight_col}' must be numeric"
+        ) from error
+    if not (np.isfinite(weights) & (weights > 0)).all():
+        raise ValueError(
+            f"CE survey weights in '{weight_col}' must be finite and "
+            "strictly positive"
+        )
 
     def _weighted_expenditure(pq: str, cq: str) -> Optional[float]:
-        if pq not in with_children.columns or cq not in with_children.columns:
+        present = {
+            pq: pq in with_children.columns,
+            cq: cq in with_children.columns,
+        }
+        if not any(present.values()):
             return None
+        if not all(present.values()):
+            missing = [
+                column for column, exists in present.items() if not exists
+            ]
+            raise ValueError(
+                f"CE data is missing expenditure pair member(s) {missing} "
+                f"from {pq}/{cq}"
+            )
         values = (
             with_children[pq].fillna(0).to_numpy()
             + with_children[cq].fillna(0).to_numpy()
@@ -311,7 +336,7 @@ _STATIC_WEIGHTS_WARNING = (
 def _resolve_weights(
     weights: Optional[Mapping[str, float]],
 ) -> dict[str, float]:
-    """Normalize a supplied ``weights`` mapping (never warns).
+    """Validate a supplied ``weights`` mapping (never warns).
 
     The fallback-use RuntimeWarning is emitted by the public
     entry-point functions (``get_fcsuti_cpi``,
@@ -322,7 +347,16 @@ def _resolve_weights(
         return dict(FCSUTI_WEIGHTS)
     if not weights:
         raise ValueError("weights mapping is empty")
-    return dict(weights)
+    try:
+        resolved = {
+            component: float(weight) for component, weight in weights.items()
+        }
+    except (TypeError, ValueError) as error:
+        raise ValueError("FCSUti weights must be numeric") from error
+    values = np.asarray(list(resolved.values()), dtype=float)
+    if not (np.isfinite(values) & (values > 0)).all():
+        raise ValueError("FCSUti weights must be finite and strictly positive")
+    return resolved
 
 
 @lru_cache(maxsize=8)
@@ -333,17 +367,23 @@ def _cached_fcsuti_cpi(
     weights_items: tuple[tuple[str, float], ...],
 ) -> pd.Series:
     """Immutable-inputs worker for :func:`get_fcsuti_cpi`."""
+    if start_year > end_year:
+        raise ValueError("start_year must be less than or equal to end_year")
+    if not start_year <= base_year <= end_year:
+        raise ValueError(
+            f"base_year {base_year} must fall within the requested "
+            f"{start_year}-{end_year} range"
+        )
+
     weights = dict(weights_items)
     components: dict[str, pd.Series] = {}
     for component in weights:
         series_id = CPI_SERIES.get(component)
         if series_id is None:
-            warnings.warn(
-                f"No CPI series known for component '{component}'; skipping.",
-                RuntimeWarning,
-                stacklevel=2,
+            raise ValueError(
+                f"No CPI series is configured for FCSUti component "
+                f"'{component}'"
             )
-            continue
         try:
             components[component] = fetch_bls_cpi_series(
                 series_id, start_year, end_year
@@ -359,24 +399,39 @@ def _cached_fcsuti_cpi(
                     RuntimeWarning,
                     stacklevel=2,
                 )
-            except KeyError:
-                warnings.warn(
-                    f"Could not fetch {component} CPI ({e}) and it "
-                    "is not in the packaged store; dropping it from "
-                    "the composite.",
-                    RuntimeWarning,
-                    stacklevel=2,
-                )
+            except KeyError as store_error:
+                raise ValueError(
+                    f"Could not load required {component} CPI series "
+                    f"{series_id} from either the BLS API or packaged store"
+                ) from store_error
 
-    if not components:
-        raise ValueError("Could not fetch any CPI component data")
-
-    df = pd.DataFrame(components)
-    used_weights = {c: weights[c] for c in df.columns if c in weights}
-    if not used_weights:
+    required_years = pd.Index(range(start_year, end_year + 1))
+    missing_by_component = {
+        component: [
+            int(year)
+            for year in required_years
+            if year not in series.index or pd.isna(series.get(year))
+        ]
+        for component, series in components.items()
+    }
+    missing_by_component = {
+        component: years
+        for component, years in missing_by_component.items()
+        if years
+    }
+    if missing_by_component:
         raise ValueError(
-            "None of the requested FCSUti components returned CPI data"
+            "FCSUti CPI component series are missing required annual values: "
+            f"{missing_by_component}"
         )
+
+    df = pd.DataFrame(
+        {
+            component: series.reindex(required_years).astype(float)
+            for component, series in components.items()
+        },
+        index=required_years,
+    )
 
     # Each CPI series carries its own reference base, so raw levels are
     # not commensurate: summing them weights each component by its
@@ -385,32 +440,17 @@ def _cached_fcsuti_cpi(
     # against 4 — caught by cross-model review 2026-07-18). Rebase
     # every component to the composite's base year before weighting so
     # the stated expenditure shares are the effective ones.
-    rebase_year = base_year if base_year in df.index else df.index.min()
-    rebasable = [c for c in used_weights if pd.notna(df[c].get(rebase_year))]
-    dropped = set(used_weights) - set(rebasable)
-    if dropped:
-        warnings.warn(
-            f"Components missing {rebase_year} values dropped from the "
-            f"FCSUti composite: {sorted(dropped)}",
-            RuntimeWarning,
-            stacklevel=2,
-        )
-    used_weights = {c: used_weights[c] for c in rebasable}
-
-    denom = sum(used_weights.values())
-    if denom <= 0:
-        raise ValueError("Requested FCSUti weights sum to zero")
-    # Renormalize over the components we actually have so dropped series
-    # don't shrink the composite.
-    renormalized = {c: w / denom for c, w in used_weights.items()}
+    denom = sum(weights.values())
+    renormalized = {c: w / denom for c, w in weights.items()}
 
     fcsuti = pd.Series(0.0, index=df.index)
     for component, weight in renormalized.items():
-        rebased = df[component] / df[component][rebase_year] * 100
+        rebased = df[component] / df[component][base_year] * 100
         fcsuti += rebased * weight
 
-    if base_year in fcsuti.index:
-        fcsuti = fcsuti / fcsuti[base_year] * 100
+    fcsuti = fcsuti / fcsuti[base_year] * 100
+    if not np.isfinite(fcsuti.to_numpy()).all():
+        raise ValueError("FCSUti CPI composite contains nonfinite values")
     fcsuti.name = "FCSUti CPI-U"
     return fcsuti
 
@@ -435,6 +475,12 @@ def get_fcsuti_cpi(
 
     Returns:
         Annual FCSUti CPI index with base ``base_year`` = 100.
+
+    Raises:
+        ValueError: If the base year is outside the requested range or
+            any required component lacks an annual value for any year
+            in that range. The function never substitutes another base
+            year or returns a partially defined composite.
     """
     if weights is None:
         warnings.warn(
@@ -491,8 +537,8 @@ def get_fcsuti_inflation_factor(
 
     try:
         fcsuti = get_fcsuti_cpi(
-            start_year=min(from_year, to_year) - 1,
-            end_year=max(from_year, to_year) + 1,
+            start_year=min(from_year, to_year),
+            end_year=max(from_year, to_year),
             base_year=from_year,
             weights=weights,
         )
@@ -511,4 +557,10 @@ def get_fcsuti_inflation_factor(
             "(scripts/build_cpi_store.py) if the requested year has "
             "since been published."
         )
-    return fcsuti[to_year] / 100.0
+    factor = float(fcsuti[to_year] / fcsuti[from_year])
+    if not np.isfinite(factor) or factor <= 0:
+        raise ValueError(
+            f"FCSUti inflation factor for ({from_year}, {to_year}) "
+            "must be finite and positive"
+        )
+    return factor

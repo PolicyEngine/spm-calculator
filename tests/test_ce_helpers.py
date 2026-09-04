@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
+import spm_calculator.ce_threshold as ce_threshold
 from spm_calculator.ce_threshold import (
     _sum_pair,
     _weighted_percentile,
@@ -25,15 +26,55 @@ class TestSumPair:
         result = _sum_pair(df, "FOODPQ", "FOODCQ")
         assert list(result) == [150, 275]
 
-    def test_returns_zero_when_either_column_missing(self):
+    def test_raises_when_either_column_missing(self):
         df = pd.DataFrame({"FOODPQ": [100, 200]})
-        result = _sum_pair(df, "FOODPQ", "FOODCQ")
-        assert list(result) == [0, 0]
+        with pytest.raises(ValueError, match="FOODCQ"):
+            _sum_pair(df, "FOODPQ", "FOODCQ")
 
     def test_treats_nan_as_zero(self):
         df = pd.DataFrame({"FOODPQ": [100, np.nan], "FOODCQ": [np.nan, 50]})
         result = _sum_pair(df, "FOODPQ", "FOODCQ")
         assert list(result) == [100, 50]
+
+
+class TestLoadCeQuarters:
+    def test_failed_quarter_raises_by_default(self, monkeypatch):
+        """A threshold window must never silently lose a quarter."""
+
+        def load(year, quarter, cache_dir=None):
+            if quarter == 2:
+                raise OSError("corrupt bundle")
+            return pd.DataFrame({"value": [quarter]})
+
+        monkeypatch.setattr(ce_threshold, "load_ce_quarter", load)
+        with pytest.raises(RuntimeError, match="2024Q2"):
+            ce_threshold.load_ce_quarters([(2024, 1), (2024, 2)])
+
+    def test_diagnostic_partial_load_requires_explicit_opt_in(
+        self, monkeypatch
+    ):
+        def load(year, quarter, cache_dir=None):
+            if quarter == 2:
+                raise OSError("corrupt bundle")
+            return pd.DataFrame({"value": [quarter]})
+
+        monkeypatch.setattr(ce_threshold, "load_ce_quarter", load)
+        with pytest.warns(RuntimeWarning, match="Diagnostic partial load"):
+            result = ce_threshold.load_ce_quarters(
+                [(2024, 1), (2024, 2)], allow_partial=True
+            )
+        assert result["value"].tolist() == [1]
+
+    def test_diagnostic_partial_load_still_rejects_empty_result(
+        self, monkeypatch
+    ):
+        def fail(*args, **kwargs):
+            raise OSError("no data")
+
+        monkeypatch.setattr(ce_threshold, "load_ce_quarter", fail)
+        with pytest.warns(RuntimeWarning, match="Diagnostic partial load"):
+            with pytest.raises(ValueError, match="No CE data"):
+                ce_threshold.load_ce_quarters([(2024, 1)], allow_partial=True)
 
 
 def _fcsuti_frame(**overrides):

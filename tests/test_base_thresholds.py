@@ -158,8 +158,14 @@ class TestCEThresholdMethodology:
                 "FINLWT21": [1000.0, 1000.0, 1000.0],
                 "FOODPQ": [100.0, 100.0, 100.0],
                 "FOODCQ": [100.0, 100.0, 100.0],
+                "APPARPQ": [0.0, 0.0, 0.0],
+                "APPARCQ": [0.0, 0.0, 0.0],
                 "SHELTPQ": [300.0, 300.0, 300.0],
                 "SHELTCQ": [300.0, 300.0, 300.0],
+                "UTILPQ": [0.0, 0.0, 0.0],
+                "UTILCQ": [0.0, 0.0, 0.0],
+                "TELEPHPQ": [0.0, 0.0, 0.0],
+                "TELEPHCQ": [0.0, 0.0, 0.0],
             }
         )
 
@@ -253,6 +259,67 @@ class TestCEThresholdMethodology:
         with pytest.raises(ValueError, match="PERSLT18"):
             ce_threshold.calculate_base_thresholds(
                 years=[2022, 2023],
+                target_year=2024,
+                use_published_fallback=False,
+            )
+
+    def test_calculate_base_thresholds_requires_finlwt21(self):
+        import spm_calculator.ce_threshold as ce_threshold
+
+        sample = self._renter_sample().drop(columns=["FINLWT21"])
+        with pytest.raises(ValueError, match="FINLWT21"):
+            ce_threshold.calculate_base_thresholds(
+                ce=sample,
+                target_year=2024,
+                use_published_fallback=False,
+            )
+
+    @pytest.mark.parametrize("weight", [0.0, -1.0, float("nan"), float("inf")])
+    def test_calculate_base_thresholds_rejects_invalid_weights(self, weight):
+        import spm_calculator.ce_threshold as ce_threshold
+
+        sample = self._renter_sample()
+        sample.loc[0, "FINLWT21"] = weight
+        with pytest.raises(ValueError, match="finite and strictly positive"):
+            ce_threshold.calculate_base_thresholds(
+                ce=sample,
+                target_year=2024,
+                use_published_fallback=False,
+            )
+
+    def test_calculate_base_thresholds_requires_fam_size(self, monkeypatch):
+        import spm_calculator.ce_threshold as ce_threshold
+
+        monkeypatch.setattr(
+            ce_threshold,
+            "get_fcsuti_inflation_factor",
+            lambda from_year, to_year, weights=None: 1.0,
+        )
+        sample = self._renter_sample().drop(columns=["FAM_SIZE"])
+        with pytest.raises(ValueError, match="FAM_SIZE"):
+            ce_threshold.calculate_base_thresholds(
+                ce=sample,
+                target_year=2024,
+                use_published_fallback=False,
+            )
+
+    @pytest.mark.parametrize("family_size", [2.0, float("nan"), float("inf")])
+    def test_calculate_base_thresholds_validates_family_composition(
+        self, monkeypatch, family_size
+    ):
+        import spm_calculator.ce_threshold as ce_threshold
+
+        monkeypatch.setattr(
+            ce_threshold,
+            "get_fcsuti_inflation_factor",
+            lambda from_year, to_year, weights=None: 1.0,
+        )
+        sample = self._renter_sample()
+        sample["FAM_SIZE"] = sample["FAM_SIZE"].astype(float)
+        sample.loc[0, "FAM_SIZE"] = family_size
+        with pytest.raises(ValueError, match=r"at least PERSLT18 \+ 1"):
+            ce_threshold.calculate_base_thresholds(
+                ce=sample,
                 target_year=2024,
                 use_published_fallback=False,
             )

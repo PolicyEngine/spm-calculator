@@ -144,6 +144,18 @@ class TestComputeFcsutiWeightsFromCE:
         with pytest.raises(ValueError, match="FINLWT21"):
             compute_fcsuti_weights_from_ce(ce)
 
+    @pytest.mark.parametrize("weight", [0.0, -1.0, float("nan"), float("inf")])
+    def test_invalid_survey_weight_raises(self, weight):
+        ce = _sample_ce_df()
+        ce.loc[0, "FINLWT21"] = weight
+        with pytest.raises(ValueError, match="finite and strictly positive"):
+            compute_fcsuti_weights_from_ce(ce)
+
+    def test_partial_expenditure_pair_raises(self):
+        ce = _sample_ce_df().drop(columns=["APPARCQ"])
+        with pytest.raises(ValueError, match="APPARCQ"):
+            compute_fcsuti_weights_from_ce(ce)
+
     def test_missing_children_column_raises(self):
         ce = _sample_ce_df().drop(columns=["PERSLT18"])
         with pytest.raises(ValueError, match="PERSLT18"):
@@ -157,7 +169,7 @@ class TestComputeFcsutiWeightsFromCE:
                 if c not in {"PERSLT18", "FINLWT21"}
             ]
         )
-        with pytest.raises(ValueError, match="FCSUti expenditure"):
+        with pytest.raises(ValueError, match="food expenditure schema"):
             compute_fcsuti_weights_from_ce(ce)
 
 
@@ -222,6 +234,43 @@ class TestGetFcsutiCpiWeightsPlumbing:
     def test_empty_weights_raises(self):
         with pytest.raises(ValueError, match="empty"):
             get_fcsuti_cpi(weights={})
+
+    def test_missing_component_year_raises(self, monkeypatch):
+        """A missing target-year value must not leak out as NaN."""
+        fake_series = pd.Series({2020: 100.0, 2021: 105.0}, name="stub")
+        monkeypatch.setattr(
+            fcsuti_cpi,
+            "fetch_bls_cpi_series",
+            lambda series_id, start_year, end_year: fake_series,
+        )
+        fcsuti_cpi._cached_fcsuti_cpi.cache_clear()
+        with pytest.raises(ValueError, match="missing required annual values"):
+            get_fcsuti_cpi(
+                start_year=2020,
+                end_year=2022,
+                base_year=2020,
+                weights={"food": 1.0},
+            )
+        fcsuti_cpi._cached_fcsuti_cpi.cache_clear()
+
+    def test_base_year_is_never_substituted(self, monkeypatch):
+        fake_series = pd.Series(
+            {2020: 100.0, 2021: 105.0, 2022: 112.0}, name="stub"
+        )
+        monkeypatch.setattr(
+            fcsuti_cpi,
+            "fetch_bls_cpi_series",
+            lambda series_id, start_year, end_year: fake_series,
+        )
+        fcsuti_cpi._cached_fcsuti_cpi.cache_clear()
+        with pytest.raises(ValueError, match="base_year 2019"):
+            get_fcsuti_cpi(
+                start_year=2020,
+                end_year=2022,
+                base_year=2019,
+                weights={"food": 1.0},
+            )
+        fcsuti_cpi._cached_fcsuti_cpi.cache_clear()
 
     def test_inflation_factor_threads_weights(self, monkeypatch):
         """get_fcsuti_inflation_factor must forward its ``weights`` arg."""
