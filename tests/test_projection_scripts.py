@@ -115,7 +115,14 @@ def test_tracked_backtest_matches_executable_rules():
     )
 
     assert rows == artifact["annual_results"]
-    assert summary == artifact["summary"]
+    assert set(summary) == set(artifact["summary"])
+    for rule in summary:
+        # Python/platform summation can differ by a few final binary digits.
+        # Keep the frozen artifact bytes exact; compare recomputed means at
+        # a tolerance far below the reported percentage-point precision.
+        assert summary[rule] == pytest.approx(
+            artifact["summary"][rule], abs=1e-14, rel=0
+        )
     assert {row["rule"] for row in rows} == {
         "cpi_u",
         "fcsuti_cpi",
