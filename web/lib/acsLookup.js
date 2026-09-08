@@ -1,7 +1,6 @@
 "use client";
 
-const ACS_VARIABLE = "B25031_004E";
-const ACS_BASE_URL = "https://api.census.gov/data";
+import releaseConfig from "@/public/data/release_config.json";
 
 const STATE_OPTIONS = [
   { fips: "01", abbr: "AL", name: "Alabama" },
@@ -57,182 +56,47 @@ const STATE_OPTIONS = [
   { fips: "56", abbr: "WY", name: "Wyoming" },
 ];
 
-const STATE_MAP = Object.fromEntries(
-  STATE_OPTIONS.map((state) => [state.fips, state]),
-);
-
-const CACHE = new Map();
-
-function getStateInfo(stateFips) {
-  return STATE_MAP[stateFips] ?? { abbr: stateFips, name: stateFips };
-}
-
-function getCacheKey(kind, acsYear, locationKey = "") {
-  return `${kind}:${acsYear}:${locationKey}`;
-}
-
-async function fetchCensusRows(url) {
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`Census API request failed (${response.status}).`);
-  }
-
-  return response.json();
-}
-
-function rowsToObjects([headers, ...rows]) {
-  return rows.map((row) =>
-    Object.fromEntries(headers.map((header, index) => [header, row[index]])),
-  );
-}
-
-function sortByLabel(left, right) {
-  return left.label.localeCompare(right.label);
-}
-
-function buildUrl(acsYear, clauses) {
-  const query = new URLSearchParams({
-    get: `NAME,${ACS_VARIABLE}`,
-    ...clauses,
-  });
-  return `${ACS_BASE_URL}/${acsYear}/acs/acs5?${query.toString()}`;
-}
-
-async function getNationalMedianRent(acsYear) {
-  const cacheKey = getCacheKey("national", acsYear);
-  if (CACHE.has(cacheKey)) {
-    return CACHE.get(cacheKey);
-  }
-
-  const rows = rowsToObjects(
-    await fetchCensusRows(buildUrl(acsYear, { for: "us:*" })),
-  );
-  const nationalMedianRent = Number(rows[0]?.[ACS_VARIABLE]);
-
-  if (!Number.isFinite(nationalMedianRent)) {
-    throw new Error("National median rent was missing from the Census API.");
-  }
-
-  CACHE.set(cacheKey, nationalMedianRent);
-  return nationalMedianRent;
-}
-
-export function getLatestAvailableAcsYear(now = new Date()) {
-  return now.getMonth() === 11 ? now.getFullYear() - 1 : now.getFullYear() - 2;
-}
-
-export function getAcsYearForThresholdYear(thresholdYear, now = new Date()) {
-  return Math.min(Number(thresholdYear) - 1, getLatestAvailableAcsYear(now));
-}
-
-export function calculateCustomGeoadj({
-  localMedianRent,
-  nationalMedianRent,
-  tenure,
-  housingShares,
-}) {
-  const housingShare = housingShares[tenure];
-  return (
-    (Number(localMedianRent) / Number(nationalMedianRent)) * housingShare +
-    (1 - housingShare)
-  );
-}
-
-export async function loadStateRentOptions(acsYear) {
-  const cacheKey = getCacheKey("state", acsYear);
-  if (CACHE.has(cacheKey)) {
-    return CACHE.get(cacheKey);
-  }
-
-  const [rows, nationalMedianRent] = await Promise.all([
-    fetchCensusRows(buildUrl(acsYear, { for: "state:*" })),
-    getNationalMedianRent(acsYear),
-  ]);
-
-  const options = rowsToObjects(rows)
-    .filter((row) => STATE_MAP[row.state])
-    .map((row) => {
-      const state = getStateInfo(row.state);
-      return {
-        id: row.state,
-        label: state.name,
-        shortLabel: state.abbr,
-        medianRent: Number(row[ACS_VARIABLE]),
-      };
-    })
-    .filter((option) => Number.isFinite(option.medianRent))
-    .sort(sortByLabel);
-
-  const value = { nationalMedianRent, options };
-  CACHE.set(cacheKey, value);
-  return value;
-}
-
-export async function loadCountyRentOptions(acsYear, stateFips) {
-  const cacheKey = getCacheKey("county", acsYear, stateFips);
-  if (CACHE.has(cacheKey)) {
-    return CACHE.get(cacheKey);
-  }
-
-  const [rows, nationalMedianRent] = await Promise.all([
-    fetchCensusRows(
-      buildUrl(acsYear, {
-        for: "county:*",
-        in: `state:${stateFips}`,
-      }),
-    ),
-    getNationalMedianRent(acsYear),
-  ]);
-
-  const options = rowsToObjects(rows)
-    .map((row) => ({
-      id: `${row.state}${row.county}`,
-      label: row.NAME,
-      shortLabel: row.NAME.split(",")[0],
-      medianRent: Number(row[ACS_VARIABLE]),
-    }))
-    .filter((option) => Number.isFinite(option.medianRent))
-    .sort(sortByLabel);
-
-  const value = { nationalMedianRent, options };
-  CACHE.set(cacheKey, value);
-  return value;
-}
-
-export async function loadDistrictRentOptions(acsYear, stateFips) {
-  const cacheKey = getCacheKey("district", acsYear, stateFips);
-  if (CACHE.has(cacheKey)) {
-    return CACHE.get(cacheKey);
-  }
-
-  const [rows, nationalMedianRent] = await Promise.all([
-    fetchCensusRows(
-      buildUrl(acsYear, {
-        for: "congressional district:*",
-        in: `state:${stateFips}`,
-      }),
-    ),
-    getNationalMedianRent(acsYear),
-  ]);
-
-  const state = getStateInfo(stateFips);
-  const options = rowsToObjects(rows)
-    .map((row) => {
-      const districtCode = String(row["congressional district"]).padStart(2, "0");
-      const shortDistrict = districtCode === "00" ? "AL" : districtCode;
-      return {
-        id: `${row.state}${districtCode}`,
-        label: `${state.abbr}-${shortDistrict} · ${row.NAME}`,
-        shortLabel: `${state.abbr}-${shortDistrict}`,
-        medianRent: Number(row[ACS_VARIABLE]),
-      };
-    })
-    .filter((option) => Number.isFinite(option.medianRent))
-    .sort(sortByLabel);
-
-  const value = { nationalMedianRent, options };
-  CACHE.set(cacheKey, value);
-  return value;
-}
 
 export const STATE_SELECTOR_OPTIONS = STATE_OPTIONS;
+
+export function getLatestAvailableAcsYear() {
+  return releaseConfig.acsLookup.state.year;
+}
+
+export function getAcsYearForThresholdYear(thresholdYear) {
+  return Math.min(Number(thresholdYear) - 1, getLatestAvailableAcsYear());
+}
+
+export function calculateCustomGeoadj({ localMedianRent, nationalMedianRent, tenure, housingShares }) {
+  const rent = Number(localMedianRent);
+  const national = Number(nationalMedianRent);
+  const share = housingShares[tenure];
+  if (!Number.isFinite(rent) || rent <= 0 || !Number.isFinite(national) || national <= 0 || !Number.isFinite(share) || share <= 0 || share >= 1) {
+    throw new Error("Rent and housing-share inputs must be valid positive values.");
+  }
+  return 1 - share + share * rent / national;
+}
+
+function loadOptions(kind, year, stateFips) {
+  const table = releaseConfig.acsLookup[kind];
+  if (Number(year) !== table.year) {
+    throw new Error(`This release bundles ACS ${table.year} rents; ACS ${year} is unavailable. Choose a supported year or national geography.`);
+  }
+  const states = new Set(STATE_OPTIONS.map(state => state.fips));
+  const options = table.options.filter(option => kind === "state" ? states.has(option.id) : option.id.slice(0, 2) === stateFips)
+    .map(option => ({...option})).sort((a, b) => a.label.localeCompare(b.label));
+  if (!options.length) throw new Error("No published rent data for the requested area in this release.");
+  return { nationalMedianRent: table.nationalMedianRent, options, year: table.year, sourceId: table.sourceId, releaseId: releaseConfig.releaseMetadata.id };
+}
+
+export async function loadStateRentOptions(year) {
+  return loadOptions("state", year);
+}
+
+export async function loadCountyRentOptions(year, stateFips) {
+  return loadOptions("county", year, stateFips);
+}
+
+export async function loadDistrictRentOptions(year, stateFips) {
+  return loadOptions("congressional_district", year, stateFips);
+}

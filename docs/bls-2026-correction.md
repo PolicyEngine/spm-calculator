@@ -2,7 +2,7 @@
 
 On July 17, 2026, the Census Bureau [announced](https://www.census.gov/newsroom/press-releases/2026/statement-on-supplemental-poverty-measure.html) that BLS had found errors in the Supplemental Poverty Measure thresholds and would re-release SPM estimates for 2019–2024. BLS [reissued corrected thresholds](https://www.bls.gov/pir/spm/spm_thresholds_2024_correction.htm) the same day, attributing the errors to "corrections to the computer code used to generate the thresholds" introduced with the September 2021 methodology change, and re-derived the median anchor from 83% to 82% of the 47th–53rd percentile FCSUti average to minimize the break in series.
 
-This page documents what changed, what this package shipped before version 0.4, and what an independent replication of the BLS methodology can and cannot detect.
+This page documents what changed, what this package shipped before version 0.4, and the historical replication and forecast experiments. The separately dated [current CE experiment](current-ce-replication.md) records the September 8, 2026 implementation, source hashes, sample exclusions and sensitivity results. Historical tables below remain identified as historical results.
 
 ## How large the BLS correction is
 
@@ -29,7 +29,7 @@ Two-adult, two-child national thresholds, as published in the Census P60 reports
 | 2024 | Owner w/o mortgage | 32,586 | 32,878.59 | +0.9% |
 | 2024 | Renter | 39,430 | 39,219.89 | −0.5% |
 
-Every change is within ±1.6%. Census will quantify the effect on SPM poverty rates in a working paper before the September 2026 report.
+Every change is within ±1.6%. Census's July announcement said it would quantify the effect on SPM poverty rates before the September 2026 report; this threshold project does not calculate that population effect.
 
 This is BLS's second code-correction episode in this series: the P60-280 threshold table footnote records that the 2022 thresholds already reflected "corrections in the computer code used to model" in-kind benefits.
 
@@ -48,13 +48,13 @@ Versions through 0.3.1 hand-entered the threshold dict. Comparing it against wha
 
 Owner-tenure errors reach −7.4% (2019). The 2019–2020 rows appear to be misattributed vintages (old-methodology 2019, and a value set matching no publication for 2020); 2022–2023 match no BLS or Census publication we could locate. Only 2021 (renter) and 2024 were correct.
 
-Two conclusions follow. First, the package's own data errors were several times larger than the BLS error that prompted this work. Second, hand-entered reference data is the failure mode — in both organizations.
+The package's own data errors were several times larger than the BLS threshold revisions that prompted this work. The package errors arose in hand-entered reference data. BLS attributed its revisions to computation-code corrections; these are different failure mechanisms.
 
 ## What 0.4 changes
 
 - **Provenance-tracked series.** `scripts/build_threshold_series.py` is the only writer of the packaged data. It parses the frozen corrected 2005–2024 workbook and BLS's bundled current workbook, records both SHA-256 digests, and emits full-precision thresholds, standard errors, and tenure shares through 2025.
 - **Three bundled series.** `bls-corrected-2026-07-17` (default), `census-published-pre-correction` (what every published 2019–2024 SPM statistic used, cross-verified against two consecutive P60 reports per year), and `package-legacy-0.3` (verbatim, for reproducing results from earlier releases).
-- **Drift watch.** A weekly CI job checks the frozen corrected workbook, BLS's rolling current workbook, and the live 2025 Chart 1 data page against the packaged series, opening an issue on divergence. Either failure mode above — ours or theirs — now surfaces within a week.
+- **Source comparison.** A weekly CI job checks the frozen corrected workbook, BLS's rolling current workbook, and the live 2025 Chart 1 data page against the packaged series, opening an issue on divergence. This can detect stale package copies, transcription errors and newly published revisions when the job and sources are available. It cannot identify an error shared by the official source and its package copy, or discover a BLS calculation error before BLS changes its published data.
 - **Replication fixes.** Benchmarking the CE-based replication against both reference series surfaced four bugs in our own methodology code, detailed below.
 
 ## Could an independent replication have caught the BLS bug?
@@ -68,7 +68,7 @@ Building the benchmark surfaced four errors in our replication code, none previo
 3. **Phantom columns.** The mortgage-principal (`MRTPRINPQ`) and internet (`INFOTECHPQ`) columns the code referenced do not exist in FMLI; both silently contributed zero. Principal now uses the real outlay columns (`EMRTPNO*`, `MRTPRNO*`); internet has no FMLI summary variable and is a documented gap.
 4. **Wrong formula shape.** The code took per-tenure percentiles of the FCSUti distribution. BLS computes `0.82 × (1.2 × FCSUti_E − SU_E + SU_Eh)` over a pooled 47th–53rd percentile estimation sample, swapping the tenure-specific shelter-utilities average — including the 1.2 multiplier for other basic goods and services.
 
-After the fixes, the faithful variant (BLS quarter window, principal-inclusive shelter, ×4 annualization) replicates official thresholds within **1–4.5% mean absolute deviation per year** with no imputed in-kind benefits. Signed deviations for the matched-anchor comparisons:
+The earlier benchmark's approximate variant (BLS quarter window, principal-inclusive shelter, ×4 annualization) produced **1–4.5% mean absolute deviation per year** with no imputed in-kind benefits. The following table is historical, preceding the current explicit youth/tenure sample policies. It does not describe the rebuilt estimator's current output. Signed deviations for those earlier matched-anchor comparisons:
 
 | Year | vs published (83%) | vs corrected (82%) |
 |---|---|---|
@@ -79,13 +79,13 @@ After the fixes, the faithful variant (BLS quarter window, principal-inclusive s
 | 2023 | −3.4 / −2.5 / −3.6% | −4.7 / −2.8 / −4.1% |
 | 2024 | −2.4 / +0.1 / −3.2% | −4.0 / −2.0 / −3.9% |
 
-(Owner w/ mortgage / owner w/o mortgage / renter. The downward drift across years is consistent with the growing in-kind benefit imputations — broadband, LIHEAP, NSLP, WIC, rental assistance — that BLS adds to consumer-unit FCSUti and this replication does not.)
+(Owner w/ mortgage / owner w/o mortgage / renter.) BLS includes in-kind benefit imputations that this replication omits. This benchmark did not isolate their contribution to the differences.
 
-The answer to the headline question is no. The BLS correction moved thresholds by at most 1.6%; the replication's own noise floor is 2–4%, and neither reference series fits systematically better in the affected years. A survey-level replication validates the structure of the series — it caught our 2–8% data errors' worth of divergence instantly once pointed at real references — but it cannot resolve a sub-2% code error inside BLS's pipeline.
+These comparisons do not demonstrate that this replication could have identified BLS's code errors before publication. Its remaining methodological differences are large enough to complicate attribution of a discrepancy to a BLS error. There is no estimated statistical detection limit here: observed replication discrepancies are not a measured sampling-error floor.
 
-What does catch that class of error on day one is mechanical: diffing published artifacts. The drift watch now does this weekly. It would have flagged this package's hand-entry errors on its first run, and BLS's July 17 reissue on the first Monday after.
+Comparing published artifacts addresses a narrower question: whether our copy matches its selected source, and whether a source has changed. It would expose package hand-entry discrepancies and an available July 17 revision. It would not diagnose the original error inside the BLS calculation.
 
-One further check the replication does support: at matched anchors, the 83% variant fits the published series about as well as the 82% variant fits the corrected one — independent confirmation that BLS's re-anchoring preserved series continuity, as intended.
+At matched anchors, the two historical variants fit their selected source series similarly. This is a descriptive comparison, not independent validation of BLS's re-anchoring calculation.
 
 ## 2025 published
 
@@ -103,18 +103,18 @@ Reproduction uses a tracked snapshot of the 2024 and 2025 CE-replication levels 
 
 ## Known approximations
 
-The CE replication remains approximate in four known ways:
+The CE replication retains the following expenditure and price approximations:
 
 - It deflates each interview with an annual-average FCSUti CPI keyed to collection year rather than BLS's quarterly treatment of the terminal Q1.
 - It applies the 80% food allocation to the combined FMLI `GROCER` summary rather than UCC 790210 alone.
 - It omits home-internet expenditures because FMLI has no matching summary.
 - It omits BLS's in-kind imputations for broadband, LIHEAP, NSLP, WIC, and rental assistance.
 
-These are deferred to the 2026-method issue and are not changed in this correction branch. Separately, the bundled metro geographic adjustments still derive from the pre-correction Census metro workbook; composed metro thresholds rescale that workbook onto the corrected national base until Census re-releases it.
+The rebuilt estimator also names unresolved minor-only-unit and tenure-3/5/6 sample policies, and documents its unverified midpoint-CDF convention. The [current experiment](current-ce-replication.md) measures youth-policy sensitivity up to 0.0411% and tenure-5/6 sensitivity up to 1.7372%; other approximation effects remain unmeasured. These results do not establish that all approximations are negligible. Separately, bundled metro adjustments derive from the selected Census metro workbook; applying them to a different national threshold vintage is a carried-geography approximation identified in the release.
 
 ## Projecting thresholds past the published years
 
-BLS does not age thresholds by a price index — each year is re-estimated from the rolling five-year CE window, so the published series moves with consumption as well as prices. We backtested four executable projection rules over 2020–2024, standing at each year's corrected prior-year base and scoring against the corrected actual (`scripts/backtest_threshold_projection.py`). The tracked result, including annual errors and input provenance, is `spm_calculator/data/nowcast/backtest_2020_2024.json`.
+BLS re-estimates thresholds from the rolling five-year CE window, so the published series moves with consumption as well as prices. The historical retrospective backtest evaluated four projection rules over 2020–2024 using corrected prior-year bases and corrected actuals (`scripts/backtest_threshold_projection.py`). The frozen result is `spm_calculator/data/nowcast/backtest_2020_2024.json`. This experiment used corrected data and realized inputs, not authenticated historical information sets.
 
 | Rule | Mean abs error/yr | Worst year |
 |---|---|---|
@@ -123,9 +123,9 @@ BLS does not age thresholds by a price index — each year is re-estimated from 
 | CE replication growth ratio | **0.41%** | **0.65% (2020)** |
 | 50/50 blend of the last two | 0.76% | 1.39% (2023) |
 
-The price-aging rules were generally below the corrected actuals in the later backtest years because prices alone do not capture real FCSUti consumption growth or in-kind benefit changes. The CPI rules use realized index values; a true forward forecast would also carry CPI-forecast error (2022's CPI surprise was ~5 points), which the replication ratio avoids because CE microdata for a nowcast year is published before BLS's thresholds for that year. The repaired backtest ranks replication first; the blend remains the committed 2025 method because it was selected before that repair, and reselecting on a second look at five years would select on noise.
+The price-aging estimates were generally below the corrected actuals in the later years. Prices alone do not capture all changes in expenditures or benefit imputations, but this backtest does not separately identify those contributions. All methods use retrospective inputs; a prospective forecast must also account for expenditure and CPI values unavailable at its actual prediction date. The historical backtest ranks replication first. The blend remains the committed 2025 method, preserving the original selection rather than retrospectively changing that commitment.
 
-The packaged **2025 nowcast** (`nowcast_thresholds(2025)`, `spm_calculator/data/nowcast/nowcast_2025.json`) applies the blend to the corrected 2024 base:
+The **archived 2025 nowcast** (`nowcast_thresholds(2025)`, `spm_calculator/data/nowcast/nowcast_2025.json`) applied the blend to the corrected 2024 base:
 
 | Tenure | Replication ratio | FCSUti CPI ratio | Blend | Nowcast 2025 |
 |---|---|---|---|---|
@@ -136,3 +136,5 @@ The packaged **2025 nowcast** (`nowcast_thresholds(2025)`, `spm_calculator/data/
 Two data notes. 2025 CPI annual averages are 11-month means — BLS canceled the October 2025 CPI release during the federal shutdown. And computing the replicated 2025 threshold surfaced one more schema break: from the 2024Q2 files, CE replaces the `FOOD`/`FDHOME` summaries with `GROCER` (all grocery purchases, food and nonfood). The package currently approximates food at home as 80% of all `GROCER`; as noted below, BLS applies the 80% factor only to UCC 790210, so this is not an exact replication. Before the per-row vintage-aware construction, pooled windows silently zeroed food for redesign-era quarters and replicated 2025 thresholds *fell* 4–5% nominal — the same silent-schema-drift failure class as everything else on this page.
 
 BLS published the actual 2025 thresholds on August 24, 2026. `nowcast_thresholds(2025)` deliberately preserves the table above for evaluation, emits a warning, and directs current calculations to `get_thresholds(2025)`.
+
+The 2026 CE collection window ended in 2026Q1. This rebuild makes no new 2026 forecast or preregistration promise. Any future prospective commitment requires a real timestamp, a declared available-input cutoff and a prediction made before the relevant outcome is published.

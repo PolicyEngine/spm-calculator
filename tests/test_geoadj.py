@@ -37,9 +37,9 @@ class TestGeoAdjFormula:
         for tenure in VALID_TENURE_TYPES:
             assert calculate_geoadj_from_rent(
                 1500, 1500, tenure=tenure
-            ) == pytest.approx(1.0), (
-                f"GEOADJ at rent parity must be 1.0 for {tenure}"
-            )
+            ) == pytest.approx(
+                1.0
+            ), f"GEOADJ at rent parity must be 1.0 for {tenure}"
 
     def test_double_rent_varies_by_tenure(self):
         from spm_calculator.geoadj import calculate_geoadj_from_rent
@@ -181,9 +181,9 @@ class TestBundledCDData:
         leftover_geoadj = [
             cd for cd, entry in cds.items() if "geoadj" in entry
         ]
-        assert not missing_rent, (
-            f"Entries without median_2br_rent: {missing_rent[:5]}"
-        )
+        assert (
+            not missing_rent
+        ), f"Entries without median_2br_rent: {missing_rent[:5]}"
         assert not leftover_geoadj, (
             f"Legacy precomputed geoadj still present in: "
             f"{leftover_geoadj[:5]}"
@@ -465,9 +465,9 @@ class TestStateFipsCanonicalList:
             assert bad not in fips, f"FIPS {bad} is non-existent"
         # Canonical inclusions:
         for good in ("01", "06", "11", "36", "56", "72"):
-            assert good in fips, (
-                f"FIPS {good} (state/DC/PR) must be in canonical list"
-            )
+            assert (
+                good in fips
+            ), f"FIPS {good} (state/DC/PR) must be in canonical list"
 
 
 class TestInvalidInputs:

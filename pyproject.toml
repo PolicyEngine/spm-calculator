@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "spm-calculator"
-version = "0.4.0"
+version = "0.5.0"
 description = "Calculate SPM (Supplemental Poverty Measure) thresholds for any US geography and year"
 readme = "README.md"
 license = "MIT"
@@ -44,6 +44,9 @@ dev = [
     "ruff>=0.1",
 ]
 
+[project.scripts]
+spm-calculator = "spm_calculator.cli:main"
+
 [project.urls]
 Homepage = "https://spm-calculator.vercel.app/"
 Documentation = "https://github.com/PolicyEngine/spm-calculator/tree/main/docs"
@@ -60,6 +63,8 @@ spm_calculator = [
     "data/bls/*.json",
     "data/bls/*.xlsx",
     "data/nowcast/*.json",
+    "data/releases/*.json",
+    "data/current/*.json",
 ]
 
 [tool.black]

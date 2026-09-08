@@ -1,6 +1,6 @@
 # spm-calculator
 
-Calculate [Supplemental Poverty Measure (SPM)](https://www.census.gov/topics/income-poverty/supplemental-poverty-measure.html) thresholds for any US geography and year.
+Calculate [Supplemental Poverty Measure (SPM)](https://www.census.gov/topics/income-poverty/supplemental-poverty-measure.html) thresholds from a pinned statistical release, with standalone lookup, reproducible estimation and optional model adapters.
 
 [![Try the Calculator](https://img.shields.io/badge/Try-Calculator-teal)](https://spm-calculator.vercel.app/)
 [![Documentation](https://img.shields.io/badge/docs-github-green)](https://github.com/PolicyEngine/spm-calculator/tree/main/docs)
@@ -9,22 +9,20 @@ Calculate [Supplemental Poverty Measure (SPM)](https://www.census.gov/topics/inc
 
 **[Try the SPM Threshold Calculator](https://spm-calculator.vercel.app/)** - A browser-based calculator for metros, states, counties, and congressional districts, with a direct handoff to the Python package for tract-level and batch work.
 
-The calculator runs entirely in your browser with no server required. National thresholds and official metro data are bundled; state, county, and district rent adjustments are fetched directly from the Census ACS API.
+The rebuilt calculator runs entirely in your browser. National thresholds through published 2025, Census 2024 metro rent indices, and ACS 2023 state, county and district rents are bundled with an explicit release hash. No browser credential or Census request is required. Housing shares are fixed to 2024 and identified as carried approximations for other years.
+
+This branch is an **unpublished 0.5.0 rebuild**. The public calculator remains on its existing deployment until a separate production promotion. The corrected national series changes some legacy numerical outputs; see [compatibility and rollout](docs/spm-releases.md#compatibility-and-rollout).
 
 ### Run Locally
 
 **Next.js app (recommended):**
 ```bash
 cd web
-npm install
-npm run dev
+bun install --frozen-lockfile
+bun run dev
 ```
 
-**Streamlit App (alternative):**
-```bash
-pip install spm-calculator[app]
-streamlit run app/streamlit_app.py
-```
+Generate and check browser inputs with `uv run scripts/export_web_release.py` and `uv run scripts/export_web_release.py --check`.
 
 ## Overview
 
@@ -46,6 +44,25 @@ pip install spm-calculator
 ```
 
 ## Quick Start
+
+For new integrations, select an immutable release. This path performs no network requests and does not import PE, Microcosm or Axiom:
+
+```python
+from spm_calculator import load_release, SPMUnit
+
+release = load_release()  # A fixed bundled artifact, not "latest" over the network.
+print(release.release_id, release.content_sha256)
+result = release.calculate_unit(SPMUnit(
+    unit_id="family-1", num_adults=2, num_children=2,
+    tenure="renter", year=2025,
+    geography_kind="county", geography_id="06001",
+))
+print(result["threshold"], result["provenance"])
+```
+
+Save the content hash and supply `expected_sha256=` to `load_release` on replay. The CLI supports `info`, `verify`, `calculate` and `export --format csv`. Unsupported years fail; new projections require explicitly identified inputs and methods. See [release contract and integration boundaries](docs/spm-releases.md), [current CE replication](docs/current-ce-replication.md), [PE integration](docs/policyengine-release-integration.md), and [Axiom integration](docs/axiom-integration.md).
+
+The existing calculator API remains available for legacy callers:
 
 ```python
 from spm_calculator import SPMCalculator
@@ -69,7 +86,7 @@ threshold = calc.calculate_threshold(
     geography_type="metro_area",
     geography_id="35620"
 )
-# $45,736 (official 2024 Census metro threshold for NYC renters)
+# A composition of the selected national series and pinned metro adjustment.
 ```
 
 Official metro thresholds are bundled with the package. For custom ACS-based

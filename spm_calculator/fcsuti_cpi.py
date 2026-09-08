@@ -405,6 +405,35 @@ def _cached_fcsuti_cpi(
                     f"{series_id} from either the BLS API or packaged store"
                 ) from store_error
 
+    return combine_cpi_series(
+        components, weights, start_year, end_year, base_year
+    )
+
+
+def combine_cpi_series(
+    components: Mapping[str, pd.Series],
+    weights: Mapping[str, float],
+    start_year: int,
+    end_year: int,
+    base_year: int,
+) -> pd.Series:
+    """Rebase and combine explicit annual component inputs, without transport.
+
+    Keys are component names, not BLS series identifiers. Every requested
+    year must be present, finite and positive. This pure stage is shared
+    by live and pinned-input execution.
+    """
+    if start_year > end_year or not start_year <= base_year <= end_year:
+        raise ValueError(
+            "CPI base year must be within the requested year range"
+        )
+    weights = _resolve_weights(weights)
+    missing = sorted(set(weights) - set(components))
+    if missing:
+        raise ValueError(f"Pinned CPI inputs missing components: {missing}")
+    components = {component: components[component] for component in weights}
+    if any(not series.index.is_unique for series in components.values()):
+        raise ValueError("CPI series must have unique annual indexes")
     required_years = pd.Index(range(start_year, end_year + 1))
     missing_by_component = {
         component: [
@@ -432,6 +461,10 @@ def _cached_fcsuti_cpi(
         },
         index=required_years,
     )
+    if not (np.isfinite(df.to_numpy()) & (df.to_numpy() > 0)).all():
+        raise ValueError(
+            "CPI annual values must be finite and strictly positive"
+        )
 
     # Each CPI series carries its own reference base, so raw levels are
     # not commensurate: summing them weights each component by its
@@ -460,6 +493,8 @@ def get_fcsuti_cpi(
     end_year: int = 2024,
     base_year: int = 2024,
     weights: Optional[Mapping[str, float]] = None,
+    *,
+    cpi_series: Optional[Mapping[str, pd.Series]] = None,
 ) -> pd.Series:
     """Compute the FCSUti composite CPI index.
 
@@ -489,6 +524,15 @@ def get_fcsuti_cpi(
             stacklevel=2,
         )
     resolved = _resolve_weights(weights)
+    if cpi_series is not None:
+        components = {
+            component: cpi_series[CPI_SERIES[component]]
+            for component in resolved
+            if component in CPI_SERIES and CPI_SERIES[component] in cpi_series
+        }
+        return combine_cpi_series(
+            components, resolved, start_year, end_year, base_year
+        )
     return _cached_fcsuti_cpi(
         start_year,
         end_year,
@@ -501,6 +545,8 @@ def get_fcsuti_inflation_factor(
     from_year: int,
     to_year: int,
     weights: Optional[Mapping[str, float]] = None,
+    *,
+    cpi_series: Optional[Mapping[str, pd.Series]] = None,
 ) -> float:
     """Inflation factor between two years via the FCSUti composite.
 
@@ -536,11 +582,13 @@ def get_fcsuti_inflation_factor(
         weights = FCSUTI_WEIGHTS
 
     try:
+        options = {} if cpi_series is None else {"cpi_series": cpi_series}
         fcsuti = get_fcsuti_cpi(
             start_year=min(from_year, to_year),
             end_year=max(from_year, to_year),
             base_year=from_year,
             weights=weights,
+            **options,
         )
     except ValueError as error:
         raise ValueError(

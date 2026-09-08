@@ -65,9 +65,7 @@ class TestPublishedThresholds:
         for year in HISTORICAL_THRESHOLDS:
             assert (
                 get_published_thresholds(year) == HISTORICAL_THRESHOLDS[year]
-            ), (
-                f"get_published_thresholds({year}) drifted from HISTORICAL_THRESHOLDS"
-            )
+            ), f"get_published_thresholds({year}) drifted from HISTORICAL_THRESHOLDS"
 
     def test_unavailable_year_raises(self):
         """Pre-2005 and far-future years are genuinely unavailable."""
@@ -139,9 +137,9 @@ class TestThresholdTrends:
             "owner_without_mortgage",
         ]:
             growth = (t2024[tenure] - t2022[tenure]) / t2022[tenure]
-            assert 0.05 < growth < 0.30, (
-                f"{tenure} growth {growth:.1%} outside range"
-            )
+            assert (
+                0.05 < growth < 0.30
+            ), f"{tenure} growth {growth:.1%} outside range"
 
 
 class TestCEThresholdMethodology:

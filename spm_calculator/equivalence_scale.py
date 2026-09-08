@@ -5,9 +5,13 @@ Source:
 - https://www.bls.gov/pir/spmhome.htm
 """
 
-from typing import Union
+from __future__ import annotations
 
-import numpy as np
+from numbers import Real
+from typing import TYPE_CHECKING, Union
+
+if TYPE_CHECKING:
+    import numpy as np
 
 # Reference family for SPM thresholds: 2 adults, 2 children.
 REFERENCE_RAW_SCALE = 3**0.7
@@ -43,17 +47,30 @@ def spm_equivalence_scale(
     Returns:
         Raw or normalized equivalence scale.
     """
+    if isinstance(num_adults, Real) and isinstance(num_children, Real):
+        adults, children = float(num_adults), float(num_children)
+        raw = 0.0
+        if adults > 0 and children > 0:
+            raw = (
+                (1.8 + 0.5 * max(children - 1, 0)) ** 0.7
+                if adults == 1
+                else (adults + 0.5 * children) ** 0.7
+            )
+        elif adults > 0 and children == 0:
+            raw = 1.0 if adults == 1 else 1.41 if adults == 2 else adults**0.7
+        return raw / REFERENCE_RAW_SCALE if normalize else raw
+
+    import numpy as np
+
     adults, children = np.broadcast_arrays(
         np.asarray(num_adults, dtype=float),
         np.asarray(num_children, dtype=float),
     )
 
     raw = np.zeros_like(adults, dtype=float)
-    # A "child-only" unit (0 adults with children > 0) is not a valid SPM
-    # unit — every SPM unit is headed by at least one reference person
-    # aged 15+. Treat it like the zero-person case and leave `raw` at 0.0
-    # so the calculator surfaces the impossibility downstream rather than
-    # synthesising a single-parent scale from a ghost adult.
+    # Zero-adult compositions are outside this documented scale. Preserve
+    # the legacy zero result; validity of a raw CE record is a separate
+    # classification question handled by the estimator's sample policy.
     has_adults = adults > 0
     with_children = has_adults & (children > 0)
 
@@ -91,6 +108,8 @@ def equivalence_scale_from_persons(
     """
     Calculate the equivalence scale from total persons and children.
     """
+    import numpy as np
+
     num_adults = np.maximum(
         np.asarray(num_persons, dtype=float)
         - np.asarray(num_children, dtype=float),

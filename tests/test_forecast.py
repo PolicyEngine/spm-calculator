@@ -134,6 +134,6 @@ def test_cpi_projections_end_year_referenced_in_warning():
         warnings.simplefilter("always")
         forecast_thresholds(target)
     texts = [str(w.message) for w in caught]
-    assert any(str(end) in text for text in texts), (
-        f"Expected CPI projection end year {end} in warning"
-    )
+    assert any(
+        str(end) in text for text in texts
+    ), f"Expected CPI projection end year {end} in warning"

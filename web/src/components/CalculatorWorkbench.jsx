@@ -138,7 +138,10 @@ export default function CalculatorWorkbench({ data }) {
   const searchParams = useSearchParams();
   const {
     baseThresholds,
-    methodology,
+    methodology: baseMethodology,
+    releaseMetadata,
+    housingSharesByYear = {},
+    housingShareProvenanceByYear = {},
     forecast,
     nowcast = {},
     nowcastEvaluation = {},
@@ -173,6 +176,7 @@ export default function CalculatorWorkbench({ data }) {
   );
 
   const [year, setYear] = useState(String(latestPublishedYear));
+  const methodology = { ...baseMethodology, housingShares: housingSharesByYear[year] ?? baseMethodology.housingShares };
   const [numAdults, setNumAdults] = useState(2);
   const [numChildren, setNumChildren] = useState(2);
   const [tenure, setTenure] = useState("renter");
@@ -326,6 +330,7 @@ export default function CalculatorWorkbench({ data }) {
 
   const base = baseThresholds[year][tenure];
   const rawScale = getRawEquivalenceScale(numAdults, numChildren, methodology);
+  const compositionValid = Number.isInteger(numAdults) && numAdults >= 1 && Number.isInteger(numChildren) && numChildren >= 0;
   const equivalenceScale =
     rawScale / methodology.equivalenceScale.referenceFamilyRaw;
 
@@ -373,7 +378,9 @@ export default function CalculatorWorkbench({ data }) {
   const geoadj = useMemo(() => {
     if (geographyType === "nation") return 1;
     if (geographyType === "metro_area" && metroYearIsHistorical) return null;
-    if (selectedMetroData) return selectedMetroData.adjustments[tenure];
+    if (selectedMetroData) return releaseMetadata
+      ? calculateCustomGeoadj({localMedianRent: selectedMetroData.rentIndex, nationalMedianRent: 1, tenure, housingShares: methodology.housingShares})
+      : selectedMetroData.adjustments[tenure];
     if (selectedCustomLocation && acsLookup.nationalMedianRent) {
       return calculateCustomGeoadj({
         localMedianRent: selectedCustomLocation.medianRent,
@@ -398,7 +405,7 @@ export default function CalculatorWorkbench({ data }) {
       `Select a national or custom ACS geography for ${year}, or choose ${earliestMetroYear} or later.`
     : "";
 
-  const threshold = geoadj === null ? null : base * equivalenceScale * geoadj;
+  const threshold = geoadj === null || !compositionValid ? null : base * equivalenceScale * geoadj;
   const monthlyThreshold = threshold === null ? null : threshold / 12;
   const nationalReferenceThreshold = base;
   const thresholdVsReference =
@@ -432,7 +439,9 @@ export default function CalculatorWorkbench({ data }) {
     if (metroYearIsHistorical) {
       isReady = false;
     } else if (selectedMetroData) {
-      adjustment = selectedMetroData.adjustments[option.value];
+      adjustment = releaseMetadata
+        ? calculateCustomGeoadj({localMedianRent: selectedMetroData.rentIndex, nationalMedianRent: 1, tenure: option.value, housingShares: methodology.housingShares})
+        : selectedMetroData.adjustments[option.value];
     } else if (selectedCustomLocation && acsLookup.nationalMedianRent) {
       adjustment = calculateCustomGeoadj({
         localMedianRent: selectedCustomLocation.medianRent,
@@ -452,18 +461,18 @@ export default function CalculatorWorkbench({ data }) {
     };
   });
 
-  const packageSnippet = `from spm_calculator import SPMCalculator
+  const releaseGeographyKind = geographyType === "nation" ? "national" : geographyType === "metro_area" ? "metro" : geographyType;
+  const packageSnippet = !compositionValid ? "# Enter valid classified adult and child counts to generate a calculation." : `from spm_calculator import load_release, SPMUnit
 
-calc = SPMCalculator(year=${year})
-threshold = calc.calculate_threshold(
-    num_adults=${numAdults},
-    num_children=${numChildren},
-    tenure="${tenure}",
-    geography_type="${geographyType}",
-    geography_id="${currentLocation?.id ?? "<loading>"}"
-)
-
-print(f"SPM threshold: \${threshold:,.0f}")`;
+release = load_release(${releaseMetadata ? `expected_sha256="${releaseMetadata.sha256}"` : ""})
+result = release.calculate_unit(SPMUnit(
+    unit_id="household-1",
+    num_adults=${numAdults}, num_children=${numChildren},
+    tenure="${tenure}", year=${year},
+    geography_kind="${releaseGeographyKind}",
+    geography_id=${geographyType === "nation" ? "None" : `"${currentLocation?.id ?? "<select an area>"}"`},
+))
+print(result["threshold"])`;
 
   // ── Location selector options ───────────────────────────────
 
@@ -508,6 +517,7 @@ print(f"SPM threshold: \${threshold:,.0f}")`;
 
   const sidebar = (
     <InputPanel title="Household and geography">
+      {!compositionValid && <p role="alert">Enter at least one classified SPM adult and a nonnegative whole number of children. Minor-only units need a separate classification decision.</p>}
       <SidebarSection title="Threshold year">
         <SelectInput
           options={yearSelectOptions}
@@ -522,13 +532,17 @@ print(f"SPM threshold: \${threshold:,.0f}")`;
         <div className="flex gap-3">
           <NumberInput
             label="Adults"
+            id="spm-adults"
+            aria-label="Adults"
             value={numAdults}
             onChange={setNumAdults}
-            min={0}
+            min={1}
             max={12}
           />
           <NumberInput
             label="Children"
+            id="spm-children"
+            aria-label="Children"
             value={numChildren}
             onChange={setNumChildren}
             min={0}
@@ -947,7 +961,7 @@ print(f"SPM threshold: \${threshold:,.0f}")`;
               <CardHeader>
                 <CardTitle>How this is calculated</CardTitle>
                 <CardDescription>
-                  Official Census SPM methodology
+                  Published national thresholds and disclosed geographic assumptions
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3 text-sm leading-6">
@@ -981,12 +995,13 @@ print(f"SPM threshold: \${threshold:,.0f}")`;
                     Reference 2A2C = <code className="font-mono">3^0.7</code>.
                   </li>
                   <li>
-                    <strong>GEOADJ</strong>: for metros, the Census 2024
-                    SPM workbook's per-tenure reference thresholds. For
-                    other geographies, a rent-based adjustment using
-                    tenure-specific housing shares (renter 0.443,
-                    owner-with-mortgage 0.434, owner-without-mortgage
-                    0.323).
+                    <strong>GEOADJ</strong>: Census 2024 metro rent indices
+                    and pinned ACS 2023 state, county and district rents,
+                    combined with 2024 housing shares (renter 0.443,
+                    owner-with-mortgage 0.434, owner-without-mortgage 0.323).
+                    Applying these shares and rents to other years is a
+                    disclosed approximation, not an official target-year
+                    geographic threshold.
                   </li>
                 </ul>
                 <p className="text-xs text-muted-foreground">
@@ -1027,7 +1042,7 @@ print(f"SPM threshold: \${threshold:,.0f}")`;
               <CardHeader>
                 <CardTitle>Reproduce with Python</CardTitle>
                 <CardDescription>
-                  Use the spm-calculator package for PUMAs, tracts, and batch workflows
+                  Replay this release without credentials or a data download
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -1058,6 +1073,14 @@ print(f"SPM threshold: \${threshold:,.0f}")`;
               data-testid="version-footer"
               className="pt-2 text-xs text-muted-foreground"
             >
+              {releaseMetadata && (
+                <p data-testid="release-provenance">
+                  Release {releaseMetadata.id} · information date {releaseMetadata.informationDate}.
+                  {" "}Housing shares: {housingShareProvenanceByYear[year]?.reference_year ?? 2024}
+                  {housingShareProvenanceByYear[year]?.status === "carried" ? " (carried to the selected year)" : ""}.
+                  {" "}SHA-256: <code className="break-all">{releaseMetadata.sha256}</code>
+                </p>
+              )}
               <p>
                 Based on{" "}
                 <a

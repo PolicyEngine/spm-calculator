@@ -636,8 +636,21 @@ def get_geoadj(
                 f"Latest available: {latest_available}"
             )
 
+    state_fips = None
+    if geography_type == "tract":
+        # Census tract GEOID: state (2) + county (3) + tract (6).
+        # https://www.census.gov/programs-surveys/geography/guidance/geo-identifiers.html
+        if (
+            not isinstance(geography_id, str)
+            or len(geography_id) != 11
+            or not geography_id.isdigit()
+        ):
+            raise ValueError(
+                "Tract geography_id must be an 11-digit Census GEOID"
+            )
+        state_fips = geography_id[:2]
     lookup = create_geoadj_lookup(
-        geography_type, year, state_fips=None, tenure=tenure
+        geography_type, year, state_fips=state_fips, tenure=tenure
     )
     match = lookup[lookup["geography_id"] == geography_id]
     if len(match) == 0:

@@ -1,6 +1,6 @@
 # Methodology
 
-This document describes the methodology for calculating SPM thresholds, following Census Bureau and BLS guidelines.
+This document distinguishes published threshold lookup, approximate CE replication and projection. The package's research estimator follows the published Census/BLS framework with explicitly documented approximations; it does not claim exact reproduction of unpublished BLS code or imputation choices.
 
 ## Overview
 
@@ -44,8 +44,13 @@ The threshold is based on spending on:
 
 1. Sum FCSUti expenditures for each consumer unit (shelter includes owner mortgage-principal outlays; UTIL already contains telephone)
 2. Convert each quarterly recall window to annual (× 4)
-3. Normalize to reference family (2A2C) using equivalence scale
-4. Apply the BLS formula over the estimation sample E (consumer units inside the 47th-53rd percentile range of equivalized FCSUti): `0.82 × (1.2 × FCSUti_E − SU_E + SU_Eh)`, where SU is shelter + utilities excluding telephone and h indexes housing tenure. The anchor was 83% before the July 17, 2026 correction (see [The 2026 BLS threshold correction](bls-2026-correction.md))
+3. Convert expenditures to target-year dollars using the sample-derived composite CPI weights and explicit annual CPI inputs (an approximation to BLS's quarterly treatment)
+4. Normalize to reference family (2A2C) using equivalence scale
+5. Apply the BLS formula over the estimation sample E (consumer units inside the 47th-53rd percentile range of equivalized FCSUti): `0.82 × (1.2 × FCSUti_E − SU_E + SU_Eh)`, where SU is shelter + utilities excluding telephone and h indexes housing tenure. The anchor was 83% before the July 17, 2026 correction (see [The 2026 BLS threshold correction](bls-2026-correction.md))
+
+CE `FINLWT21` survey weights govern the expenditure distribution and within-band averages. Population calibration weights must not replace them. The current midpoint-CDF convention has not been verified against BLS's exact percentile implementation. Original CE consumer units and repeated interviews remain separate from the population SPM units used for poverty calculations.
+
+For minor-only units (`FAM_SIZE == PERSLT18`), exact BLS adult/child treatment remains unresolved. The default calculation raises; research runs must explicitly select `youth_policy="exclude_unresolved"` or the nonofficial `legacy_recode` sensitivity. Excluding tenure 5/6 and assigning tenure 3 to owners with mortgage are also named research sample policies, not verified BLS instructions. The [current CE experiment](current-ce-replication.md) reports counts, weight mass, estimated levels and sensitivity. Other unresolved approximations include the post-redesign `GROCER` food allocation and omitted internet/in-kind expenditures.
 
 ### 2024 Base Thresholds
 
@@ -88,6 +93,8 @@ $$
 \text{equivalence\_scale} = \frac{\text{raw\_scale}}{3^{0.7}}
 $$
 
+These counts are already-classified SPM adults and children. Age alone does not resolve every teenage membership/dependency case. Household consumers validate supported compositions; the CE estimator owns its separate unresolved-unit sample policy.
+
 ### Example Values
 
 | Family Type | Adults | Children | Equivalence Scale |
@@ -115,6 +122,8 @@ Where:
 - owner with mortgage housing share = 0.434
 - owner without mortgage housing share = 0.323
 
+These are the fixed 2024-derived legacy accessor values. Explicit releases identify the share reference year and any carried-value approximation; they must not label carried 2024 shares as official target-year shares. New provider calculations use the selected release's shares. The release's geographic identifier and year also determine its rent or metro inputs; unknown requested areas raise unless a caller explicitly selects a documented fallback.
+
 ### Data Source
 
 - **Survey**: American Community Survey (ACS) 5-Year Estimates
@@ -134,7 +143,7 @@ Because the housing share differs by tenure, owner adjustments are flatter than 
 
 ## Supported Geographies
 
-The ACS provides median rent data at multiple geographic levels:
+The ACS publishes median rent data at multiple geographic levels. This table describes source coverage; actual offline support is limited to areas present in the selected release, and is not a promise that every listed area has an available estimate:
 
 | Level | Count | Example |
 |-------|-------|---------|
@@ -148,11 +157,30 @@ The ACS provides median rent data at multiple geographic levels:
 
 ## Forecasting
 
-For years beyond published BLS thresholds, we:
+Published lookup consumes a pinned release. Missing years raise by default;
+an explicitly supplied estimated entry requires opt-in. The archived 2025
+nowcast remains available for evaluation, separately from the published
+2025 threshold.
 
-1. Start from the latest published BLS tenure-specific thresholds
-2. Apply projected CPI uprating by year
-3. Keep the latest published metro adjustment factors when forecasting metro thresholds
+The generic projection helper anchors to an official base:
+
+```
+projected threshold = official base × replicated target / replicated base
+```
+
+It also supports price-only ratios and explicit blends. Each input carries
+its year, methodology, source identity and availability date. Inputs later
+than `as_of` are rejected. The helper does not itself predict unobserved
+expenditures or prices. Current-method historical results are retrospective;
+they do not replace frozen forecasts or demonstrate real-time accuracy.
+See [current CE replication](current-ce-replication.md).
+
+Legacy calculator and PE paths retain their documented CPI extrapolation
+behavior. The new PE compatibility adapter labels any such result as
+consumer extrapolation with its base release and evaluated model CPI
+ratio; it is not a published release entry. Projecting poverty rates also
+requires projected population characteristics and resources, which this
+threshold estimator does not supply. No new 2026 forecast is made here.
 
 ## References
 

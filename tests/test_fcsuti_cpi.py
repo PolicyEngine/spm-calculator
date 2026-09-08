@@ -201,9 +201,9 @@ class TestGetFcsutiCpiWeightsPlumbing:
             for r in records
             if issubclass(r.category, RuntimeWarning)
         ]
-        assert any("static FCSUti weights" in m for m in messages), (
-            f"Expected static-weights warning, got: {messages}"
-        )
+        assert any(
+            "static FCSUti weights" in m for m in messages
+        ), f"Expected static-weights warning, got: {messages}"
 
     def test_explicit_weights_suppress_warning(self, monkeypatch):
         """Supplying ``weights`` explicitly is the opt-in path and

@@ -30,11 +30,11 @@ class TestCECalculation:
         - Owner with mortgage: $39,231.00
         - Owner without mortgage: $32,878.59
 
-        Measured replication fidelity (scripts/benchmark_bls_replication
-        .py, see docs/bls-2026-correction.md): the faithful variant
-        (BLS quarter window, principal-inclusive shelter, quarter4
-        annualization, 82% anchor) lands within ~4% per tenure for
-        2024. The 6% tolerance leaves headroom for CE re-releases and
+        Current measured replication (scripts/replicate_current_ce.py,
+        docs/current-ce-replication.md) uses the explicit unresolved-youth
+        exclusion approximation and pinned annual CPI inputs. Its 2024
+        tenure errors are -1.40%, -2.25%, and +1.14%. The 6% tolerance
+        leaves headroom for CE re-releases and
         CPI revisions without masking structural regressions — the
         pre-0.4 replication was 20-60% off and would fail loudly.
 
@@ -45,11 +45,20 @@ class TestCECalculation:
         Note: downloads ~600MB of CE bundles on first run (cached).
         """
         from spm_calculator.ce_threshold import calculate_base_thresholds
+        from spm_calculator.fcsuti_cpi import (
+            CPI_SERIES,
+            get_packaged_cpi_series,
+        )
         from spm_calculator.forecast import get_thresholds
 
         calculated = calculate_base_thresholds(
             target_year=2024,
             use_published_fallback=False,
+            youth_policy="exclude_unresolved",
+            cpi_series={
+                series: get_packaged_cpi_series(series, 2019, 2024)
+                for series in CPI_SERIES.values()
+            },
         )
         corrected = get_thresholds(2024, allow_forecast=False)
 
@@ -74,10 +83,19 @@ class TestCECalculation:
     def test_tenure_ordering_from_ce(self):
         """Verify tenure ordering is correct when calculated from CE data."""
         from spm_calculator.ce_threshold import calculate_base_thresholds
+        from spm_calculator.fcsuti_cpi import (
+            CPI_SERIES,
+            get_packaged_cpi_series,
+        )
 
         calculated = calculate_base_thresholds(
             target_year=2024,
             use_published_fallback=False,
+            youth_policy="exclude_unresolved",
+            cpi_series={
+                series: get_packaged_cpi_series(series, 2019, 2024)
+                for series in CPI_SERIES.values()
+            },
         )
 
         # Owner without mortgage should have lowest threshold

@@ -43,11 +43,15 @@ Reference:
 - Garner et al. methodology paper: https://www.bls.gov/pir/spm/garner_spm_choices_03_15_21.pdf
 """
 
+from __future__ import annotations
+
+import hashlib
+import json
 import os
 import warnings
 import zipfile
 from pathlib import Path
-from typing import Optional, Sequence
+from typing import Mapping, Optional, Sequence
 
 import numpy as np
 import pandas as pd
@@ -164,7 +168,10 @@ def _fetch_bytes(url: str, timeout: int = 300) -> bytes:
 
 
 def download_ce_bundle(
-    bundle_year: int, cache_dir: Optional[Path] = None
+    bundle_year: int,
+    cache_dir: Optional[Path] = None,
+    *,
+    allow_download: bool = True,
 ) -> Path:
     """Download (or reuse) the CE Interview year bundle zip.
 
@@ -180,6 +187,10 @@ def download_ce_bundle(
     dest = cache / f"intrvw{bundle_year % 100:02d}.zip"
     if dest.exists() and zipfile.is_zipfile(dest):
         return dest
+    if not allow_download:
+        raise FileNotFoundError(
+            f"Required cached CE bundle unavailable: {dest}"
+        )
     content = _fetch_bytes(bundle_url(bundle_year))
     if content[:2] != b"PK":
         raise ValueError(
@@ -205,11 +216,20 @@ def _read_bundle_member(bundle: Path, basename: str) -> pd.DataFrame:
                 f"(members: {sorted(z.namelist())[:8]}...)"
             )
         with z.open(matches[0]) as f:
-            return pd.read_csv(f, low_memory=False)
+            frame = pd.read_csv(f, low_memory=False)
+        frame.attrs["source"] = {
+            "bundle_path": str(bundle.resolve()),
+            "member": matches[0],
+        }
+        return frame
 
 
 def load_ce_quarter(
-    year: int, quarter: int, cache_dir: Optional[Path] = None
+    year: int,
+    quarter: int,
+    cache_dir: Optional[Path] = None,
+    *,
+    allow_download: bool = True,
 ) -> pd.DataFrame:
     """Load one CE Interview collection quarter as a DataFrame.
 
@@ -242,7 +262,10 @@ def load_ce_quarter(
     last_error: Optional[Exception] = None
     for bundle_year, basename in candidates:
         try:
-            bundle = download_ce_bundle(bundle_year, cache_dir=cache_dir)
+            options = {} if allow_download else {"allow_download": False}
+            bundle = download_ce_bundle(
+                bundle_year, cache_dir=cache_dir, **options
+            )
             df = _read_bundle_member(bundle, basename)
             break
         except (FileNotFoundError, RuntimeError, ValueError) as e:
@@ -254,6 +277,9 @@ def load_ce_quarter(
 
     df["ce_year"] = year
     df["ce_quarter"] = quarter
+    df.attrs["source"].update(
+        {"url": bundle_url(bundle_year), "bundle_year": bundle_year}
+    )
     return df
 
 
@@ -616,10 +642,8 @@ def _weighted_percentile(
     percentiles (numpy's default ``linear`` interpolation places
     observations at ``i / (n - 1)``, which is a different convention).
 
-    This matches the weighted-median convention used in survey
-    statistics packages (e.g., R's ``Hmisc::wtd.quantile`` with
-    ``type='i/n'``) and is the sensible extension of BLS's
-    percentile-range threshold approach to weighted CU data.
+    This is this package's interpolation convention. Its exact agreement
+    with the unpublished BLS percentile implementation is unverified.
 
     Empty input returns NaN rather than indexing into `cumulative[-1]`
     on a zero-length array; this path is reachable when a tenure bucket
@@ -644,6 +668,382 @@ def _weighted_percentile(
     return float(np.interp(target, cdf, values))
 
 
+YOUTH_POLICIES = ("error", "exclude_unresolved", "legacy_recode")
+TENURE_POLICIES = (
+    "exclude_5_6_code3_mortgage",
+    "exclude_5_6_code3_no_mortgage",
+    "include_5_6_as_renter",
+)
+TENURES = ("renter", "owner_with_mortgage", "owner_without_mortgage")
+
+
+def _mass(frame: pd.DataFrame) -> dict:
+    return {
+        "rows": len(frame),
+        "weight_sum": float(frame["FINLWT21"].sum()),
+    }
+
+
+def normalize_ce_sample(
+    ce: pd.DataFrame,
+    *,
+    youth_policy: str = "error",
+    tenure_policy: str = "exclude_5_6_code3_mortgage",
+) -> tuple[pd.DataFrame, dict]:
+    """Validate counts, select the research sample, and expose exclusions.
+
+    ``FAM_SIZE == PERSLT18`` is a legitimate minor-only consumer unit,
+    not malformed data. BLS's CE definition permits independent minors,
+    but an exact BLS SPM A=0 classification could not be established.
+    Default execution therefore raises. ``exclude_unresolved`` explicitly
+    excludes such units; ``legacy_recode`` is a nonofficial sensitivity
+    that imposes one adult while retaining the reported child count. It
+    deliberately reproduces an assumption, not a plausible classification.
+    Original counts remain intact in both modes.
+
+    Tenure 3's assignment and exclusions of 5/6 are methodological choices,
+    not an established BLS sample rule. The named alternatives measure
+    their sensitivity. Returned row labels are fresh positional indexes.
+    """
+    if youth_policy not in YOUTH_POLICIES:
+        raise ValueError(f"youth_policy must be one of {YOUTH_POLICIES}")
+    if tenure_policy not in TENURE_POLICIES:
+        raise ValueError(f"tenure_policy must be one of {TENURE_POLICIES}")
+    required = ("PERSLT18", "FAM_SIZE", "FINLWT21", "CUTENURE", "ce_year")
+    missing = [column for column in required if column not in ce]
+    if missing:
+        raise ValueError(f"CE data is missing required columns {missing}")
+    frame = ce.copy().reset_index(drop=True)
+    for column in ("FAM_SIZE", "PERSLT18", "FINLWT21", "ce_year", "CUTENURE"):
+        try:
+            frame[column] = pd.to_numeric(frame[column], errors="raise")
+        except (TypeError, ValueError) as error:
+            raise ValueError(
+                f"{column} must contain numeric values"
+            ) from error
+    family = frame["FAM_SIZE"]
+    children = frame["PERSLT18"]
+    valid = (
+        np.isfinite(family)
+        & np.isfinite(children)
+        & (family >= 1)
+        & (children >= 0)
+        & (family >= children)
+        & (family == np.floor(family))
+        & (children == np.floor(children))
+    )
+    if not valid.all():
+        raise ValueError(
+            "Malformed CE family composition: FAM_SIZE/PERSLT18 must be "
+            "finite integer counts, 0 <= PERSLT18 <= FAM_SIZE and "
+            "FAM_SIZE >= 1; supported adult-containing units have "
+            "FAM_SIZE at least PERSLT18 + 1. "
+            f"Invalid row positions: {np.flatnonzero(~valid)[:10].tolist()}"
+        )
+    weights = frame["FINLWT21"].to_numpy(dtype=float)
+    if not (np.isfinite(weights) & (weights > 0)).all():
+        raise ValueError(
+            "CE survey weights must be finite and strictly positive"
+        )
+    years = frame["ce_year"].to_numpy(dtype=float)
+    if not (np.isfinite(years) & (years == np.floor(years))).all():
+        raise ValueError("ce_year must contain finite integer years")
+    frame["num_adults"] = family - children
+    frame["num_children"] = children
+    diagnostics = {
+        "youth_policy": youth_policy,
+        "tenure_policy": tenure_policy,
+        "raw": _mass(frame),
+        "weight_semantics": "CE FINLWT21 survey weight summed over CU interviews; not unique population counts",
+        "exclusions": {"no_children": _mass(frame.loc[children == 0])},
+        "approximations": [
+            "PERSLT18 used as child count; dependent/nondependent teen classification unresolved",
+            "Tenure 3/5/6 treatment is an explicit research sample policy",
+        ],
+    }
+    frame = frame.loc[children > 0].copy()
+    if frame.empty:
+        raise ValueError("No consumer units with children found")
+    diagnostics["with_children"] = _mass(frame)
+    frame["tenure_type"] = get_tenure_type(frame)
+    if tenure_policy == "exclude_5_6_code3_no_mortgage":
+        frame.loc[frame["CUTENURE"] == 3, "tenure_type"] = (
+            "owner_without_mortgage"
+        )
+    if tenure_policy == "include_5_6_as_renter":
+        frame.loc[frame["CUTENURE"].isin([5, 6]), "tenure_type"] = "renter"
+    for code in (3, 5, 6):
+        diagnostics[f"tenure_{code}"] = _mass(
+            frame.loc[frame["CUTENURE"] == code]
+        )
+    for code in (5, 6):
+        diagnostics["exclusions"][f"tenure_{code}"] = _mass(
+            frame.loc[
+                (frame["CUTENURE"] == code) & frame["tenure_type"].isna()
+            ]
+        )
+    frame = frame.loc[frame["tenure_type"].notna()].copy()
+    unresolved = frame["num_adults"] == 0
+    detail_columns = [
+        column
+        for column in (
+            "NEWID",
+            "AGE_REF",
+            "FAM_SIZE",
+            "PERSLT18",
+            "FINLWT21",
+            "CUTENURE",
+            "ce_year",
+            "ce_quarter",
+        )
+        if column in frame
+    ]
+    # JSON-safe records preserve the observed evidence without manufacturing
+    # dates, missing reference ages, or record identifiers.
+    import json
+
+    diagnostics["unresolved_youth"] = {
+        **_mass(frame.loc[unresolved]),
+        "records": json.loads(
+            frame.loc[unresolved, detail_columns].to_json(orient="records")
+        ),
+    }
+    diagnostics["exclusions"]["unresolved_youth"] = {
+        "rows": 0,
+        "weight_sum": 0.0,
+    }
+    if unresolved.any():
+        if youth_policy == "error":
+            raise ValueError(
+                "CE minor-only units have unresolved BLS SPM adult/child "
+                f"classification ({int(unresolved.sum())} rows); exact "
+                "normalization requires FAM_SIZE at least PERSLT18 + 1. "
+                "Choose youth_policy='exclude_unresolved' explicitly for "
+                "a documented research approximation, or 'legacy_recode' "
+                "only as a nonofficial sensitivity."
+            )
+        if youth_policy == "exclude_unresolved":
+            diagnostics["exclusions"]["unresolved_youth"] = _mass(
+                frame.loc[unresolved]
+            )
+            frame = frame.loc[~unresolved].copy()
+        else:
+            frame.loc[unresolved, "num_adults"] = 1
+        diagnostics["approximations"].append(
+            f"minor-only units: {youth_policy}"
+        )
+    if frame.empty:
+        raise ValueError(
+            "No consumer units in the selected SPM research sample"
+        )
+    diagnostics["included"] = _mass(frame)
+    return frame.reset_index(drop=True), diagnostics
+
+
+def construct_normalized_expenditures(
+    ce: pd.DataFrame,
+    target_year: int,
+    *,
+    mortgage_principal: str = "include",
+    annualization: str = "quarter4",
+    cpi_series: Optional[Mapping[str, pd.Series]] = None,
+) -> tuple[pd.DataFrame, dict]:
+    """Construct expenditure, price and reference-family stages explicitly.
+
+    ``ce`` is the result of :func:`normalize_ce_sample`. Supplying CPI
+    series by BLS id pins every annual input and disables CPI transport.
+    """
+    frame = ce.copy()
+    frame["fcsuti"] = calculate_fcsuti(
+        frame, mortgage_principal, annualization
+    )
+    weights = compute_fcsuti_weights_from_ce(
+        frame, include_mortgage_principal=mortgage_principal == "include"
+    )
+    # Zero expenditure components have zero contribution, so need no CPI
+    # series. Keep negative weights visible for the CPI validator to reject.
+    weights = {
+        component: value for component, value in weights.items() if value != 0
+    }
+    options = {} if cpi_series is None else {"cpi_series": cpi_series}
+    inflation = {
+        int(year): get_fcsuti_inflation_factor(
+            int(year), target_year, weights=weights, **options
+        )
+        for year in sorted(frame["ce_year"].unique())
+    }
+    frame["inflation_factor"] = frame["ce_year"].map(inflation)
+    frame["equiv_scale"] = spm_equivalence_scale(
+        frame["num_adults"], frame["num_children"], normalize=False
+    )
+    scale = REFERENCE_RAW_SCALE / frame["equiv_scale"]
+    frame["fcsuti_threshold_year"] = (
+        frame["fcsuti"] * frame["inflation_factor"]
+    )
+    frame["fcsuti_2a2c"] = frame["fcsuti_threshold_year"] * scale
+    su = (
+        _sum_pair(frame, "SHELTPQ", "SHELTCQ")
+        + _sum_pair(frame, "UTILPQ", "UTILCQ")
+        - _sum_pair(frame, "TELEPHPQ", "TELEPHCQ")
+    )
+    if mortgage_principal == "include":
+        for pq, cq in _PRINCIPAL_COLUMNS:
+            principal = _sum_pair_if_present(frame, pq, cq)
+            if principal is not None:
+                su = su + principal
+    frame["su_2a2c"] = (
+        su
+        * (4.0 if annualization == "quarter4" else 2.0)
+        * frame["inflation_factor"]
+        * scale
+    )
+    frame["ce_weight"] = frame["FINLWT21"].astype(float)
+    if not np.isfinite(frame[["fcsuti_2a2c", "su_2a2c"]].to_numpy()).all():
+        raise ValueError("Normalized CE expenditures contain nonfinite values")
+    return frame, {
+        "cpi_component_weights": weights,
+        "inflation_factors": inflation,
+        "cpi_input_mode": (
+            "explicit_pinned_series"
+            if cpi_series is not None
+            else "live_with_packaged_fallback"
+        ),
+        "mortgage_principal": mortgage_principal,
+        "annualization": annualization,
+        "reference_family": {"adults": 2, "children": 2},
+        "approximations": [
+            "annual CPI by collection year instead of BLS quarterly treatment",
+            "80 percent allocation to combined GROCER summary for redesigned rows",
+            "home internet and BLS in-kind benefit imputations omitted",
+        ],
+    }
+
+
+def estimate_thresholds(
+    ce: pd.DataFrame, median_share: float = MEDIAN_SHARE
+) -> tuple[dict[str, float], dict]:
+    """Apply the 47–53 midpoint-CDF band with strictly positional selection.
+
+    Tiny samples retain the historical nearest-median/pooled-tenure
+    fallback, but its use is surfaced in diagnostics. The convention is
+    explicit; equivalence to BLS's unpublished percentile code is unverified.
+    """
+    if not np.isfinite(median_share) or not 0 < median_share <= 1:
+        raise ValueError("median_share must be finite and in (0, 1]")
+    if ce.empty:
+        raise ValueError("No usable consumer units for weighted estimation")
+    values = ce["fcsuti_2a2c"].to_numpy(dtype=float)
+    weights = ce["ce_weight"].to_numpy(dtype=float)
+    if not (np.isfinite(values) & np.isfinite(weights) & (weights > 0)).all():
+        raise ValueError(
+            "Estimation values must be finite with positive weights"
+        )
+    order = np.argsort(values, kind="stable")
+    cumulative = np.cumsum(weights[order])
+    cdf = (cumulative - weights[order] / 2) / cumulative[-1]
+    in_range = (cdf >= 0.47) & (cdf <= 0.53)
+    fallback = not bool(in_range.any())
+    if fallback:
+        in_range[np.argmin(np.abs(cdf - 0.5))] = True
+    estimation = ce.iloc[order[in_range]]
+    est_weights = estimation["ce_weight"].to_numpy()
+    fcsuti_e = float(
+        np.average(estimation["fcsuti_2a2c"], weights=est_weights)
+    )
+    su_e = float(np.average(estimation["su_2a2c"], weights=est_weights))
+    thresholds, tenure_diagnostics = {}, {}
+    for tenure in TENURES:
+        subset = estimation.loc[estimation["tenure_type"] == tenure]
+        su_eh = (
+            su_e
+            if subset.empty
+            else float(
+                np.average(subset["su_2a2c"], weights=subset["ce_weight"])
+            )
+        )
+        thresholds[tenure] = median_share * (1.2 * fcsuti_e - su_e + su_eh)
+        tenure_diagnostics[tenure] = {
+            "rows": len(subset),
+            "weight_sum": float(subset["ce_weight"].sum()),
+            "su_mean": su_eh,
+            "pooled_fallback": subset.empty,
+        }
+    if not all(
+        np.isfinite(value) and value > 0 for value in thresholds.values()
+    ):
+        raise ValueError("Estimated thresholds must be finite and positive")
+    return thresholds, {
+        "percentile_convention": "midpoint_cdf_inclusive_47_53",
+        "bls_percentile_code_parity": "unverified",
+        "band_rows": len(estimation),
+        "band_weight_sum": float(est_weights.sum()),
+        "band_fallback": fallback,
+        "fcsuti_mean": fcsuti_e,
+        "su_mean": su_e,
+        "band_fcsuti_min": float(estimation["fcsuti_2a2c"].min()),
+        "band_fcsuti_max": float(estimation["fcsuti_2a2c"].max()),
+        "median_share": median_share,
+        "tenures": tenure_diagnostics,
+    }
+
+
+def replicate_thresholds(
+    ce: pd.DataFrame,
+    target_year: int,
+    *,
+    youth_policy: str = "error",
+    tenure_policy: str = "exclude_5_6_code3_mortgage",
+    mortgage_principal: str = "include",
+    annualization: str = "quarter4",
+    median_share: float = MEDIAN_SHARE,
+    cpi_series: Optional[Mapping[str, pd.Series]] = None,
+) -> dict:
+    """Run source-independent scientific stages and return all diagnostics."""
+    normalized, sample = normalize_ce_sample(
+        ce, youth_policy=youth_policy, tenure_policy=tenure_policy
+    )
+    expenditures, construction = construct_normalized_expenditures(
+        normalized,
+        target_year,
+        mortgage_principal=mortgage_principal,
+        annualization=annualization,
+        cpi_series=cpi_series,
+    )
+    thresholds, estimation = estimate_thresholds(expenditures, median_share)
+    methodology_config = {
+        "implementation": "ce-fmli-annual-cpi-research-v1",
+        "youth_policy": youth_policy,
+        "tenure_policy": tenure_policy,
+        "mortgage_principal": mortgage_principal,
+        "annualization": annualization,
+        "median_share": float(median_share),
+        "percentile_convention": estimation["percentile_convention"],
+        "cpi_input_mode": construction["cpi_input_mode"],
+    }
+    method_digest = hashlib.sha256(
+        json.dumps(
+            methodology_config,
+            sort_keys=True,
+            separators=(",", ":"),
+            allow_nan=False,
+        ).encode("utf-8")
+    ).hexdigest()
+    return {
+        "target_year": target_year,
+        "methodology_id": f"ce-fmli-research-v1:{method_digest}",
+        "methodology_config": methodology_config,
+        "classification": "research_replication_with_approximations",
+        "thresholds": thresholds,
+        "sample": sample,
+        "construction": construction,
+        "estimation": estimation,
+        "uncertainty": {
+            "status": "unavailable",
+            "reason": "Sampling and imputation uncertainty not estimated",
+        },
+    }
+
+
 def calculate_base_thresholds(
     years: Optional[list[int]] = None,
     target_year: int = 2024,
@@ -654,6 +1054,10 @@ def calculate_base_thresholds(
     annualization: str = "quarter4",
     cache_dir: Optional[Path] = None,
     ce: Optional[pd.DataFrame] = None,
+    *,
+    youth_policy: str = "error",
+    tenure_policy: str = "exclude_5_6_code3_mortgage",
+    cpi_series: Optional[Mapping[str, pd.Series]] = None,
 ) -> dict[str, float]:
     """Calculate SPM base thresholds by tenure from CE Survey PUMD.
 
@@ -703,6 +1107,16 @@ def calculate_base_thresholds(
         ce: Pre-loaded CE FMLI DataFrame (with ``ce_year`` column).
             Skips downloading; used by the replication benchmark to
             reuse one loaded window across variants.
+        youth_policy: Default "error" refuses unresolved minor-only units.
+            Research runs may select "exclude_unresolved" explicitly;
+            "legacy_recode" is a nonofficial sensitivity only. See
+            :func:`normalize_ce_sample` and use :func:`replicate_thresholds`
+            to retain exclusion counts, weights and estimation diagnostics.
+        tenure_policy: Named treatment of ambiguous/unrepresented tenures;
+            see :func:`normalize_ce_sample`.
+        cpi_series: Explicit annual CPI Series by BLS id; no CPI network
+            calls occur when supplied. Source identity belongs in the
+            calling release/replication manifest.
 
     Returns:
         Dict with ``renter``, ``owner_with_mortgage``,
@@ -722,186 +1136,17 @@ def calculate_base_thresholds(
                 ce = load_ce_quarters(
                     bls_quarter_window(target_year), cache_dir=cache_dir
                 )
-        ce = ce.copy()
-
-        # The BLS methodology requires consumer units with at least one
-        # child under 18. FMLI publishes `PERSLT18` for every vintage we
-        # care about (2013+); if it's missing we refuse rather than
-        # using the old `FAM_SIZE > PERSOT64` heuristic, which silently
-        # matches any non-elderly CU — including two-adult / zero-child
-        # units — and therefore miscalibrates the threshold.
-        if "PERSLT18" not in ce.columns:
-            raise ValueError(
-                "CE data is missing the 'PERSLT18' column required to "
-                "restrict to consumer units with children. The previous "
-                "fallback (FAM_SIZE > PERSOT64) is a methodology error "
-                "because it matches any CU with at least one non-elderly "
-                "member, not a CU with a child under 18."
-            )
-        ce = ce[ce["PERSLT18"] > 0].copy()
-
-        if len(ce) == 0:
-            raise ValueError("No consumer units with children found")
-
-        # CUTENURE 5 (occupied without cash rent) and 6 (student
-        # housing) do not identify one of the three published SPM
-        # tenure groups. ``get_tenure_type`` marks them missing; remove
-        # them before deriving weights or the pooled percentile band so
-        # exclusion means exclusion from the replication sample.
-        ce["tenure_type"] = get_tenure_type(ce)
-        ce = ce[ce["tenure_type"].notna()].copy()
-        if len(ce) == 0:
-            raise ValueError(
-                "No consumer units in a published SPM tenure group found"
-            )
-
-        ce["fcsuti"] = calculate_fcsuti(
+        result = replicate_thresholds(
             ce,
+            target_year,
+            youth_policy=youth_policy,
+            tenure_policy=tenure_policy,
+            median_share=median_share,
             mortgage_principal=mortgage_principal,
             annualization=annualization,
+            cpi_series=cpi_series,
         )
-
-        # Derive FCSUti composite weights from this CE sample itself,
-        # matching BLS Garner (2021): the weights roll with the 5-year
-        # window rather than being held static across years. Failure is
-        # fatal; substituting static weights would make the output look
-        # like a CE replication when it is not one.
-        fcsuti_weights = compute_fcsuti_weights_from_ce(ce)
-
-        # Inflate each CU's FCSUti to target-year dollars using the
-        # FCSUti composite CPI built from the derived (or default)
-        # weights.
-        inflation_factors = {
-            year: get_fcsuti_inflation_factor(
-                year, target_year, weights=fcsuti_weights
-            )
-            for year in ce["ce_year"].dropna().astype(int).unique()
-        }
-        ce["inflation_factor"] = (
-            ce["ce_year"].astype(int).map(inflation_factors).astype(float)
-        )
-        ce["fcsuti_threshold_year"] = ce["fcsuti"] * ce["inflation_factor"]
-
-        # Normalize to the 2A2C reference family via the Betson scale.
-        # FMLI has no adult-count summary column; derive it as family
-        # size minus children. (The previous ``ce.get("ADULT", 2)``
-        # read a nonexistent column and silently treated every CU as
-        # two-adult, understating equivalized spending for
-        # single-parent CUs.)
-        if "FAM_SIZE" not in ce.columns:
-            raise ValueError(
-                "CE data is missing the 'FAM_SIZE' column required to "
-                "derive the number of adults"
-            )
-        try:
-            family_size = pd.to_numeric(ce["FAM_SIZE"], errors="raise")
-            num_children = pd.to_numeric(ce["PERSLT18"], errors="raise")
-        except (TypeError, ValueError) as error:
-            raise ValueError(
-                "FAM_SIZE and PERSLT18 must contain numeric values"
-            ) from error
-        valid_family = (
-            np.isfinite(family_size)
-            & np.isfinite(num_children)
-            & (family_size >= num_children + 1)
-        )
-        if not valid_family.all():
-            bad_rows = list(ce.index[~valid_family])
-            raise ValueError(
-                "FAM_SIZE must be finite and at least PERSLT18 + 1 "
-                f"(one adult); invalid row indices: {bad_rows[:10]}"
-            )
-        num_adults = family_size - num_children
-        ce["equiv_scale"] = spm_equivalence_scale(
-            num_adults, num_children, normalize=False
-        )
-        ce["fcsuti_2a2c"] = ce["fcsuti_threshold_year"] * (
-            REFERENCE_RAW_SCALE / ce["equiv_scale"]
-        )
-
-        # Shelter + utilities excluding telephone, the tenure-swapped
-        # term of the BLS formula. UTIL contains TELEPH, so SU without
-        # telephone is SHELT (+ principal under the outlays concept)
-        # + UTIL - TELEPH.
-        su = (
-            _sum_pair(ce, "SHELTPQ", "SHELTCQ")
-            + _sum_pair(ce, "UTILPQ", "UTILCQ")
-            - _sum_pair(ce, "TELEPHPQ", "TELEPHCQ")
-        )
-        if mortgage_principal == "include":
-            for pq, cq in _PRINCIPAL_COLUMNS:
-                principal = _sum_pair_if_present(ce, pq, cq)
-                if principal is not None:
-                    su = su + principal
-        annual_factor = 4.0 if annualization == "quarter4" else 2.0
-        ce["su_2a2c"] = (
-            su
-            * annual_factor
-            * ce["inflation_factor"]
-            * (REFERENCE_RAW_SCALE / ce["equiv_scale"])
-        )
-
-        # ``compute_fcsuti_weights_from_ce`` already validated these as
-        # finite and strictly positive; retain the calibrated CE weights
-        # for percentiles and within-band averages.
-        ce["ce_weight"] = ce["FINLWT21"].astype(float)
-
-        ce = ce.dropna(subset=["fcsuti_2a2c", "su_2a2c"])
-        if len(ce) == 0:
-            raise ValueError("No usable consumer units after cleaning")
-
-        # BLS formula (methodology page, corrected 2026-07-17):
-        #   SPM_h = share * (1.2 * FCSUti_E - SU_E + SU_Eh)
-        # where E is the estimation subsample inside the 47th-53rd
-        # percentile range of equivalized FCSUti, SU is shelter +
-        # utilities excluding telephone, and h indexes housing tenure.
-        # The 1.2 multiplier accounts for other basic goods and
-        # services (household supplies, personal care, non-work
-        # transportation).
-        values = ce["fcsuti_2a2c"].to_numpy()
-        weights = ce["ce_weight"].to_numpy()
-        order = np.argsort(values)
-        cumulative = np.cumsum(weights[order])
-        cdf = (cumulative - weights[order] / 2) / cumulative[-1]
-        in_range_sorted = (cdf >= 0.47) & (cdf <= 0.53)
-        if not in_range_sorted.any():
-            # Degenerate samples (tiny test fixtures) can leave the
-            # 47th-53rd band empty under the midpoint-CDF convention;
-            # fall back to the observation closest to the median.
-            in_range_sorted = np.zeros_like(in_range_sorted, dtype=bool)
-            in_range_sorted[np.argmin(np.abs(cdf - 0.5))] = True
-        range_index = ce.index.to_numpy()[order][in_range_sorted]
-        estimation = ce.loc[range_index]
-
-        est_weights = estimation["ce_weight"].to_numpy()
-        fcsuti_e = float(
-            np.average(estimation["fcsuti_2a2c"], weights=est_weights)
-        )
-        su_e = float(np.average(estimation["su_2a2c"], weights=est_weights))
-
-        base_thresholds: dict[str, float] = {}
-        for tenure in (
-            "renter",
-            "owner_with_mortgage",
-            "owner_without_mortgage",
-        ):
-            subset = estimation[estimation["tenure_type"] == tenure]
-            if len(subset) == 0:
-                # Degenerate estimation range (tiny test fixtures):
-                # fall back to the pooled shelter-utilities average.
-                su_eh = su_e
-            else:
-                su_eh = float(
-                    np.average(
-                        subset["su_2a2c"],
-                        weights=subset["ce_weight"].to_numpy(),
-                    )
-                )
-            base_thresholds[tenure] = median_share * (
-                1.2 * fcsuti_e - su_e + su_eh
-            )
-
-        return base_thresholds
+        return result["thresholds"]
 
     except Exception as e:
         if use_published_fallback:
