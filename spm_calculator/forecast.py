@@ -38,6 +38,8 @@ and CPI are already published, prefer the consumption-based
 0.76%/yr mean absolute error).
 """
 
+from __future__ import annotations
+
 import json
 import warnings
 from functools import lru_cache
