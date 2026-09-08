@@ -1,0 +1,511 @@
+{
+  "dataset": {
+    "inputs": [
+      {
+        "entity": "SpmUnit",
+        "entity_id": "synthetic:2024:owner_with_mortgage",
+        "interval": {
+          "end": "2024-12-31",
+          "start": "2024-01-01"
+        },
+        "name": "us:policies/policyengine/spm-threshold-application#input.housing_tenure",
+        "value": {
+          "kind": "integer",
+          "value": 0
+        }
+      },
+      {
+        "entity": "SpmUnit",
+        "entity_id": "synthetic:2024:owner_with_mortgage",
+        "interval": {
+          "end": "2024-12-31",
+          "start": "2024-01-01"
+        },
+        "name": "us:policies/policyengine/spm-threshold-application#input.equivalence_factor",
+        "value": {
+          "kind": "decimal",
+          "value": "1.0"
+        }
+      },
+      {
+        "entity": "SpmUnit",
+        "entity_id": "synthetic:2024:owner_with_mortgage",
+        "interval": {
+          "end": "2024-12-31",
+          "start": "2024-01-01"
+        },
+        "name": "us:policies/policyengine/spm-threshold-application#input.geographic_factor",
+        "value": {
+          "kind": "decimal",
+          "value": "1.1"
+        }
+      },
+      {
+        "entity": "SpmUnit",
+        "entity_id": "synthetic:2024:owner_without_mortgage",
+        "interval": {
+          "end": "2024-12-31",
+          "start": "2024-01-01"
+        },
+        "name": "us:policies/policyengine/spm-threshold-application#input.housing_tenure",
+        "value": {
+          "kind": "integer",
+          "value": 1
+        }
+      },
+      {
+        "entity": "SpmUnit",
+        "entity_id": "synthetic:2024:owner_without_mortgage",
+        "interval": {
+          "end": "2024-12-31",
+          "start": "2024-01-01"
+        },
+        "name": "us:policies/policyengine/spm-threshold-application#input.equivalence_factor",
+        "value": {
+          "kind": "decimal",
+          "value": "0.46346305677196975"
+        }
+      },
+      {
+        "entity": "SpmUnit",
+        "entity_id": "synthetic:2024:owner_without_mortgage",
+        "interval": {
+          "end": "2024-12-31",
+          "start": "2024-01-01"
+        },
+        "name": "us:policies/policyengine/spm-threshold-application#input.geographic_factor",
+        "value": {
+          "kind": "decimal",
+          "value": "0.9"
+        }
+      },
+      {
+        "entity": "SpmUnit",
+        "entity_id": "synthetic:2024:renter",
+        "interval": {
+          "end": "2024-12-31",
+          "start": "2024-01-01"
+        },
+        "name": "us:policies/policyengine/spm-threshold-application#input.housing_tenure",
+        "value": {
+          "kind": "integer",
+          "value": 2
+        }
+      },
+      {
+        "entity": "SpmUnit",
+        "entity_id": "synthetic:2024:renter",
+        "interval": {
+          "end": "2024-12-31",
+          "start": "2024-01-01"
+        },
+        "name": "us:policies/policyengine/spm-threshold-application#input.equivalence_factor",
+        "value": {
+          "kind": "decimal",
+          "value": "0.8302800578458694"
+        }
+      },
+      {
+        "entity": "SpmUnit",
+        "entity_id": "synthetic:2024:renter",
+        "interval": {
+          "end": "2024-12-31",
+          "start": "2024-01-01"
+        },
+        "name": "us:policies/policyengine/spm-threshold-application#input.geographic_factor",
+        "value": {
+          "kind": "decimal",
+          "value": "1.0"
+        }
+      },
+      {
+        "entity": "SpmUnit",
+        "entity_id": "synthetic:2025:owner_with_mortgage",
+        "interval": {
+          "end": "2025-12-31",
+          "start": "2025-01-01"
+        },
+        "name": "us:policies/policyengine/spm-threshold-application#input.housing_tenure",
+        "value": {
+          "kind": "integer",
+          "value": 0
+        }
+      },
+      {
+        "entity": "SpmUnit",
+        "entity_id": "synthetic:2025:owner_with_mortgage",
+        "interval": {
+          "end": "2025-12-31",
+          "start": "2025-01-01"
+        },
+        "name": "us:policies/policyengine/spm-threshold-application#input.equivalence_factor",
+        "value": {
+          "kind": "decimal",
+          "value": "1.0"
+        }
+      },
+      {
+        "entity": "SpmUnit",
+        "entity_id": "synthetic:2025:owner_with_mortgage",
+        "interval": {
+          "end": "2025-12-31",
+          "start": "2025-01-01"
+        },
+        "name": "us:policies/policyengine/spm-threshold-application#input.geographic_factor",
+        "value": {
+          "kind": "decimal",
+          "value": "1.1"
+        }
+      },
+      {
+        "entity": "SpmUnit",
+        "entity_id": "synthetic:2025:owner_without_mortgage",
+        "interval": {
+          "end": "2025-12-31",
+          "start": "2025-01-01"
+        },
+        "name": "us:policies/policyengine/spm-threshold-application#input.housing_tenure",
+        "value": {
+          "kind": "integer",
+          "value": 1
+        }
+      },
+      {
+        "entity": "SpmUnit",
+        "entity_id": "synthetic:2025:owner_without_mortgage",
+        "interval": {
+          "end": "2025-12-31",
+          "start": "2025-01-01"
+        },
+        "name": "us:policies/policyengine/spm-threshold-application#input.equivalence_factor",
+        "value": {
+          "kind": "decimal",
+          "value": "0.46346305677196975"
+        }
+      },
+      {
+        "entity": "SpmUnit",
+        "entity_id": "synthetic:2025:owner_without_mortgage",
+        "interval": {
+          "end": "2025-12-31",
+          "start": "2025-01-01"
+        },
+        "name": "us:policies/policyengine/spm-threshold-application#input.geographic_factor",
+        "value": {
+          "kind": "decimal",
+          "value": "0.9"
+        }
+      },
+      {
+        "entity": "SpmUnit",
+        "entity_id": "synthetic:2025:renter",
+        "interval": {
+          "end": "2025-12-31",
+          "start": "2025-01-01"
+        },
+        "name": "us:policies/policyengine/spm-threshold-application#input.housing_tenure",
+        "value": {
+          "kind": "integer",
+          "value": 2
+        }
+      },
+      {
+        "entity": "SpmUnit",
+        "entity_id": "synthetic:2025:renter",
+        "interval": {
+          "end": "2025-12-31",
+          "start": "2025-01-01"
+        },
+        "name": "us:policies/policyengine/spm-threshold-application#input.equivalence_factor",
+        "value": {
+          "kind": "decimal",
+          "value": "0.8302800578458694"
+        }
+      },
+      {
+        "entity": "SpmUnit",
+        "entity_id": "synthetic:2025:renter",
+        "interval": {
+          "end": "2025-12-31",
+          "start": "2025-01-01"
+        },
+        "name": "us:policies/policyengine/spm-threshold-application#input.geographic_factor",
+        "value": {
+          "kind": "decimal",
+          "value": "1.0"
+        }
+      },
+      {
+        "entity": "SpmUnit",
+        "entity_id": "synthetic:boundary:below",
+        "interval": {
+          "end": "2025-12-31",
+          "start": "2025-01-01"
+        },
+        "name": "us:policies/policyengine/spm-threshold-application#input.housing_tenure",
+        "value": {
+          "kind": "integer",
+          "value": 2
+        }
+      },
+      {
+        "entity": "SpmUnit",
+        "entity_id": "synthetic:boundary:below",
+        "interval": {
+          "end": "2025-12-31",
+          "start": "2025-01-01"
+        },
+        "name": "us:policies/policyengine/spm-threshold-application#input.equivalence_factor",
+        "value": {
+          "kind": "decimal",
+          "value": "1.0"
+        }
+      },
+      {
+        "entity": "SpmUnit",
+        "entity_id": "synthetic:boundary:below",
+        "interval": {
+          "end": "2025-12-31",
+          "start": "2025-01-01"
+        },
+        "name": "us:policies/policyengine/spm-threshold-application#input.geographic_factor",
+        "value": {
+          "kind": "decimal",
+          "value": "1.0"
+        }
+      },
+      {
+        "entity": "SpmUnit",
+        "entity_id": "synthetic:boundary:below",
+        "interval": {
+          "end": "2025-12-31",
+          "start": "2025-01-01"
+        },
+        "name": "us:policies/policyengine/spm-threshold-application#input.resources",
+        "value": {
+          "kind": "decimal",
+          "value": "41700.545713"
+        }
+      },
+      {
+        "entity": "SpmUnit",
+        "entity_id": "synthetic:boundary:equal",
+        "interval": {
+          "end": "2025-12-31",
+          "start": "2025-01-01"
+        },
+        "name": "us:policies/policyengine/spm-threshold-application#input.housing_tenure",
+        "value": {
+          "kind": "integer",
+          "value": 2
+        }
+      },
+      {
+        "entity": "SpmUnit",
+        "entity_id": "synthetic:boundary:equal",
+        "interval": {
+          "end": "2025-12-31",
+          "start": "2025-01-01"
+        },
+        "name": "us:policies/policyengine/spm-threshold-application#input.equivalence_factor",
+        "value": {
+          "kind": "decimal",
+          "value": "1.0"
+        }
+      },
+      {
+        "entity": "SpmUnit",
+        "entity_id": "synthetic:boundary:equal",
+        "interval": {
+          "end": "2025-12-31",
+          "start": "2025-01-01"
+        },
+        "name": "us:policies/policyengine/spm-threshold-application#input.geographic_factor",
+        "value": {
+          "kind": "decimal",
+          "value": "1.0"
+        }
+      },
+      {
+        "entity": "SpmUnit",
+        "entity_id": "synthetic:boundary:equal",
+        "interval": {
+          "end": "2025-12-31",
+          "start": "2025-01-01"
+        },
+        "name": "us:policies/policyengine/spm-threshold-application#input.resources",
+        "value": {
+          "kind": "decimal",
+          "value": "41700.555713"
+        }
+      },
+      {
+        "entity": "SpmUnit",
+        "entity_id": "synthetic:boundary:above",
+        "interval": {
+          "end": "2025-12-31",
+          "start": "2025-01-01"
+        },
+        "name": "us:policies/policyengine/spm-threshold-application#input.housing_tenure",
+        "value": {
+          "kind": "integer",
+          "value": 2
+        }
+      },
+      {
+        "entity": "SpmUnit",
+        "entity_id": "synthetic:boundary:above",
+        "interval": {
+          "end": "2025-12-31",
+          "start": "2025-01-01"
+        },
+        "name": "us:policies/policyengine/spm-threshold-application#input.equivalence_factor",
+        "value": {
+          "kind": "decimal",
+          "value": "1.0"
+        }
+      },
+      {
+        "entity": "SpmUnit",
+        "entity_id": "synthetic:boundary:above",
+        "interval": {
+          "end": "2025-12-31",
+          "start": "2025-01-01"
+        },
+        "name": "us:policies/policyengine/spm-threshold-application#input.geographic_factor",
+        "value": {
+          "kind": "decimal",
+          "value": "1.0"
+        }
+      },
+      {
+        "entity": "SpmUnit",
+        "entity_id": "synthetic:boundary:above",
+        "interval": {
+          "end": "2025-12-31",
+          "start": "2025-01-01"
+        },
+        "name": "us:policies/policyengine/spm-threshold-application#input.resources",
+        "value": {
+          "kind": "decimal",
+          "value": "41700.565713"
+        }
+      }
+    ],
+    "relations": []
+  },
+  "mode": "explain",
+  "queries": [
+    {
+      "entity_id": "synthetic:2024:owner_with_mortgage",
+      "outputs": [
+        "us:policies/policyengine/spm-threshold-application#adjusted_threshold"
+      ],
+      "period": {
+        "end": "2024-12-31",
+        "name": "spm-calendar-year",
+        "period_kind": "custom",
+        "start": "2024-01-01"
+      }
+    },
+    {
+      "entity_id": "synthetic:2024:owner_without_mortgage",
+      "outputs": [
+        "us:policies/policyengine/spm-threshold-application#adjusted_threshold"
+      ],
+      "period": {
+        "end": "2024-12-31",
+        "name": "spm-calendar-year",
+        "period_kind": "custom",
+        "start": "2024-01-01"
+      }
+    },
+    {
+      "entity_id": "synthetic:2024:renter",
+      "outputs": [
+        "us:policies/policyengine/spm-threshold-application#adjusted_threshold"
+      ],
+      "period": {
+        "end": "2024-12-31",
+        "name": "spm-calendar-year",
+        "period_kind": "custom",
+        "start": "2024-01-01"
+      }
+    },
+    {
+      "entity_id": "synthetic:2025:owner_with_mortgage",
+      "outputs": [
+        "us:policies/policyengine/spm-threshold-application#adjusted_threshold"
+      ],
+      "period": {
+        "end": "2025-12-31",
+        "name": "spm-calendar-year",
+        "period_kind": "custom",
+        "start": "2025-01-01"
+      }
+    },
+    {
+      "entity_id": "synthetic:2025:owner_without_mortgage",
+      "outputs": [
+        "us:policies/policyengine/spm-threshold-application#adjusted_threshold"
+      ],
+      "period": {
+        "end": "2025-12-31",
+        "name": "spm-calendar-year",
+        "period_kind": "custom",
+        "start": "2025-01-01"
+      }
+    },
+    {
+      "entity_id": "synthetic:2025:renter",
+      "outputs": [
+        "us:policies/policyengine/spm-threshold-application#adjusted_threshold"
+      ],
+      "period": {
+        "end": "2025-12-31",
+        "name": "spm-calendar-year",
+        "period_kind": "custom",
+        "start": "2025-01-01"
+      }
+    },
+    {
+      "entity_id": "synthetic:boundary:below",
+      "outputs": [
+        "us:policies/policyengine/spm-threshold-application#adjusted_threshold",
+        "us:policies/policyengine/spm-threshold-application#is_in_poverty"
+      ],
+      "period": {
+        "end": "2025-12-31",
+        "name": "spm-calendar-year",
+        "period_kind": "custom",
+        "start": "2025-01-01"
+      }
+    },
+    {
+      "entity_id": "synthetic:boundary:equal",
+      "outputs": [
+        "us:policies/policyengine/spm-threshold-application#adjusted_threshold",
+        "us:policies/policyengine/spm-threshold-application#is_in_poverty"
+      ],
+      "period": {
+        "end": "2025-12-31",
+        "name": "spm-calendar-year",
+        "period_kind": "custom",
+        "start": "2025-01-01"
+      }
+    },
+    {
+      "entity_id": "synthetic:boundary:above",
+      "outputs": [
+        "us:policies/policyengine/spm-threshold-application#adjusted_threshold",
+        "us:policies/policyengine/spm-threshold-application#is_in_poverty"
+      ],
+      "period": {
+        "end": "2025-12-31",
+        "name": "spm-calendar-year",
+        "period_kind": "custom",
+        "start": "2025-01-01"
+      }
+    }
+  ]
+}

@@ -1,0 +1,883 @@
+{
+  "assurance": "development_unsigned",
+  "context": {
+    "artifact_sha256": "07cb8d0f6d7d49f031ba3c59585f04889c92e0a0cdaf51112f203250724abdf9",
+    "bundle_sha256": "ebce48e91bf7335924ce07566e9b6fcefc0ea668c5a75fac7d099518785f8942",
+    "engine": {
+      "artifact_format_version": 2,
+      "dependency_lock_sha256": "e556fd5ef7f298f7be1ca68c20f765af6f667682329766a556300a0417797628",
+      "execution_host_sha256": "a7b48c9aef987018776d1ee921aad985a458b2c5798d32b8369a30ea69eb73ac",
+      "repository": "https://github.com/TheAxiomFoundation/axiom-rules-engine",
+      "revision": "d142c645917817cf590e036fb99f99b2d4780e1a",
+      "version": "0.2.2"
+    },
+    "mode": "explain",
+    "queries": [
+      {
+        "entity_id": "synthetic:2024:owner_with_mortgage",
+        "outputs": [
+          "us:policies/policyengine/spm-threshold-application#adjusted_threshold"
+        ],
+        "period": {
+          "end": "2024-12-31",
+          "name": "spm-calendar-year",
+          "period_kind": "custom",
+          "start": "2024-01-01"
+        }
+      },
+      {
+        "entity_id": "synthetic:2024:owner_without_mortgage",
+        "outputs": [
+          "us:policies/policyengine/spm-threshold-application#adjusted_threshold"
+        ],
+        "period": {
+          "end": "2024-12-31",
+          "name": "spm-calendar-year",
+          "period_kind": "custom",
+          "start": "2024-01-01"
+        }
+      },
+      {
+        "entity_id": "synthetic:2024:renter",
+        "outputs": [
+          "us:policies/policyengine/spm-threshold-application#adjusted_threshold"
+        ],
+        "period": {
+          "end": "2024-12-31",
+          "name": "spm-calendar-year",
+          "period_kind": "custom",
+          "start": "2024-01-01"
+        }
+      },
+      {
+        "entity_id": "synthetic:2025:owner_with_mortgage",
+        "outputs": [
+          "us:policies/policyengine/spm-threshold-application#adjusted_threshold"
+        ],
+        "period": {
+          "end": "2025-12-31",
+          "name": "spm-calendar-year",
+          "period_kind": "custom",
+          "start": "2025-01-01"
+        }
+      },
+      {
+        "entity_id": "synthetic:2025:owner_without_mortgage",
+        "outputs": [
+          "us:policies/policyengine/spm-threshold-application#adjusted_threshold"
+        ],
+        "period": {
+          "end": "2025-12-31",
+          "name": "spm-calendar-year",
+          "period_kind": "custom",
+          "start": "2025-01-01"
+        }
+      },
+      {
+        "entity_id": "synthetic:2025:renter",
+        "outputs": [
+          "us:policies/policyengine/spm-threshold-application#adjusted_threshold"
+        ],
+        "period": {
+          "end": "2025-12-31",
+          "name": "spm-calendar-year",
+          "period_kind": "custom",
+          "start": "2025-01-01"
+        }
+      },
+      {
+        "entity_id": "synthetic:boundary:below",
+        "outputs": [
+          "us:policies/policyengine/spm-threshold-application#adjusted_threshold",
+          "us:policies/policyengine/spm-threshold-application#is_in_poverty"
+        ],
+        "period": {
+          "end": "2025-12-31",
+          "name": "spm-calendar-year",
+          "period_kind": "custom",
+          "start": "2025-01-01"
+        }
+      },
+      {
+        "entity_id": "synthetic:boundary:equal",
+        "outputs": [
+          "us:policies/policyengine/spm-threshold-application#adjusted_threshold",
+          "us:policies/policyengine/spm-threshold-application#is_in_poverty"
+        ],
+        "period": {
+          "end": "2025-12-31",
+          "name": "spm-calendar-year",
+          "period_kind": "custom",
+          "start": "2025-01-01"
+        }
+      },
+      {
+        "entity_id": "synthetic:boundary:above",
+        "outputs": [
+          "us:policies/policyengine/spm-threshold-application#adjusted_threshold",
+          "us:policies/policyengine/spm-threshold-application#is_in_poverty"
+        ],
+        "period": {
+          "end": "2025-12-31",
+          "name": "spm-calendar-year",
+          "period_kind": "custom",
+          "start": "2025-01-01"
+        }
+      }
+    ],
+    "scenario": {
+      "pins": []
+    },
+    "scenario_sha256": "bc4b6052640553c4fb3ea970d4ff057f54a3205e2e6eab63270bdcb07e17296d",
+    "wire_version": "axiom/execution/v0"
+  },
+  "context_sha256": "2a41811537902d516feda476ef4fb0fc788e636125f78b1e04687f1c00036493",
+  "format": "axiom/execution-receipt/v0",
+  "result": {
+    "metadata": {
+      "actual_mode": "explain",
+      "fallback_reason": null,
+      "requested_mode": "explain"
+    },
+    "results": [
+      {
+        "entity_id": "synthetic:2024:owner_with_mortgage",
+        "outputs": {
+          "us:policies/policyengine/spm-threshold-application#adjusted_threshold": {
+            "dtype": "decimal",
+            "id": "us:policies/policyengine/spm-threshold-application#adjusted_threshold",
+            "kind": "scalar",
+            "name": "adjusted_threshold",
+            "unit": "USD",
+            "value": {
+              "kind": "decimal",
+              "value": "43154.0939027"
+            }
+          }
+        },
+        "period": {
+          "end": "2024-12-31",
+          "name": "spm-calendar-year",
+          "period_kind": "custom",
+          "start": "2024-01-01"
+        },
+        "trace": {
+          "us:policies/policyengine/spm-threshold-application#adjusted_threshold": {
+            "dependencies": [
+              "us:policies/policyengine/spm-threshold-application#reference_threshold"
+            ],
+            "dtype": "decimal",
+            "entity_id": "synthetic:2024:owner_with_mortgage",
+            "executed_expression": "((us:policies/policyengine/spm-threshold-application#reference_threshold * input(\"equivalence_factor\")) * input(\"geographic_factor\"))",
+            "id": "us:policies/policyengine/spm-threshold-application#adjusted_threshold",
+            "kind": "scalar",
+            "name": "adjusted_threshold",
+            "source": "{\"release_id\": \"spm-2026-09-08\", \"release_sha256\": \"762ad5347fe4b6b1eabbc3189f83ddae296329e7c3f6630f0db22204dfaffaf6\", \"scope\": \"partial statistical bridge; external equivalence and geography\", \"sources\": [{\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-corrected-2005-2024\", \"publication_date\": \"2026-07-17\", \"sha256\": \"e7931a1f2540d52877d6fd14a8ed1e421e977a85c952ae1b6f690a04d904f2cb\", \"snapshot_path\": \"bls/spm_threshold_200524_corrected.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_threshold_200524_corrected.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-2025\", \"publication_date\": \"2026-08-24\", \"sha256\": \"95f39fb5479ee5c196de627e06e10efd59af5148cf1c8466924e3fb2e5e2bd3b\", \"snapshot_path\": \"bls/spm_thresholds.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_thresholds.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"census-metro-2024-snapshot\", \"publication_date\": null, \"sha256\": \"4443d5005f9c2847f25c0f6cbc42eb5e5d897244b26b488a10d1e7fe87d68fcd\", \"snapshot_path\": \"metro_geoadj_2024.json\", \"url\": \"https://www2.census.gov/programs-surveys/demo/tables/p60/287/SPM-pov-threshold-2024.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-cd-2023-snapshot\", \"publication_date\": null, \"sha256\": \"f89938d871753f9b796445e65df6e3975d47b256ed34be8993b9038972ea9917\", \"snapshot_path\": \"cd_geoadj_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5/groups/B25031.html\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-rents-2023-snapshot\", \"publication_date\": null, \"sha256\": \"a64258f4cebe16bc2bca16456368876003059af5870dfa22e8bc4d908cb14296\", \"snapshot_path\": \"acs_rents_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5\"}], \"years\": {\"2024\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/revised_2019_2024\", \"status\": \"published\"}, \"2025\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/bls-published-2025\", \"status\": \"published\"}}}",
+            "source_url": "https://www.bls.gov/pir/spmhome.htm",
+            "unit": "USD",
+            "value": {
+              "kind": "decimal",
+              "value": "43154.0939027"
+            }
+          },
+          "us:policies/policyengine/spm-threshold-application#reference_threshold": {
+            "dependencies": [],
+            "dtype": "decimal",
+            "entity_id": "synthetic:2024:owner_with_mortgage",
+            "executed_expression": "us:policies/policyengine/spm-threshold-application#national_threshold[input(\"housing_tenure\")]",
+            "id": "us:policies/policyengine/spm-threshold-application#reference_threshold",
+            "kind": "scalar",
+            "name": "reference_threshold",
+            "parameter_reads": [
+              {
+                "effective_from": "2024-01-01",
+                "effective_to": "2024-12-31",
+                "id": "us:policies/policyengine/spm-threshold-application#national_threshold",
+                "index": 0,
+                "name": "national_threshold",
+                "parameter": "us:policies/policyengine/spm-threshold-application#national_threshold",
+                "source": "{\"release_id\": \"spm-2026-09-08\", \"release_sha256\": \"762ad5347fe4b6b1eabbc3189f83ddae296329e7c3f6630f0db22204dfaffaf6\", \"scope\": \"partial statistical bridge; external equivalence and geography\", \"sources\": [{\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-corrected-2005-2024\", \"publication_date\": \"2026-07-17\", \"sha256\": \"e7931a1f2540d52877d6fd14a8ed1e421e977a85c952ae1b6f690a04d904f2cb\", \"snapshot_path\": \"bls/spm_threshold_200524_corrected.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_threshold_200524_corrected.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-2025\", \"publication_date\": \"2026-08-24\", \"sha256\": \"95f39fb5479ee5c196de627e06e10efd59af5148cf1c8466924e3fb2e5e2bd3b\", \"snapshot_path\": \"bls/spm_thresholds.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_thresholds.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"census-metro-2024-snapshot\", \"publication_date\": null, \"sha256\": \"4443d5005f9c2847f25c0f6cbc42eb5e5d897244b26b488a10d1e7fe87d68fcd\", \"snapshot_path\": \"metro_geoadj_2024.json\", \"url\": \"https://www2.census.gov/programs-surveys/demo/tables/p60/287/SPM-pov-threshold-2024.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-cd-2023-snapshot\", \"publication_date\": null, \"sha256\": \"f89938d871753f9b796445e65df6e3975d47b256ed34be8993b9038972ea9917\", \"snapshot_path\": \"cd_geoadj_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5/groups/B25031.html\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-rents-2023-snapshot\", \"publication_date\": null, \"sha256\": \"a64258f4cebe16bc2bca16456368876003059af5870dfa22e8bc4d908cb14296\", \"snapshot_path\": \"acs_rents_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5\"}], \"years\": {\"2024\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/revised_2019_2024\", \"status\": \"published\"}, \"2025\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/bls-published-2025\", \"status\": \"published\"}}}",
+                "source_url": "https://www.bls.gov/pir/spmhome.htm",
+                "unit": "USD",
+                "value": {
+                  "kind": "decimal",
+                  "value": "39230.994457"
+                }
+              }
+            ],
+            "source": "{\"release_id\": \"spm-2026-09-08\", \"release_sha256\": \"762ad5347fe4b6b1eabbc3189f83ddae296329e7c3f6630f0db22204dfaffaf6\", \"scope\": \"partial statistical bridge; external equivalence and geography\", \"sources\": [{\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-corrected-2005-2024\", \"publication_date\": \"2026-07-17\", \"sha256\": \"e7931a1f2540d52877d6fd14a8ed1e421e977a85c952ae1b6f690a04d904f2cb\", \"snapshot_path\": \"bls/spm_threshold_200524_corrected.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_threshold_200524_corrected.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-2025\", \"publication_date\": \"2026-08-24\", \"sha256\": \"95f39fb5479ee5c196de627e06e10efd59af5148cf1c8466924e3fb2e5e2bd3b\", \"snapshot_path\": \"bls/spm_thresholds.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_thresholds.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"census-metro-2024-snapshot\", \"publication_date\": null, \"sha256\": \"4443d5005f9c2847f25c0f6cbc42eb5e5d897244b26b488a10d1e7fe87d68fcd\", \"snapshot_path\": \"metro_geoadj_2024.json\", \"url\": \"https://www2.census.gov/programs-surveys/demo/tables/p60/287/SPM-pov-threshold-2024.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-cd-2023-snapshot\", \"publication_date\": null, \"sha256\": \"f89938d871753f9b796445e65df6e3975d47b256ed34be8993b9038972ea9917\", \"snapshot_path\": \"cd_geoadj_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5/groups/B25031.html\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-rents-2023-snapshot\", \"publication_date\": null, \"sha256\": \"a64258f4cebe16bc2bca16456368876003059af5870dfa22e8bc4d908cb14296\", \"snapshot_path\": \"acs_rents_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5\"}], \"years\": {\"2024\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/revised_2019_2024\", \"status\": \"published\"}, \"2025\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/bls-published-2025\", \"status\": \"published\"}}}",
+            "source_url": "https://www.bls.gov/pir/spmhome.htm",
+            "unit": "USD",
+            "value": {
+              "kind": "decimal",
+              "value": "39230.994457"
+            }
+          }
+        }
+      },
+      {
+        "entity_id": "synthetic:2024:owner_without_mortgage",
+        "outputs": {
+          "us:policies/policyengine/spm-threshold-application#adjusted_threshold": {
+            "dtype": "decimal",
+            "id": "us:policies/policyengine/spm-threshold-application#adjusted_threshold",
+            "kind": "scalar",
+            "name": "adjusted_threshold",
+            "unit": "USD",
+            "value": {
+              "kind": "decimal",
+              "value": "13714.2126635590945198456632"
+            }
+          }
+        },
+        "period": {
+          "end": "2024-12-31",
+          "name": "spm-calendar-year",
+          "period_kind": "custom",
+          "start": "2024-01-01"
+        },
+        "trace": {
+          "us:policies/policyengine/spm-threshold-application#adjusted_threshold": {
+            "dependencies": [
+              "us:policies/policyengine/spm-threshold-application#reference_threshold"
+            ],
+            "dtype": "decimal",
+            "entity_id": "synthetic:2024:owner_without_mortgage",
+            "executed_expression": "((us:policies/policyengine/spm-threshold-application#reference_threshold * input(\"equivalence_factor\")) * input(\"geographic_factor\"))",
+            "id": "us:policies/policyengine/spm-threshold-application#adjusted_threshold",
+            "kind": "scalar",
+            "name": "adjusted_threshold",
+            "source": "{\"release_id\": \"spm-2026-09-08\", \"release_sha256\": \"762ad5347fe4b6b1eabbc3189f83ddae296329e7c3f6630f0db22204dfaffaf6\", \"scope\": \"partial statistical bridge; external equivalence and geography\", \"sources\": [{\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-corrected-2005-2024\", \"publication_date\": \"2026-07-17\", \"sha256\": \"e7931a1f2540d52877d6fd14a8ed1e421e977a85c952ae1b6f690a04d904f2cb\", \"snapshot_path\": \"bls/spm_threshold_200524_corrected.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_threshold_200524_corrected.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-2025\", \"publication_date\": \"2026-08-24\", \"sha256\": \"95f39fb5479ee5c196de627e06e10efd59af5148cf1c8466924e3fb2e5e2bd3b\", \"snapshot_path\": \"bls/spm_thresholds.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_thresholds.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"census-metro-2024-snapshot\", \"publication_date\": null, \"sha256\": \"4443d5005f9c2847f25c0f6cbc42eb5e5d897244b26b488a10d1e7fe87d68fcd\", \"snapshot_path\": \"metro_geoadj_2024.json\", \"url\": \"https://www2.census.gov/programs-surveys/demo/tables/p60/287/SPM-pov-threshold-2024.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-cd-2023-snapshot\", \"publication_date\": null, \"sha256\": \"f89938d871753f9b796445e65df6e3975d47b256ed34be8993b9038972ea9917\", \"snapshot_path\": \"cd_geoadj_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5/groups/B25031.html\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-rents-2023-snapshot\", \"publication_date\": null, \"sha256\": \"a64258f4cebe16bc2bca16456368876003059af5870dfa22e8bc4d908cb14296\", \"snapshot_path\": \"acs_rents_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5\"}], \"years\": {\"2024\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/revised_2019_2024\", \"status\": \"published\"}, \"2025\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/bls-published-2025\", \"status\": \"published\"}}}",
+            "source_url": "https://www.bls.gov/pir/spmhome.htm",
+            "unit": "USD",
+            "value": {
+              "kind": "decimal",
+              "value": "13714.2126635590945198456632"
+            }
+          },
+          "us:policies/policyengine/spm-threshold-application#reference_threshold": {
+            "dependencies": [],
+            "dtype": "decimal",
+            "entity_id": "synthetic:2024:owner_without_mortgage",
+            "executed_expression": "us:policies/policyengine/spm-threshold-application#national_threshold[input(\"housing_tenure\")]",
+            "id": "us:policies/policyengine/spm-threshold-application#reference_threshold",
+            "kind": "scalar",
+            "name": "reference_threshold",
+            "parameter_reads": [
+              {
+                "effective_from": "2024-01-01",
+                "effective_to": "2024-12-31",
+                "id": "us:policies/policyengine/spm-threshold-application#national_threshold",
+                "index": 1,
+                "name": "national_threshold",
+                "parameter": "us:policies/policyengine/spm-threshold-application#national_threshold",
+                "source": "{\"release_id\": \"spm-2026-09-08\", \"release_sha256\": \"762ad5347fe4b6b1eabbc3189f83ddae296329e7c3f6630f0db22204dfaffaf6\", \"scope\": \"partial statistical bridge; external equivalence and geography\", \"sources\": [{\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-corrected-2005-2024\", \"publication_date\": \"2026-07-17\", \"sha256\": \"e7931a1f2540d52877d6fd14a8ed1e421e977a85c952ae1b6f690a04d904f2cb\", \"snapshot_path\": \"bls/spm_threshold_200524_corrected.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_threshold_200524_corrected.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-2025\", \"publication_date\": \"2026-08-24\", \"sha256\": \"95f39fb5479ee5c196de627e06e10efd59af5148cf1c8466924e3fb2e5e2bd3b\", \"snapshot_path\": \"bls/spm_thresholds.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_thresholds.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"census-metro-2024-snapshot\", \"publication_date\": null, \"sha256\": \"4443d5005f9c2847f25c0f6cbc42eb5e5d897244b26b488a10d1e7fe87d68fcd\", \"snapshot_path\": \"metro_geoadj_2024.json\", \"url\": \"https://www2.census.gov/programs-surveys/demo/tables/p60/287/SPM-pov-threshold-2024.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-cd-2023-snapshot\", \"publication_date\": null, \"sha256\": \"f89938d871753f9b796445e65df6e3975d47b256ed34be8993b9038972ea9917\", \"snapshot_path\": \"cd_geoadj_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5/groups/B25031.html\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-rents-2023-snapshot\", \"publication_date\": null, \"sha256\": \"a64258f4cebe16bc2bca16456368876003059af5870dfa22e8bc4d908cb14296\", \"snapshot_path\": \"acs_rents_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5\"}], \"years\": {\"2024\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/revised_2019_2024\", \"status\": \"published\"}, \"2025\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/bls-published-2025\", \"status\": \"published\"}}}",
+                "source_url": "https://www.bls.gov/pir/spmhome.htm",
+                "unit": "USD",
+                "value": {
+                  "kind": "decimal",
+                  "value": "32878.594848"
+                }
+              }
+            ],
+            "source": "{\"release_id\": \"spm-2026-09-08\", \"release_sha256\": \"762ad5347fe4b6b1eabbc3189f83ddae296329e7c3f6630f0db22204dfaffaf6\", \"scope\": \"partial statistical bridge; external equivalence and geography\", \"sources\": [{\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-corrected-2005-2024\", \"publication_date\": \"2026-07-17\", \"sha256\": \"e7931a1f2540d52877d6fd14a8ed1e421e977a85c952ae1b6f690a04d904f2cb\", \"snapshot_path\": \"bls/spm_threshold_200524_corrected.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_threshold_200524_corrected.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-2025\", \"publication_date\": \"2026-08-24\", \"sha256\": \"95f39fb5479ee5c196de627e06e10efd59af5148cf1c8466924e3fb2e5e2bd3b\", \"snapshot_path\": \"bls/spm_thresholds.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_thresholds.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"census-metro-2024-snapshot\", \"publication_date\": null, \"sha256\": \"4443d5005f9c2847f25c0f6cbc42eb5e5d897244b26b488a10d1e7fe87d68fcd\", \"snapshot_path\": \"metro_geoadj_2024.json\", \"url\": \"https://www2.census.gov/programs-surveys/demo/tables/p60/287/SPM-pov-threshold-2024.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-cd-2023-snapshot\", \"publication_date\": null, \"sha256\": \"f89938d871753f9b796445e65df6e3975d47b256ed34be8993b9038972ea9917\", \"snapshot_path\": \"cd_geoadj_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5/groups/B25031.html\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-rents-2023-snapshot\", \"publication_date\": null, \"sha256\": \"a64258f4cebe16bc2bca16456368876003059af5870dfa22e8bc4d908cb14296\", \"snapshot_path\": \"acs_rents_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5\"}], \"years\": {\"2024\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/revised_2019_2024\", \"status\": \"published\"}, \"2025\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/bls-published-2025\", \"status\": \"published\"}}}",
+            "source_url": "https://www.bls.gov/pir/spmhome.htm",
+            "unit": "USD",
+            "value": {
+              "kind": "decimal",
+              "value": "32878.594848"
+            }
+          }
+        }
+      },
+      {
+        "entity_id": "synthetic:2024:renter",
+        "outputs": {
+          "us:policies/policyengine/spm-threshold-application#adjusted_threshold": {
+            "dtype": "decimal",
+            "id": "us:policies/policyengine/spm-threshold-application#adjusted_threshold",
+            "kind": "scalar",
+            "name": "adjusted_threshold",
+            "unit": "USD",
+            "value": {
+              "kind": "decimal",
+              "value": "32563.4957776614205369483988"
+            }
+          }
+        },
+        "period": {
+          "end": "2024-12-31",
+          "name": "spm-calendar-year",
+          "period_kind": "custom",
+          "start": "2024-01-01"
+        },
+        "trace": {
+          "us:policies/policyengine/spm-threshold-application#adjusted_threshold": {
+            "dependencies": [
+              "us:policies/policyengine/spm-threshold-application#reference_threshold"
+            ],
+            "dtype": "decimal",
+            "entity_id": "synthetic:2024:renter",
+            "executed_expression": "((us:policies/policyengine/spm-threshold-application#reference_threshold * input(\"equivalence_factor\")) * input(\"geographic_factor\"))",
+            "id": "us:policies/policyengine/spm-threshold-application#adjusted_threshold",
+            "kind": "scalar",
+            "name": "adjusted_threshold",
+            "source": "{\"release_id\": \"spm-2026-09-08\", \"release_sha256\": \"762ad5347fe4b6b1eabbc3189f83ddae296329e7c3f6630f0db22204dfaffaf6\", \"scope\": \"partial statistical bridge; external equivalence and geography\", \"sources\": [{\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-corrected-2005-2024\", \"publication_date\": \"2026-07-17\", \"sha256\": \"e7931a1f2540d52877d6fd14a8ed1e421e977a85c952ae1b6f690a04d904f2cb\", \"snapshot_path\": \"bls/spm_threshold_200524_corrected.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_threshold_200524_corrected.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-2025\", \"publication_date\": \"2026-08-24\", \"sha256\": \"95f39fb5479ee5c196de627e06e10efd59af5148cf1c8466924e3fb2e5e2bd3b\", \"snapshot_path\": \"bls/spm_thresholds.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_thresholds.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"census-metro-2024-snapshot\", \"publication_date\": null, \"sha256\": \"4443d5005f9c2847f25c0f6cbc42eb5e5d897244b26b488a10d1e7fe87d68fcd\", \"snapshot_path\": \"metro_geoadj_2024.json\", \"url\": \"https://www2.census.gov/programs-surveys/demo/tables/p60/287/SPM-pov-threshold-2024.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-cd-2023-snapshot\", \"publication_date\": null, \"sha256\": \"f89938d871753f9b796445e65df6e3975d47b256ed34be8993b9038972ea9917\", \"snapshot_path\": \"cd_geoadj_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5/groups/B25031.html\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-rents-2023-snapshot\", \"publication_date\": null, \"sha256\": \"a64258f4cebe16bc2bca16456368876003059af5870dfa22e8bc4d908cb14296\", \"snapshot_path\": \"acs_rents_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5\"}], \"years\": {\"2024\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/revised_2019_2024\", \"status\": \"published\"}, \"2025\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/bls-published-2025\", \"status\": \"published\"}}}",
+            "source_url": "https://www.bls.gov/pir/spmhome.htm",
+            "unit": "USD",
+            "value": {
+              "kind": "decimal",
+              "value": "32563.4957776614205369483988"
+            }
+          },
+          "us:policies/policyengine/spm-threshold-application#reference_threshold": {
+            "dependencies": [],
+            "dtype": "decimal",
+            "entity_id": "synthetic:2024:renter",
+            "executed_expression": "us:policies/policyengine/spm-threshold-application#national_threshold[input(\"housing_tenure\")]",
+            "id": "us:policies/policyengine/spm-threshold-application#reference_threshold",
+            "kind": "scalar",
+            "name": "reference_threshold",
+            "parameter_reads": [
+              {
+                "effective_from": "2024-01-01",
+                "effective_to": "2024-12-31",
+                "id": "us:policies/policyengine/spm-threshold-application#national_threshold",
+                "index": 2,
+                "name": "national_threshold",
+                "parameter": "us:policies/policyengine/spm-threshold-application#national_threshold",
+                "source": "{\"release_id\": \"spm-2026-09-08\", \"release_sha256\": \"762ad5347fe4b6b1eabbc3189f83ddae296329e7c3f6630f0db22204dfaffaf6\", \"scope\": \"partial statistical bridge; external equivalence and geography\", \"sources\": [{\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-corrected-2005-2024\", \"publication_date\": \"2026-07-17\", \"sha256\": \"e7931a1f2540d52877d6fd14a8ed1e421e977a85c952ae1b6f690a04d904f2cb\", \"snapshot_path\": \"bls/spm_threshold_200524_corrected.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_threshold_200524_corrected.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-2025\", \"publication_date\": \"2026-08-24\", \"sha256\": \"95f39fb5479ee5c196de627e06e10efd59af5148cf1c8466924e3fb2e5e2bd3b\", \"snapshot_path\": \"bls/spm_thresholds.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_thresholds.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"census-metro-2024-snapshot\", \"publication_date\": null, \"sha256\": \"4443d5005f9c2847f25c0f6cbc42eb5e5d897244b26b488a10d1e7fe87d68fcd\", \"snapshot_path\": \"metro_geoadj_2024.json\", \"url\": \"https://www2.census.gov/programs-surveys/demo/tables/p60/287/SPM-pov-threshold-2024.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-cd-2023-snapshot\", \"publication_date\": null, \"sha256\": \"f89938d871753f9b796445e65df6e3975d47b256ed34be8993b9038972ea9917\", \"snapshot_path\": \"cd_geoadj_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5/groups/B25031.html\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-rents-2023-snapshot\", \"publication_date\": null, \"sha256\": \"a64258f4cebe16bc2bca16456368876003059af5870dfa22e8bc4d908cb14296\", \"snapshot_path\": \"acs_rents_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5\"}], \"years\": {\"2024\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/revised_2019_2024\", \"status\": \"published\"}, \"2025\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/bls-published-2025\", \"status\": \"published\"}}}",
+                "source_url": "https://www.bls.gov/pir/spmhome.htm",
+                "unit": "USD",
+                "value": {
+                  "kind": "decimal",
+                  "value": "39219.893902"
+                }
+              }
+            ],
+            "source": "{\"release_id\": \"spm-2026-09-08\", \"release_sha256\": \"762ad5347fe4b6b1eabbc3189f83ddae296329e7c3f6630f0db22204dfaffaf6\", \"scope\": \"partial statistical bridge; external equivalence and geography\", \"sources\": [{\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-corrected-2005-2024\", \"publication_date\": \"2026-07-17\", \"sha256\": \"e7931a1f2540d52877d6fd14a8ed1e421e977a85c952ae1b6f690a04d904f2cb\", \"snapshot_path\": \"bls/spm_threshold_200524_corrected.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_threshold_200524_corrected.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-2025\", \"publication_date\": \"2026-08-24\", \"sha256\": \"95f39fb5479ee5c196de627e06e10efd59af5148cf1c8466924e3fb2e5e2bd3b\", \"snapshot_path\": \"bls/spm_thresholds.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_thresholds.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"census-metro-2024-snapshot\", \"publication_date\": null, \"sha256\": \"4443d5005f9c2847f25c0f6cbc42eb5e5d897244b26b488a10d1e7fe87d68fcd\", \"snapshot_path\": \"metro_geoadj_2024.json\", \"url\": \"https://www2.census.gov/programs-surveys/demo/tables/p60/287/SPM-pov-threshold-2024.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-cd-2023-snapshot\", \"publication_date\": null, \"sha256\": \"f89938d871753f9b796445e65df6e3975d47b256ed34be8993b9038972ea9917\", \"snapshot_path\": \"cd_geoadj_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5/groups/B25031.html\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-rents-2023-snapshot\", \"publication_date\": null, \"sha256\": \"a64258f4cebe16bc2bca16456368876003059af5870dfa22e8bc4d908cb14296\", \"snapshot_path\": \"acs_rents_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5\"}], \"years\": {\"2024\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/revised_2019_2024\", \"status\": \"published\"}, \"2025\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/bls-published-2025\", \"status\": \"published\"}}}",
+            "source_url": "https://www.bls.gov/pir/spmhome.htm",
+            "unit": "USD",
+            "value": {
+              "kind": "decimal",
+              "value": "39219.893902"
+            }
+          }
+        }
+      },
+      {
+        "entity_id": "synthetic:2025:owner_with_mortgage",
+        "outputs": {
+          "us:policies/policyengine/spm-threshold-application#adjusted_threshold": {
+            "dtype": "decimal",
+            "id": "us:policies/policyengine/spm-threshold-application#adjusted_threshold",
+            "kind": "scalar",
+            "name": "adjusted_threshold",
+            "unit": "USD",
+            "value": {
+              "kind": "decimal",
+              "value": "45454.9781334"
+            }
+          }
+        },
+        "period": {
+          "end": "2025-12-31",
+          "name": "spm-calendar-year",
+          "period_kind": "custom",
+          "start": "2025-01-01"
+        },
+        "trace": {
+          "us:policies/policyengine/spm-threshold-application#adjusted_threshold": {
+            "dependencies": [
+              "us:policies/policyengine/spm-threshold-application#reference_threshold"
+            ],
+            "dtype": "decimal",
+            "entity_id": "synthetic:2025:owner_with_mortgage",
+            "executed_expression": "((us:policies/policyengine/spm-threshold-application#reference_threshold * input(\"equivalence_factor\")) * input(\"geographic_factor\"))",
+            "id": "us:policies/policyengine/spm-threshold-application#adjusted_threshold",
+            "kind": "scalar",
+            "name": "adjusted_threshold",
+            "source": "{\"release_id\": \"spm-2026-09-08\", \"release_sha256\": \"762ad5347fe4b6b1eabbc3189f83ddae296329e7c3f6630f0db22204dfaffaf6\", \"scope\": \"partial statistical bridge; external equivalence and geography\", \"sources\": [{\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-corrected-2005-2024\", \"publication_date\": \"2026-07-17\", \"sha256\": \"e7931a1f2540d52877d6fd14a8ed1e421e977a85c952ae1b6f690a04d904f2cb\", \"snapshot_path\": \"bls/spm_threshold_200524_corrected.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_threshold_200524_corrected.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-2025\", \"publication_date\": \"2026-08-24\", \"sha256\": \"95f39fb5479ee5c196de627e06e10efd59af5148cf1c8466924e3fb2e5e2bd3b\", \"snapshot_path\": \"bls/spm_thresholds.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_thresholds.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"census-metro-2024-snapshot\", \"publication_date\": null, \"sha256\": \"4443d5005f9c2847f25c0f6cbc42eb5e5d897244b26b488a10d1e7fe87d68fcd\", \"snapshot_path\": \"metro_geoadj_2024.json\", \"url\": \"https://www2.census.gov/programs-surveys/demo/tables/p60/287/SPM-pov-threshold-2024.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-cd-2023-snapshot\", \"publication_date\": null, \"sha256\": \"f89938d871753f9b796445e65df6e3975d47b256ed34be8993b9038972ea9917\", \"snapshot_path\": \"cd_geoadj_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5/groups/B25031.html\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-rents-2023-snapshot\", \"publication_date\": null, \"sha256\": \"a64258f4cebe16bc2bca16456368876003059af5870dfa22e8bc4d908cb14296\", \"snapshot_path\": \"acs_rents_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5\"}], \"years\": {\"2024\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/revised_2019_2024\", \"status\": \"published\"}, \"2025\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/bls-published-2025\", \"status\": \"published\"}}}",
+            "source_url": "https://www.bls.gov/pir/spmhome.htm",
+            "unit": "USD",
+            "value": {
+              "kind": "decimal",
+              "value": "45454.9781334"
+            }
+          },
+          "us:policies/policyengine/spm-threshold-application#reference_threshold": {
+            "dependencies": [],
+            "dtype": "decimal",
+            "entity_id": "synthetic:2025:owner_with_mortgage",
+            "executed_expression": "us:policies/policyengine/spm-threshold-application#national_threshold[input(\"housing_tenure\")]",
+            "id": "us:policies/policyengine/spm-threshold-application#reference_threshold",
+            "kind": "scalar",
+            "name": "reference_threshold",
+            "parameter_reads": [
+              {
+                "effective_from": "2025-01-01",
+                "effective_to": "2025-12-31",
+                "id": "us:policies/policyengine/spm-threshold-application#national_threshold",
+                "index": 0,
+                "name": "national_threshold",
+                "parameter": "us:policies/policyengine/spm-threshold-application#national_threshold",
+                "source": "{\"release_id\": \"spm-2026-09-08\", \"release_sha256\": \"762ad5347fe4b6b1eabbc3189f83ddae296329e7c3f6630f0db22204dfaffaf6\", \"scope\": \"partial statistical bridge; external equivalence and geography\", \"sources\": [{\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-corrected-2005-2024\", \"publication_date\": \"2026-07-17\", \"sha256\": \"e7931a1f2540d52877d6fd14a8ed1e421e977a85c952ae1b6f690a04d904f2cb\", \"snapshot_path\": \"bls/spm_threshold_200524_corrected.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_threshold_200524_corrected.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-2025\", \"publication_date\": \"2026-08-24\", \"sha256\": \"95f39fb5479ee5c196de627e06e10efd59af5148cf1c8466924e3fb2e5e2bd3b\", \"snapshot_path\": \"bls/spm_thresholds.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_thresholds.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"census-metro-2024-snapshot\", \"publication_date\": null, \"sha256\": \"4443d5005f9c2847f25c0f6cbc42eb5e5d897244b26b488a10d1e7fe87d68fcd\", \"snapshot_path\": \"metro_geoadj_2024.json\", \"url\": \"https://www2.census.gov/programs-surveys/demo/tables/p60/287/SPM-pov-threshold-2024.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-cd-2023-snapshot\", \"publication_date\": null, \"sha256\": \"f89938d871753f9b796445e65df6e3975d47b256ed34be8993b9038972ea9917\", \"snapshot_path\": \"cd_geoadj_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5/groups/B25031.html\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-rents-2023-snapshot\", \"publication_date\": null, \"sha256\": \"a64258f4cebe16bc2bca16456368876003059af5870dfa22e8bc4d908cb14296\", \"snapshot_path\": \"acs_rents_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5\"}], \"years\": {\"2024\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/revised_2019_2024\", \"status\": \"published\"}, \"2025\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/bls-published-2025\", \"status\": \"published\"}}}",
+                "source_url": "https://www.bls.gov/pir/spmhome.htm",
+                "unit": "USD",
+                "value": {
+                  "kind": "decimal",
+                  "value": "41322.707394"
+                }
+              }
+            ],
+            "source": "{\"release_id\": \"spm-2026-09-08\", \"release_sha256\": \"762ad5347fe4b6b1eabbc3189f83ddae296329e7c3f6630f0db22204dfaffaf6\", \"scope\": \"partial statistical bridge; external equivalence and geography\", \"sources\": [{\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-corrected-2005-2024\", \"publication_date\": \"2026-07-17\", \"sha256\": \"e7931a1f2540d52877d6fd14a8ed1e421e977a85c952ae1b6f690a04d904f2cb\", \"snapshot_path\": \"bls/spm_threshold_200524_corrected.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_threshold_200524_corrected.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-2025\", \"publication_date\": \"2026-08-24\", \"sha256\": \"95f39fb5479ee5c196de627e06e10efd59af5148cf1c8466924e3fb2e5e2bd3b\", \"snapshot_path\": \"bls/spm_thresholds.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_thresholds.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"census-metro-2024-snapshot\", \"publication_date\": null, \"sha256\": \"4443d5005f9c2847f25c0f6cbc42eb5e5d897244b26b488a10d1e7fe87d68fcd\", \"snapshot_path\": \"metro_geoadj_2024.json\", \"url\": \"https://www2.census.gov/programs-surveys/demo/tables/p60/287/SPM-pov-threshold-2024.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-cd-2023-snapshot\", \"publication_date\": null, \"sha256\": \"f89938d871753f9b796445e65df6e3975d47b256ed34be8993b9038972ea9917\", \"snapshot_path\": \"cd_geoadj_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5/groups/B25031.html\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-rents-2023-snapshot\", \"publication_date\": null, \"sha256\": \"a64258f4cebe16bc2bca16456368876003059af5870dfa22e8bc4d908cb14296\", \"snapshot_path\": \"acs_rents_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5\"}], \"years\": {\"2024\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/revised_2019_2024\", \"status\": \"published\"}, \"2025\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/bls-published-2025\", \"status\": \"published\"}}}",
+            "source_url": "https://www.bls.gov/pir/spmhome.htm",
+            "unit": "USD",
+            "value": {
+              "kind": "decimal",
+              "value": "41322.707394"
+            }
+          }
+        }
+      },
+      {
+        "entity_id": "synthetic:2025:owner_without_mortgage",
+        "outputs": {
+          "us:policies/policyengine/spm-threshold-application#adjusted_threshold": {
+            "dtype": "decimal",
+            "id": "us:policies/policyengine/spm-threshold-application#adjusted_threshold",
+            "kind": "scalar",
+            "name": "adjusted_threshold",
+            "unit": "USD",
+            "value": {
+              "kind": "decimal",
+              "value": "14317.948647052977778568073"
+            }
+          }
+        },
+        "period": {
+          "end": "2025-12-31",
+          "name": "spm-calendar-year",
+          "period_kind": "custom",
+          "start": "2025-01-01"
+        },
+        "trace": {
+          "us:policies/policyengine/spm-threshold-application#adjusted_threshold": {
+            "dependencies": [
+              "us:policies/policyengine/spm-threshold-application#reference_threshold"
+            ],
+            "dtype": "decimal",
+            "entity_id": "synthetic:2025:owner_without_mortgage",
+            "executed_expression": "((us:policies/policyengine/spm-threshold-application#reference_threshold * input(\"equivalence_factor\")) * input(\"geographic_factor\"))",
+            "id": "us:policies/policyengine/spm-threshold-application#adjusted_threshold",
+            "kind": "scalar",
+            "name": "adjusted_threshold",
+            "source": "{\"release_id\": \"spm-2026-09-08\", \"release_sha256\": \"762ad5347fe4b6b1eabbc3189f83ddae296329e7c3f6630f0db22204dfaffaf6\", \"scope\": \"partial statistical bridge; external equivalence and geography\", \"sources\": [{\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-corrected-2005-2024\", \"publication_date\": \"2026-07-17\", \"sha256\": \"e7931a1f2540d52877d6fd14a8ed1e421e977a85c952ae1b6f690a04d904f2cb\", \"snapshot_path\": \"bls/spm_threshold_200524_corrected.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_threshold_200524_corrected.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-2025\", \"publication_date\": \"2026-08-24\", \"sha256\": \"95f39fb5479ee5c196de627e06e10efd59af5148cf1c8466924e3fb2e5e2bd3b\", \"snapshot_path\": \"bls/spm_thresholds.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_thresholds.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"census-metro-2024-snapshot\", \"publication_date\": null, \"sha256\": \"4443d5005f9c2847f25c0f6cbc42eb5e5d897244b26b488a10d1e7fe87d68fcd\", \"snapshot_path\": \"metro_geoadj_2024.json\", \"url\": \"https://www2.census.gov/programs-surveys/demo/tables/p60/287/SPM-pov-threshold-2024.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-cd-2023-snapshot\", \"publication_date\": null, \"sha256\": \"f89938d871753f9b796445e65df6e3975d47b256ed34be8993b9038972ea9917\", \"snapshot_path\": \"cd_geoadj_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5/groups/B25031.html\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-rents-2023-snapshot\", \"publication_date\": null, \"sha256\": \"a64258f4cebe16bc2bca16456368876003059af5870dfa22e8bc4d908cb14296\", \"snapshot_path\": \"acs_rents_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5\"}], \"years\": {\"2024\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/revised_2019_2024\", \"status\": \"published\"}, \"2025\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/bls-published-2025\", \"status\": \"published\"}}}",
+            "source_url": "https://www.bls.gov/pir/spmhome.htm",
+            "unit": "USD",
+            "value": {
+              "kind": "decimal",
+              "value": "14317.948647052977778568073"
+            }
+          },
+          "us:policies/policyengine/spm-threshold-application#reference_threshold": {
+            "dependencies": [],
+            "dtype": "decimal",
+            "entity_id": "synthetic:2025:owner_without_mortgage",
+            "executed_expression": "us:policies/policyengine/spm-threshold-application#national_threshold[input(\"housing_tenure\")]",
+            "id": "us:policies/policyengine/spm-threshold-application#reference_threshold",
+            "kind": "scalar",
+            "name": "reference_threshold",
+            "parameter_reads": [
+              {
+                "effective_from": "2025-01-01",
+                "effective_to": "2025-12-31",
+                "id": "us:policies/policyengine/spm-threshold-application#national_threshold",
+                "index": 1,
+                "name": "national_threshold",
+                "parameter": "us:policies/policyengine/spm-threshold-application#national_threshold",
+                "source": "{\"release_id\": \"spm-2026-09-08\", \"release_sha256\": \"762ad5347fe4b6b1eabbc3189f83ddae296329e7c3f6630f0db22204dfaffaf6\", \"scope\": \"partial statistical bridge; external equivalence and geography\", \"sources\": [{\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-corrected-2005-2024\", \"publication_date\": \"2026-07-17\", \"sha256\": \"e7931a1f2540d52877d6fd14a8ed1e421e977a85c952ae1b6f690a04d904f2cb\", \"snapshot_path\": \"bls/spm_threshold_200524_corrected.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_threshold_200524_corrected.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-2025\", \"publication_date\": \"2026-08-24\", \"sha256\": \"95f39fb5479ee5c196de627e06e10efd59af5148cf1c8466924e3fb2e5e2bd3b\", \"snapshot_path\": \"bls/spm_thresholds.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_thresholds.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"census-metro-2024-snapshot\", \"publication_date\": null, \"sha256\": \"4443d5005f9c2847f25c0f6cbc42eb5e5d897244b26b488a10d1e7fe87d68fcd\", \"snapshot_path\": \"metro_geoadj_2024.json\", \"url\": \"https://www2.census.gov/programs-surveys/demo/tables/p60/287/SPM-pov-threshold-2024.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-cd-2023-snapshot\", \"publication_date\": null, \"sha256\": \"f89938d871753f9b796445e65df6e3975d47b256ed34be8993b9038972ea9917\", \"snapshot_path\": \"cd_geoadj_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5/groups/B25031.html\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-rents-2023-snapshot\", \"publication_date\": null, \"sha256\": \"a64258f4cebe16bc2bca16456368876003059af5870dfa22e8bc4d908cb14296\", \"snapshot_path\": \"acs_rents_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5\"}], \"years\": {\"2024\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/revised_2019_2024\", \"status\": \"published\"}, \"2025\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/bls-published-2025\", \"status\": \"published\"}}}",
+                "source_url": "https://www.bls.gov/pir/spmhome.htm",
+                "unit": "USD",
+                "value": {
+                  "kind": "decimal",
+                  "value": "34325.99772"
+                }
+              }
+            ],
+            "source": "{\"release_id\": \"spm-2026-09-08\", \"release_sha256\": \"762ad5347fe4b6b1eabbc3189f83ddae296329e7c3f6630f0db22204dfaffaf6\", \"scope\": \"partial statistical bridge; external equivalence and geography\", \"sources\": [{\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-corrected-2005-2024\", \"publication_date\": \"2026-07-17\", \"sha256\": \"e7931a1f2540d52877d6fd14a8ed1e421e977a85c952ae1b6f690a04d904f2cb\", \"snapshot_path\": \"bls/spm_threshold_200524_corrected.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_threshold_200524_corrected.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-2025\", \"publication_date\": \"2026-08-24\", \"sha256\": \"95f39fb5479ee5c196de627e06e10efd59af5148cf1c8466924e3fb2e5e2bd3b\", \"snapshot_path\": \"bls/spm_thresholds.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_thresholds.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"census-metro-2024-snapshot\", \"publication_date\": null, \"sha256\": \"4443d5005f9c2847f25c0f6cbc42eb5e5d897244b26b488a10d1e7fe87d68fcd\", \"snapshot_path\": \"metro_geoadj_2024.json\", \"url\": \"https://www2.census.gov/programs-surveys/demo/tables/p60/287/SPM-pov-threshold-2024.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-cd-2023-snapshot\", \"publication_date\": null, \"sha256\": \"f89938d871753f9b796445e65df6e3975d47b256ed34be8993b9038972ea9917\", \"snapshot_path\": \"cd_geoadj_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5/groups/B25031.html\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-rents-2023-snapshot\", \"publication_date\": null, \"sha256\": \"a64258f4cebe16bc2bca16456368876003059af5870dfa22e8bc4d908cb14296\", \"snapshot_path\": \"acs_rents_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5\"}], \"years\": {\"2024\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/revised_2019_2024\", \"status\": \"published\"}, \"2025\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/bls-published-2025\", \"status\": \"published\"}}}",
+            "source_url": "https://www.bls.gov/pir/spmhome.htm",
+            "unit": "USD",
+            "value": {
+              "kind": "decimal",
+              "value": "34325.99772"
+            }
+          }
+        }
+      },
+      {
+        "entity_id": "synthetic:2025:renter",
+        "outputs": {
+          "us:policies/policyengine/spm-threshold-application#adjusted_threshold": {
+            "dtype": "decimal",
+            "id": "us:policies/policyengine/spm-threshold-application#adjusted_threshold",
+            "kind": "scalar",
+            "name": "adjusted_threshold",
+            "unit": "USD",
+            "value": {
+              "kind": "decimal",
+              "value": "34623.1398095945396816218822"
+            }
+          }
+        },
+        "period": {
+          "end": "2025-12-31",
+          "name": "spm-calendar-year",
+          "period_kind": "custom",
+          "start": "2025-01-01"
+        },
+        "trace": {
+          "us:policies/policyengine/spm-threshold-application#adjusted_threshold": {
+            "dependencies": [
+              "us:policies/policyengine/spm-threshold-application#reference_threshold"
+            ],
+            "dtype": "decimal",
+            "entity_id": "synthetic:2025:renter",
+            "executed_expression": "((us:policies/policyengine/spm-threshold-application#reference_threshold * input(\"equivalence_factor\")) * input(\"geographic_factor\"))",
+            "id": "us:policies/policyengine/spm-threshold-application#adjusted_threshold",
+            "kind": "scalar",
+            "name": "adjusted_threshold",
+            "source": "{\"release_id\": \"spm-2026-09-08\", \"release_sha256\": \"762ad5347fe4b6b1eabbc3189f83ddae296329e7c3f6630f0db22204dfaffaf6\", \"scope\": \"partial statistical bridge; external equivalence and geography\", \"sources\": [{\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-corrected-2005-2024\", \"publication_date\": \"2026-07-17\", \"sha256\": \"e7931a1f2540d52877d6fd14a8ed1e421e977a85c952ae1b6f690a04d904f2cb\", \"snapshot_path\": \"bls/spm_threshold_200524_corrected.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_threshold_200524_corrected.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-2025\", \"publication_date\": \"2026-08-24\", \"sha256\": \"95f39fb5479ee5c196de627e06e10efd59af5148cf1c8466924e3fb2e5e2bd3b\", \"snapshot_path\": \"bls/spm_thresholds.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_thresholds.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"census-metro-2024-snapshot\", \"publication_date\": null, \"sha256\": \"4443d5005f9c2847f25c0f6cbc42eb5e5d897244b26b488a10d1e7fe87d68fcd\", \"snapshot_path\": \"metro_geoadj_2024.json\", \"url\": \"https://www2.census.gov/programs-surveys/demo/tables/p60/287/SPM-pov-threshold-2024.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-cd-2023-snapshot\", \"publication_date\": null, \"sha256\": \"f89938d871753f9b796445e65df6e3975d47b256ed34be8993b9038972ea9917\", \"snapshot_path\": \"cd_geoadj_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5/groups/B25031.html\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-rents-2023-snapshot\", \"publication_date\": null, \"sha256\": \"a64258f4cebe16bc2bca16456368876003059af5870dfa22e8bc4d908cb14296\", \"snapshot_path\": \"acs_rents_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5\"}], \"years\": {\"2024\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/revised_2019_2024\", \"status\": \"published\"}, \"2025\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/bls-published-2025\", \"status\": \"published\"}}}",
+            "source_url": "https://www.bls.gov/pir/spmhome.htm",
+            "unit": "USD",
+            "value": {
+              "kind": "decimal",
+              "value": "34623.1398095945396816218822"
+            }
+          },
+          "us:policies/policyengine/spm-threshold-application#reference_threshold": {
+            "dependencies": [],
+            "dtype": "decimal",
+            "entity_id": "synthetic:2025:renter",
+            "executed_expression": "us:policies/policyengine/spm-threshold-application#national_threshold[input(\"housing_tenure\")]",
+            "id": "us:policies/policyengine/spm-threshold-application#reference_threshold",
+            "kind": "scalar",
+            "name": "reference_threshold",
+            "parameter_reads": [
+              {
+                "effective_from": "2025-01-01",
+                "effective_to": "2025-12-31",
+                "id": "us:policies/policyengine/spm-threshold-application#national_threshold",
+                "index": 2,
+                "name": "national_threshold",
+                "parameter": "us:policies/policyengine/spm-threshold-application#national_threshold",
+                "source": "{\"release_id\": \"spm-2026-09-08\", \"release_sha256\": \"762ad5347fe4b6b1eabbc3189f83ddae296329e7c3f6630f0db22204dfaffaf6\", \"scope\": \"partial statistical bridge; external equivalence and geography\", \"sources\": [{\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-corrected-2005-2024\", \"publication_date\": \"2026-07-17\", \"sha256\": \"e7931a1f2540d52877d6fd14a8ed1e421e977a85c952ae1b6f690a04d904f2cb\", \"snapshot_path\": \"bls/spm_threshold_200524_corrected.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_threshold_200524_corrected.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-2025\", \"publication_date\": \"2026-08-24\", \"sha256\": \"95f39fb5479ee5c196de627e06e10efd59af5148cf1c8466924e3fb2e5e2bd3b\", \"snapshot_path\": \"bls/spm_thresholds.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_thresholds.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"census-metro-2024-snapshot\", \"publication_date\": null, \"sha256\": \"4443d5005f9c2847f25c0f6cbc42eb5e5d897244b26b488a10d1e7fe87d68fcd\", \"snapshot_path\": \"metro_geoadj_2024.json\", \"url\": \"https://www2.census.gov/programs-surveys/demo/tables/p60/287/SPM-pov-threshold-2024.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-cd-2023-snapshot\", \"publication_date\": null, \"sha256\": \"f89938d871753f9b796445e65df6e3975d47b256ed34be8993b9038972ea9917\", \"snapshot_path\": \"cd_geoadj_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5/groups/B25031.html\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-rents-2023-snapshot\", \"publication_date\": null, \"sha256\": \"a64258f4cebe16bc2bca16456368876003059af5870dfa22e8bc4d908cb14296\", \"snapshot_path\": \"acs_rents_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5\"}], \"years\": {\"2024\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/revised_2019_2024\", \"status\": \"published\"}, \"2025\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/bls-published-2025\", \"status\": \"published\"}}}",
+                "source_url": "https://www.bls.gov/pir/spmhome.htm",
+                "unit": "USD",
+                "value": {
+                  "kind": "decimal",
+                  "value": "41700.555713"
+                }
+              }
+            ],
+            "source": "{\"release_id\": \"spm-2026-09-08\", \"release_sha256\": \"762ad5347fe4b6b1eabbc3189f83ddae296329e7c3f6630f0db22204dfaffaf6\", \"scope\": \"partial statistical bridge; external equivalence and geography\", \"sources\": [{\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-corrected-2005-2024\", \"publication_date\": \"2026-07-17\", \"sha256\": \"e7931a1f2540d52877d6fd14a8ed1e421e977a85c952ae1b6f690a04d904f2cb\", \"snapshot_path\": \"bls/spm_threshold_200524_corrected.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_threshold_200524_corrected.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-2025\", \"publication_date\": \"2026-08-24\", \"sha256\": \"95f39fb5479ee5c196de627e06e10efd59af5148cf1c8466924e3fb2e5e2bd3b\", \"snapshot_path\": \"bls/spm_thresholds.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_thresholds.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"census-metro-2024-snapshot\", \"publication_date\": null, \"sha256\": \"4443d5005f9c2847f25c0f6cbc42eb5e5d897244b26b488a10d1e7fe87d68fcd\", \"snapshot_path\": \"metro_geoadj_2024.json\", \"url\": \"https://www2.census.gov/programs-surveys/demo/tables/p60/287/SPM-pov-threshold-2024.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-cd-2023-snapshot\", \"publication_date\": null, \"sha256\": \"f89938d871753f9b796445e65df6e3975d47b256ed34be8993b9038972ea9917\", \"snapshot_path\": \"cd_geoadj_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5/groups/B25031.html\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-rents-2023-snapshot\", \"publication_date\": null, \"sha256\": \"a64258f4cebe16bc2bca16456368876003059af5870dfa22e8bc4d908cb14296\", \"snapshot_path\": \"acs_rents_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5\"}], \"years\": {\"2024\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/revised_2019_2024\", \"status\": \"published\"}, \"2025\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/bls-published-2025\", \"status\": \"published\"}}}",
+            "source_url": "https://www.bls.gov/pir/spmhome.htm",
+            "unit": "USD",
+            "value": {
+              "kind": "decimal",
+              "value": "41700.555713"
+            }
+          }
+        }
+      },
+      {
+        "entity_id": "synthetic:boundary:below",
+        "outputs": {
+          "us:policies/policyengine/spm-threshold-application#adjusted_threshold": {
+            "dtype": "decimal",
+            "id": "us:policies/policyengine/spm-threshold-application#adjusted_threshold",
+            "kind": "scalar",
+            "name": "adjusted_threshold",
+            "unit": "USD",
+            "value": {
+              "kind": "decimal",
+              "value": "41700.555713"
+            }
+          },
+          "us:policies/policyengine/spm-threshold-application#is_in_poverty": {
+            "id": "us:policies/policyengine/spm-threshold-application#is_in_poverty",
+            "kind": "judgment",
+            "name": "is_in_poverty",
+            "outcome": "holds",
+            "unit": null
+          }
+        },
+        "period": {
+          "end": "2025-12-31",
+          "name": "spm-calendar-year",
+          "period_kind": "custom",
+          "start": "2025-01-01"
+        },
+        "trace": {
+          "us:policies/policyengine/spm-threshold-application#adjusted_threshold": {
+            "dependencies": [
+              "us:policies/policyengine/spm-threshold-application#reference_threshold"
+            ],
+            "dtype": "decimal",
+            "entity_id": "synthetic:boundary:below",
+            "executed_expression": "((us:policies/policyengine/spm-threshold-application#reference_threshold * input(\"equivalence_factor\")) * input(\"geographic_factor\"))",
+            "id": "us:policies/policyengine/spm-threshold-application#adjusted_threshold",
+            "kind": "scalar",
+            "name": "adjusted_threshold",
+            "source": "{\"release_id\": \"spm-2026-09-08\", \"release_sha256\": \"762ad5347fe4b6b1eabbc3189f83ddae296329e7c3f6630f0db22204dfaffaf6\", \"scope\": \"partial statistical bridge; external equivalence and geography\", \"sources\": [{\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-corrected-2005-2024\", \"publication_date\": \"2026-07-17\", \"sha256\": \"e7931a1f2540d52877d6fd14a8ed1e421e977a85c952ae1b6f690a04d904f2cb\", \"snapshot_path\": \"bls/spm_threshold_200524_corrected.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_threshold_200524_corrected.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-2025\", \"publication_date\": \"2026-08-24\", \"sha256\": \"95f39fb5479ee5c196de627e06e10efd59af5148cf1c8466924e3fb2e5e2bd3b\", \"snapshot_path\": \"bls/spm_thresholds.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_thresholds.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"census-metro-2024-snapshot\", \"publication_date\": null, \"sha256\": \"4443d5005f9c2847f25c0f6cbc42eb5e5d897244b26b488a10d1e7fe87d68fcd\", \"snapshot_path\": \"metro_geoadj_2024.json\", \"url\": \"https://www2.census.gov/programs-surveys/demo/tables/p60/287/SPM-pov-threshold-2024.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-cd-2023-snapshot\", \"publication_date\": null, \"sha256\": \"f89938d871753f9b796445e65df6e3975d47b256ed34be8993b9038972ea9917\", \"snapshot_path\": \"cd_geoadj_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5/groups/B25031.html\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-rents-2023-snapshot\", \"publication_date\": null, \"sha256\": \"a64258f4cebe16bc2bca16456368876003059af5870dfa22e8bc4d908cb14296\", \"snapshot_path\": \"acs_rents_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5\"}], \"years\": {\"2024\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/revised_2019_2024\", \"status\": \"published\"}, \"2025\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/bls-published-2025\", \"status\": \"published\"}}}",
+            "source_url": "https://www.bls.gov/pir/spmhome.htm",
+            "unit": "USD",
+            "value": {
+              "kind": "decimal",
+              "value": "41700.555713"
+            }
+          },
+          "us:policies/policyengine/spm-threshold-application#is_in_poverty": {
+            "dependencies": [
+              "us:policies/policyengine/spm-threshold-application#adjusted_threshold"
+            ],
+            "entity_id": "synthetic:boundary:below",
+            "executed_expression": "(input(\"resources\") < us:policies/policyengine/spm-threshold-application#adjusted_threshold)",
+            "id": "us:policies/policyengine/spm-threshold-application#is_in_poverty",
+            "kind": "judgment",
+            "name": "is_in_poverty",
+            "outcome": "holds",
+            "source": "{\"release_id\": \"spm-2026-09-08\", \"release_sha256\": \"762ad5347fe4b6b1eabbc3189f83ddae296329e7c3f6630f0db22204dfaffaf6\", \"scope\": \"partial statistical bridge; external equivalence and geography\", \"sources\": [{\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-corrected-2005-2024\", \"publication_date\": \"2026-07-17\", \"sha256\": \"e7931a1f2540d52877d6fd14a8ed1e421e977a85c952ae1b6f690a04d904f2cb\", \"snapshot_path\": \"bls/spm_threshold_200524_corrected.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_threshold_200524_corrected.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-2025\", \"publication_date\": \"2026-08-24\", \"sha256\": \"95f39fb5479ee5c196de627e06e10efd59af5148cf1c8466924e3fb2e5e2bd3b\", \"snapshot_path\": \"bls/spm_thresholds.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_thresholds.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"census-metro-2024-snapshot\", \"publication_date\": null, \"sha256\": \"4443d5005f9c2847f25c0f6cbc42eb5e5d897244b26b488a10d1e7fe87d68fcd\", \"snapshot_path\": \"metro_geoadj_2024.json\", \"url\": \"https://www2.census.gov/programs-surveys/demo/tables/p60/287/SPM-pov-threshold-2024.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-cd-2023-snapshot\", \"publication_date\": null, \"sha256\": \"f89938d871753f9b796445e65df6e3975d47b256ed34be8993b9038972ea9917\", \"snapshot_path\": \"cd_geoadj_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5/groups/B25031.html\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-rents-2023-snapshot\", \"publication_date\": null, \"sha256\": \"a64258f4cebe16bc2bca16456368876003059af5870dfa22e8bc4d908cb14296\", \"snapshot_path\": \"acs_rents_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5\"}], \"years\": {\"2024\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/revised_2019_2024\", \"status\": \"published\"}, \"2025\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/bls-published-2025\", \"status\": \"published\"}}}",
+            "source_url": "https://www.bls.gov/pir/spmhome.htm",
+            "unit": null
+          },
+          "us:policies/policyengine/spm-threshold-application#reference_threshold": {
+            "dependencies": [],
+            "dtype": "decimal",
+            "entity_id": "synthetic:boundary:below",
+            "executed_expression": "us:policies/policyengine/spm-threshold-application#national_threshold[input(\"housing_tenure\")]",
+            "id": "us:policies/policyengine/spm-threshold-application#reference_threshold",
+            "kind": "scalar",
+            "name": "reference_threshold",
+            "parameter_reads": [
+              {
+                "effective_from": "2025-01-01",
+                "effective_to": "2025-12-31",
+                "id": "us:policies/policyengine/spm-threshold-application#national_threshold",
+                "index": 2,
+                "name": "national_threshold",
+                "parameter": "us:policies/policyengine/spm-threshold-application#national_threshold",
+                "source": "{\"release_id\": \"spm-2026-09-08\", \"release_sha256\": \"762ad5347fe4b6b1eabbc3189f83ddae296329e7c3f6630f0db22204dfaffaf6\", \"scope\": \"partial statistical bridge; external equivalence and geography\", \"sources\": [{\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-corrected-2005-2024\", \"publication_date\": \"2026-07-17\", \"sha256\": \"e7931a1f2540d52877d6fd14a8ed1e421e977a85c952ae1b6f690a04d904f2cb\", \"snapshot_path\": \"bls/spm_threshold_200524_corrected.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_threshold_200524_corrected.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-2025\", \"publication_date\": \"2026-08-24\", \"sha256\": \"95f39fb5479ee5c196de627e06e10efd59af5148cf1c8466924e3fb2e5e2bd3b\", \"snapshot_path\": \"bls/spm_thresholds.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_thresholds.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"census-metro-2024-snapshot\", \"publication_date\": null, \"sha256\": \"4443d5005f9c2847f25c0f6cbc42eb5e5d897244b26b488a10d1e7fe87d68fcd\", \"snapshot_path\": \"metro_geoadj_2024.json\", \"url\": \"https://www2.census.gov/programs-surveys/demo/tables/p60/287/SPM-pov-threshold-2024.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-cd-2023-snapshot\", \"publication_date\": null, \"sha256\": \"f89938d871753f9b796445e65df6e3975d47b256ed34be8993b9038972ea9917\", \"snapshot_path\": \"cd_geoadj_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5/groups/B25031.html\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-rents-2023-snapshot\", \"publication_date\": null, \"sha256\": \"a64258f4cebe16bc2bca16456368876003059af5870dfa22e8bc4d908cb14296\", \"snapshot_path\": \"acs_rents_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5\"}], \"years\": {\"2024\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/revised_2019_2024\", \"status\": \"published\"}, \"2025\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/bls-published-2025\", \"status\": \"published\"}}}",
+                "source_url": "https://www.bls.gov/pir/spmhome.htm",
+                "unit": "USD",
+                "value": {
+                  "kind": "decimal",
+                  "value": "41700.555713"
+                }
+              }
+            ],
+            "source": "{\"release_id\": \"spm-2026-09-08\", \"release_sha256\": \"762ad5347fe4b6b1eabbc3189f83ddae296329e7c3f6630f0db22204dfaffaf6\", \"scope\": \"partial statistical bridge; external equivalence and geography\", \"sources\": [{\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-corrected-2005-2024\", \"publication_date\": \"2026-07-17\", \"sha256\": \"e7931a1f2540d52877d6fd14a8ed1e421e977a85c952ae1b6f690a04d904f2cb\", \"snapshot_path\": \"bls/spm_threshold_200524_corrected.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_threshold_200524_corrected.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-2025\", \"publication_date\": \"2026-08-24\", \"sha256\": \"95f39fb5479ee5c196de627e06e10efd59af5148cf1c8466924e3fb2e5e2bd3b\", \"snapshot_path\": \"bls/spm_thresholds.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_thresholds.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"census-metro-2024-snapshot\", \"publication_date\": null, \"sha256\": \"4443d5005f9c2847f25c0f6cbc42eb5e5d897244b26b488a10d1e7fe87d68fcd\", \"snapshot_path\": \"metro_geoadj_2024.json\", \"url\": \"https://www2.census.gov/programs-surveys/demo/tables/p60/287/SPM-pov-threshold-2024.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-cd-2023-snapshot\", \"publication_date\": null, \"sha256\": \"f89938d871753f9b796445e65df6e3975d47b256ed34be8993b9038972ea9917\", \"snapshot_path\": \"cd_geoadj_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5/groups/B25031.html\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-rents-2023-snapshot\", \"publication_date\": null, \"sha256\": \"a64258f4cebe16bc2bca16456368876003059af5870dfa22e8bc4d908cb14296\", \"snapshot_path\": \"acs_rents_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5\"}], \"years\": {\"2024\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/revised_2019_2024\", \"status\": \"published\"}, \"2025\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/bls-published-2025\", \"status\": \"published\"}}}",
+            "source_url": "https://www.bls.gov/pir/spmhome.htm",
+            "unit": "USD",
+            "value": {
+              "kind": "decimal",
+              "value": "41700.555713"
+            }
+          }
+        }
+      },
+      {
+        "entity_id": "synthetic:boundary:equal",
+        "outputs": {
+          "us:policies/policyengine/spm-threshold-application#adjusted_threshold": {
+            "dtype": "decimal",
+            "id": "us:policies/policyengine/spm-threshold-application#adjusted_threshold",
+            "kind": "scalar",
+            "name": "adjusted_threshold",
+            "unit": "USD",
+            "value": {
+              "kind": "decimal",
+              "value": "41700.555713"
+            }
+          },
+          "us:policies/policyengine/spm-threshold-application#is_in_poverty": {
+            "id": "us:policies/policyengine/spm-threshold-application#is_in_poverty",
+            "kind": "judgment",
+            "name": "is_in_poverty",
+            "outcome": "not_holds",
+            "unit": null
+          }
+        },
+        "period": {
+          "end": "2025-12-31",
+          "name": "spm-calendar-year",
+          "period_kind": "custom",
+          "start": "2025-01-01"
+        },
+        "trace": {
+          "us:policies/policyengine/spm-threshold-application#adjusted_threshold": {
+            "dependencies": [
+              "us:policies/policyengine/spm-threshold-application#reference_threshold"
+            ],
+            "dtype": "decimal",
+            "entity_id": "synthetic:boundary:equal",
+            "executed_expression": "((us:policies/policyengine/spm-threshold-application#reference_threshold * input(\"equivalence_factor\")) * input(\"geographic_factor\"))",
+            "id": "us:policies/policyengine/spm-threshold-application#adjusted_threshold",
+            "kind": "scalar",
+            "name": "adjusted_threshold",
+            "source": "{\"release_id\": \"spm-2026-09-08\", \"release_sha256\": \"762ad5347fe4b6b1eabbc3189f83ddae296329e7c3f6630f0db22204dfaffaf6\", \"scope\": \"partial statistical bridge; external equivalence and geography\", \"sources\": [{\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-corrected-2005-2024\", \"publication_date\": \"2026-07-17\", \"sha256\": \"e7931a1f2540d52877d6fd14a8ed1e421e977a85c952ae1b6f690a04d904f2cb\", \"snapshot_path\": \"bls/spm_threshold_200524_corrected.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_threshold_200524_corrected.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-2025\", \"publication_date\": \"2026-08-24\", \"sha256\": \"95f39fb5479ee5c196de627e06e10efd59af5148cf1c8466924e3fb2e5e2bd3b\", \"snapshot_path\": \"bls/spm_thresholds.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_thresholds.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"census-metro-2024-snapshot\", \"publication_date\": null, \"sha256\": \"4443d5005f9c2847f25c0f6cbc42eb5e5d897244b26b488a10d1e7fe87d68fcd\", \"snapshot_path\": \"metro_geoadj_2024.json\", \"url\": \"https://www2.census.gov/programs-surveys/demo/tables/p60/287/SPM-pov-threshold-2024.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-cd-2023-snapshot\", \"publication_date\": null, \"sha256\": \"f89938d871753f9b796445e65df6e3975d47b256ed34be8993b9038972ea9917\", \"snapshot_path\": \"cd_geoadj_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5/groups/B25031.html\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-rents-2023-snapshot\", \"publication_date\": null, \"sha256\": \"a64258f4cebe16bc2bca16456368876003059af5870dfa22e8bc4d908cb14296\", \"snapshot_path\": \"acs_rents_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5\"}], \"years\": {\"2024\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/revised_2019_2024\", \"status\": \"published\"}, \"2025\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/bls-published-2025\", \"status\": \"published\"}}}",
+            "source_url": "https://www.bls.gov/pir/spmhome.htm",
+            "unit": "USD",
+            "value": {
+              "kind": "decimal",
+              "value": "41700.555713"
+            }
+          },
+          "us:policies/policyengine/spm-threshold-application#is_in_poverty": {
+            "dependencies": [
+              "us:policies/policyengine/spm-threshold-application#adjusted_threshold"
+            ],
+            "entity_id": "synthetic:boundary:equal",
+            "executed_expression": "(input(\"resources\") < us:policies/policyengine/spm-threshold-application#adjusted_threshold)",
+            "id": "us:policies/policyengine/spm-threshold-application#is_in_poverty",
+            "kind": "judgment",
+            "name": "is_in_poverty",
+            "outcome": "not_holds",
+            "source": "{\"release_id\": \"spm-2026-09-08\", \"release_sha256\": \"762ad5347fe4b6b1eabbc3189f83ddae296329e7c3f6630f0db22204dfaffaf6\", \"scope\": \"partial statistical bridge; external equivalence and geography\", \"sources\": [{\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-corrected-2005-2024\", \"publication_date\": \"2026-07-17\", \"sha256\": \"e7931a1f2540d52877d6fd14a8ed1e421e977a85c952ae1b6f690a04d904f2cb\", \"snapshot_path\": \"bls/spm_threshold_200524_corrected.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_threshold_200524_corrected.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-2025\", \"publication_date\": \"2026-08-24\", \"sha256\": \"95f39fb5479ee5c196de627e06e10efd59af5148cf1c8466924e3fb2e5e2bd3b\", \"snapshot_path\": \"bls/spm_thresholds.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_thresholds.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"census-metro-2024-snapshot\", \"publication_date\": null, \"sha256\": \"4443d5005f9c2847f25c0f6cbc42eb5e5d897244b26b488a10d1e7fe87d68fcd\", \"snapshot_path\": \"metro_geoadj_2024.json\", \"url\": \"https://www2.census.gov/programs-surveys/demo/tables/p60/287/SPM-pov-threshold-2024.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-cd-2023-snapshot\", \"publication_date\": null, \"sha256\": \"f89938d871753f9b796445e65df6e3975d47b256ed34be8993b9038972ea9917\", \"snapshot_path\": \"cd_geoadj_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5/groups/B25031.html\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-rents-2023-snapshot\", \"publication_date\": null, \"sha256\": \"a64258f4cebe16bc2bca16456368876003059af5870dfa22e8bc4d908cb14296\", \"snapshot_path\": \"acs_rents_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5\"}], \"years\": {\"2024\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/revised_2019_2024\", \"status\": \"published\"}, \"2025\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/bls-published-2025\", \"status\": \"published\"}}}",
+            "source_url": "https://www.bls.gov/pir/spmhome.htm",
+            "unit": null
+          },
+          "us:policies/policyengine/spm-threshold-application#reference_threshold": {
+            "dependencies": [],
+            "dtype": "decimal",
+            "entity_id": "synthetic:boundary:equal",
+            "executed_expression": "us:policies/policyengine/spm-threshold-application#national_threshold[input(\"housing_tenure\")]",
+            "id": "us:policies/policyengine/spm-threshold-application#reference_threshold",
+            "kind": "scalar",
+            "name": "reference_threshold",
+            "parameter_reads": [
+              {
+                "effective_from": "2025-01-01",
+                "effective_to": "2025-12-31",
+                "id": "us:policies/policyengine/spm-threshold-application#national_threshold",
+                "index": 2,
+                "name": "national_threshold",
+                "parameter": "us:policies/policyengine/spm-threshold-application#national_threshold",
+                "source": "{\"release_id\": \"spm-2026-09-08\", \"release_sha256\": \"762ad5347fe4b6b1eabbc3189f83ddae296329e7c3f6630f0db22204dfaffaf6\", \"scope\": \"partial statistical bridge; external equivalence and geography\", \"sources\": [{\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-corrected-2005-2024\", \"publication_date\": \"2026-07-17\", \"sha256\": \"e7931a1f2540d52877d6fd14a8ed1e421e977a85c952ae1b6f690a04d904f2cb\", \"snapshot_path\": \"bls/spm_threshold_200524_corrected.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_threshold_200524_corrected.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-2025\", \"publication_date\": \"2026-08-24\", \"sha256\": \"95f39fb5479ee5c196de627e06e10efd59af5148cf1c8466924e3fb2e5e2bd3b\", \"snapshot_path\": \"bls/spm_thresholds.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_thresholds.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"census-metro-2024-snapshot\", \"publication_date\": null, \"sha256\": \"4443d5005f9c2847f25c0f6cbc42eb5e5d897244b26b488a10d1e7fe87d68fcd\", \"snapshot_path\": \"metro_geoadj_2024.json\", \"url\": \"https://www2.census.gov/programs-surveys/demo/tables/p60/287/SPM-pov-threshold-2024.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-cd-2023-snapshot\", \"publication_date\": null, \"sha256\": \"f89938d871753f9b796445e65df6e3975d47b256ed34be8993b9038972ea9917\", \"snapshot_path\": \"cd_geoadj_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5/groups/B25031.html\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-rents-2023-snapshot\", \"publication_date\": null, \"sha256\": \"a64258f4cebe16bc2bca16456368876003059af5870dfa22e8bc4d908cb14296\", \"snapshot_path\": \"acs_rents_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5\"}], \"years\": {\"2024\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/revised_2019_2024\", \"status\": \"published\"}, \"2025\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/bls-published-2025\", \"status\": \"published\"}}}",
+                "source_url": "https://www.bls.gov/pir/spmhome.htm",
+                "unit": "USD",
+                "value": {
+                  "kind": "decimal",
+                  "value": "41700.555713"
+                }
+              }
+            ],
+            "source": "{\"release_id\": \"spm-2026-09-08\", \"release_sha256\": \"762ad5347fe4b6b1eabbc3189f83ddae296329e7c3f6630f0db22204dfaffaf6\", \"scope\": \"partial statistical bridge; external equivalence and geography\", \"sources\": [{\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-corrected-2005-2024\", \"publication_date\": \"2026-07-17\", \"sha256\": \"e7931a1f2540d52877d6fd14a8ed1e421e977a85c952ae1b6f690a04d904f2cb\", \"snapshot_path\": \"bls/spm_threshold_200524_corrected.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_threshold_200524_corrected.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-2025\", \"publication_date\": \"2026-08-24\", \"sha256\": \"95f39fb5479ee5c196de627e06e10efd59af5148cf1c8466924e3fb2e5e2bd3b\", \"snapshot_path\": \"bls/spm_thresholds.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_thresholds.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"census-metro-2024-snapshot\", \"publication_date\": null, \"sha256\": \"4443d5005f9c2847f25c0f6cbc42eb5e5d897244b26b488a10d1e7fe87d68fcd\", \"snapshot_path\": \"metro_geoadj_2024.json\", \"url\": \"https://www2.census.gov/programs-surveys/demo/tables/p60/287/SPM-pov-threshold-2024.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-cd-2023-snapshot\", \"publication_date\": null, \"sha256\": \"f89938d871753f9b796445e65df6e3975d47b256ed34be8993b9038972ea9917\", \"snapshot_path\": \"cd_geoadj_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5/groups/B25031.html\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-rents-2023-snapshot\", \"publication_date\": null, \"sha256\": \"a64258f4cebe16bc2bca16456368876003059af5870dfa22e8bc4d908cb14296\", \"snapshot_path\": \"acs_rents_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5\"}], \"years\": {\"2024\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/revised_2019_2024\", \"status\": \"published\"}, \"2025\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/bls-published-2025\", \"status\": \"published\"}}}",
+            "source_url": "https://www.bls.gov/pir/spmhome.htm",
+            "unit": "USD",
+            "value": {
+              "kind": "decimal",
+              "value": "41700.555713"
+            }
+          }
+        }
+      },
+      {
+        "entity_id": "synthetic:boundary:above",
+        "outputs": {
+          "us:policies/policyengine/spm-threshold-application#adjusted_threshold": {
+            "dtype": "decimal",
+            "id": "us:policies/policyengine/spm-threshold-application#adjusted_threshold",
+            "kind": "scalar",
+            "name": "adjusted_threshold",
+            "unit": "USD",
+            "value": {
+              "kind": "decimal",
+              "value": "41700.555713"
+            }
+          },
+          "us:policies/policyengine/spm-threshold-application#is_in_poverty": {
+            "id": "us:policies/policyengine/spm-threshold-application#is_in_poverty",
+            "kind": "judgment",
+            "name": "is_in_poverty",
+            "outcome": "not_holds",
+            "unit": null
+          }
+        },
+        "period": {
+          "end": "2025-12-31",
+          "name": "spm-calendar-year",
+          "period_kind": "custom",
+          "start": "2025-01-01"
+        },
+        "trace": {
+          "us:policies/policyengine/spm-threshold-application#adjusted_threshold": {
+            "dependencies": [
+              "us:policies/policyengine/spm-threshold-application#reference_threshold"
+            ],
+            "dtype": "decimal",
+            "entity_id": "synthetic:boundary:above",
+            "executed_expression": "((us:policies/policyengine/spm-threshold-application#reference_threshold * input(\"equivalence_factor\")) * input(\"geographic_factor\"))",
+            "id": "us:policies/policyengine/spm-threshold-application#adjusted_threshold",
+            "kind": "scalar",
+            "name": "adjusted_threshold",
+            "source": "{\"release_id\": \"spm-2026-09-08\", \"release_sha256\": \"762ad5347fe4b6b1eabbc3189f83ddae296329e7c3f6630f0db22204dfaffaf6\", \"scope\": \"partial statistical bridge; external equivalence and geography\", \"sources\": [{\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-corrected-2005-2024\", \"publication_date\": \"2026-07-17\", \"sha256\": \"e7931a1f2540d52877d6fd14a8ed1e421e977a85c952ae1b6f690a04d904f2cb\", \"snapshot_path\": \"bls/spm_threshold_200524_corrected.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_threshold_200524_corrected.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-2025\", \"publication_date\": \"2026-08-24\", \"sha256\": \"95f39fb5479ee5c196de627e06e10efd59af5148cf1c8466924e3fb2e5e2bd3b\", \"snapshot_path\": \"bls/spm_thresholds.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_thresholds.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"census-metro-2024-snapshot\", \"publication_date\": null, \"sha256\": \"4443d5005f9c2847f25c0f6cbc42eb5e5d897244b26b488a10d1e7fe87d68fcd\", \"snapshot_path\": \"metro_geoadj_2024.json\", \"url\": \"https://www2.census.gov/programs-surveys/demo/tables/p60/287/SPM-pov-threshold-2024.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-cd-2023-snapshot\", \"publication_date\": null, \"sha256\": \"f89938d871753f9b796445e65df6e3975d47b256ed34be8993b9038972ea9917\", \"snapshot_path\": \"cd_geoadj_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5/groups/B25031.html\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-rents-2023-snapshot\", \"publication_date\": null, \"sha256\": \"a64258f4cebe16bc2bca16456368876003059af5870dfa22e8bc4d908cb14296\", \"snapshot_path\": \"acs_rents_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5\"}], \"years\": {\"2024\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/revised_2019_2024\", \"status\": \"published\"}, \"2025\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/bls-published-2025\", \"status\": \"published\"}}}",
+            "source_url": "https://www.bls.gov/pir/spmhome.htm",
+            "unit": "USD",
+            "value": {
+              "kind": "decimal",
+              "value": "41700.555713"
+            }
+          },
+          "us:policies/policyengine/spm-threshold-application#is_in_poverty": {
+            "dependencies": [
+              "us:policies/policyengine/spm-threshold-application#adjusted_threshold"
+            ],
+            "entity_id": "synthetic:boundary:above",
+            "executed_expression": "(input(\"resources\") < us:policies/policyengine/spm-threshold-application#adjusted_threshold)",
+            "id": "us:policies/policyengine/spm-threshold-application#is_in_poverty",
+            "kind": "judgment",
+            "name": "is_in_poverty",
+            "outcome": "not_holds",
+            "source": "{\"release_id\": \"spm-2026-09-08\", \"release_sha256\": \"762ad5347fe4b6b1eabbc3189f83ddae296329e7c3f6630f0db22204dfaffaf6\", \"scope\": \"partial statistical bridge; external equivalence and geography\", \"sources\": [{\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-corrected-2005-2024\", \"publication_date\": \"2026-07-17\", \"sha256\": \"e7931a1f2540d52877d6fd14a8ed1e421e977a85c952ae1b6f690a04d904f2cb\", \"snapshot_path\": \"bls/spm_threshold_200524_corrected.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_threshold_200524_corrected.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-2025\", \"publication_date\": \"2026-08-24\", \"sha256\": \"95f39fb5479ee5c196de627e06e10efd59af5148cf1c8466924e3fb2e5e2bd3b\", \"snapshot_path\": \"bls/spm_thresholds.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_thresholds.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"census-metro-2024-snapshot\", \"publication_date\": null, \"sha256\": \"4443d5005f9c2847f25c0f6cbc42eb5e5d897244b26b488a10d1e7fe87d68fcd\", \"snapshot_path\": \"metro_geoadj_2024.json\", \"url\": \"https://www2.census.gov/programs-surveys/demo/tables/p60/287/SPM-pov-threshold-2024.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-cd-2023-snapshot\", \"publication_date\": null, \"sha256\": \"f89938d871753f9b796445e65df6e3975d47b256ed34be8993b9038972ea9917\", \"snapshot_path\": \"cd_geoadj_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5/groups/B25031.html\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-rents-2023-snapshot\", \"publication_date\": null, \"sha256\": \"a64258f4cebe16bc2bca16456368876003059af5870dfa22e8bc4d908cb14296\", \"snapshot_path\": \"acs_rents_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5\"}], \"years\": {\"2024\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/revised_2019_2024\", \"status\": \"published\"}, \"2025\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/bls-published-2025\", \"status\": \"published\"}}}",
+            "source_url": "https://www.bls.gov/pir/spmhome.htm",
+            "unit": null
+          },
+          "us:policies/policyengine/spm-threshold-application#reference_threshold": {
+            "dependencies": [],
+            "dtype": "decimal",
+            "entity_id": "synthetic:boundary:above",
+            "executed_expression": "us:policies/policyengine/spm-threshold-application#national_threshold[input(\"housing_tenure\")]",
+            "id": "us:policies/policyengine/spm-threshold-application#reference_threshold",
+            "kind": "scalar",
+            "name": "reference_threshold",
+            "parameter_reads": [
+              {
+                "effective_from": "2025-01-01",
+                "effective_to": "2025-12-31",
+                "id": "us:policies/policyengine/spm-threshold-application#national_threshold",
+                "index": 2,
+                "name": "national_threshold",
+                "parameter": "us:policies/policyengine/spm-threshold-application#national_threshold",
+                "source": "{\"release_id\": \"spm-2026-09-08\", \"release_sha256\": \"762ad5347fe4b6b1eabbc3189f83ddae296329e7c3f6630f0db22204dfaffaf6\", \"scope\": \"partial statistical bridge; external equivalence and geography\", \"sources\": [{\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-corrected-2005-2024\", \"publication_date\": \"2026-07-17\", \"sha256\": \"e7931a1f2540d52877d6fd14a8ed1e421e977a85c952ae1b6f690a04d904f2cb\", \"snapshot_path\": \"bls/spm_threshold_200524_corrected.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_threshold_200524_corrected.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-2025\", \"publication_date\": \"2026-08-24\", \"sha256\": \"95f39fb5479ee5c196de627e06e10efd59af5148cf1c8466924e3fb2e5e2bd3b\", \"snapshot_path\": \"bls/spm_thresholds.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_thresholds.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"census-metro-2024-snapshot\", \"publication_date\": null, \"sha256\": \"4443d5005f9c2847f25c0f6cbc42eb5e5d897244b26b488a10d1e7fe87d68fcd\", \"snapshot_path\": \"metro_geoadj_2024.json\", \"url\": \"https://www2.census.gov/programs-surveys/demo/tables/p60/287/SPM-pov-threshold-2024.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-cd-2023-snapshot\", \"publication_date\": null, \"sha256\": \"f89938d871753f9b796445e65df6e3975d47b256ed34be8993b9038972ea9917\", \"snapshot_path\": \"cd_geoadj_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5/groups/B25031.html\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-rents-2023-snapshot\", \"publication_date\": null, \"sha256\": \"a64258f4cebe16bc2bca16456368876003059af5870dfa22e8bc4d908cb14296\", \"snapshot_path\": \"acs_rents_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5\"}], \"years\": {\"2024\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/revised_2019_2024\", \"status\": \"published\"}, \"2025\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/bls-published-2025\", \"status\": \"published\"}}}",
+                "source_url": "https://www.bls.gov/pir/spmhome.htm",
+                "unit": "USD",
+                "value": {
+                  "kind": "decimal",
+                  "value": "41700.555713"
+                }
+              }
+            ],
+            "source": "{\"release_id\": \"spm-2026-09-08\", \"release_sha256\": \"762ad5347fe4b6b1eabbc3189f83ddae296329e7c3f6630f0db22204dfaffaf6\", \"scope\": \"partial statistical bridge; external equivalence and geography\", \"sources\": [{\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-corrected-2005-2024\", \"publication_date\": \"2026-07-17\", \"sha256\": \"e7931a1f2540d52877d6fd14a8ed1e421e977a85c952ae1b6f690a04d904f2cb\", \"snapshot_path\": \"bls/spm_threshold_200524_corrected.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_threshold_200524_corrected.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"bls-2025\", \"publication_date\": \"2026-08-24\", \"sha256\": \"95f39fb5479ee5c196de627e06e10efd59af5148cf1c8466924e3fb2e5e2bd3b\", \"snapshot_path\": \"bls/spm_thresholds.xlsx\", \"url\": \"https://www.bls.gov/pir/spm/spm_thresholds.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"census-metro-2024-snapshot\", \"publication_date\": null, \"sha256\": \"4443d5005f9c2847f25c0f6cbc42eb5e5d897244b26b488a10d1e7fe87d68fcd\", \"snapshot_path\": \"metro_geoadj_2024.json\", \"url\": \"https://www2.census.gov/programs-surveys/demo/tables/p60/287/SPM-pov-threshold-2024.xlsx\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-cd-2023-snapshot\", \"publication_date\": null, \"sha256\": \"f89938d871753f9b796445e65df6e3975d47b256ed34be8993b9038972ea9917\", \"snapshot_path\": \"cd_geoadj_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5/groups/B25031.html\"}, {\"availability_basis\": \"Conservative date of this pinned snapshot; not a reconstructed historical information set\", \"available_on\": \"2026-09-08\", \"id\": \"acs-rents-2023-snapshot\", \"publication_date\": null, \"sha256\": \"a64258f4cebe16bc2bca16456368876003059af5870dfa22e8bc4d908cb14296\", \"snapshot_path\": \"acs_rents_2023.json\", \"url\": \"https://api.census.gov/data/2023/acs/acs5\"}], \"years\": {\"2024\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/revised_2019_2024\", \"status\": \"published\"}, \"2025\": {\"available_on\": \"2026-09-08\", \"methodology_id\": \"bls/bls-published-2025\", \"status\": \"published\"}}}",
+            "source_url": "https://www.bls.gov/pir/spmhome.htm",
+            "unit": "USD",
+            "value": {
+              "kind": "decimal",
+              "value": "41700.555713"
+            }
+          }
+        }
+      }
+    ]
+  }
+}

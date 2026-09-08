@@ -1,0 +1,209 @@
+[
+  {
+    "available_on": "2026-09-08",
+    "counts": {
+      "adults": 2,
+      "children": 2,
+      "classification": "caller-supplied SPM membership/classification"
+    },
+    "equivalence_provider": "spm_calculator.release.equivalence_factor",
+    "external_equivalence_factor": 1.0,
+    "external_geography": {
+      "factor": 1.1,
+      "kind": "explicit_whole_threshold_factor",
+      "source": "caller"
+    },
+    "methodology_id": "bls/revised_2019_2024",
+    "release_id": "spm-2026-09-08",
+    "release_sha256": "762ad5347fe4b6b1eabbc3189f83ddae296329e7c3f6630f0db22204dfaffaf6",
+    "resources_provider": "caller; annual SPM resources",
+    "status": "published",
+    "tenure": "owner_with_mortgage",
+    "unit_id": "synthetic:2024:owner_with_mortgage",
+    "year": 2024
+  },
+  {
+    "available_on": "2026-09-08",
+    "counts": {
+      "adults": 1,
+      "children": 0,
+      "classification": "caller-supplied SPM membership/classification"
+    },
+    "equivalence_provider": "spm_calculator.release.equivalence_factor",
+    "external_equivalence_factor": 0.46346305677196975,
+    "external_geography": {
+      "factor": 0.9,
+      "kind": "explicit_whole_threshold_factor",
+      "source": "caller"
+    },
+    "methodology_id": "bls/revised_2019_2024",
+    "release_id": "spm-2026-09-08",
+    "release_sha256": "762ad5347fe4b6b1eabbc3189f83ddae296329e7c3f6630f0db22204dfaffaf6",
+    "resources_provider": "caller; annual SPM resources",
+    "status": "published",
+    "tenure": "owner_without_mortgage",
+    "unit_id": "synthetic:2024:owner_without_mortgage",
+    "year": 2024
+  },
+  {
+    "available_on": "2026-09-08",
+    "counts": {
+      "adults": 1,
+      "children": 2,
+      "classification": "caller-supplied SPM membership/classification"
+    },
+    "equivalence_provider": "spm_calculator.release.equivalence_factor",
+    "external_equivalence_factor": 0.8302800578458694,
+    "external_geography": {
+      "factor": 1.0,
+      "kind": "explicit_whole_threshold_factor",
+      "source": "caller"
+    },
+    "methodology_id": "bls/revised_2019_2024",
+    "release_id": "spm-2026-09-08",
+    "release_sha256": "762ad5347fe4b6b1eabbc3189f83ddae296329e7c3f6630f0db22204dfaffaf6",
+    "resources_provider": "caller; annual SPM resources",
+    "status": "published",
+    "tenure": "renter",
+    "unit_id": "synthetic:2024:renter",
+    "year": 2024
+  },
+  {
+    "available_on": "2026-09-08",
+    "counts": {
+      "adults": 2,
+      "children": 2,
+      "classification": "caller-supplied SPM membership/classification"
+    },
+    "equivalence_provider": "spm_calculator.release.equivalence_factor",
+    "external_equivalence_factor": 1.0,
+    "external_geography": {
+      "factor": 1.1,
+      "kind": "explicit_whole_threshold_factor",
+      "source": "caller"
+    },
+    "methodology_id": "bls/bls-published-2025",
+    "release_id": "spm-2026-09-08",
+    "release_sha256": "762ad5347fe4b6b1eabbc3189f83ddae296329e7c3f6630f0db22204dfaffaf6",
+    "resources_provider": "caller; annual SPM resources",
+    "status": "published",
+    "tenure": "owner_with_mortgage",
+    "unit_id": "synthetic:2025:owner_with_mortgage",
+    "year": 2025
+  },
+  {
+    "available_on": "2026-09-08",
+    "counts": {
+      "adults": 1,
+      "children": 0,
+      "classification": "caller-supplied SPM membership/classification"
+    },
+    "equivalence_provider": "spm_calculator.release.equivalence_factor",
+    "external_equivalence_factor": 0.46346305677196975,
+    "external_geography": {
+      "factor": 0.9,
+      "kind": "explicit_whole_threshold_factor",
+      "source": "caller"
+    },
+    "methodology_id": "bls/bls-published-2025",
+    "release_id": "spm-2026-09-08",
+    "release_sha256": "762ad5347fe4b6b1eabbc3189f83ddae296329e7c3f6630f0db22204dfaffaf6",
+    "resources_provider": "caller; annual SPM resources",
+    "status": "published",
+    "tenure": "owner_without_mortgage",
+    "unit_id": "synthetic:2025:owner_without_mortgage",
+    "year": 2025
+  },
+  {
+    "available_on": "2026-09-08",
+    "counts": {
+      "adults": 1,
+      "children": 2,
+      "classification": "caller-supplied SPM membership/classification"
+    },
+    "equivalence_provider": "spm_calculator.release.equivalence_factor",
+    "external_equivalence_factor": 0.8302800578458694,
+    "external_geography": {
+      "factor": 1.0,
+      "kind": "explicit_whole_threshold_factor",
+      "source": "caller"
+    },
+    "methodology_id": "bls/bls-published-2025",
+    "release_id": "spm-2026-09-08",
+    "release_sha256": "762ad5347fe4b6b1eabbc3189f83ddae296329e7c3f6630f0db22204dfaffaf6",
+    "resources_provider": "caller; annual SPM resources",
+    "status": "published",
+    "tenure": "renter",
+    "unit_id": "synthetic:2025:renter",
+    "year": 2025
+  },
+  {
+    "available_on": "2026-09-08",
+    "counts": {
+      "adults": 2,
+      "children": 2,
+      "classification": "caller-supplied SPM membership/classification"
+    },
+    "equivalence_provider": "spm_calculator.release.equivalence_factor",
+    "external_equivalence_factor": 1.0,
+    "external_geography": {
+      "factor": 1.0,
+      "kind": "national",
+      "status": "explicit_national"
+    },
+    "methodology_id": "bls/bls-published-2025",
+    "release_id": "spm-2026-09-08",
+    "release_sha256": "762ad5347fe4b6b1eabbc3189f83ddae296329e7c3f6630f0db22204dfaffaf6",
+    "resources_provider": "caller; annual SPM resources",
+    "status": "published",
+    "tenure": "renter",
+    "unit_id": "synthetic:boundary:below",
+    "year": 2025
+  },
+  {
+    "available_on": "2026-09-08",
+    "counts": {
+      "adults": 2,
+      "children": 2,
+      "classification": "caller-supplied SPM membership/classification"
+    },
+    "equivalence_provider": "spm_calculator.release.equivalence_factor",
+    "external_equivalence_factor": 1.0,
+    "external_geography": {
+      "factor": 1.0,
+      "kind": "national",
+      "status": "explicit_national"
+    },
+    "methodology_id": "bls/bls-published-2025",
+    "release_id": "spm-2026-09-08",
+    "release_sha256": "762ad5347fe4b6b1eabbc3189f83ddae296329e7c3f6630f0db22204dfaffaf6",
+    "resources_provider": "caller; annual SPM resources",
+    "status": "published",
+    "tenure": "renter",
+    "unit_id": "synthetic:boundary:equal",
+    "year": 2025
+  },
+  {
+    "available_on": "2026-09-08",
+    "counts": {
+      "adults": 2,
+      "children": 2,
+      "classification": "caller-supplied SPM membership/classification"
+    },
+    "equivalence_provider": "spm_calculator.release.equivalence_factor",
+    "external_equivalence_factor": 1.0,
+    "external_geography": {
+      "factor": 1.0,
+      "kind": "national",
+      "status": "explicit_national"
+    },
+    "methodology_id": "bls/bls-published-2025",
+    "release_id": "spm-2026-09-08",
+    "release_sha256": "762ad5347fe4b6b1eabbc3189f83ddae296329e7c3f6630f0db22204dfaffaf6",
+    "resources_provider": "caller; annual SPM resources",
+    "status": "published",
+    "tenure": "renter",
+    "unit_id": "synthetic:boundary:above",
+    "year": 2025
+  }
+]

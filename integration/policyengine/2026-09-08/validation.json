@@ -1,0 +1,257 @@
+{
+  "scope": "Actual public wrapper household development integration; no population certification",
+  "versions": {
+    "policyengine": "5.3.0",
+    "policyengine-us": "1.824.3",
+    "policyengine-core": "3.30.2",
+    "spm-calculator": "0.5.0"
+  },
+  "release_id": "spm-2026-09-08",
+  "release_sha256": "762ad5347fe4b6b1eabbc3189f83ddae296329e7c3f6630f0db22204dfaffaf6",
+  "source_revisions": {
+    "policyengine": {
+      "head": "bd5c73a2dda0b6ed6f79aaf635f5e72cad27e6e6",
+      "branch": "max/spm-release-rebuild-20260908",
+      "worktree_status": ""
+    },
+    "policyengine-us": {
+      "head": "3a4ff53654c75e4559b7d55374e8f00c0261b392",
+      "branch": "max/spm-release-rebuild-20260908",
+      "worktree_status": ""
+    },
+    "spm-calculator": {
+      "head": "9e6ae4798458771231613b994df2345dd1685214",
+      "branch": "max/spm-release-rebuild-20260908",
+      "worktree_status": "?? integration/"
+    }
+  },
+  "implementation_files": {
+    "spm-calculator-rebuild/spm_calculator/policyengine_adapter.py": "187e7b7ace1b6fdc5f766121a0273470507e9545406bbfdb4315a7e6de3500b9",
+    "policyengine.py-spm-release/src/policyengine/tax_benefit_models/us/household.py": "3d4eec3dbce054bf3d27ca186bf67e01d71ca0261628466999ebeee8adfed7d7",
+    "policyengine.py-spm-release/src/policyengine/tax_benefit_models/us/model.py": "04de41b060d539d4e69b625414a3e597c18efd9535128df47897a108be218f40",
+    "policyengine.py-spm-release/src/policyengine/tax_benefit_models/us/spm_release.py": "c6f1db68495b9762ca9f3725f489cee5bb26cda12bd2d77d91762c20b52b9788"
+  },
+  "results": {
+    "2025": {
+      "threshold": 41700.5546875,
+      "housing_portion": 18473.345703125,
+      "net_income": 18624.0,
+      "is_in_poverty": true,
+      "provenance": {
+        "spm": {
+          "integration_status": "development_household_integration",
+          "release_id": "spm-2026-09-08",
+          "release_sha256": "762ad5347fe4b6b1eabbc3189f83ddae296329e7c3f6630f0db22204dfaffaf6",
+          "information_date": "2026-09-08",
+          "year_policy": "pe_cpi_u",
+          "allow_estimated": false,
+          "missing_geography": "error",
+          "runtime_versions": {
+            "policyengine": "5.3.0",
+            "policyengine-us": "1.824.3",
+            "policyengine-core": "3.30.2",
+            "spm-calculator": "0.5.0"
+          },
+          "years": {
+            "2025": {
+              "available_on": "2026-09-08",
+              "housing_share_provenance": {
+                "note": "Fixed three-decimal 2024 Census metro housing shares. Other target years carry these values as an approximation; they are not official target-year shares. Geography uses the published rent index with these shares, not an assertion of exact revised metro threshold reproduction.",
+                "reference_year": 2024,
+                "source_id": "census-metro-2024-snapshot",
+                "status": "carried"
+              },
+              "housing_shares": {
+                "owner_with_mortgage": 0.434,
+                "owner_without_mortgage": 0.323,
+                "renter": 0.443
+              },
+              "methodology_id": "bls/bls-published-2025",
+              "source_ids": [
+                "bls-2025",
+                "census-metro-2024-snapshot"
+              ],
+              "status": "published",
+              "thresholds": {
+                "owner_with_mortgage": 41322.707394,
+                "owner_without_mortgage": 34325.99772,
+                "renter": 41700.555713
+              },
+              "uncertainty": {
+                "kind": "published_standard_error",
+                "scope": "National threshold estimation only; no uncertainty estimate for housing-share carry or geographic approximation",
+                "standard_errors": {
+                  "owner_with_mortgage": 327.35414802,
+                  "owner_without_mortgage": 560.28664871,
+                  "renter": 393.03526083
+                }
+              },
+              "geography_threshold_year": 2025,
+              "release_id": "spm-2026-09-08",
+              "release_sha256": "762ad5347fe4b6b1eabbc3189f83ddae296329e7c3f6630f0db22204dfaffaf6",
+              "year": 2025
+            }
+          },
+          "geographies": [
+            {
+              "factor": 1.0,
+              "kind": "national",
+              "status": "explicit_national",
+              "target_year": 2025,
+              "tenure": "renter",
+              "housing_share_provenance": {
+                "note": "Fixed three-decimal 2024 Census metro housing shares. Other target years carry these values as an approximation; they are not official target-year shares. Geography uses the published rent index with these shares, not an assertion of exact revised metro threshold reproduction.",
+                "reference_year": 2024,
+                "source_id": "census-metro-2024-snapshot",
+                "status": "carried"
+              }
+            }
+          ],
+          "composition_method": "Existing PolicyEngine SPM membership and is_adult/is_child formulas; Census independent-teen parity not established",
+          "population_data_certified": false
+        },
+        "wrapper_model_mode": "household_only_development",
+        "certified_population_bundle": false
+      },
+      "spm_warnings": []
+    },
+    "2026": {
+      "threshold": 42702.7265625,
+      "housing_portion": 18917.30859375,
+      "net_income": 19066.783203125,
+      "is_in_poverty": true,
+      "provenance": {
+        "spm": {
+          "integration_status": "development_household_integration",
+          "release_id": "spm-2026-09-08",
+          "release_sha256": "762ad5347fe4b6b1eabbc3189f83ddae296329e7c3f6630f0db22204dfaffaf6",
+          "information_date": "2026-09-08",
+          "year_policy": "pe_cpi_u",
+          "allow_estimated": false,
+          "missing_geography": "error",
+          "runtime_versions": {
+            "policyengine": "5.3.0",
+            "policyengine-us": "1.824.3",
+            "policyengine-core": "3.30.2",
+            "spm-calculator": "0.5.0"
+          },
+          "years": {
+            "2026": {
+              "status": "consumer_extrapolation",
+              "methodology_id": "pe_cpi_u",
+              "method": "pe_cpi_u",
+              "base_year": 2025,
+              "target_year": 2026,
+              "base_release_sha256": "762ad5347fe4b6b1eabbc3189f83ddae296329e7c3f6630f0db22204dfaffaf6",
+              "thresholds": {
+                "owner_with_mortgage": 42315.79630439915,
+                "owner_without_mortgage": 35150.9380451605,
+                "renter": 42702.72527176602
+              },
+              "housing_shares": {
+                "owner_with_mortgage": 0.434,
+                "owner_without_mortgage": 0.323,
+                "renter": 0.443
+              },
+              "housing_share_provenance": {
+                "note": "Fixed three-decimal 2024 Census metro housing shares. Other target years carry these values as an approximation; they are not official target-year shares. Geography uses the published rent index with these shares, not an assertion of exact revised metro threshold reproduction.",
+                "reference_year": 2024,
+                "source_id": "census-metro-2024-snapshot",
+                "status": "carried",
+                "carried_from_threshold_year": 2025,
+                "target_year": 2026,
+                "consumer_extrapolation": true
+              },
+              "source_ids": [
+                "bls-2025",
+                "census-metro-2024-snapshot"
+              ],
+              "geography_threshold_year": 2025,
+              "uncertainty": {
+                "kind": "unavailable",
+                "note": "No extrapolation interval estimated"
+              },
+              "cpi": {
+                "parameter_path": "gov.bls.cpi.cpi_u",
+                "series": "PE model CPI-U parameter",
+                "ratio": 1.0240325228676412,
+                "base": {
+                  "year": 2025,
+                  "instant": "2025-02-01",
+                  "value": 319.775,
+                  "classification": "unknown_model_parameter_classification"
+                },
+                "target": {
+                  "year": 2026,
+                  "instant": "2026-02-01",
+                  "value": 327.46,
+                  "classification": "unknown_model_parameter_classification"
+                },
+                "classification_note": "Model parameter metadata does not establish observed versus projected endpoint values",
+                "parameter_metadata": {
+                  "unit": "currency-USD",
+                  "label": "CPI-U",
+                  "economy": false,
+                  "reference": [
+                    {
+                      "title": "BLS | CPI-U, U.S. city average, all items, seasonally adjusted (CUSR0000SA0), monthly values through June 2026",
+                      "href": "https://data.bls.gov/timeseries/CUSR0000SA0"
+                    },
+                    {
+                      "title": "CBO | Tax Parameters and Effective Marginal Tax Rates | June 2024",
+                      "href": "https://www.cbo.gov/system/files/2024-06/51135-2024-06-Economic-Projections.xlsx"
+                    },
+                    {
+                      "title": "CBO | Tax Parameters and Effective Marginal Tax Rates | January 2025",
+                      "href": "https://www.cbo.gov/system/files/2025-01/51135-2025-01-Economic-Projections.xlsx"
+                    },
+                    {
+                      "title": "CBO | Economic Projections | February 2026",
+                      "href": "https://www.cbo.gov/system/files/2026-02/51135-2026-02-Economic-Projections.xlsx"
+                    }
+                  ]
+                },
+                "runtime_versions": {
+                  "policyengine": "5.3.0",
+                  "policyengine-us": "1.824.3",
+                  "policyengine-core": "3.30.2",
+                  "spm-calculator": "0.5.0"
+                }
+              },
+              "unused_release_estimate": null,
+              "release_id": "spm-2026-09-08",
+              "release_sha256": "762ad5347fe4b6b1eabbc3189f83ddae296329e7c3f6630f0db22204dfaffaf6",
+              "year": 2026
+            }
+          },
+          "geographies": [
+            {
+              "factor": 1.0,
+              "kind": "national",
+              "status": "explicit_national",
+              "target_year": 2026,
+              "tenure": "renter",
+              "housing_share_provenance": {
+                "note": "Fixed three-decimal 2024 Census metro housing shares. Other target years carry these values as an approximation; they are not official target-year shares. Geography uses the published rent index with these shares, not an assertion of exact revised metro threshold reproduction.",
+                "reference_year": 2024,
+                "source_id": "census-metro-2024-snapshot",
+                "status": "carried",
+                "carried_from_threshold_year": 2025,
+                "target_year": 2026,
+                "consumer_extrapolation": true
+              }
+            }
+          ],
+          "composition_method": "Existing PolicyEngine SPM membership and is_adult/is_child formulas; Census independent-teen parity not established",
+          "population_data_certified": false
+        },
+        "wrapper_model_mode": "household_only_development",
+        "certified_population_bundle": false
+      },
+      "spm_warnings": [
+        "SPM 2026 uses PE CPI-U consumer extrapolation from published 2025; it is not a published release threshold"
+      ]
+    }
+  },
+  "certified_manifests_modified": false
+}
