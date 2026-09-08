@@ -28,9 +28,11 @@ describe("pinned release integration", () => {
     render(<CalculatorWorkbench data={data} />);
     const areas = screen.getByLabelText("Census metro/nonmetro area");
     expect(areas.options.length).toBe(341);
-    for (const area of Object.values(data.metroAreas)) {
-      expect(screen.getByRole("option", { name: area.name })).toBeTruthy();
-    }
+    expect(Object.fromEntries(
+      Array.from(areas.options, (option) => [option.value, option.textContent]),
+    )).toEqual(Object.fromEntries(
+      Object.entries(data.metroAreas).map(([id, area]) => [id, area.name]),
+    ));
     fireEvent.change(areas, { target: { value: "1002" } });
     expect(screen.getByRole("heading", { name: "Alabama Nonmetro" })).toBeTruthy();
     expect(screen.getByText(/geography_id="1002"/)).toBeTruthy();
