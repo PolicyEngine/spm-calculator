@@ -1,4 +1,4 @@
-"""Generate the browser's inputs from the same validated offline release."""
+"""Export release inputs for official Census SPM areas to the browser."""
 
 from __future__ import annotations
 
@@ -25,28 +25,9 @@ def build_config():
     ).group(1)
     metro = document["geographies"]["metro"]
     latest = release.latest_published_year
-    lookup = {}
-    for kind in ("state", "county", "congressional_district"):
-        geo = document["geographies"][kind]
-        national = geo["national_median_rent"]
-        lookup[kind] = {
-            "year": geo["year"],
-            "sourceId": geo["source_id"],
-            "nationalMedianRent": national,
-            "options": [
-                {
-                    "id": (
-                        identity.zfill(4)
-                        if kind == "congressional_district"
-                        else identity
-                    ),
-                    "label": area["name"],
-                    "shortLabel": area["name"].split(",")[0],
-                    "medianRent": area["rent_index"] * national,
-                }
-                for identity, area in geo["areas"].items()
-            ],
-        }
+    # Census's workbook includes named MSAs and state residual Metro/Nonmetro
+    # areas. Custom ACS rent estimates remain in the immutable Python release
+    # for research replay but are not official SPM areas or browser inputs.
     return {
         "packageVersion": version,
         "releaseMetadata": {
@@ -105,7 +86,6 @@ def build_config():
             for s in document["sources"]
             if s["id"] == metro["source_id"]
         ),
-        "acsLookup": lookup,
     }
 
 

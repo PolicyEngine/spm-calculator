@@ -23,3 +23,9 @@ Independent reviews found and repaired configuration mixing, incomplete source h
 The country draft uses an exact Git dependency for review while 0.5.0 is unpublished. PyPI rejects that direct dependency in distribution metadata; the country repository auto-publishes on main. Do not merge it as-is. A separate promotion must protect old unbounded consumers, coordinate package publication, and replace the development pin with exactly `spm-calculator==0.5.0`.
 
 The live public calculator still has stale national data until a separate production deployment. Successful local builds and preview deployment do not resolve that public-delivery risk. GitHub CI status is reported on the draft PRs; local checks are not a claim that all hosted jobs have completed.
+
+## Geography scope correction — 2026-09-08
+
+The earlier county-preview check above records the initial rebuild's behavior. That behavior carried forward unofficial custom ACS rent thresholds that the January 25 metro-only design had removed; the April Next.js migration had reintroduced them. The rebuilt app now restricts selection and its exported data to the Census workbook's 341 official SPM areas: named MSAs and state residual Metro/Nonmetro areas. National thresholds remain calculation inputs and reference values. The browser export excludes custom state, county and district rent lookups.
+
+This correction preserves the sealed release, its content hash, Python research helpers and the historical execution receipts. Those retained custom calculations are research approximations, not official Census thresholds. Follow-up validation: 11 browser tests, 5 Python export/config tests, release and browser-export drift checks, Black, Ruff, and standalone/subpath builds pass. No production promotion is recorded here.

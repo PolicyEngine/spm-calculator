@@ -5,11 +5,11 @@ Calculate [Supplemental Poverty Measure (SPM)](https://www.census.gov/topics/inc
 [![Try the Calculator](https://img.shields.io/badge/Try-Calculator-teal)](https://spm-calculator.vercel.app/)
 [![Documentation](https://img.shields.io/badge/docs-github-green)](https://github.com/PolicyEngine/spm-calculator/tree/main/docs)
 
-## Interactive Calculator
+## Interactive calculator
 
-**[Try the SPM Threshold Calculator](https://spm-calculator.vercel.app/)** - A browser-based calculator for metros, states, counties, and congressional districts, with a direct handoff to the Python package for tract-level and batch work.
+**[Try the SPM Threshold Calculator](https://spm-calculator.vercel.app/)** - Calculate thresholds by family composition and housing tenure for the official areas in the Census SPM workbook: named metropolitan statistical areas and state residual Metro/Nonmetro areas.
 
-The rebuilt calculator runs entirely in your browser. National thresholds through published 2025, Census 2024 metro rent indices, and ACS 2023 state, county and district rents are bundled with an explicit release hash. No browser credential or Census request is required. Housing shares are fixed to 2024 and identified as carried approximations for other years.
+The rebuilt calculator runs entirely in your browser. It bundles national thresholds through published 2025 and Census 2024 SPM area rent indices with an explicit release hash. National thresholds provide the calculation's base and reference values; the app selects an official Census area. No browser credential or Census request is required. Housing shares are fixed to 2024 and identified as carried approximations for other years. Applying the 2024 geographic inputs to another year's national base does not produce a published Census threshold for that year.
 
 This branch is an **unpublished 0.5.0 rebuild**. The public calculator remains on its existing deployment until a separate production promotion. The corrected national series changes some legacy numerical outputs; see [compatibility and rollout](docs/spm-releases.md#compatibility-and-rollout).
 
@@ -35,7 +35,7 @@ threshold = base_threshold[tenure] × equivalence_scale × geoadj[tenure]
 Where:
 - **base_threshold** varies by housing tenure (renter, owner with mortgage, owner without mortgage), calculated from 5-year rolling Consumer Expenditure Survey data
 - **equivalence_scale** adjusts for family composition using the official Betson three-parameter SPM scale
-- **geoadj** adjusts for local housing costs, using official Census metro thresholds where available and a tenure-specific ACS rent adjustment elsewhere
+- **geoadj** adjusts for housing costs using the rent index for an official Census SPM area and the selected tenure's housing share
 
 ## Installation
 
@@ -55,7 +55,7 @@ print(release.release_id, release.content_sha256)
 result = release.calculate_unit(SPMUnit(
     unit_id="family-1", num_adults=2, num_children=2,
     tenure="renter", year=2025,
-    geography_kind="county", geography_id="06001",
+    geography_kind="metro", geography_id="35620",  # New York metro
 ))
 print(result["threshold"], result["provenance"])
 ```
@@ -89,9 +89,12 @@ threshold = calc.calculate_threshold(
 # A composition of the selected national series and pinned metro adjustment.
 ```
 
-Official metro thresholds are bundled with the package. For custom ACS-based
-geographies like states, counties, congressional districts, PUMAs, and tracts,
-set `CENSUS_API_KEY` to fetch current median rents.
+Official Census area data are bundled with the package. The Python package also
+retains custom ACS rent calculations for research and compatibility. State,
+county, district, PUMA and tract rent adjustments are approximations, not
+official SPM geographic thresholds, and the browser does not offer them. Legacy
+data-download helpers may require `CENSUS_API_KEY`; the immutable release's
+retained state/county/district inputs replay offline.
 
 ### SPM unit IDs
 
@@ -131,20 +134,19 @@ threshold_report = spm_threshold_match(calculated, reference, atol=1.0)
 The optional ASEC parity tests run against a real Census CPS ASEC HDFStore when
 `SPM_CALCULATOR_ASEC_H5=/path/to/census_cps_2024.h5` is set.
 
-## Supported Geographies
+## Geography scope
 
-- `nation` - National average
-- `state` - 50 states + DC
-- `county` - ~3,200 counties
-- `metro_area` - Metropolitan statistical areas
-- `congressional_district` - 435 congressional districts
-- `puma` - Public Use Microdata Areas
-- `tract` - Census tracts (limited availability)
+The browser offers the 341 areas in the [Census 2024 SPM workbook](https://www2.census.gov/programs-surveys/demo/tables/p60/287/SPM-pov-threshold-2024.xlsx): 260 named metropolitan statistical areas, 34 state residual Metro areas and 47 state Nonmetro areas. A state residual area such as “Alaska Metro” is a specific Census SPM area, not a statewide threshold.
+
+Python callers can use `metro` in the release API (`metro_area` in the legacy API) for those same areas. National reference calculations and custom ACS-based state, county, district, PUMA and tract helpers remain available separately. Their availability does not make custom rent adjustments official SPM thresholds.
+
+For a population within a county or congressional district, assign each unit to its official Census SPM area and apply that area's adjustment. A single threshold derived from the county or district median rent does not preserve the mix of SPM areas. Geographic assignment and boundary vintages belong in the data layer; see [Microcosm's geography work](https://github.com/PolicyEngine/microcosm/issues/48).
 
 ## Data Sources
 
 - **Base thresholds**: [BLS Consumer Expenditure Survey](https://www.bls.gov/cex/) - 5-year rolling FCSUti (Food, Clothing, Shelter, Utilities, telephone, internet)
-- **Geographic adjustment**: [ACS 5-Year Estimates](https://www.census.gov/programs-surveys/acs) - Table B25031 (Median Gross Rent by Bedrooms)
+- **Browser geographic adjustment**: [Census SPM Thresholds by Metro Area: 2024](https://www2.census.gov/programs-surveys/demo/tables/p60/287/SPM-pov-threshold-2024.xlsx) - Official SPM area rent indices
+- **Optional custom Python rent estimates**: [ACS 5-Year Estimates](https://www.census.gov/programs-surveys/acs) - Published rent tables; these custom adjustments are not official SPM thresholds
 - **Methodology**: [Census SPM Technical Documentation](https://www2.census.gov/programs-surveys/supplemental-poverty-measure/datasets/spm/spm_techdoc.pdf)
 
 ## Methodology
@@ -160,9 +162,9 @@ Following BLS methodology (updated September 2021, corrected July 17, 2026):
 
 ### Geographic Adjustment (GEOADJ)
 
-For official public metro areas, the package uses the published Census metro table directly.
+For official Census SPM areas, the browser combines the workbook's rent indices with the release's national thresholds and tenure-specific housing shares. It identifies the geographic vintage and carried shares; the resulting amounts need not equal the workbook's earlier published thresholds.
 
-For custom geographies built from ACS rents, the adjustment is tenure-specific:
+The same formula is available to Python researchers for custom geographies built from ACS rents. Those estimates do not define official Census SPM areas:
 ```
 GEOADJ_t = (local_median_rent / national_median_rent) × housing_share_t + (1 - housing_share_t)
 ```

@@ -18,7 +18,7 @@ PE can migrate its execution to Axiom while the release contract stays the same.
 - Schema version, release id, creation and information dates, USD/year and the two-adult/two-child reference family.
 - National values by target year and tenure, publication/estimate status, method id, source identities and uncertainty information.
 - Housing shares with their own source, reference year and published/carried/assumed status. These shares affect both geography and the cap on housing assistance counted as resources.
-- Pinned geographic rent indices and source snapshots. The current release bundles 2024 metro and 2023 ACS state/county/district data. Areas with nonpositive published rents are explicitly excluded.
+- Pinned geographic rent indices and source snapshots. The current release bundles official 2024 Census SPM area data and optional 2023 ACS state/county/district research inputs. The custom ACS adjustments are not official SPM thresholds. Areas with nonpositive published rents are explicitly excluded.
 - Source checksums and availability dates. Unknown publication dates remain null. The September 8 availability date is conservative snapshot evidence, not a reconstructed real-time information set.
 
 The JSON Schema is [schema-v1.json](../spm_calculator/data/releases/schema-v1.json). The Python reader additionally checks content digests, dates, cross-references and numeric invariants. A digest is an integrity check; source authenticity requires a separately trusted digest or signed distribution.
@@ -26,6 +26,14 @@ The JSON Schema is [schema-v1.json](../spm_calculator/data/releases/schema-v1.js
 The content hash is SHA-256 of UTF-8 JSON with sorted keys, compact separators, non-ASCII characters preserved and nonfinite numbers prohibited, excluding only `content_sha256`. Accessors return copies; the provider retains immutable bytes. A supplied `as_of` cannot predate the release information date. No lookup silently downloads a newer release or substitutes an absent year.
 
 The first release uses the corrected BLS national series through 2025. It carries fixed three-decimal 2024 housing shares into other years as an approximation. Geographic thresholds recompute `1 - housing_share + housing_share * rent_index`; they do not claim exact reproduction of Census metro amounts based on the earlier national series and rounding. Published national standard errors do not quantify this geographic/share approximation.
+
+## Browser geography scope
+
+The app exports only the official areas in the [Census 2024 SPM workbook](https://www2.census.gov/programs-surveys/demo/tables/p60/287/SPM-pov-threshold-2024.xlsx): 260 named MSAs, 34 state residual Metro areas and 47 state Nonmetro areas. These 341 entries are all available through the release's `metro` geography kind. State residual entries represent the Census-defined residual area, not an entire state.
+
+The browser does not export the release's custom ACS state, county or district rent lookup tables. National thresholds remain calculation inputs and reference values, rather than an app location choice. Python research helpers and the sealed release retain their existing inputs for compatibility and reproducibility; restricting the browser export leaves the release bytes and content hash unchanged.
+
+Local-area population analysis should assign each SPM unit to its official Census area, preserving the mix of areas within a county or district. Microcosm owns those geographic assignments and boundary vintages. A single custom county or district rent adjustment is a different research estimate, not an official geographic SPM threshold.
 
 ## Reproduce and use
 
@@ -38,7 +46,7 @@ uv run spm-calculator calculate --year 2025 --adults 2 --children 2 --tenure ren
 uv run spm-calculator export --format csv > thresholds.csv
 ```
 
-The reader and scalar calculation also run in a Python interpreter with site packages disabled. Legacy data-download APIs retain their installed dependencies. New ACS source acquisition is separate from replay: `scripts/build_acs_snapshot.py` requires a caller-supplied Census key, writes no credentials, and stores the raw tables. The website imports generated release data and never sends that key to the browser.
+The reader and scalar calculation also run in a Python interpreter with site packages disabled. Legacy data-download APIs retain their installed dependencies. New ACS source acquisition for optional Python research is separate from replay: `scripts/build_acs_snapshot.py` requires a caller-supplied Census key, writes no credentials, and stores the raw tables. The website imports only the generated national and official Census area inputs; it does not acquire or export custom ACS rent lookups.
 
 Adult and child counts are already classified SPM counts. Age alone does not establish dependency for every minor-headed unit. CE estimation therefore has a separate, named unresolved-composition policy with weight diagnostics. See [current CE replication](current-ce-replication.md). Microcosm population weights must not replace CE design weights or calibrate away a poverty-rate validation error.
 

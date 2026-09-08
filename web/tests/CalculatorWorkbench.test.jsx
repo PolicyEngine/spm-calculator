@@ -15,6 +15,18 @@ import CalculatorWorkbench from "../src/components/CalculatorWorkbench";
 import { makeCalculatorData } from "./fixtures/calculatorData";
 
 describe("CalculatorWorkbench", () => {
+  it("limits location choices to Census metro/nonmetro workbook areas", () => {
+    render(<CalculatorWorkbench data={makeCalculatorData()} />);
+
+    expect(screen.getByLabelText("Census metro/nonmetro area")).toBeTruthy();
+    expect(screen.queryByLabelText("Geography type")).toBeNull();
+    for (const name of ["National average", "State", "County", "Congressional district"]) {
+      expect(screen.queryByRole("option", { name })).toBeNull();
+    }
+    expect(screen.getByRole("option", { name: "Alabama Nonmetro" })).toBeTruthy();
+    expect(screen.queryByRole("option", { name: "2023" })).toBeNull();
+  });
+
   it("renders the methodology card with the formula", () => {
     render(<CalculatorWorkbench data={makeCalculatorData()} />);
     const card = screen.getByTestId("methodology-card");
@@ -28,6 +40,7 @@ describe("CalculatorWorkbench", () => {
     expect(card.textContent).toMatch(/0\.443/);
     expect(card.textContent).toMatch(/0\.434/);
     expect(card.textContent).toMatch(/0\.323/);
+    expect(card.textContent).toMatch(/metro\/nonmetro/);
   });
 
   it("surfaces the package version and data vintage in the footer", () => {

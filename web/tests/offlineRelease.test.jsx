@@ -3,27 +3,11 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 
 import { loadCalculatorData } from "../lib/loadCalculatorData";
-import { loadStateRentOptions, loadCountyRentOptions, loadDistrictRentOptions, getAcsYearForThresholdYear } from "../lib/acsLookup";
 import CalculatorWorkbench from "../src/components/CalculatorWorkbench";
 
 afterEach(() => vi.unstubAllGlobals());
 
 describe("pinned release integration", () => {
-  it("resolves state, county and district rents without requests or credentials", async () => {
-    const fetch = vi.fn(() => { throw new Error("Network unavailable"); });
-    vi.stubGlobal("fetch", fetch);
-    expect(getAcsYearForThresholdYear(2025)).toBe(2023);
-    const state = await loadStateRentOptions(2023);
-    const county = await loadCountyRentOptions(2023, "06");
-    const district = await loadDistrictRentOptions(2023, "06");
-    expect(state.options.find(x => x.id === "06").medianRent).toBeGreaterThan(0);
-    expect(county.options.find(x => x.id === "06001").medianRent).toBeGreaterThan(0);
-    expect(district.options.find(x => x.id === "0601").medianRent).toBeGreaterThan(0);
-    expect(fetch).not.toHaveBeenCalled();
-    await expect(loadCountyRentOptions(2022, "06")).rejects.toThrow("unavailable");
-    await expect(loadCountyRentOptions(2023, "99")).rejects.toThrow("No published rent");
-  });
-
   it("uses published 2025 data and places release provenance in the app footnote", async () => {
     const data = await loadCalculatorData();
     expect(data.baseThresholds["2025"].renter).toBe(41700.555713);
@@ -36,14 +20,33 @@ describe("pinned release integration", () => {
     expect(layout).not.toMatch(/releaseMetadata|release-provenance|packageVersion|informationDate/);
   });
 
-  it("keeps county selection useful while offline", async () => {
+  it("offers every official Census area offline without custom ACS options", async () => {
     const fetch = vi.fn(() => { throw new Error("Network unavailable"); });
     vi.stubGlobal("fetch", fetch);
-    render(<CalculatorWorkbench data={await loadCalculatorData()} />);
-    const option = screen.getByRole("option", { name: "County" });
-    fireEvent.change(option.closest("select"), {target: {value: "county"}});
-    expect(await screen.findByRole("option", { name: /Alameda County/ })).toBeTruthy();
+    const data = await loadCalculatorData();
+    expect(data.acsLookup).toBeUndefined();
+    render(<CalculatorWorkbench data={data} />);
+    const areas = screen.getByLabelText("Census metro/nonmetro area");
+    expect(areas.options.length).toBe(341);
+    for (const area of Object.values(data.metroAreas)) {
+      expect(screen.getByRole("option", { name: area.name })).toBeTruthy();
+    }
+    fireEvent.change(areas, { target: { value: "1002" } });
+    expect(screen.getByRole("heading", { name: "Alabama Nonmetro" })).toBeTruthy();
+    expect(screen.getByText(/geography_id="1002"/)).toBeTruthy();
     expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("keeps Census residual state metro groups available and labels carried indices", async () => {
+    const data = await loadCalculatorData();
+    render(<CalculatorWorkbench data={data} />);
+    const [id, area] = Object.entries(data.metroAreas).find(([, value]) => value.name === "Alaska Metro");
+    fireEvent.change(screen.getByLabelText("Census metro/nonmetro area"), {
+      target: { value: id },
+    });
+    expect(screen.getByRole("heading", { name: area.name })).toBeTruthy();
+    expect(screen.getByText("2024 Census rent index (carried)")).toBeTruthy();
+    expect(screen.queryByText("Published metro adjustment factor")).toBeNull();
   });
 
   it("does not calculate a zero-dollar threshold for unsupported adult counts", async () => {

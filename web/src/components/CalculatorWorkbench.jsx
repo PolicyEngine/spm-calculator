@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  startTransition,
   useDeferredValue,
   useEffect,
   useMemo,
@@ -36,14 +35,7 @@ import {
   Input,
 } from "@policyengine/ui-kit";
 
-import {
-  STATE_SELECTOR_OPTIONS,
-  calculateCustomGeoadj,
-  getAcsYearForThresholdYear,
-  loadCountyRentOptions,
-  loadDistrictRentOptions,
-  loadStateRentOptions,
-} from "@/lib/acsLookup";
+import { calculateGeoadj } from "@/lib/geoadj";
 
 const TENURE_OPTIONS = [
   { value: "renter", label: "Renter" },
@@ -56,14 +48,6 @@ const TENURE_LABELS = {
   owner_with_mortgage: "Owner with mortgage",
   owner_without_mortgage: "Owner without mortgage",
 };
-
-const GEOGRAPHY_OPTIONS = [
-  { value: "nation", label: "National average" },
-  { value: "metro_area", label: "Metro area" },
-  { value: "state", label: "State" },
-  { value: "county", label: "County" },
-  { value: "congressional_district", label: "Congressional district" },
-];
 
 const PYPI_URL = "https://pypi.org/project/spm-calculator/";
 const GITHUB_URL = "https://github.com/PolicyEngine/spm-calculator";
@@ -148,6 +132,7 @@ export default function CalculatorWorkbench({ data }) {
     paperUrl,
     metroAreas,
     metroData,
+    metroDataYear,
     packageVersion,
     metroSource,
     metroSourceUrl,
@@ -159,13 +144,15 @@ export default function CalculatorWorkbench({ data }) {
   // Metro rent indices ship as a single Census vintage. Historical years
   // (< earliestMetroYear) are unsupported for metros because back-casting
   // a current rent index to earlier base thresholds does not match any
-  // published BLS or Census table. Forecast years (> latestMetroYear)
-  // pin to the latest bundled vintage and surface a warning badge.
-  const earliestMetroYear = metroData?.earliestYear ?? latestPublishedYear;
-  const latestMetroYear = metroData?.latestYear ?? latestPublishedYear;
-  const availableYears = Object.keys(baseThresholds).sort(
-    (left, right) => Number(right) - Number(left),
-  );
+  // published BLS or Census table. Later threshold years carry the latest
+  // bundled rent-index vintage and surface a warning badge.
+  const earliestMetroYear =
+    metroData?.earliestYear ?? metroDataYear ?? latestPublishedYear;
+  const latestMetroYear =
+    metroData?.latestYear ?? metroDataYear ?? latestPublishedYear;
+  const availableYears = Object.keys(baseThresholds)
+    .filter((value) => Number(value) >= earliestMetroYear)
+    .sort((left, right) => Number(right) - Number(left));
 
   const metroEntries = useMemo(
     () =>
@@ -180,22 +167,9 @@ export default function CalculatorWorkbench({ data }) {
   const [numAdults, setNumAdults] = useState(2);
   const [numChildren, setNumChildren] = useState(2);
   const [tenure, setTenure] = useState("renter");
-  const [geographyType, setGeographyType] = useState("metro_area");
-  const [selectedStateFips, setSelectedStateFips] = useState("06");
   const [selectedGeographyId, setSelectedGeographyId] = useState("35620");
   const [locationQuery, setLocationQuery] = useState("");
-  const [acsLookup, setAcsLookup] = useState({
-    status: "idle",
-    error: "",
-    nationalMedianRent: null,
-    options: [],
-  });
-
   const deferredLocationQuery = useDeferredValue(locationQuery);
-  const acsYear = useMemo(
-    () => getAcsYearForThresholdYear(Number(year)),
-    [year],
-  );
   const yearNowcast = nowcast[year] ?? null;
   const yearNowcastEvaluation = nowcastEvaluation[year] ?? null;
   const yearIsNowcast = Boolean(yearNowcast);
@@ -204,103 +178,19 @@ export default function CalculatorWorkbench({ data }) {
   const ceSurveyWindow = getCeSurveyWindow(year);
 
   useEffect(() => {
-    if (geographyType === "metro_area") {
-      setSelectedGeographyId((current) =>
-        metroAreas[current] ? current : "35620",
-      );
-      return;
-    }
-
-    if (geographyType === "nation") {
-      setSelectedGeographyId("US");
-      return;
-    }
-
-    let cancelled = false;
-
-    async function loadLookup() {
-      setAcsLookup({
-        status: "loading",
-        error: "",
-        nationalMedianRent: null,
-        options: [],
-      });
-
-      try {
-        let nextLookup;
-        if (geographyType === "state") {
-          nextLookup = await loadStateRentOptions(acsYear);
-        } else if (geographyType === "county") {
-          nextLookup = await loadCountyRentOptions(acsYear, selectedStateFips);
-        } else {
-          nextLookup = await loadDistrictRentOptions(acsYear, selectedStateFips);
-        }
-
-        if (cancelled) return;
-
-        setAcsLookup({
-          status: "ready",
-          error: "",
-          nationalMedianRent: nextLookup.nationalMedianRent,
-          options: nextLookup.options,
-        });
-
-        setSelectedGeographyId((current) => {
-          const preferredId =
-            geographyType === "state" ? selectedStateFips : nextLookup.options[0]?.id;
-          const hasCurrent = nextLookup.options.some(
-            (option) => option.id === current,
-          );
-          if (hasCurrent) return current;
-          if (preferredId) {
-            const hasPreferred = nextLookup.options.some(
-              (option) => option.id === preferredId,
-            );
-            if (hasPreferred) return preferredId;
-          }
-          return nextLookup.options[0]?.id ?? "";
-        });
-      } catch (error) {
-        if (cancelled) return;
-        setAcsLookup({
-          status: "error",
-          error:
-            error instanceof Error
-              ? error.message
-              : "Unable to load Census geography data.",
-          nationalMedianRent: null,
-          options: [],
-        });
-      }
-    }
-
-    loadLookup();
-    return () => {
-      cancelled = true;
-    };
-  }, [acsYear, geographyType, metroAreas, selectedStateFips]);
+    setSelectedGeographyId((current) =>
+      metroAreas[current] ? current : Object.keys(metroAreas)[0] ?? "",
+    );
+  }, [metroAreas]);
 
   const filteredMetroEntries = useMemo(() => {
     const query = deferredLocationQuery.trim().toLowerCase();
-    if (!query) return metroEntries.slice(0, 150);
+    if (!query) return metroEntries;
     return metroEntries
       .filter(([code, info]) =>
         `${code} ${info.name}`.toLowerCase().includes(query),
-      )
-      .slice(0, 150);
+      );
   }, [deferredLocationQuery, metroEntries]);
-
-  const filteredAcsOptions = useMemo(() => {
-    const query = deferredLocationQuery.trim().toLowerCase();
-    if (!query) return acsLookup.options.slice(0, 150);
-    return acsLookup.options
-      .filter((option) =>
-        `${option.id} ${option.label} ${option.shortLabel ?? ""}`
-          .toLowerCase()
-          .includes(query),
-      )
-      .slice(0, 150);
-  }, [acsLookup.options, deferredLocationQuery]);
 
   const displayedMetroEntries = useMemo(() => {
     const entries = new Map(filteredMetroEntries);
@@ -313,19 +203,6 @@ export default function CalculatorWorkbench({ data }) {
     );
   }, [filteredMetroEntries, metroAreas, selectedGeographyId]);
 
-  const displayedAcsOptions = useMemo(() => {
-    const entries = new Map(filteredAcsOptions.map((option) => [option.id, option]));
-    const selected = acsLookup.options.find(
-      (option) => option.id === selectedGeographyId,
-    );
-    if (selected && !entries.has(selectedGeographyId)) {
-      entries.set(selectedGeographyId, selected);
-    }
-    return Array.from(entries.values()).sort((left, right) =>
-      left.label.localeCompare(right.label),
-    );
-  }, [acsLookup.options, filteredAcsOptions, selectedGeographyId]);
-
   // ── Derived calculations ────────────────────────────────────
 
   const base = baseThresholds[year][tenure];
@@ -334,76 +211,31 @@ export default function CalculatorWorkbench({ data }) {
   const equivalenceScale =
     rawScale / methodology.equivalenceScale.referenceFamilyRaw;
 
-  const selectedMetroData =
-    geographyType === "metro_area" ? metroAreas[selectedGeographyId] : null;
-  const selectedCustomLocation =
-    geographyType === "state" ||
-    geographyType === "county" ||
-    geographyType === "congressional_district"
-      ? acsLookup.options.find((option) => option.id === selectedGeographyId)
-      : null;
+  const selectedMetroData = metroAreas[selectedGeographyId];
+  const currentLocation = selectedMetroData
+    ? { id: selectedGeographyId, label: selectedMetroData.name }
+    : null;
 
-  const currentLocation = useMemo(() => {
-    if (geographyType === "nation") {
-      return { id: "US", label: "United States", shortLabel: "Nation" };
-    }
-    if (selectedMetroData) {
-      return {
-        id: selectedGeographyId,
-        label: selectedMetroData.name,
-        shortLabel: "Metro area",
-      };
-    }
-    if (selectedCustomLocation) {
-      return {
-        id: selectedCustomLocation.id,
-        label: selectedCustomLocation.label,
-        shortLabel:
-          GEOGRAPHY_OPTIONS.find((option) => option.value === geographyType)
-            ?.label ?? geographyType,
-      };
-    }
-    return null;
-  }, [geographyType, selectedCustomLocation, selectedGeographyId, selectedMetroData]);
-
-  // Metros only support years >= earliestMetroYear. Older years come back
-  // as an error state (mirrors Python's ValueError in
-  // `_resolve_bundled_metro_year`) so the UI doesn't silently compound a
-  // 2024 rent index against a 2015 base threshold.
-  const metroYearIsHistorical =
-    geographyType === "metro_area" && Number(year) < earliestMetroYear;
-  const metroYearIsForecast =
-    geographyType === "metro_area" && Number(year) > latestMetroYear;
-
-  const geoadj = useMemo(() => {
-    if (geographyType === "nation") return 1;
-    if (geographyType === "metro_area" && metroYearIsHistorical) return null;
-    if (selectedMetroData) return releaseMetadata
-      ? calculateCustomGeoadj({localMedianRent: selectedMetroData.rentIndex, nationalMedianRent: 1, tenure, housingShares: methodology.housingShares})
-      : selectedMetroData.adjustments[tenure];
-    if (selectedCustomLocation && acsLookup.nationalMedianRent) {
-      return calculateCustomGeoadj({
-        localMedianRent: selectedCustomLocation.medianRent,
-        nationalMedianRent: acsLookup.nationalMedianRent,
-        tenure,
-        housingShares: methodology.housingShares,
-      });
-    }
-    return null;
-  }, [
-    acsLookup.nationalMedianRent,
-    geographyType,
-    methodology.housingShares,
-    metroYearIsHistorical,
-    selectedCustomLocation,
-    selectedMetroData,
-    tenure,
-  ]);
-
-  const metroYearError = metroYearIsHistorical
-    ? `Metro rent indices are only published for ${earliestMetroYear} and later. ` +
-      `Select a national or custom ACS geography for ${year}, or choose ${earliestMetroYear} or later.`
+  // Earlier local years need a matching historical Census rent-index
+  // vintage. Later years carry the bundled index with an explicit label.
+  const metroYearIsHistorical = Number(year) < earliestMetroYear;
+  const metroIndexIsCarried = Number(year) > latestMetroYear;
+  const locationError = metroYearIsHistorical
+    ? `The bundled Census rent indices start in ${earliestMetroYear}. ` +
+      `Choose ${earliestMetroYear} or later.`
     : "";
+
+  function areaAdjustment(areaTenure) {
+    if (!selectedMetroData || metroYearIsHistorical) return null;
+    return releaseMetadata
+      ? calculateGeoadj({
+          rentIndex: selectedMetroData.rentIndex,
+          housingShare: methodology.housingShares[areaTenure],
+        })
+      : selectedMetroData.adjustments[areaTenure];
+  }
+
+  const geoadj = areaAdjustment(tenure);
 
   const threshold = geoadj === null || !compositionValid ? null : base * equivalenceScale * geoadj;
   const monthlyThreshold = threshold === null ? null : threshold / 12;
@@ -417,51 +249,19 @@ export default function CalculatorWorkbench({ data }) {
     geoadj === null ? null : baseThresholds[year][tenure] * geoadj;
   const selectedTenureLabel = TENURE_LABELS[tenure] ?? tenure;
 
-  const selectedLocationRentIndex =
-    selectedMetroData?.rentIndex ??
-    (selectedCustomLocation && acsLookup.nationalMedianRent
-      ? selectedCustomLocation.medianRent / acsLookup.nationalMedianRent
-      : null);
-
-  const isLocationLoading =
-    geographyType !== "metro_area" &&
-    geographyType !== "nation" &&
-    acsLookup.status === "loading";
-  const locationError =
-    acsLookup.status === "error"
-      ? acsLookup.error
-      : metroYearError || "";
+  const selectedLocationRentIndex = selectedMetroData?.rentIndex ?? null;
 
   const tenureComparisonData = TENURE_OPTIONS.map((option) => {
-    let adjustment = 1;
-    let isReady = geographyType === "nation" || Boolean(selectedMetroData);
-
-    if (metroYearIsHistorical) {
-      isReady = false;
-    } else if (selectedMetroData) {
-      adjustment = releaseMetadata
-        ? calculateCustomGeoadj({localMedianRent: selectedMetroData.rentIndex, nationalMedianRent: 1, tenure: option.value, housingShares: methodology.housingShares})
-        : selectedMetroData.adjustments[option.value];
-    } else if (selectedCustomLocation && acsLookup.nationalMedianRent) {
-      adjustment = calculateCustomGeoadj({
-        localMedianRent: selectedCustomLocation.medianRent,
-        nationalMedianRent: acsLookup.nationalMedianRent,
-        tenure: option.value,
-        housingShares: methodology.housingShares,
-      });
-      isReady = true;
-    }
-
+    const adjustment = areaAdjustment(option.value);
     const nationalBase = baseThresholds[year][option.value];
     return {
       tenure: option.label,
       nationalBase,
-      locationThreshold: isReady ? nationalBase * adjustment : null,
-      adjustment: isReady ? adjustment : null,
+      locationThreshold: adjustment === null ? null : nationalBase * adjustment,
+      adjustment,
     };
   });
 
-  const releaseGeographyKind = geographyType === "nation" ? "national" : geographyType === "metro_area" ? "metro" : geographyType;
   const packageSnippet = !compositionValid ? "# Enter valid classified adult and child counts to generate a calculation." : `from spm_calculator import load_release, SPMUnit
 
 release = load_release(${releaseMetadata ? `expected_sha256="${releaseMetadata.sha256}"` : ""})
@@ -469,33 +269,19 @@ result = release.calculate_unit(SPMUnit(
     unit_id="household-1",
     num_adults=${numAdults}, num_children=${numChildren},
     tenure="${tenure}", year=${year},
-    geography_kind="${releaseGeographyKind}",
-    geography_id=${geographyType === "nation" ? "None" : `"${currentLocation?.id ?? "<select an area>"}"`},
+    geography_kind="metro",
+    geography_id="${currentLocation?.id ?? "<select an area>"}",
 ))
 print(result["threshold"])`;
 
   // ── Location selector options ───────────────────────────────
 
-  const locationSelectOptions = useMemo(() => {
-    if (geographyType === "metro_area") {
-      return displayedMetroEntries.map(([code, info]) => ({
-        value: code,
-        label: info.name,
-      }));
-    }
-    return displayedAcsOptions.map((option) => ({
-      value: option.id,
-      label: option.label,
-    }));
-  }, [geographyType, displayedMetroEntries, displayedAcsOptions]);
-
-  const stateSelectOptions = useMemo(
-    () =>
-      STATE_SELECTOR_OPTIONS.map((option) => ({
-        value: option.fips,
-        label: option.name,
-      })),
-    [],
+  const locationSelectOptions = useMemo(
+    () => displayedMetroEntries.map(([code, info]) => ({
+      value: code,
+      label: info.name,
+    })),
+    [displayedMetroEntries],
   );
 
   const yearSelectOptions = useMemo(
@@ -565,78 +351,34 @@ print(result["threshold"])`;
       <SidebarDivider />
 
       <SidebarSection title="Geography">
-        <SelectInput
-          label="Geography type"
-          options={GEOGRAPHY_OPTIONS}
-          value={geographyType}
-          onChange={(value) => {
-            startTransition(() => {
-              setGeographyType(value);
-              setLocationQuery("");
-            });
-          }}
-        />
-
-        {(geographyType === "county" ||
-          geographyType === "congressional_district") && (
-          <div className="mt-3">
-            <SelectInput
-              label="State"
-              options={stateSelectOptions}
-              value={selectedStateFips}
-              onChange={(value) => {
-                startTransition(() => {
-                  setSelectedStateFips(value);
-                  setLocationQuery("");
-                });
-              }}
+        <div className="space-y-3">
+          <div>
+            <label
+              htmlFor="spm-area-search"
+              className="mb-1.5 block text-sm font-medium text-muted-foreground"
+            >
+              Search Census areas
+            </label>
+            <Input
+              id="spm-area-search"
+              placeholder="New York, Alabama Nonmetro, 35620..."
+              value={locationQuery}
+              onChange={(event) => setLocationQuery(event.target.value)}
             />
           </div>
-        )}
-
-        {geographyType !== "nation" && (
-          <div className="mt-3 space-y-3">
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-muted-foreground">
-                Search
-              </label>
-              <Input
-                placeholder={
-                  geographyType === "metro_area"
-                    ? "New York, San Jose, 35620..."
-                    : geographyType === "state"
-                      ? "California, Texas..."
-                      : geographyType === "county"
-                        ? "Los Angeles, Cook..."
-                        : "CA-12, NY-01..."
-                }
-                value={locationQuery}
-                onChange={(event) => setLocationQuery(event.target.value)}
-              />
-            </div>
-
-            <SelectInput
-              label={
-                geographyType === "metro_area"
-                  ? "Metro area"
-                  : geographyType === "state"
-                    ? "State"
-                    : geographyType === "county"
-                      ? "County"
-                      : "District"
-              }
-              options={locationSelectOptions}
-              value={selectedGeographyId}
-              onChange={(value) => {
-                setSelectedGeographyId(value);
-                if (geographyType === "state") {
-                  setSelectedStateFips(value);
-                }
-              }}
-              disabled={isLocationLoading || Boolean(locationError)}
-            />
-          </div>
-        )}
+          <SelectInput
+            id="spm-census-area"
+            aria-label="Census metro/nonmetro area"
+            label="Census metro/nonmetro area"
+            options={locationSelectOptions}
+            value={selectedGeographyId}
+            onChange={setSelectedGeographyId}
+          />
+          <p className="text-xs leading-5 text-muted-foreground">
+            Published Census SPM areas: identified metropolitan areas and
+            state residual metro/nonmetro groups.
+          </p>
+        </div>
       </SidebarSection>
 
       {locationError && (
@@ -652,11 +394,7 @@ print(result["threshold"])`;
           <div className="flex justify-between">
             <span>Data source</span>
             <span className="font-medium text-foreground">
-              {geographyType === "metro_area"
-                ? "2024 Census workbook"
-                : geographyType === "nation"
-                  ? "National baseline"
-                  : `ACS ${acsYear}`}
+              {latestMetroYear} Census workbook
             </span>
           </div>
           <div className="flex justify-between">
@@ -673,16 +411,6 @@ print(result["threshold"])`;
               </span>
             </div>
           )}
-          {geographyType !== "metro_area" &&
-            geographyType !== "nation" &&
-            selectedCustomLocation && (
-              <div className="flex justify-between">
-                <span>Median 2BR rent</span>
-                <span className="font-medium text-foreground">
-                  {fmtCurrency(selectedCustomLocation.medianRent)}
-                </span>
-              </div>
-            )}
         </div>
       </SidebarSection>
     </InputPanel>
@@ -740,9 +468,9 @@ print(result["threshold"])`;
                 {yearIsNowcast && (
                   <Badge variant="warning">Nowcast — not BLS</Badge>
                 )}
-                {metroYearIsForecast && (
+                {metroIndexIsCarried && (
                   <Badge variant="warning">
-                    {latestMetroYear} metro rent index
+                    {latestMetroYear} Census rent index (carried)
                   </Badge>
                 )}
               </div>
@@ -902,11 +630,7 @@ print(result["threshold"])`;
                 <CardHeader>
                   <CardTitle>Location adjustment</CardTitle>
                   <CardDescription>
-                    {geographyType === "metro_area"
-                      ? "Published metro adjustment factor"
-                      : geographyType === "nation"
-                        ? "No additional geography factor"
-                        : `ACS ${acsYear} rent-based adjustment`}
+                    Census area rent index with tenure-specific housing share
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -961,7 +685,7 @@ print(result["threshold"])`;
               <CardHeader>
                 <CardTitle>How this is calculated</CardTitle>
                 <CardDescription>
-                  Published national thresholds and disclosed geographic assumptions
+                  National base thresholds adjusted using Census SPM area rent indices
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3 text-sm leading-6">
@@ -995,13 +719,21 @@ print(result["threshold"])`;
                     Reference 2A2C = <code className="font-mono">3^0.7</code>.
                   </li>
                   <li>
-                    <strong>GEOADJ</strong>: Census 2024 metro rent indices
-                    and pinned ACS 2023 state, county and district rents,
-                    combined with 2024 housing shares (renter 0.443,
-                    owner-with-mortgage 0.434, owner-without-mortgage 0.323).
-                    Applying these shares and rents to other years is a
-                    disclosed approximation, not an official target-year
-                    geographic threshold.
+                    <strong>GEOADJ</strong>: Census {latestMetroYear} rent indices
+                    for identified metro and state residual metro/nonmetro
+                    areas. The housing share for the selected tenure adjusts
+                    only the housing portion of the national base: renter{" "}
+                    {methodology.housingShares.renter}, owner with mortgage{" "}
+                    {methodology.housingShares.owner_with_mortgage}, owner
+                    without mortgage{" "}
+                    {methodology.housingShares.owner_without_mortgage}. The app
+                    uses the published Census area definitions; it does not
+                    construct separate state, county or district thresholds.
+                    Housing shares and rent indices carried into another year
+                    are approximations. These calculated thresholds combine
+                    the selected national series with the bundled geography
+                    vintage and may differ from the original Census workbook
+                    amounts.
                   </li>
                 </ul>
                 <p className="text-xs text-muted-foreground">
