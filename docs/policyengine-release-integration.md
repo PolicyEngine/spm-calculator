@@ -120,7 +120,7 @@ managed microsimulation and certified TRACE export are unavailable in this
 mode. The certified manifests remain unchanged.
 
 The checked development combination is Python 3.14.4, `policyengine` 5.3.0
-with the accompanying wrapper changes, `policyengine-us` 1.823.1,
+with the accompanying wrapper changes, `policyengine-us` 1.824.3,
 `policyengine-core` 3.30.2 and the accompanying SPM package. Install the bare
 wrapper plus the exact selected development dependencies; its `[us]` extra
 pins an older certified country/core pair. The final integration receipt
