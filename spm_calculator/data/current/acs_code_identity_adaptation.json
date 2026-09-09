@@ -1,0 +1,65 @@
+{
+  "builder": {
+    "path": "scripts/adapt_acs_code_identity.py",
+    "sha256": "7fc670792a102a9eeebc5af14be24977033a17ea006571e9525cd6305bc0339b"
+  },
+  "current_source": {
+    "path": "spm_calculator/acs_forecast_sources.py",
+    "sha256": "28d31b3db0caa26f457660f1be9618f63fb08573460c13c68de6cd01b3f7e4bc"
+  },
+  "date": "2026-09-09",
+  "evidence_scope": "The archived reparse and scientific-refresh receipts describe earlier runs under their original source/artifact identities. This operation admits equivalent code and reuses retained products; it does not repeat or relabel those historical runs.",
+  "kind": "equivalent_code_provenance_adaptation",
+  "normalization_evidence": {
+    "method": "Compare original/current scientific source sections byte-for-byte; serialize unchanged original normalizer ASTs using the portable Python 3.13 spelling and compare with original cache pins.",
+    "normalization_function_source_sha256": {
+      "_historical_housing": "7ae7472f9a66de75218b73657332ed3ddb9d91478e167a1aa05369d57f9e6632",
+      "_restore_historical_record_ids": "cf80d4ddbb820326ab4c7418e319628d425460044bb147bcb6468ba41c19a54f",
+      "_universe": "a1ec1f58a522614738c18f1fee272f3a4e87073ec953b8dfa45c52fe6957bc0d",
+      "apply_puma_update": "eb92cbaf7bee93e3b28fc787ce54fd5ee1f3df762ce1f2f6e6d4bc42e7845ac9",
+      "normalize_housing": "14e3f0f1481d2ae1ad81f41a6a24ba1de552146ad69a91be39269be2efe17988"
+    },
+    "normalization_logic_sha256_by_vintage": {
+      "2021": "2c02fb82bba6992f4fa0db844781a4d7bb610cb6f3680b03d188daa1a49936ba",
+      "2022": "ff5fa220fa295f464d29fe682823433980ebd19059e2bab0260eec923575ecf5",
+      "2023": "ff5fa220fa295f464d29fe682823433980ebd19059e2bab0260eec923575ecf5",
+      "2024": "ff5fa220fa295f464d29fe682823433980ebd19059e2bab0260eec923575ecf5"
+    },
+    "scientific_top_level_sections_byte_equal": true
+  },
+  "normalized_cache_files_rewritten": false,
+  "original": {
+    "acs_component": {
+      "decoded_sha256": "8ad5edcd82c9535e9a8170539f55ce21474245d69f09775d9c0cd9a49f0cda20",
+      "encoding": "gzip",
+      "path": "spm_calculator/data/provenance/ast-portability-2026-09-09/acs_rolling_forecast.json.gz",
+      "sha256": "b3c3241eb9a959934fb03edbd0c5e4c08f5d0d4e44fc73c665e5ad4fa5f42774"
+    },
+    "artifact": {
+      "assumption_sha256": "f4a92d547d1a5039701680a57fb02e368438aa5dd1a11e952351020450132983",
+      "content_sha256": "b9dbf5ae49697e3bf3abee2fa22b7429703412cb1e58478938a682a0dfddc821",
+      "path": "web/public/data/canonical/rolling-forecast-76ab8435f087f167ad01b8495ebd016415ba8086f32bfbd3dab961dcc8976c0a.json",
+      "sha256": "76ab8435f087f167ad01b8495ebd016415ba8086f32bfbd3dab961dcc8976c0a"
+    },
+    "manifest": {
+      "path": "spm_calculator/data/provenance/ast-portability-2026-09-09/acs_normalized_products.json",
+      "sha256": "7f9dd53454eeac90a83437643944e47d60d27d35cf3a99d2a988c39be25b99a8"
+    },
+    "normalization_receipt": {
+      "path": "spm_calculator/data/provenance/ast-portability-2026-09-09/acs_2021_normalization_receipt.json",
+      "sha256": "925d0f4fcc06694f808afe7155b88924cb14e425f51cb0dac40363384ed3b5bf"
+    },
+    "scientific_refresh_receipt": {
+      "path": "spm_calculator/data/provenance/ast-portability-2026-09-09/scientific_refresh_receipt.json",
+      "sha256": "ea431cf183c80c8c0446f614ba355bddc6a30714906460bf1e8df54cd332af54"
+    },
+    "source": {
+      "path": "spm_calculator/data/provenance/ast-portability-2026-09-09/acs_forecast_sources.py.txt",
+      "sha256": "d96fb6556f3a019025c2bd7dfdef5b9f5d05a7a4d819ab568f3a8bc41bf2aed3"
+    }
+  },
+  "raw_source_reparse_performed": false,
+  "reason": "Portable AST serialization across Python 3.9–3.14",
+  "schema_version": 1,
+  "scientific_component_rebuild_performed": false
+}

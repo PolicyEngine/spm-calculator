@@ -259,9 +259,47 @@ def test_2021_exact_normalization_receipt_binds_current_cache_identity():
     assert len(receipt["columns"]) == len(set(receipt["columns"])) == 16
     assert receipt["check_exact"] is True
     assert receipt["check_dtype"] is False
-    assert receipt["verification"] == (
+    # Exact reparse evidence belongs to the archived run. The current receipt
+    # binds the same retained cache through an explicit equivalent-code step.
+    original_link = receipt["original_reparse_evidence"]
+    original_bytes = (ROOT / original_link["path"]).read_bytes()
+    assert (
+        hashlib.sha256(original_bytes).hexdigest() == (original_link["sha256"])
+    )
+    original = json.loads(original_bytes)
+    assert original["verification"] == (
         "raw-source reparse exactly equals all retained normalized records"
     )
+    assert original["parser_sha256"] == (
+        "d96fb6556f3a019025c2bd7dfdef5b9f5d05a7a4d819ab568f3a8bc41bf2aed3"
+    )
+    for key in (
+        "check_exact",
+        "check_dtype",
+        "records",
+        "columns",
+        "retained_normalized_sha256",
+        "normalization_logic_sha256",
+        "source_sha256",
+    ):
+        assert receipt[key] == original[key]
+    assert receipt["raw_source_reparse_performed"] is False
+    assert receipt["verification"] == (
+        "Inherited exact raw-reparse evidence from the original receipt; "
+        "current parser identity admitted by equivalent-code adaptation. "
+        "No raw-source reparse performed by this adaptation."
+    )
+    chain = receipt["provenance_adaptation"]
+    assert chain == historical["provenance_adaptation"]
+    adaptation_bytes = (ROOT / chain["path"]).read_bytes()
+    assert hashlib.sha256(adaptation_bytes).hexdigest() == chain["sha256"]
+    adaptation = json.loads(adaptation_bytes)
+    assert adaptation["raw_source_reparse_performed"] is False
+    assert adaptation["original"]["normalization_receipt"] == original_link
+    assert adaptation["current_source"] == {
+        "path": "spm_calculator/acs_forecast_sources.py",
+        "sha256": receipt["parser_sha256"],
+    }
     assert receipt["unchanged_product_receipts"] == [2022, 2023, 2024]
     for vintage in receipt["unchanged_product_receipts"]:
         logic = acs_forecast_sources.normalization_logic_sha256(vintage)

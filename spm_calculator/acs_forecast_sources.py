@@ -218,13 +218,37 @@ def normalize_housing(
     return normalized
 
 
+def _normalization_ast_dump(node) -> str:
+    """Preserve the Python 3.13 AST spelling used by normalized-cache pins.
+
+    Python 3.13's dump omits empty list fields (including type_params, added
+    in 3.12). Spell parsed trees explicitly so interpreter formatting changes
+    cannot invalidate identical normalization logic. Optional None fields are
+    omitted, but literal None in Constant.value remains part of the identity.
+    """
+    if isinstance(node, ast.AST):
+        fields = []
+        for name, value in ast.iter_fields(node):
+            if value is None and getattr(type(node), name, ...) is None:
+                continue
+            if isinstance(value, list) and not value:
+                continue
+            fields.append(f"{name}={_normalization_ast_dump(value)}")
+        return f"{type(node).__name__}({', '.join(fields)})"
+    if isinstance(node, list):
+        return f"[{', '.join(_normalization_ast_dump(item) for item in node)}]"
+    return repr(node)
+
+
 def normalization_logic_sha256(vintage: int) -> str:
     """Fingerprint the normalization steps used by this product vintage."""
     functions = (_universe, normalize_housing, apply_puma_update)
     if vintage == 2021:
         functions += (_historical_housing, _restore_historical_record_ids)
     logic = "".join(
-        ast.dump(ast.parse(textwrap.dedent(inspect.getsource(function))))
+        _normalization_ast_dump(
+            ast.parse(textwrap.dedent(inspect.getsource(function)))
+        )
         for function in functions
     ) + json.dumps(COMPONENTS, sort_keys=True)
     return hashlib.sha256(logic.encode()).hexdigest()

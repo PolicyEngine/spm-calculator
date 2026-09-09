@@ -20,9 +20,18 @@
     "rent_lower_bound"
   ],
   "dtype_note": "Only persisted NumPy vs pandas string dtype differences are ignored.",
-  "manifest_sha256": "7f9dd53454eeac90a83437643944e47d60d27d35cf3a99d2a988c39be25b99a8",
+  "manifest_sha256": "49b12d772d209f4d3f806769a30576f1ffeea52716561874e382e3b4600e1be5",
   "normalization_logic_sha256": "2c02fb82bba6992f4fa0db844781a4d7bb610cb6f3680b03d188daa1a49936ba",
-  "parser_sha256": "d96fb6556f3a019025c2bd7dfdef5b9f5d05a7a4d819ab568f3a8bc41bf2aed3",
+  "original_reparse_evidence": {
+    "path": "spm_calculator/data/provenance/ast-portability-2026-09-09/acs_2021_normalization_receipt.json",
+    "sha256": "925d0f4fcc06694f808afe7155b88924cb14e425f51cb0dac40363384ed3b5bf"
+  },
+  "parser_sha256": "28d31b3db0caa26f457660f1be9618f63fb08573460c13c68de6cd01b3f7e4bc",
+  "provenance_adaptation": {
+    "path": "spm_calculator/data/current/acs_code_identity_adaptation.json",
+    "sha256": "b0bfbb6d87702ec06a96841b178c5645c755a042e01c3d5cabd8bad69e520396"
+  },
+  "raw_source_reparse_performed": false,
   "records": 616858,
   "retained_normalized_sha256": "f407c8677c70baa37d22fdc4b0780f459ac4db46f405868836f052f62d774041",
   "source_sha256": [
@@ -33,5 +42,5 @@
     2023,
     2024
   ],
-  "verification": "raw-source reparse exactly equals all retained normalized records"
+  "verification": "Inherited exact raw-reparse evidence from the original receipt; current parser identity admitted by equivalent-code adaptation. No raw-source reparse performed by this adaptation."
 }

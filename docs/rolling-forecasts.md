@@ -345,6 +345,13 @@ python scripts/build_rolling_forecast.py --check
 python scripts/export_web_release.py --check
 ```
 
-Changing scientific code or pinned inputs requires rebuilding the affected
-component before assembly. Hashes check integrity; they are not signatures
-or independent evidence of source authenticity.
+Changing scientific logic or pinned scientific inputs requires rebuilding the
+affected component before assembly. A change confined to code-identity
+serialization can use a separately recorded equivalent-code adaptation when
+the original source and receipts are retained, normalization logic and cached
+products are unchanged, and exact comparison confirms that every scientific
+field survives reassembly. Such an adaptation records both source identities;
+it does not claim a fresh raw-data parse. See the
+[current artifact identity](spm-releases.md#current-artifact-identity) for the
+retained evidence and current consumer pins. Hashes check integrity; they are
+not signatures or independent evidence of source authenticity.

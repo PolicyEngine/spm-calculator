@@ -9,6 +9,10 @@ This checkout is the **local 1.0.0 candidate**. These instructions describe this
 source, not an announced PyPI release or production website, wrapper or API
 promotion.
 
+Version 1.0 changes the public calculation API and removes the legacy modules.
+Existing PolicyEngine environments require coordinated dependency pins; read
+the [1.0 migration guide](docs/migration.md) before upgrading.
+
 ## Published 2025 inputs
 
 The national reference family has two SPM adults and two children. The bundled

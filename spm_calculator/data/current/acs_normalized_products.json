@@ -20,7 +20,11 @@
       "rent_lower_bound"
     ],
     "normalization_logic_sha256": "2c02fb82bba6992f4fa0db844781a4d7bb610cb6f3680b03d188daa1a49936ba",
-    "parser_sha256": "d96fb6556f3a019025c2bd7dfdef5b9f5d05a7a4d819ab568f3a8bc41bf2aed3",
+    "parser_sha256": "28d31b3db0caa26f457660f1be9618f63fb08573460c13c68de6cd01b3f7e4bc",
+    "provenance_adaptation": {
+      "path": "spm_calculator/data/current/acs_code_identity_adaptation.json",
+      "sha256": "b0bfbb6d87702ec06a96841b178c5645c755a042e01c3d5cabd8bad69e520396"
+    },
     "sha256": "f407c8677c70baa37d22fdc4b0780f459ac4db46f405868836f052f62d774041",
     "source_sha256": [
       "7a0f6d2d86990343bce760a2b679d26f19272a7518399a03ca7e19bf74e92b19"

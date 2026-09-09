@@ -66,6 +66,7 @@ spm_calculator = [
     "data/current/*.json",
     "data/current/*.csv",
     "data/current/*.xlsx",
+    "data/provenance/ast-portability-2026-09-09/*",
 ]
 
 [tool.ruff]

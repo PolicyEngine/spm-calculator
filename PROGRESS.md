@@ -1,3 +1,81 @@
+# Equivalent-code provenance adaptation — September 9, 2026
+
+## State
+
+Completed the provenance adaptation and all required validation. No commit,
+push, publication, or heavy CE/ACS/PUMS rebuild occurred. The task-specific
+no-commit instruction applies; prior journals retain their historical meaning.
+
+## Done
+
+- Archived original receipts, ACS component and source bytes with exact hashes.
+- Added a deterministic equivalent-code adaptation receipt explicitly recording
+  no fresh raw-source reparse or scientific component rebuild.
+- Adapted current receipt/manifest and ACS metadata; reassembled and exported.
+- Compared every complete scientific document field and 2,110,752 canonical
+  calculation pairs (10,553,760 numeric fields): all exactly equal.
+- Verified all four retained normalized NPZ files against original cache hashes.
+- Updated current documentation pins; preserved immutable original downloads,
+  root README/migration edits and reviewed source/fingerprint regression edits.
+- Full tests: 497 passed, 77 existing skips on each of Python 3.12 and 3.13.
+- Passed assembly/export checks and exact final-receipt replay on Python 3.12;
+  all 115 web tests, Ruff and whitespace checks passed.
+- Verified 81,794 permitted original acceptance files unchanged and confirmed
+  all six archive/six current evidence files are present verbatim in the wheel.
+- Wrote CALCULATOR-PROVENANCE-ADAPTATION-REPORT.md with commands, exact old/new
+  identities, equality evidence and coordinated consumer changes for root.
+- Current content SHA: 3d86d5c4c0423480e6b69b75d222ffa4a7a2639e4094df5ba2504af01be17173.
+- Current file SHA: cc06784feb81f8c7935d4494cea0a9821a79af868ac50383da8be37c6dc14b99.
+
+## Next
+
+- Root: coordinate paper/wrapper/runtime imports using the report's new content
+  and file pins; retain all historical acceptance evidence under its old IDs.
+- No implementation or required calculator validation remains in this lane.
+
+---
+
+# Calculator CI fingerprint portability — September 9, 2026
+
+## State
+
+Completed and verified a Python 3.9–3.14 portable research-source cache
+fingerprint preserving both existing normalization hashes. Task-specific
+no-commit instruction overrides standing commit instructions. Canonical/component
+artifacts remain untouched; two full-suite source-provenance gates require
+root's coordinated identity adaptation.
+
+## Done
+
+- Read applicable repository instructions and recorded starting Git state.
+- Reproduced Python 3.12's original fingerprint failures and isolated empty-list
+  AST formatting differences, including the 3.12 addition of `type_params`.
+- Added an explicit serializer matching the pinned Python 3.13 representation;
+  all other existing top-level scientific source sections are unchanged.
+- Limited implementation ownership to ACS source fingerprint code and relevant
+  ACS/rolling tests; README and migration documentation belong to root.
+- Passed all 50 ACS source tests on real Python 3.12.14 and 3.13.9, with semantic
+  mutation/cache-admission, formatting, literal/default/order and exact-pin checks.
+- Ran actual production fingerprint/serializer code on all six supported Python
+  minor versions: original 3.13 bytes, 11 scientific mutations, 25 syntax cases.
+- Passed the final combined ACS source/rolling consumer scope: 68 tests each on
+  Python 3.12 and 3.13. Full suites each produced 462 passes, 77 existing skips,
+  and only the two expected unchanged source-receipt/component hash failures.
+- Passed pinned Ruff 0.15.0 lint/format and owned whitespace checks.
+- Completed the read-only provenance audit and verified 37 packaged data/web
+  configuration files remain byte-identical to their starting snapshots.
+
+## Next
+
+- Root: review `CALCULATOR-CI-PORTABILITY-REPORT.md`, coordinate explicit parser
+  receipt/ACS component code-identity adaptation, then reassemble/export and
+  recheck provenance while preserving all scientific values and normalized bytes.
+- New source SHA: `28d31b3db0caa26f457660f1be9618f63fb08573460c13c68de6cd01b3f7e4bc`.
+- No implementation work remains in this bounded lane; no artifacts were
+  regenerated/resealed and no commits, push, or publication occurred.
+
+---
+
 # Canonical SPM rollout — September 9, 2026
 
 The canonical scientific artifact and adapters are committed at c89d20f.

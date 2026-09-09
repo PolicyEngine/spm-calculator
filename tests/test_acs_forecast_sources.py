@@ -1,8 +1,10 @@
 """Source-universe and revision safeguards for Census PUMS inputs."""
 
+import ast
 import copy
 import hashlib
 import json
+import textwrap
 import zipfile
 from pathlib import Path
 
@@ -232,10 +234,50 @@ def test_2017_numeric_ids_and_2010_pumas_survive_historical_normalization(
 
 @pytest.mark.parametrize("vintage", [2021, 2022, 2023, 2024])
 @pytest.mark.parametrize(
-    "helper", ["_historical_housing", "_restore_historical_record_ids"]
+    "step, original, mutation, historical_only",
+    [
+        pytest.param(
+            "normalize_housing",
+            "data.GRNTP * data.ADJHSG / 1e6",
+            "data.GRNTP * data.ADJHSG / 1e5",
+            False,
+            id="housing-dollar-scale",
+        ),
+        pytest.param(
+            "_universe",
+            "raw.NP > 0",
+            "raw.NP > 1",
+            False,
+            id="eligibility",
+        ),
+        pytest.param(
+            "apply_puma_update",
+            'how="left"',
+            'how="inner"',
+            False,
+            id="puma-join",
+        ),
+        pytest.param(
+            "_historical_housing",
+            ".str[4:]",
+            ".str[5:]",
+            True,
+            id="historical-id-preparation",
+        ),
+        pytest.param(
+            "_restore_historical_record_ids",
+            ".str[6:]",
+            ".str[7:]",
+            True,
+            id="historical-id-restoration",
+        ),
+        pytest.param(
+            "COMPONENTS", "rent", "shelter", False, id="component-mapping"
+        ),
+    ],
 )
-def test_historical_helper_mutations_invalidate_only_2021_pinned_cache(
-    tmp_path, monkeypatch, vintage, helper
+def test_normalization_mutations_invalidate_affected_pinned_cache(
+    tmp_path, monkeypatch, vintage, step, original, mutation, historical_only
 ):
     import spm_calculator.acs_forecast_sources as sources
 
@@ -267,20 +309,76 @@ def test_historical_helper_mutations_invalidate_only_2021_pinned_cache(
         is not None
     )
 
-    def changed_historical_helper(data):
-        return data
+    if step == "COMPONENTS":
+        assert sources.COMPONENTS["RNTP"] == original
+        monkeypatch.setitem(sources.COMPONENTS, "RNTP", mutation)
+    else:
+        getsource = sources.inspect.getsource
+        function = getattr(sources, step)
+        original_source = getsource(function)
+        assert original_source.count(original) == 1
+        changed_source = original_source.replace(original, mutation)
 
-    monkeypatch.setattr(sources, helper, changed_historical_helper)
+        def mutated_getsource(candidate):
+            return (
+                changed_source
+                if candidate is function
+                else getsource(candidate)
+            )
+
+        monkeypatch.setattr(sources.inspect, "getsource", mutated_getsource)
+
     retained = sources._pinned_normalized(
         tmp_path, vintage, bundle, source_hashes
     )
-    if vintage == 2021:
+    if not historical_only or vintage == 2021:
         assert retained is None
     else:
         assert retained.rent.tolist() == [1100.0]
 
 
-def test_historical_identity_fix_preserves_existing_2022_2024_pins():
+@pytest.mark.parametrize("vintage", [2021, 2022, 2023, 2024])
+def test_normalization_fingerprint_ignores_comments_and_formatting(
+    monkeypatch, vintage
+):
+    import spm_calculator.acs_forecast_sources as sources
+
+    original = sources.normalization_logic_sha256(vintage)
+    getsource = sources.inspect.getsource
+
+    def reformatted_getsource(function):
+        source = getsource(function).replace("raw.NP > 0", "raw.NP  >  0")
+        return "    # Source formatting only\n" + textwrap.indent(
+            source, "    "
+        )
+
+    monkeypatch.setattr(sources.inspect, "getsource", reformatted_getsource)
+    assert sources.normalization_logic_sha256(vintage) == original
+
+
+@pytest.mark.parametrize(
+    "original, mutation",
+    [
+        ("def f(): return", "def f(): return None"),
+        ("def f(*, limit): pass", "def f(*, limit=None): pass"),
+        ("value = None", "value = ''"),
+        ("value = False", "value = 0"),
+        ("values = []", "values = ()"),
+        ("values = []", "values = [0]"),
+        ("values = [1, 2]", "values = [2, 1]"),
+    ],
+)
+def test_normalization_ast_identity_preserves_literals_defaults_and_order(
+    original, mutation
+):
+    from spm_calculator.acs_forecast_sources import _normalization_ast_dump
+
+    assert _normalization_ast_dump(ast.parse(original)) != (
+        _normalization_ast_dump(ast.parse(mutation))
+    )
+
+
+def test_portable_normalization_identity_preserves_all_pinned_vintages():
     import spm_calculator.acs_forecast_sources as sources
 
     manifest = (
@@ -288,11 +386,12 @@ def test_historical_identity_fix_preserves_existing_2022_2024_pins():
         / "data/current/acs_normalized_products.json"
     )
     products = json.loads(manifest.read_text())
-    for vintage in (2022, 2023, 2024):
-        assert (
-            sources.normalization_logic_sha256(vintage)
-            == products[str(vintage)]["normalization_logic_sha256"]
-        )
-    assert sources.normalization_logic_sha256(2021) != (
-        sources.normalization_logic_sha256(2022)
-    )
+    expected = {
+        2021: "2c02fb82bba6992f4fa0db844781a4d7bb610cb6f3680b03d188daa1a49936ba",
+        2022: "ff5fa220fa295f464d29fe682823433980ebd19059e2bab0260eec923575ecf5",
+        2023: "ff5fa220fa295f464d29fe682823433980ebd19059e2bab0260eec923575ecf5",
+        2024: "ff5fa220fa295f464d29fe682823433980ebd19059e2bab0260eec923575ecf5",
+    }
+    for vintage, digest in expected.items():
+        assert products[str(vintage)]["normalization_logic_sha256"] == digest
+        assert sources.normalization_logic_sha256(vintage) == digest
