@@ -9,6 +9,10 @@ dependency declaration bytes remain exactly those of
 publication's test matrix; this journal follows the standing commit order.
 Final source/remote identities and PR36 readback belong in
 `rollout/calculator-python-matrix/FINAL-REPORT.md`.
+The authorized push and PR36 body update are blocked in this session: shell Git
+cannot resolve GitHub, and GitHub connector writes require approval while the
+session policy is `never`. PR36 remains at `fd7de4b`; all local commits are
+retained and the reviewed PR body is saved beside the final report.
 
 ## Done
 
@@ -40,6 +44,8 @@ Final source/remote identities and PR36 readback belong in
 ## Next
 
 - Root: use the final report and PR36 readback for the exact final-source gate.
+- Root: push the retained local commits to PR36's existing branch and apply
+  `pr-body-prepared.md`, updating its pending-push sentence after readback.
 - Require the six hosted Python CI jobs and final Fable agreement, plus the
   rollout's protective prerequisites, before any publication-triggering merge.
 - No calculator compatibility fix or further matrix implementation is needed.
