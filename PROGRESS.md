@@ -1,3 +1,32 @@
+# Calculator Python support release gate — September 9, 2026
+
+## State
+
+In progress from clean `fd7de4b3b670a10acd72567904ccea800252c9a5`, based on
+`origin/main` at `2541464a1a34c8fcc634e6595053a9d2ea3709cf`. This journal is
+current; no-commit instructions in historical entries below no longer apply.
+
+## Done
+
+- Read global/local instructions, PolicyEngine standards, workflow and package
+  configuration, rollout plan, and calculator portability/adaptation reports.
+- Confirmed CI covers 3.9–3.14 but publication gates only 3.9–3.12.
+- Located all four additional interpreters and existing 3.12/3.13 evidence.
+- Restricted this lane to workflow and verification records; scientific,
+  runtime, data, test, and dependency declaration bytes must remain unchanged.
+
+## Next
+
+- Expand publication gating to all six supported minors.
+- Authenticate source and run complete tests sequentially in isolated 3.9,
+  3.10, 3.11, and 3.14 environments, including fingerprint portability cases.
+- Check original skips, lint/format/workflows, and source-byte preservation.
+- Commit coherent steps, push verified changes, check remote head/message and
+  PR36 validation, and write `rollout/calculator-python-matrix/FINAL-REPORT.md`.
+- Root retains hosted CI/Fable gates and all merge/publication/deployment work.
+
+---
+
 # Equivalent-code provenance adaptation — September 9, 2026
 
 ## State
