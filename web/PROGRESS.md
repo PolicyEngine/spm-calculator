@@ -2,7 +2,7 @@
 
 ## State
 
-Compact export and client loading implemented; validation and review in progress. This lane owns only `web/**`, `scripts/export_web_release.py`, and `tests/test_web_config.py`. Scoped commits are authorized by the standing orders; no push, deployment, or edits to other lanes. Prior canonical handoff: `web/web-canonical-report.md`.
+Authorized web performance work complete and committed. Root-owned CUA/live checks, publication and deployment remain. This lane owns only `web/**`, `scripts/export_web_release.py`, and `tests/test_web_config.py`. Scoped commits are authorized by the standing orders; no push, deployment, or edits to other lanes. Prior canonical handoff: `web/web-canonical-report.md`.
 
 ## Done
 
@@ -17,10 +17,13 @@ Compact export and client loading implemented; validation and review in progress
 - Selected-area Massachusetts/Sumter historical warnings and accurate 2029 donor-distribution stabilization note are visible; material topcoding/thin-support diagnostics preserved.
 - Python export suite: 59 passed; export/audit `--check`: passed. Full Vitest suite: 115 passed, including 205,212 numerical replays and all actual year menus. Webpack production static build: passed. No browser/UX verification performed.
 - Added passing export-integrity regressions: source mutation during derivation writes nothing; missing/corrupt pinned audit downloads fail checks and are never overwritten.
+- Independent full data-contract review found no actionable regression. Production HTML is 39,025 bytes / 8,937 gzip; RSC is 8,608 / 2,814. All 11 initial local asset references resolve, and no scientific payload is embedded in HTML/RSC/JS.
+- Wrote final report to `web/WEB-PERFORMANCE-HANDOFF.md`.
 - Compact JSON: 1,225,568 bytes / 109,965 gzip (95.92% / 94.72% smaller than baseline).
 
 ## Next
 
-- Finish independent data-contract review and export stability/production artifact checks.
-- Record final HTML/RSC sizes and root-owned CUA/publication/deployment tasks in `web/WEB-PERFORMANCE-HANDOFF.md`.
-- Root must regenerate/check export after any further scientific changes; package 1.0.0 remains a local preview until publication.
+- Root: perform CUA desktop/mobile/live loading, interaction and download QA; this lane did not verify browser UX and used no Chrome CDP.
+- Root: after any further scientific hash change, regenerate/check the compact export and audit pin together, rerun checks, and rebuild.
+- Root: publish the exact package before setting its published-version flag; package 1.0.0 remains a local preview. Deployment and live checks belong to root.
+- Final handoff, exact size measurements, pinned hashes, commands and remaining work: `web/WEB-PERFORMANCE-HANDOFF.md`.
