@@ -25,11 +25,20 @@ current; no-commit instructions in historical entries below no longer apply.
   cache; retained commands, installation identities and package RECORD checks.
   Registry shell access is unavailable; genuine cached source builds are being
   investigated for missing Python 3.10 NumPy/pandas wheels.
+- Fresh complete suites now pass on 3.9.25, 3.11.15, 3.12.14, 3.13.9 and
+  3.14.4: 505 passed / 81 identical current-source skips each, including all
+  50 ACS source tests. Optional integration/download skips remain unqualified.
+- Built genuine cached NumPy 2.1.3 and pandas 2.3.2 source distributions for
+  3.10.19 with two compile jobs; retained source/cache/build/wheel identities.
+  An unchanged official jellyfish source release is being retrieved for the
+  remaining unversioned `us` dependency. No calculator source changes needed.
+- Independent review confirmed the matrix dependency gate, preserved bytes,
+  honest skip accounting and separation of installed-wheel identity checks
+  from authenticated-checkout full suites.
 
 ## Next
 
-- Authenticate source and run complete tests sequentially in isolated 3.9,
-  3.10, 3.11, and 3.14 environments, including fingerprint portability cases.
+- Complete Python 3.10 dependency installation and its unchanged full suite.
 - Check original skips, lint/format/workflows, and source-byte preservation.
 - Commit coherent steps, push verified changes, check remote head/message and
   PR36 validation, and write `rollout/calculator-python-matrix/FINAL-REPORT.md`.
