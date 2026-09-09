@@ -14,10 +14,20 @@ current; no-commit instructions in historical entries below no longer apply.
 - Located all four additional interpreters and existing 3.12/3.13 evidence.
 - Restricted this lane to workflow and verification records; scientific,
   runtime, data, test, and dependency declaration bytes must remain unchanged.
+- Authenticated all 62 package members of the current year-boundary wheel
+  (`c49c41da…ffba`) against this exact source; recorded tracked-file SHA-256s.
+- Expanded the pending publisher matrix; actionlint 1.7.12 and repository-wide
+  Ruff 0.15.0 format/lint checks pass.
+- Python 3.9.25 full suite passed: 505 tests, 81 original current-source skips.
+  The earlier 497/77 receipts predate the typed-year-error cases; they do not
+  authenticate the complete current provider suite. Fresh 3.12/3.13 runs added.
+- Installed real isolated 3.9/3.11/3.12/3.14 dependency sets from registry wheel
+  cache; retained commands, installation identities and package RECORD checks.
+  Registry shell access is unavailable; genuine cached source builds are being
+  investigated for missing Python 3.10 NumPy/pandas wheels.
 
 ## Next
 
-- Expand publication gating to all six supported minors.
 - Authenticate source and run complete tests sequentially in isolated 3.9,
   3.10, 3.11, and 3.14 environments, including fingerprint portability cases.
 - Check original skips, lint/format/workflows, and source-byte preservation.
