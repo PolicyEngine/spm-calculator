@@ -362,8 +362,54 @@
     }
   },
   "forecast": {
+    "method": "price_only_inflation_assumptions",
+    "baseYear": 2025,
+    "baseReleaseSha256": "762ad5347fe4b6b1eabbc3189f83ddae296329e7c3f6630f0db22204dfaffaf6",
+    "cpiProjections": {
+      "2026": 0.023,
+      "2027": 0.022,
+      "2028": 0.02,
+      "2029": 0.02,
+      "2030": 0.02
+    },
     "latestPublishedYear": 2025,
-    "cpiProjections": {}
+    "assumptionSha256": "92c31c60d52f78877e5c547ab0c61da5172d0b36ad2e8488f7e21c9325112b97",
+    "source": "Package inflation assumptions; no external forecast vintage",
+    "uncertainty": "not estimated",
+    "factorsByYear": {
+      "2026": 1.023,
+      "2027": 1.0455059999999998,
+      "2028": 1.0664161199999997,
+      "2029": 1.0877444423999998,
+      "2030": 1.1094993312479997
+    },
+    "thresholdsByYear": {
+      "2026": {
+        "owner_with_mortgage": 42273.12966406199,
+        "owner_without_mortgage": 35115.49566756,
+        "renter": 42659.668494399
+      },
+      "2027": {
+        "owner_with_mortgage": 43203.13851667135,
+        "owner_without_mortgage": 35888.03657224631,
+        "renter": 43598.18120127577
+      },
+      "2028": {
+        "owner_with_mortgage": 44067.20128700478,
+        "owner_without_mortgage": 36605.79730369124,
+        "renter": 44470.144825301286
+      },
+      "2029": {
+        "owner_with_mortgage": 44948.54531274488,
+        "owner_without_mortgage": 37337.913249765064,
+        "renter": 45359.547721807314
+      },
+      "2030": {
+        "owner_with_mortgage": 45847.51621899977,
+        "owner_without_mortgage": 38084.67151476036,
+        "renter": 46266.738676243454
+      }
+    }
   },
   "nowcast": {},
   "nowcastEvaluation": {

@@ -33,6 +33,8 @@ The app exports only the official areas in the [Census 2024 SPM workbook](https:
 
 The browser does not export the release's custom ACS state, county or district rent lookup tables. National thresholds remain calculation inputs and reference values, rather than an app location choice. Python research helpers and the sealed release retain their existing inputs for compatibility and reproducibility; restricting the browser export leaves the release bytes and content hash unchanged.
 
+The browser's 2026–2030 forecasts form a separate price-only layer above the sealed 2025 base. They compound the package's explicit inflation assumptions (2.3%, 2.2%, then 2.0% annually), holding rent indices and housing shares fixed. These are modeling assumptions without a citable external forecast vintage; no consumption growth or forecast uncertainty is estimated. The assumption hash covers the method, base year, base release hash and annual rates. The release hash continues to identify only the sealed inputs. Future-year Python examples calculate the base-year unit and apply the recorded forecast factor, rather than requesting an absent future release entry.
+
 Local-area population analysis should assign each SPM unit to its official Census area, preserving the mix of areas within a county or district. Microcosm owns those geographic assignments and boundary vintages. A single custom county or district rent adjustment is a different research estimate, not an official geographic SPM threshold.
 
 ## Reproduce and use

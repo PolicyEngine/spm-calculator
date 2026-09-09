@@ -1,16 +1,14 @@
 "use client";
 
-import {
-  useDeferredValue,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
-import { useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 
 import {
   DashboardShell,
-  Header,
+  Command,
+  CommandInput,
+  CommandList,
+  CommandItem,
+  CommandEmpty,
   SidebarLayout,
   InputPanel,
   ResultsPanel,
@@ -31,8 +29,6 @@ import {
   Title,
   Button,
   Separator,
-  logos,
-  Input,
 } from "@policyengine/ui-kit";
 
 import { calculateGeoadj } from "@/lib/geoadj";
@@ -76,15 +72,18 @@ function getRawEquivalenceScale(adults, children, methodology) {
   if (children > 0) {
     if (adults === 1) {
       return (
-        1 +
-        methodology.equivalenceScale.singleAdultFirstChild +
-        methodology.equivalenceScale.additionalChild * Math.max(children - 1, 0)
-      ) ** methodology.equivalenceScale.economiesOfScale;
+        (1 +
+          methodology.equivalenceScale.singleAdultFirstChild +
+          methodology.equivalenceScale.additionalChild *
+            Math.max(children - 1, 0)) **
+        methodology.equivalenceScale.economiesOfScale
+      );
     }
 
     return (
-      adults + methodology.equivalenceScale.additionalChild * children
-    ) ** methodology.equivalenceScale.economiesOfScale;
+      (adults + methodology.equivalenceScale.additionalChild * children) **
+      methodology.equivalenceScale.economiesOfScale
+    );
   }
 
   if (adults === 1) return 1;
@@ -119,9 +118,8 @@ function getCeSurveyWindow(thresholdYear) {
 }
 
 export default function CalculatorWorkbench({ data }) {
-  const searchParams = useSearchParams();
   const {
-    baseThresholds,
+    baseThresholds: publishedThresholds,
     methodology: baseMethodology,
     releaseMetadata,
     housingSharesByYear = {},
@@ -137,10 +135,11 @@ export default function CalculatorWorkbench({ data }) {
     metroSource,
     metroSourceUrl,
   } = data;
-  const isEmbedded =
-    searchParams.get("embed") === "true" ||
-    searchParams.get("embedded") === "true";
   const latestPublishedYear = forecast.latestPublishedYear;
+  const baseThresholds = {
+    ...publishedThresholds,
+    ...forecast.thresholdsByYear,
+  };
   // Metro rent indices ship as a single Census vintage. Historical years
   // (< earliestMetroYear) are unsupported for metros because back-casting
   // a current rent index to earlier base thresholds does not match any
@@ -163,51 +162,55 @@ export default function CalculatorWorkbench({ data }) {
   );
 
   const [year, setYear] = useState(String(latestPublishedYear));
-  const methodology = { ...baseMethodology, housingShares: housingSharesByYear[year] ?? baseMethodology.housingShares };
+  const methodology = {
+    ...baseMethodology,
+    housingShares: housingSharesByYear[year] ?? baseMethodology.housingShares,
+  };
   const [numAdults, setNumAdults] = useState(2);
   const [numChildren, setNumChildren] = useState(2);
   const [tenure, setTenure] = useState("renter");
   const [selectedGeographyId, setSelectedGeographyId] = useState("35620");
   const [locationQuery, setLocationQuery] = useState("");
-  const deferredLocationQuery = useDeferredValue(locationQuery);
   const yearNowcast = nowcast[year] ?? null;
   const yearNowcastEvaluation = nowcastEvaluation[year] ?? null;
   const yearIsNowcast = Boolean(yearNowcast);
-  const yearIsForecast =
-    Number(year) > latestPublishedYear && !yearIsNowcast;
-  const ceSurveyWindow = getCeSurveyWindow(year);
+  const yearIsForecast = Number(year) > latestPublishedYear && !yearIsNowcast;
+  const projectionFactor = forecast.factorsByYear?.[year];
+  const projectionBaseYear = forecast.baseYear ?? latestPublishedYear;
+  const ceSurveyWindow = getCeSurveyWindow(
+    yearIsForecast ? projectionBaseYear : year,
+  );
+  const annualForecastAssumptions = Object.entries(forecast.cpiProjections)
+    .filter(([target]) => Number(target) <= Number(year))
+    .map(([target, rate]) => `${target}: ${(rate * 100).toFixed(1)}%`)
+    .join("; ");
+  const shareProvenance =
+    housingShareProvenanceByYear[year] ??
+    housingShareProvenanceByYear[projectionBaseYear];
 
   useEffect(() => {
     setSelectedGeographyId((current) =>
-      metroAreas[current] ? current : Object.keys(metroAreas)[0] ?? "",
+      metroAreas[current] ? current : (Object.keys(metroAreas)[0] ?? ""),
     );
   }, [metroAreas]);
 
   const filteredMetroEntries = useMemo(() => {
-    const query = deferredLocationQuery.trim().toLowerCase();
+    const query = locationQuery.trim().toLowerCase();
     if (!query) return metroEntries;
-    return metroEntries
-      .filter(([code, info]) =>
-        `${code} ${info.name}`.toLowerCase().includes(query),
-      );
-  }, [deferredLocationQuery, metroEntries]);
-
-  const displayedMetroEntries = useMemo(() => {
-    const entries = new Map(filteredMetroEntries);
-    const selected = metroAreas[selectedGeographyId];
-    if (!entries.has(selectedGeographyId) && selected) {
-      entries.set(selectedGeographyId, selected);
-    }
-    return Array.from(entries.entries()).sort(([, left], [, right]) =>
-      left.name.localeCompare(right.name),
+    return metroEntries.filter(([code, info]) =>
+      `${code} ${info.name}`.toLowerCase().includes(query),
     );
-  }, [filteredMetroEntries, metroAreas, selectedGeographyId]);
+  }, [locationQuery, metroEntries]);
 
   // ── Derived calculations ────────────────────────────────────
 
   const base = baseThresholds[year][tenure];
   const rawScale = getRawEquivalenceScale(numAdults, numChildren, methodology);
-  const compositionValid = Number.isInteger(numAdults) && numAdults >= 1 && Number.isInteger(numChildren) && numChildren >= 0;
+  const compositionValid =
+    Number.isInteger(numAdults) &&
+    numAdults >= 1 &&
+    Number.isInteger(numChildren) &&
+    numChildren >= 0;
   const equivalenceScale =
     rawScale / methodology.equivalenceScale.referenceFamilyRaw;
 
@@ -237,13 +240,18 @@ export default function CalculatorWorkbench({ data }) {
 
   const geoadj = areaAdjustment(tenure);
 
-  const threshold = geoadj === null || !compositionValid ? null : base * equivalenceScale * geoadj;
+  const threshold =
+    geoadj === null || !compositionValid
+      ? null
+      : base * equivalenceScale * geoadj;
   const monthlyThreshold = threshold === null ? null : threshold / 12;
   const nationalReferenceThreshold = base;
   const thresholdVsReference =
     threshold === null
       ? null
-      : ((threshold - nationalReferenceThreshold) / nationalReferenceThreshold) * 100;
+      : ((threshold - nationalReferenceThreshold) /
+          nationalReferenceThreshold) *
+        100;
 
   const officialReferenceThreshold =
     geoadj === null ? null : baseThresholds[year][tenure] * geoadj;
@@ -262,26 +270,36 @@ export default function CalculatorWorkbench({ data }) {
     };
   });
 
-  const packageSnippet = !compositionValid ? "# Enter valid classified adult and child counts to generate a calculation." : `from spm_calculator import load_release, SPMUnit
+  const packageSnippet = !compositionValid
+    ? "# Enter valid classified adult and child counts to generate a calculation."
+    : `from spm_calculator import load_release, SPMUnit
 
 release = load_release(${releaseMetadata ? `expected_sha256="${releaseMetadata.sha256}"` : ""})
 result = release.calculate_unit(SPMUnit(
     unit_id="household-1",
     num_adults=${numAdults}, num_children=${numChildren},
-    tenure="${tenure}", year=${year},
+    tenure="${tenure}", year=${yearIsForecast ? projectionBaseYear : year},
     geography_kind="metro",
     geography_id="${currentLocation?.id ?? "<select an area>"}",
 ))
-print(result["threshold"])`;
+${
+  yearIsForecast
+    ? `# ${year} price-only forecast; carry the base-year geography and shares.
+# Annual inflation assumptions: ${annualForecastAssumptions}
+inflation_factor = ${projectionFactor}
+print(result["threshold"] * inflation_factor)`
+    : 'print(result["threshold"])'
+}`;
 
   // ── Location selector options ───────────────────────────────
 
   const locationSelectOptions = useMemo(
-    () => displayedMetroEntries.map(([code, info]) => ({
-      value: code,
-      label: info.name,
-    })),
-    [displayedMetroEntries],
+    () =>
+      metroEntries.map(([code, info]) => ({
+        value: code,
+        label: info.name,
+      })),
+    [metroEntries],
   );
 
   const yearSelectOptions = useMemo(
@@ -303,7 +321,12 @@ print(result["threshold"])`;
 
   const sidebar = (
     <InputPanel title="Household and geography">
-      {!compositionValid && <p role="alert">Enter at least one classified SPM adult and a nonnegative whole number of children. Minor-only units need a separate classification decision.</p>}
+      {!compositionValid && (
+        <p role="alert">
+          Enter at least one classified SPM adult and a nonnegative whole number
+          of children. Minor-only units need a separate classification decision.
+        </p>
+      )}
       <SidebarSection title="Threshold year">
         <SelectInput
           options={yearSelectOptions}
@@ -352,20 +375,33 @@ print(result["threshold"])`;
 
       <SidebarSection title="Geography">
         <div className="space-y-3">
-          <div>
-            <label
-              htmlFor="spm-area-search"
-              className="mb-1.5 block text-sm font-medium text-muted-foreground"
-            >
+          <Command label="Search Census areas" shouldFilter={false}>
+            <p className="mb-1.5 text-sm font-medium text-muted-foreground">
               Search Census areas
-            </label>
-            <Input
-              id="spm-area-search"
+            </p>
+            <CommandInput
               placeholder="New York, Alabama Nonmetro, 35620..."
               value={locationQuery}
-              onChange={(event) => setLocationQuery(event.target.value)}
+              onValueChange={setLocationQuery}
             />
-          </div>
+            {locationQuery.trim() && (
+              <CommandList label="Matching Census areas" className="max-h-60">
+                <CommandEmpty>No Census areas match your search.</CommandEmpty>
+                {filteredMetroEntries.map(([code, info]) => (
+                  <CommandItem
+                    key={code}
+                    value={code}
+                    onSelect={() => {
+                      setSelectedGeographyId(code);
+                      setLocationQuery("");
+                    }}
+                  >
+                    {info.name}
+                  </CommandItem>
+                ))}
+              </CommandList>
+            )}
+          </Command>
           <SelectInput
             id="spm-census-area"
             aria-label="Census metro/nonmetro area"
@@ -375,8 +411,8 @@ print(result["threshold"])`;
             onChange={setSelectedGeographyId}
           />
           <p className="text-xs leading-5 text-muted-foreground">
-            Published Census SPM areas: identified metropolitan areas and
-            state residual metro/nonmetro groups.
+            Published Census SPM areas: identified metropolitan areas and state
+            residual metro/nonmetro groups.
           </p>
         </div>
       </SidebarSection>
@@ -444,12 +480,6 @@ print(result["threshold"])`;
 
   return (
     <DashboardShell>
-      <Header
-        navItems={[]}
-        logoSrc={logos.whiteWordmark}
-        logoHref="/"
-      />
-
       <SidebarLayout sidebar={sidebar} sidebarWidth="320px">
         <ResultsPanel>
           <div className="space-y-6">
@@ -459,12 +489,8 @@ print(result["threshold"])`;
                 <Title order={2} className="text-xl">
                   {currentLocation?.label ?? "Loading geography"}
                 </Title>
-                <Badge variant="secondary">
-                  {selectedTenureLabel}
-                </Badge>
-                {yearIsForecast && (
-                  <Badge variant="warning">Forecast</Badge>
-                )}
+                <Badge variant="secondary">{selectedTenureLabel}</Badge>
+                {yearIsForecast && <Badge variant="warning">Forecast</Badge>}
                 {yearIsNowcast && (
                   <Badge variant="warning">Nowcast — not BLS</Badge>
                 )}
@@ -522,7 +548,9 @@ print(result["threshold"])`;
                 <CardHeader>
                   <CardTitle>Base threshold</CardTitle>
                   <CardDescription>
-                    National BLS reference-family threshold before adjustments
+                    {yearIsForecast
+                      ? "Projected national reference-family threshold before adjustments"
+                      : "National BLS reference-family threshold before adjustments"}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -532,7 +560,9 @@ print(result["threshold"])`;
                       <Text className="font-medium">{selectedTenureLabel}</Text>
                     </div>
                     <div className="flex justify-between">
-                      <Text className="text-muted-foreground">Base threshold</Text>
+                      <Text className="text-muted-foreground">
+                        Base threshold
+                      </Text>
                       <Text className="font-medium">{fmtCurrency(base)}</Text>
                     </div>
                     <div className="flex justify-between">
@@ -549,9 +579,38 @@ print(result["threshold"])`;
                           ? "Nowcast"
                           : yearIsForecast
                             ? "Forecast"
-                            : "Published"}
+                            : "Published by BLS"}
                       </Badge>
                     </div>
+                    {yearIsForecast && (
+                      <p
+                        className="pt-1 text-xs text-muted-foreground"
+                        data-testid="forecast-disclaimer"
+                      >
+                        Price-only forecast from the published{" "}
+                        {projectionBaseYear} national base. Inflation
+                        assumptions: {annualForecastAssumptions}. These are
+                        package modeling assumptions, not BLS or CBO forecasts.
+                        Consumption growth and forecast uncertainty are not
+                        estimated.
+                      </p>
+                    )}
+                    {!yearIsForecast &&
+                      !yearIsNowcast &&
+                      Number(year) === 2025 && (
+                        <p className="pt-1 text-xs text-muted-foreground">
+                          BLS finalized the national 2025 thresholds on{" "}
+                          <a
+                            className="underline"
+                            href="https://www.bls.gov/pir/spm/spm_thresholds_2025.htm"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            August 24, 2026
+                          </a>
+                          . This is a threshold, not a published poverty rate.
+                        </p>
+                      )}
                     {yearIsNowcast && (
                       <p
                         className="pt-1 text-xs text-muted-foreground"
@@ -608,12 +667,20 @@ print(result["threshold"])`;
                     <div className="flex justify-between">
                       <Text className="text-muted-foreground">Formula</Text>
                       <Text className="font-mono text-xs font-medium">
-                        {describeEquivalenceFormula(numAdults, numChildren, methodology)}
+                        {describeEquivalenceFormula(
+                          numAdults,
+                          numChildren,
+                          methodology,
+                        )}
                       </Text>
                     </div>
                     <div className="flex justify-between">
-                      <Text className="text-muted-foreground">Normalized scale</Text>
-                      <Text className="font-medium">{equivalenceScale.toFixed(3)}</Text>
+                      <Text className="text-muted-foreground">
+                        Normalized scale
+                      </Text>
+                      <Text className="font-medium">
+                        {equivalenceScale.toFixed(3)}
+                      </Text>
                     </div>
                     <div className="flex justify-between">
                       <Text className="text-muted-foreground">Household</Text>
@@ -642,13 +709,17 @@ print(result["threshold"])`;
                       </Text>
                     </div>
                     <div className="flex justify-between">
-                      <Text className="text-muted-foreground">Location factor</Text>
+                      <Text className="text-muted-foreground">
+                        Location factor
+                      </Text>
                       <Text className="font-medium">
                         {geoadj === null ? "..." : geoadj.toFixed(3)}
                       </Text>
                     </div>
                     <div className="flex justify-between">
-                      <Text className="text-muted-foreground">Ref. 2A2C threshold</Text>
+                      <Text className="text-muted-foreground">
+                        Ref. 2A2C threshold
+                      </Text>
                       <Text className="font-medium">
                         {officialReferenceThreshold === null
                           ? "..."
@@ -685,55 +756,54 @@ print(result["threshold"])`;
               <CardHeader>
                 <CardTitle>How this is calculated</CardTitle>
                 <CardDescription>
-                  National base thresholds adjusted using Census SPM area rent indices
+                  National base thresholds adjusted using Census SPM area rent
+                  indices
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3 text-sm leading-6">
                 <p>
-                  Threshold = <code className="font-mono">base[tenure]</code>{" "}
-                  × <code className="font-mono">equivalence_scale</code> ×{" "}
+                  Threshold = <code className="font-mono">base[tenure]</code> ×{" "}
+                  <code className="font-mono">equivalence_scale</code> ×{" "}
                   <code className="font-mono">geoadj[tenure]</code>
                 </p>
                 <ul className="list-disc space-y-1 pl-6 text-muted-foreground">
                   <li>
                     <strong>Base</strong>: BLS FCSUti thresholds for the
-                    reference family (2 adults, 2 children), by tenure,
-                    from BLS, estimated over CE quarters {ceSurveyWindow}.
+                    reference family (2 adults, 2 children), by tenure, from
+                    BLS, estimated over CE quarters {ceSurveyWindow}.
+                    {yearIsForecast &&
+                      ` The ${year} forecast compounds inflation assumptions from the published ${projectionBaseYear} base; it does not estimate a new CE expenditure window.`}
                     The 2019–2024 values use the corrected workbook BLS
-                    published July 17, 2026, and 2025 uses the current
-                    workbook published August 24, 2026. National 2025
-                    renter base ={" "}
+                    published July 17, 2026, and 2025 uses the current workbook
+                    published August 24, 2026. National 2025 renter base ={" "}
                     <span className="font-mono">
                       {fmtCurrency(baseThresholds["2025"].renter)}
                     </span>
                     .
                   </li>
                   <li>
-                    <strong>Equivalence scale</strong>: Betson
-                    three-parameter. Single-adult with K children:{" "}
-                    <code className="font-mono">
-                      (1 + 0.8 + 0.5·(K−1))^0.7
-                    </code>
+                    <strong>Equivalence scale</strong>: Betson three-parameter.
+                    Single-adult with K children:{" "}
+                    <code className="font-mono">(1 + 0.8 + 0.5·(K−1))^0.7</code>
                     . Multi-adult with children:{" "}
                     <code className="font-mono">(A + 0.5·K)^0.7</code>.
                     Reference 2A2C = <code className="font-mono">3^0.7</code>.
                   </li>
                   <li>
-                    <strong>GEOADJ</strong>: Census {latestMetroYear} rent indices
-                    for identified metro and state residual metro/nonmetro
-                    areas. The housing share for the selected tenure adjusts
-                    only the housing portion of the national base: renter{" "}
-                    {methodology.housingShares.renter}, owner with mortgage{" "}
-                    {methodology.housingShares.owner_with_mortgage}, owner
-                    without mortgage{" "}
+                    <strong>GEOADJ</strong>: Census {latestMetroYear} rent
+                    indices for identified metro and state residual
+                    metro/nonmetro areas. The housing share for the selected
+                    tenure adjusts only the housing portion of the national
+                    base: renter {methodology.housingShares.renter}, owner with
+                    mortgage {methodology.housingShares.owner_with_mortgage},
+                    owner without mortgage{" "}
                     {methodology.housingShares.owner_without_mortgage}. The app
                     uses the published Census area definitions; it does not
                     construct separate state, county or district thresholds.
                     Housing shares and rent indices carried into another year
-                    are approximations. These calculated thresholds combine
-                    the selected national series with the bundled geography
-                    vintage and may differ from the original Census workbook
-                    amounts.
+                    are approximations. These calculated thresholds combine the
+                    selected national series with the bundled geography vintage
+                    and may differ from the original Census workbook amounts.
                   </li>
                 </ul>
                 <p className="text-xs text-muted-foreground">
@@ -807,10 +877,23 @@ print(result["threshold"])`;
             >
               {releaseMetadata && (
                 <p data-testid="release-provenance">
-                  Release {releaseMetadata.id} · information date {releaseMetadata.informationDate}.
-                  {" "}Housing shares: {housingShareProvenanceByYear[year]?.reference_year ?? 2024}
-                  {housingShareProvenanceByYear[year]?.status === "carried" ? " (carried to the selected year)" : ""}.
-                  {" "}SHA-256: <code className="break-all">{releaseMetadata.sha256}</code>
+                  Release {releaseMetadata.id} · information date{" "}
+                  {releaseMetadata.informationDate}. Housing shares:{" "}
+                  {shareProvenance?.reference_year ?? 2024}
+                  {shareProvenance?.status === "carried"
+                    ? " (carried to the selected year)"
+                    : ""}
+                  . SHA-256:{" "}
+                  <code className="break-all">{releaseMetadata.sha256}</code>
+                </p>
+              )}
+              {yearIsForecast && (
+                <p className="mt-2" data-testid="forecast-provenance">
+                  Forecast assumptions are separate from the published release.
+                  Assumption SHA-256:{" "}
+                  <code className="break-all">{forecast.assumptionSha256}</code>
+                  . Rent indices and housing shares remain at {latestMetroYear}{" "}
+                  values.
                 </p>
               )}
               <p>

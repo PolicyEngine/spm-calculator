@@ -11,6 +11,8 @@ Calculate [Supplemental Poverty Measure (SPM)](https://www.census.gov/topics/inc
 
 The rebuilt calculator runs entirely in your browser. It bundles national thresholds through published 2025 and Census 2024 SPM area rent indices with an explicit release hash. National thresholds provide the calculation's base and reference values; the app selects an official Census area. No browser credential or Census request is required. Housing shares are fixed to 2024 and identified as carried approximations for other years. Applying the 2024 geographic inputs to another year's national base does not produce a published Census threshold for that year.
 
+The app also offers 2026–2030 price-only forecasts from the 2025 base, using the package's stated inflation assumptions: 2.3% for 2026, 2.2% for 2027, and 2.0% annually for 2028–2030. These assumptions have no external forecast vintage and do not estimate consumption growth or forecast uncertainty. They are exported separately from published release years, with their own assumption hash and Python reproduction snippet.
+
 This branch is an **unpublished 0.5.0 rebuild**. The public calculator remains on its existing deployment until a separate production promotion. The corrected national series changes some legacy numerical outputs; see [compatibility and rollout](docs/spm-releases.md#compatibility-and-rollout).
 
 ### Run Locally

@@ -1,5 +1,6 @@
 """Checks that the generated web bundle preserves data vintages."""
 
+import hashlib
 import json
 from pathlib import Path
 
@@ -10,6 +11,7 @@ from scripts.generate_geoadj_data import (
     generate_all_thresholds,
     generate_nowcast_evaluations,
 )
+from spm_calculator.forecast import forecast_thresholds
 
 REPO = Path(__file__).parents[1]
 CONFIG = REPO / "web/public/data/spm_config.json"
@@ -85,3 +87,33 @@ def test_committed_browser_export_matches_official_area_contract():
     )
     assert config == build_config()
     assert config["baseThresholds"]["2025"] == pytest.approx(PUBLISHED_2025)
+
+
+def test_forecast_layer_replays_package_assumptions_separately():
+    config = build_config()
+    forecast = config["forecast"]
+    assert set(forecast["thresholdsByYear"]) == {
+        str(year) for year in range(2026, 2031)
+    }
+    assert "2026" not in config["baseThresholds"]
+    assert config["nowcast"] == {}
+    assert forecast["factorsByYear"]["2026"] == pytest.approx(1.023)
+    assert forecast["factorsByYear"]["2030"] == pytest.approx(
+        1.023 * 1.022 * 1.02**3
+    )
+    for year, thresholds in forecast["thresholdsByYear"].items():
+        assert thresholds == pytest.approx(forecast_thresholds(int(year)))
+    assumptions = {
+        key: forecast[key]
+        for key in (
+            "method",
+            "baseYear",
+            "baseReleaseSha256",
+            "cpiProjections",
+        )
+    }
+    digest = hashlib.sha256(
+        json.dumps(assumptions, sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()
+    assert forecast["assumptionSha256"] == digest
+    assert forecast["baseReleaseSha256"] == config["releaseMetadata"]["sha256"]

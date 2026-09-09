@@ -180,7 +180,10 @@ behavior. The new PE compatibility adapter labels any such result as
 consumer extrapolation with its base release and evaluated model CPI
 ratio; it is not a published release entry. Projecting poverty rates also
 requires projected population characteristics and resources, which this
-threshold estimator does not supply. No new 2026 forecast is made here.
+threshold estimator does not supply. No new consumption-based 2026 forecast is
+made in this CE research experiment. The browser separately offers 2026–2030
+price-only projections using explicit inflation assumptions; see
+[SPM releases](spm-releases.md#browser-geography-scope).
 
 ## References
 

@@ -3,11 +3,16 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 from pathlib import Path
 
 from spm_calculator.equivalence_scale import REFERENCE_RAW_SCALE
+from spm_calculator.forecast import (
+    CPI_PROJECTIONS,
+    calculate_cumulative_inflation,
+)
 from spm_calculator.release import load_release
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -25,6 +30,24 @@ def build_config():
     ).group(1)
     metro = document["geographies"]["metro"]
     latest = release.latest_published_year
+    # Forecasts are a separate assumption layer, not published release years.
+    assumptions = {
+        "method": "price_only_inflation_assumptions",
+        "baseYear": latest,
+        "baseReleaseSha256": release.content_sha256,
+        "cpiProjections": {
+            str(year): rate
+            for year, rate in CPI_PROJECTIONS.items()
+            if year > latest
+        },
+    }
+    forecast_hash = hashlib.sha256(
+        json.dumps(assumptions, sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()
+    factors = {
+        year: calculate_cumulative_inflation(latest, int(year))
+        for year in assumptions["cpiProjections"]
+    }
     # Census's workbook includes named MSAs and state residual Metro/Nonmetro
     # areas. Custom ACS rent estimates remain in the immutable Python release
     # for research replay but are not official SPM areas or browser inputs.
@@ -57,7 +80,23 @@ def build_config():
                 "referenceFamilyRaw": REFERENCE_RAW_SCALE,
             },
         },
-        "forecast": {"latestPublishedYear": latest, "cpiProjections": {}},
+        "forecast": {
+            **assumptions,
+            "latestPublishedYear": latest,
+            "assumptionSha256": forecast_hash,
+            "source": "Package inflation assumptions; no external forecast vintage",
+            "uncertainty": "not estimated",
+            "factorsByYear": factors,
+            "thresholdsByYear": {
+                year: {
+                    tenure: amount * factor
+                    for tenure, amount in release.entry(latest)[
+                        "thresholds"
+                    ].items()
+                }
+                for year, factor in factors.items()
+            },
+        },
         "nowcast": {},
         "nowcastEvaluation": archived.get("nowcastEvaluation", {}),
         "paperUrl": archived["paperUrl"],

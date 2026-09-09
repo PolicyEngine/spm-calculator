@@ -8,22 +8,95 @@
  * doesn't regress.
  */
 
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import CalculatorWorkbench from "../src/components/CalculatorWorkbench";
+import RootLayout from "../app/layout";
 import { makeCalculatorData } from "./fixtures/calculatorData";
 
 describe("CalculatorWorkbench", () => {
+  it("renders one shared navigation header in the actual page layout", () => {
+    const layout = RootLayout({
+      children: <CalculatorWorkbench data={makeCalculatorData()} />,
+    });
+    // Render the real body without nesting html/head inside jsdom's body.
+    render(
+      layout.props.children.find((child) => child.type === "body").props
+        .children,
+    );
+    expect(
+      screen.getAllByRole("button", { name: "Toggle navigation" }),
+    ).toHaveLength(1);
+    expect(screen.getByTestId("version-footer")).toBeTruthy();
+  });
+
+  it("shows matching search results and selects an area with a click", () => {
+    render(<CalculatorWorkbench data={makeCalculatorData()} />);
+    fireEvent.change(screen.getByLabelText("Search Census areas"), {
+      target: { value: "san jose" },
+    });
+    const matches = screen.getByRole("listbox", {
+      name: "Matching Census areas",
+    });
+    expect(within(matches).getAllByRole("option")).toHaveLength(1);
+    fireEvent.click(
+      within(matches).getByRole("option", {
+        name: "San Jose-Sunnyvale-Santa Clara, CA MSA",
+      }),
+    );
+    expect(
+      screen.getByRole("heading", {
+        name: "San Jose-Sunnyvale-Santa Clara, CA MSA",
+      }),
+    ).toBeTruthy();
+    expect(screen.getByLabelText("Search Census areas")).toHaveValue("");
+    expect(screen.getByLabelText("Census metro/nonmetro area")).toHaveValue(
+      "41940",
+    );
+    expect(screen.queryByRole("listbox")).toBeNull();
+  });
+
+  it("selects a Census area code with Enter and reports empty searches", () => {
+    render(<CalculatorWorkbench data={makeCalculatorData()} />);
+    const search = screen.getByLabelText("Search Census areas");
+    fireEvent.change(search, { target: { value: "1002" } });
+    fireEvent.keyDown(search, { key: "Enter", code: "Enter" });
+    expect(
+      screen.getByRole("heading", { name: "Alabama Nonmetro" }),
+    ).toBeTruthy();
+    fireEvent.change(search, { target: { value: "no matching place" } });
+    expect(screen.getByText("No Census areas match your search.")).toBeTruthy();
+    const matches = screen.getByRole("listbox", {
+      name: "Matching Census areas",
+    });
+    expect(within(matches).queryAllByRole("option")).toHaveLength(0);
+    expect(
+      screen.getByRole("heading", { name: "Alabama Nonmetro" }),
+    ).toBeTruthy();
+    fireEvent.change(search, { target: { value: "" } });
+    expect(screen.queryByRole("listbox")).toBeNull();
+    expect(
+      screen.getByLabelText("Census metro/nonmetro area").options,
+    ).toHaveLength(3);
+  });
+
   it("limits location choices to Census metro/nonmetro workbook areas", () => {
     render(<CalculatorWorkbench data={makeCalculatorData()} />);
 
     expect(screen.getByLabelText("Census metro/nonmetro area")).toBeTruthy();
     expect(screen.queryByLabelText("Geography type")).toBeNull();
-    for (const name of ["National average", "State", "County", "Congressional district"]) {
+    for (const name of [
+      "National average",
+      "State",
+      "County",
+      "Congressional district",
+    ]) {
       expect(screen.queryByRole("option", { name })).toBeNull();
     }
-    expect(screen.getByRole("option", { name: "Alabama Nonmetro" })).toBeTruthy();
+    expect(
+      screen.getByRole("option", { name: "Alabama Nonmetro" }),
+    ).toBeTruthy();
     expect(screen.queryByRole("option", { name: "2023" })).toBeNull();
   });
 
@@ -71,13 +144,9 @@ describe("CalculatorWorkbench", () => {
       />,
     );
     const footer = screen.getByTestId("version-footer");
-    expect(
-      footer.querySelector('a[href*="pypi.org"]'),
-    ).toBeNull();
+    expect(footer.querySelector('a[href*="pypi.org"]')).toBeNull();
     // Data-vintage link still present.
-    expect(
-      footer.querySelector('a[href*="census.gov"]'),
-    ).not.toBeNull();
+    expect(footer.querySelector('a[href*="census.gov"]')).not.toBeNull();
   });
 
   it("links out to both BLS methodology and the Census SPM report", () => {
@@ -130,7 +199,7 @@ describe("published and nowcast years", () => {
     ).toBeNull();
     expect(screen.queryByTestId("nowcast-disclaimer")).toBeNull();
     expect(screen.queryByText("Nowcast — not BLS")).toBeNull();
-    expect(screen.getAllByText("Published").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Published by BLS").length).toBeGreaterThan(0);
     const evaluation = screen.getByTestId("nowcast-evaluation");
     expect(evaluation.textContent).toMatch(/\$40,756/);
     expect(evaluation.textContent).toMatch(/-2\.27% versus BLS/);
