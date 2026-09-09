@@ -34,19 +34,38 @@ function completed(evaluation) {
 /**
  * Consume normalized export metrics defensively. MAPE values already use
  * percent units; annual real-spending rates elsewhere in the export are fractions.
- * Artifact generation owns checking all 341 ACS areas and 21 CE folds/63 tenure
- * observations. The UI additionally requires valid scores for the chosen scenario
- * and horizon, even if an inconsistent artifact claims validation is complete.
+ * A completed research evaluation does not validate every displayed projection.
+ * Require scores for the selected spending horizon and apply the geographic
+ * evaluation only to its tested horizon and published, anchored area coverage.
  */
-export function getForecastValidation(forecast, scenarioId, year) {
+export function getForecastValidation(
+  forecast,
+  scenarioId,
+  year,
+  entry,
+  areaId,
+) {
+  const selectedEntry =
+    entry ?? forecast?.scenarios?.[scenarioId]?.years?.[String(year)];
+  const area = selectedEntry?.geography_by_area?.[areaId];
   const ce = forecast?.validation?.ce;
   const scenario = ce?.scenarios?.[scenarioId];
   const baseline = ce?.baseline;
   const horizon = Number(year) - forecast?.baseYear;
-  const usesCe = Number(year) >= 2026;
+  const usesCe = selectedEntry?.national_status === "forecast";
   const selectedHorizon = ce?.by_horizon?.[String(horizon)];
   const horizonScenario = selectedHorizon?.scenarios?.[scenarioId];
-  const ceComplete =
+  const supportedHorizons = Object.entries(ce?.by_horizon ?? {})
+    .filter(
+      ([key, value]) =>
+        Number.isInteger(Number(key)) &&
+        Number(key) > 0 &&
+        Number.isInteger(value?.fold_count) &&
+        value.fold_count > 0,
+    )
+    .map(([key]) => Number(key))
+    .sort((a, b) => a - b);
+  const ceResearchComplete =
     completed(ce) &&
     ce.metric === MAPE &&
     hasComparison(scenario, baseline) &&
@@ -55,7 +74,9 @@ export function getForecastValidation(forecast, scenarioId, year) {
       baseline,
       BALANCED_MAPE,
       "beats_horizon_balanced_baseline",
-    ) &&
+    );
+  const ceComplete =
+    ceResearchComplete &&
     (!usesCe ||
       (Number.isInteger(forecast?.baseYear) &&
         Number.isInteger(horizon) &&
@@ -64,7 +85,7 @@ export function getForecastValidation(forecast, scenarioId, year) {
         selectedHorizon.fold_count > 0 &&
         hasComparison(horizonScenario, selectedHorizon?.baseline)));
   const ceUnderperformed =
-    ceComplete &&
+    ceResearchComplete &&
     (!outperforms(scenario, baseline) ||
       !outperforms(
         scenario,
@@ -72,17 +93,48 @@ export function getForecastValidation(forecast, scenarioId, year) {
         BALANCED_MAPE,
         "beats_horizon_balanced_baseline",
       ) ||
-      (usesCe && !outperforms(horizonScenario, selectedHorizon.baseline)));
+      (usesCe &&
+        hasComparison(horizonScenario, selectedHorizon?.baseline) &&
+        !outperforms(horizonScenario, selectedHorizon.baseline)));
+  const ceUnsupportedHorizon =
+    usesCe &&
+    Number.isInteger(horizon) &&
+    horizon > 0 &&
+    supportedHorizons.length > 0 &&
+    !supportedHorizons.includes(horizon);
 
   const acs = forecast?.validation?.acs;
   const acsBaseline = { [MAPE]: acs?.baseline_mean_absolute_percentage_error };
-  const acsComplete = completed(acs) && hasComparison(acs, acsBaseline);
+  const usesAcs = ["modeled", "modeled_unanchored"].includes(area?.status);
+  const acsHorizon = Number(year) - forecast?.geographyAnchorYear;
+  const testedAcsHorizon = acs?.target_spm_year - acs?.origin_spm_year;
+  const acsResearchComplete =
+    completed(acs) &&
+    hasComparison(acs, acsBaseline) &&
+    Number.isInteger(acs?.origin_spm_year) &&
+    Number.isInteger(acs?.target_spm_year) &&
+    testedAcsHorizon > 0 &&
+    Number.isInteger(acs?.area_count) &&
+    acs.area_count > 0;
+  const acsHorizonSupported =
+    Number.isInteger(testedAcsHorizon) &&
+    testedAcsHorizon > 0 &&
+    acsHorizon === testedAcsHorizon;
+  const acsAreaSupported =
+    area?.official_published_area === true &&
+    area?.anchor_status === "published_anchor";
+  const acsComplete =
+    acsResearchComplete &&
+    (!usesAcs || (acsHorizonSupported && acsAreaSupported));
 
   return {
     ce: {
       used: usesCe,
       complete: ceComplete,
+      researchComplete: ceResearchComplete,
       underperformed: ceUnderperformed,
+      unsupportedHorizon: ceUnsupportedHorizon,
+      supportedHorizons,
       scenario,
       baseline,
       horizon,
@@ -90,9 +142,22 @@ export function getForecastValidation(forecast, scenarioId, year) {
       horizonScenario,
     },
     acs: {
-      used: Number(year) >= 2025,
+      used: usesAcs,
       complete: acsComplete,
-      underperformed: acsComplete && !outperforms(acs, acsBaseline),
+      researchComplete: acsResearchComplete,
+      underperformed: acsResearchComplete && !outperforms(acs, acsBaseline),
+      unsupportedArea:
+        usesAcs &&
+        (area?.official_published_area === false ||
+          area?.anchor_status === "modeled_unanchored"),
+      unsupportedHorizon:
+        usesAcs &&
+        Number.isInteger(acsHorizon) &&
+        Number.isInteger(testedAcsHorizon) &&
+        testedAcsHorizon > 0 &&
+        !acsHorizonSupported,
+      horizon: acsHorizon,
+      testedHorizon: testedAcsHorizon,
       scenario: acs,
       baseline: acsBaseline,
     },
@@ -146,8 +211,9 @@ export function getRealGrowthFits(diagnostics) {
 }
 
 export function getMedianDiagnostic(entry, areaId) {
-  if (entry?.geography_status === "published_anchor") return null;
-  const diagnostic = entry?.median_diagnostics?.[areaId];
+  const area = entry?.geography_by_area?.[areaId];
+  if (!area || area.status === "published_anchor") return null;
+  const diagnostic = area.diagnostics ?? entry?.median_diagnostics?.[areaId];
   if (!diagnostic) return null;
   const materialTopcoding = [
     diagnostic.material_topcoding,
@@ -176,4 +242,39 @@ export function getMedianDiagnostic(entry, areaId) {
         topcodedShare: validShare ? topcodedShare : undefined,
       }
     : null;
+}
+
+/**
+ * A selected area's comparison includes every available year, so retain source
+ * breaks recorded on historical entries even when a later year is selected.
+ * Disclosure text and transition values come directly from the audit artifact.
+ */
+export function getHistoricalSeriesBreaks(forecast, scenarioId, areaId, entry) {
+  const entries = [
+    entry,
+    ...Object.values(forecast?.scenarios?.[scenarioId]?.years ?? {}),
+  ];
+  const unique = new Map();
+  for (const candidate of entries) {
+    const disclosures = candidate?.geography_by_area?.[areaId]?.series_breaks;
+    if (!Array.isArray(disclosures)) continue;
+    for (const disclosure of disclosures) {
+      if (
+        !Number.isInteger(disclosure?.from_year) ||
+        !Number.isInteger(disclosure?.to_year) ||
+        typeof disclosure?.interpretation !== "string" ||
+        !disclosure.interpretation.trim()
+      )
+        continue;
+      const key = JSON.stringify([
+        disclosure.kind,
+        disclosure.from_year,
+        disclosure.to_year,
+        disclosure.from_area_id,
+        disclosure.to_area_id,
+      ]);
+      unique.set(key, disclosure);
+    }
+  }
+  return [...unique.values()];
 }

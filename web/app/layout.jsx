@@ -8,7 +8,7 @@ const GA_ID = "G-2YHG89FY0N";
 const TOOL_NAME = "spm-calculator";
 const SITE_URL = "https://policyengine.org/us/spm-calculator";
 const DESCRIPTION =
-  "Calculate Supplemental Poverty Measure (SPM) thresholds by family composition and housing tenure for official Census SPM areas: metro areas and state residual Metro/Nonmetro areas.";
+  "Calculate Supplemental Poverty Measure (SPM) thresholds by family composition and housing tenure for SPM estimation areas: MSAs, residual metro groups and state nonmetro groups, using published and modeled inputs through 2035.";
 
 export const metadata = {
   title: "SPM Threshold Calculator | PolicyEngine",
@@ -133,7 +133,7 @@ export default function RootLayout({ children }) {
         </Script>
       </head>
       <body>
-        <PolicyEngineShell country="us">{children}        </PolicyEngineShell>
+        <PolicyEngineShell country="us">{children}</PolicyEngineShell>
       </body>
     </html>
   );

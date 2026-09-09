@@ -2,6 +2,7 @@ import { Alert, AlertDescription, AlertTitle } from "@policyengine/ui-kit";
 
 import {
   getForecastValidation,
+  getHistoricalSeriesBreaks,
   getMedianDiagnostic,
   getRealGrowthFits,
 } from "@/lib/forecastValidation";
@@ -17,6 +18,17 @@ function fmtGrowth(value) {
   return `${sign}${Math.abs(value * 100).toFixed(2)}%`;
 }
 
+function horizonRange(horizons) {
+  if (horizons.length === 1) return `${horizons[0]} year`;
+  if (
+    horizons.some(
+      (value, index) => index > 0 && value !== horizons[index - 1] + 1,
+    )
+  )
+    return `${horizons.join(", ")} years`;
+  return `${horizons[0]}–${horizons.at(-1)} years`;
+}
+
 function ComponentWarning({ kind, evaluation }) {
   if (!evaluation.used || (evaluation.complete && !evaluation.underperformed))
     return null;
@@ -29,12 +41,35 @@ function ComponentWarning({ kind, evaluation }) {
       <AlertTitle>
         {spending ? "Spending projection" : "Geographic projection"}
       </AlertTitle>
-      <AlertDescription>
-        {!evaluation.complete
-          ? "This projected component has not been retrospectively validated."
-          : spending
-            ? "The selected spending scenario did not outperform inflation-only in retrospective tests."
-            : "Modeled geographic change did not outperform unchanged indices in retrospective tests."}
+      <AlertDescription className="space-y-1">
+        {evaluation.unsupportedArea ? (
+          <p>
+            This unpublished area has no published Census anchor and no
+            area-matched retrospective validation. The geographic backtest
+            covers published, anchored areas.
+          </p>
+        ) : evaluation.unsupportedHorizon ? (
+          <p>
+            The selected {evaluation.horizon}-year{" "}
+            {spending ? "spending" : "geographic"} horizon has no retrospective
+            backtest support. Available {spending ? "CE" : "ACS"} tests cover{" "}
+            {spending
+              ? horizonRange(evaluation.supportedHorizons)
+              : `${evaluation.testedHorizon} year`}
+            .
+          </p>
+        ) : !evaluation.complete ? (
+          <p>
+            This projected component has not been retrospectively validated.
+          </p>
+        ) : null}
+        {evaluation.underperformed && (
+          <p>
+            {spending
+              ? "The selected spending scenario did not outperform inflation-only in retrospective tests."
+              : "Modeled geographic change did not outperform unchanged indices in retrospective tests."}
+          </p>
+        )}
       </AlertDescription>
     </Alert>
   );
@@ -47,9 +82,20 @@ export function ForecastWarnings({
   entry,
   areaId,
 }) {
-  if (forecast?.method !== "rolling_ce_acs_v1") return null;
-  const validation = getForecastValidation(forecast, scenarioId, year);
+  const validation = getForecastValidation(
+    forecast,
+    scenarioId,
+    year,
+    entry,
+    areaId,
+  );
   const median = getMedianDiagnostic(entry, areaId);
+  const seriesBreaks = getHistoricalSeriesBreaks(
+    forecast,
+    scenarioId,
+    areaId,
+    entry,
+  );
   const counts = median
     ? [
         Number.isFinite(median.unique_records) &&
@@ -62,6 +108,7 @@ export function ForecastWarnings({
     : [];
   if (
     !median &&
+    seriesBreaks.length === 0 &&
     ![validation.ce, validation.acs].some(
       (value) => value.used && (!value.complete || value.underperformed),
     )
@@ -69,6 +116,22 @@ export function ForecastWarnings({
     return null;
   return (
     <div className="mt-3 space-y-2">
+      {seriesBreaks.length > 0 && (
+        <Alert
+          data-testid="historical-series-break-warning"
+          className="border-border bg-muted/40"
+        >
+          <AlertTitle>Historical geography series break</AlertTitle>
+          <AlertDescription className="space-y-1">
+            {seriesBreaks.map((disclosure, index) => (
+              <p key={index}>
+                {disclosure.from_year}→{disclosure.to_year}:{" "}
+                {disclosure.interpretation}
+              </p>
+            ))}
+          </AlertDescription>
+        </Alert>
+      )}
       <ComponentWarning kind="ce" evaluation={validation.ce} />
       <ComponentWarning kind="acs" evaluation={validation.acs} />
       {median && (
@@ -102,9 +165,21 @@ export function ForecastWarnings({
   );
 }
 
-export function ForecastMethodology({ forecast, scenarioId, year }) {
-  if (forecast?.method !== "rolling_ce_acs_v1") return null;
-  const { ce, acs } = getForecastValidation(forecast, scenarioId, year);
+export function ForecastMethodology({
+  forecast,
+  scenarioId,
+  year,
+  entry,
+  areaId,
+}) {
+  if (!forecast) return null;
+  const { ce, acs } = getForecastValidation(
+    forecast,
+    scenarioId,
+    year,
+    entry,
+    areaId,
+  );
   const fits = getRealGrowthFits(forecast.realGrowthDiagnostics);
   return (
     <details
@@ -138,7 +213,7 @@ export function ForecastMethodology({ forecast, scenarioId, year }) {
             )}
             .
           </p>
-          {ce.used && (
+          {ce.used && !ce.unsupportedHorizon && (
             <p>
               {ce.horizon}-year CE MAPE:{" "}
               {fmtMape(ce.horizonScenario?.mean_absolute_percentage_error)} vs{" "}
@@ -152,13 +227,35 @@ export function ForecastMethodology({ forecast, scenarioId, year }) {
               folds).
             </p>
           )}
+          {ce.unsupportedHorizon && (
+            <p>
+              The selected {ce.horizon}-year spending horizon has no
+              retrospective backtest support. CE scores cover{" "}
+              {horizonRange(ce.supportedHorizons)}.
+            </p>
+          )}
           <p>
             ACS MAPE: {fmtMape(acs.scenario?.mean_absolute_percentage_error)} vs{" "}
             {fmtMape(acs.baseline?.mean_absolute_percentage_error)} unchanged
             indices.
           </p>
-          {!ce.complete && <p>CE validation incomplete.</p>}
-          {!acs.complete && <p>ACS validation incomplete.</p>}
+          {!ce.researchComplete && <p>CE validation incomplete.</p>}
+          {!acs.researchComplete && <p>ACS validation incomplete.</p>}
+          {acs.researchComplete && (
+            <p>
+              The ACS backtest covers {acs.scenario.origin_spm_year}–
+              {acs.scenario.target_spm_year}
+              {Number.isInteger(acs.scenario.area_count)
+                ? ` across ${acs.scenario.area_count} published areas`
+                : ""}
+              .
+              {acs.unsupportedArea
+                ? " It does not validate this unpublished, unanchored area."
+                : acs.unsupportedHorizon
+                  ? ` It does not validate the selected ${acs.horizon}-year geographic horizon.`
+                  : ""}
+            </p>
+          )}
         </div>
         <p>
           Shorter horizons have more folds and more weight in the overall CE
@@ -171,6 +268,17 @@ export function ForecastMethodology({ forecast, scenarioId, year }) {
           The CE trend uses 0.5 shrinkage and is predeclared independently of
           holdout results. Unshrunk fits are diagnostic sensitivities only; zero
           real growth is a separate scored scenario.
+        </p>
+        <p>
+          Future estimates are conditional rolling CE and ACS projections. CBO
+          annual CPI ratios are applied uniformly to spending components and
+          rent growth as a modeling assumption, not a CBO rent forecast.
+        </p>
+        <p data-testid="rent-index-stabilization">
+          Under uniform national rent growth, relative rent indices stabilize
+          from 2029, once the five-year window contains only the 2024 donor
+          distribution and its projected copies. The whole-threshold geography
+          factor can still change as the housing share changes.
         </p>
         {fits.length > 0 && (
           <div data-testid="real-growth-fits" className="space-y-1">
