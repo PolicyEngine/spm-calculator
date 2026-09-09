@@ -2,47 +2,47 @@
 
 ## State
 
-In progress from clean `fd7de4b3b670a10acd72567904ccea800252c9a5`, based on
-`origin/main` at `2541464a1a34c8fcc634e6595053a9d2ea3709cf`. This journal is
-current; no-commit instructions in historical entries below no longer apply.
+Local six-version gate complete: 505 passed and 81 original current-source
+skips on every Python 3.9–3.14 interpreter. Scientific/runtime/data/test and
+dependency declaration bytes remain exactly those of
+`fd7de4b3b670a10acd72567904ccea800252c9a5`. The only operational change expands
+publication's test matrix; this journal follows the standing commit order.
+Final source/remote identities and PR36 readback belong in
+`rollout/calculator-python-matrix/FINAL-REPORT.md`.
 
 ## Done
 
-- Read global/local instructions, PolicyEngine standards, workflow and package
-  configuration, rollout plan, and calculator portability/adaptation reports.
-- Confirmed CI covers 3.9–3.14 but publication gates only 3.9–3.12.
-- Located all four additional interpreters and existing 3.12/3.13 evidence.
-- Restricted this lane to workflow and verification records; scientific,
-  runtime, data, test, and dependency declaration bytes must remain unchanged.
-- Authenticated all 62 package members of the current year-boundary wheel
-  (`c49c41da…ffba`) against this exact source; recorded tracked-file SHA-256s.
-- Expanded the pending publisher matrix; actionlint 1.7.12 and repository-wide
-  Ruff 0.15.0 format/lint checks pass.
-- Python 3.9.25 full suite passed: 505 tests, 81 original current-source skips.
-  The earlier 497/77 receipts predate the typed-year-error cases; they do not
-  authenticate the complete current provider suite. Fresh 3.12/3.13 runs added.
-- Installed real isolated 3.9/3.11/3.12/3.14 dependency sets from registry wheel
-  cache; retained commands, installation identities and package RECORD checks.
-  Registry shell access is unavailable; genuine cached source builds are being
-  investigated for missing Python 3.10 NumPy/pandas wheels.
-- Fresh complete suites now pass on 3.9.25, 3.11.15, 3.12.14, 3.13.9 and
-  3.14.4: 505 passed / 81 identical current-source skips each, including all
-  50 ACS source tests. Optional integration/download skips remain unqualified.
-- Built genuine cached NumPy 2.1.3 and pandas 2.3.2 source distributions for
-  3.10.19 with two compile jobs; retained source/cache/build/wheel identities.
-  An unchanged official jellyfish source release is being retrieved for the
-  remaining unversioned `us` dependency. No calculator source changes needed.
-- Independent review confirmed the matrix dependency gate, preserved bytes,
-  honest skip accounting and separation of installed-wheel identity checks
-  from authenticated-checkout full suites.
+- Read applicable instructions, PolicyEngine standards, rollout plan and prior
+  reports; authenticated the supplied clean source and base `2541464a…09cf`.
+- Expanded the publisher matrix to 3.9, 3.10, 3.11, 3.12, 3.13 and 3.14,
+  preserving the complete `publish.needs: test` gate.
+- Ran complete suites sequentially in six isolated real environments. Every
+  run passed all 50 ACS source cases, including fingerprint portability and
+  mutation/cache-admission checks. No source edits, deselection or new skips.
+- Corrected the evidence interpretation: historical 497/77 receipts precede
+  fd7de4b's eight ordinary/four optional tests. Fresh 3.12/3.13 runs passed
+  505/81 alongside the four requested additional interpreters.
+- Authenticated all 62 packaged files against the existing year-boundary wheel
+  `c49c41da…ffba`, verified installed dependency RECORDs and `uv pip check`,
+  and rehashed tracked files to prove unchanged scientific/runtime/data bytes.
+- Reused real registry wheel caches. Built unmodified cached NumPy/pandas and
+  Git-blob-authenticated official jellyfish source for Python 3.10; retained
+  source/wheel identities and cache-origin limitations. No import overlays.
+- Retained the deliberately interrupted slow 3.10 coverage attempt separately;
+  the restarted complete publisher-scope suite passed 505/81. Optional native,
+  ASEC and download checks remain original skips, not claimed acceptances.
+- Passed repository Ruff 0.15.0 format/lint, actionlint 1.7.12, semantic matrix
+  validation, whitespace checks and independent workflow/source review.
+- Preserved every scientific receipt and provider wheel's existing meaning;
+  no raw reparse, normalization regeneration, CE/ACS pipeline, population run,
+  browser, merge, tag, publication, deployment or Fable gate occurred.
 
 ## Next
 
-- Complete Python 3.10 dependency installation and its unchanged full suite.
-- Check original skips, lint/format/workflows, and source-byte preservation.
-- Commit coherent steps, push verified changes, check remote head/message and
-  PR36 validation, and write `rollout/calculator-python-matrix/FINAL-REPORT.md`.
-- Root retains hosted CI/Fable gates and all merge/publication/deployment work.
+- Root: use the final report and PR36 readback for the exact final-source gate.
+- Require the six hosted Python CI jobs and final Fable agreement, plus the
+  rollout's protective prerequisites, before any publication-triggering merge.
+- No calculator compatibility fix or further matrix implementation is needed.
 
 ---
 
