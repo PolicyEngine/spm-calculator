@@ -32,6 +32,7 @@ import {
 } from "@policyengine/ui-kit";
 
 import { calculateGeoadj } from "@/lib/geoadj";
+import { ForecastMethodology, ForecastWarnings } from "./ForecastDiagnostics";
 
 const TENURE_OPTIONS = [
   { value: "renter", label: "Renter" },
@@ -47,8 +48,13 @@ const TENURE_LABELS = {
 
 const PYPI_URL = "https://pypi.org/project/spm-calculator/";
 const GITHUB_URL = "https://github.com/PolicyEngine/spm-calculator";
+const PREVIEW_URL = `${GITHUB_URL}/pull/36`;
+const ROLLING_YEARS = Array.from({ length: 7 }, (_, index) =>
+  String(2024 + index),
+);
 
 function fmtCurrency(value, fractionDigits = 0) {
+  if (!Number.isFinite(value)) return "Unavailable";
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
@@ -60,6 +66,10 @@ function fmtCurrency(value, fractionDigits = 0) {
 function fmtPercent(value) {
   const prefix = value > 0 ? "+" : "";
   return `${prefix}${value.toFixed(1)}%`;
+}
+
+function fmtInput(value) {
+  return Number.isFinite(value) ? value.toFixed(3) : "Unavailable";
 }
 
 function getRawEquivalenceScale(adults, children, methodology) {
@@ -117,6 +127,20 @@ function getCeSurveyWindow(thresholdYear) {
   return `${t - 5}Q2\u2013${t}Q1`;
 }
 
+function rollingAdjustment(entry, areaId, tenure) {
+  const rentIndex = entry?.rent_indices?.[areaId];
+  const housingShare = entry?.housing_shares?.[tenure];
+  if (
+    !Number.isFinite(rentIndex) ||
+    rentIndex <= 0 ||
+    !Number.isFinite(housingShare) ||
+    housingShare <= 0 ||
+    housingShare >= 1
+  )
+    return null;
+  return calculateGeoadj({ rentIndex, housingShare });
+}
+
 export default function CalculatorWorkbench({ data }) {
   const {
     baseThresholds: publishedThresholds,
@@ -136,11 +160,20 @@ export default function CalculatorWorkbench({ data }) {
     metroSourceUrl,
   } = data;
   const latestPublishedYear = forecast.latestPublishedYear;
-  const baseThresholds = {
-    ...publishedThresholds,
-    ...forecast.thresholdsByYear,
-  };
-  // Metro rent indices ship as a single Census vintage. Historical years
+  const isRolling = forecast.method === "rolling_ce_acs_v1";
+  const [scenarioId, setScenarioId] = useState(
+    forecast.defaultScenario ?? "ce_trend",
+  );
+  const selectedScenario = isRolling ? forecast.scenarios?.[scenarioId] : null;
+  const baseThresholds = isRolling
+    ? Object.fromEntries(
+        ROLLING_YEARS.map((y) => [y, selectedScenario?.years?.[y]?.thresholds]),
+      )
+    : {
+        ...publishedThresholds,
+        ...forecast.thresholdsByYear,
+      };
+  // Legacy metro rent indices ship as a single Census vintage. Historical years
   // (< earliestMetroYear) are unsupported for metros because back-casting
   // a current rent index to earlier base thresholds does not match any
   // published BLS or Census table. Later threshold years carry the latest
@@ -150,7 +183,7 @@ export default function CalculatorWorkbench({ data }) {
   const latestMetroYear =
     metroData?.latestYear ?? metroDataYear ?? latestPublishedYear;
   const availableYears = Object.keys(baseThresholds)
-    .filter((value) => Number(value) >= earliestMetroYear)
+    .filter((value) => isRolling || Number(value) >= earliestMetroYear)
     .sort((left, right) => Number(right) - Number(left));
 
   const metroEntries = useMemo(
@@ -162,26 +195,39 @@ export default function CalculatorWorkbench({ data }) {
   );
 
   const [year, setYear] = useState(String(latestPublishedYear));
+  const selectedEntry = selectedScenario?.years?.[year];
   const methodology = {
     ...baseMethodology,
-    housingShares: housingSharesByYear[year] ?? baseMethodology.housingShares,
+    housingShares: isRolling
+      ? (selectedEntry?.housing_shares ?? {})
+      : (housingSharesByYear[year] ?? baseMethodology.housingShares),
   };
   const [numAdults, setNumAdults] = useState(2);
   const [numChildren, setNumChildren] = useState(2);
   const [tenure, setTenure] = useState("renter");
   const [selectedGeographyId, setSelectedGeographyId] = useState("35620");
   const [locationQuery, setLocationQuery] = useState("");
-  const yearNowcast = nowcast[year] ?? null;
-  const yearNowcastEvaluation = nowcastEvaluation[year] ?? null;
+  const yearNowcast = isRolling ? null : (nowcast[year] ?? null);
+  const yearNowcastEvaluation = isRolling
+    ? null
+    : (nowcastEvaluation[year] ?? null);
   const yearIsNowcast = Boolean(yearNowcast);
-  const yearIsForecast = Number(year) > latestPublishedYear && !yearIsNowcast;
+  const yearIsForecast = isRolling
+    ? selectedEntry?.national_status === "forecast" ||
+      Number(year) > latestPublishedYear
+    : Number(year) > latestPublishedYear && !yearIsNowcast;
   const projectionFactor = forecast.factorsByYear?.[year];
   const projectionBaseYear = forecast.baseYear ?? latestPublishedYear;
-  const ceSurveyWindow = getCeSurveyWindow(
-    yearIsForecast ? projectionBaseYear : year,
-  );
-  const annualForecastAssumptions = Object.entries(forecast.cpiProjections)
-    .filter(([target]) => Number(target) <= Number(year))
+  const ceSurveyWindow = isRolling
+    ? selectedEntry?.ce_window
+      ? `${selectedEntry.ce_window.start}\u2013${selectedEntry.ce_window.end}`
+      : "Unavailable"
+    : getCeSurveyWindow(yearIsForecast ? projectionBaseYear : year);
+  const annualForecastAssumptions = Object.entries(
+    forecast.cpiProjections ?? {},
+  )
+    .filter(([target]) => isRolling || Number(target) <= Number(year))
+    .sort(([a], [b]) => Number(a) - Number(b))
     .map(([target, rate]) => `${target}: ${(rate * 100).toFixed(1)}%`)
     .join("; ");
   const shareProvenance =
@@ -204,7 +250,7 @@ export default function CalculatorWorkbench({ data }) {
 
   // ── Derived calculations ────────────────────────────────────
 
-  const base = baseThresholds[year][tenure];
+  const base = baseThresholds[year]?.[tenure] ?? null;
   const rawScale = getRawEquivalenceScale(numAdults, numChildren, methodology);
   const compositionValid =
     Number.isInteger(numAdults) &&
@@ -221,15 +267,25 @@ export default function CalculatorWorkbench({ data }) {
 
   // Earlier local years need a matching historical Census rent-index
   // vintage. Later years carry the bundled index with an explicit label.
-  const metroYearIsHistorical = Number(year) < earliestMetroYear;
-  const metroIndexIsCarried = Number(year) > latestMetroYear;
-  const locationError = metroYearIsHistorical
-    ? `The bundled Census rent indices start in ${earliestMetroYear}. ` +
-      `Choose ${earliestMetroYear} or later.`
-    : "";
+  const metroYearIsHistorical = !isRolling && Number(year) < earliestMetroYear;
+  const metroIndexIsCarried = !isRolling && Number(year) > latestMetroYear;
+  const rollingDataUnavailable =
+    isRolling &&
+    (!selectedMetroData ||
+      rollingAdjustment(selectedEntry, selectedGeographyId, tenure) === null ||
+      !Number.isFinite(base) ||
+      base <= 0);
+  const locationError = rollingDataUnavailable
+    ? "Rolling forecast data is unavailable for this area, tenure and year."
+    : metroYearIsHistorical
+      ? `The bundled Census rent indices start in ${earliestMetroYear}. ` +
+        `Choose ${earliestMetroYear} or later.`
+      : "";
 
   function areaAdjustment(areaTenure) {
     if (!selectedMetroData || metroYearIsHistorical) return null;
+    if (isRolling)
+      return rollingAdjustment(selectedEntry, selectedGeographyId, areaTenure);
     return releaseMetadata
       ? calculateGeoadj({
           rentIndex: selectedMetroData.rentIndex,
@@ -241,7 +297,7 @@ export default function CalculatorWorkbench({ data }) {
   const geoadj = areaAdjustment(tenure);
 
   const threshold =
-    geoadj === null || !compositionValid
+    geoadj === null || !compositionValid || rollingDataUnavailable
       ? null
       : base * equivalenceScale * geoadj;
   const monthlyThreshold = threshold === null ? null : threshold / 12;
@@ -254,25 +310,68 @@ export default function CalculatorWorkbench({ data }) {
         100;
 
   const officialReferenceThreshold =
-    geoadj === null ? null : baseThresholds[year][tenure] * geoadj;
+    geoadj === null || rollingDataUnavailable ? null : base * geoadj;
   const selectedTenureLabel = TENURE_LABELS[tenure] ?? tenure;
 
-  const selectedLocationRentIndex = selectedMetroData?.rentIndex ?? null;
+  const selectedLocationRentIndex = isRolling
+    ? (selectedEntry?.rent_indices?.[selectedGeographyId] ?? null)
+    : (selectedMetroData?.rentIndex ?? null);
 
   const tenureComparisonData = TENURE_OPTIONS.map((option) => {
     const adjustment = areaAdjustment(option.value);
-    const nationalBase = baseThresholds[year][option.value];
+    const nationalBase = baseThresholds[year]?.[option.value] ?? null;
     return {
       tenure: option.label,
       nationalBase,
-      locationThreshold: adjustment === null ? null : nationalBase * adjustment,
+      locationThreshold:
+        adjustment === null || nationalBase === null
+          ? null
+          : nationalBase * adjustment,
       adjustment,
     };
   });
 
+  const yearComparisonData = isRolling
+    ? ROLLING_YEARS.map((targetYear) => {
+        const entry = selectedScenario?.years?.[targetYear];
+        const nationalBase = entry?.thresholds?.[tenure] ?? null;
+        const adjustment = rollingAdjustment(
+          entry,
+          selectedGeographyId,
+          tenure,
+        );
+        return {
+          year: targetYear,
+          nationalBase,
+          adjustment,
+          localThreshold:
+            !compositionValid ||
+            !Number.isFinite(nationalBase) ||
+            nationalBase <= 0 ||
+            adjustment === null
+              ? null
+              : nationalBase * equivalenceScale * adjustment,
+        };
+      })
+    : [];
+
   const packageSnippet = !compositionValid
     ? "# Enter valid classified adult and child counts to generate a calculation."
-    : `from spm_calculator import load_release, SPMUnit
+    : rollingDataUnavailable
+      ? "# Rolling forecast data is unavailable for the selected area, tenure and year."
+      : isRolling
+        ? `from spm_calculator import load_forecast, SPMUnit
+
+projection = load_forecast(expected_sha256="${forecast.contentSha256}")
+result = projection.calculate_unit(SPMUnit(
+    unit_id="household-1",
+    num_adults=${numAdults}, num_children=${numChildren},
+    tenure="${tenure}", year=${year},
+    geography_kind="metro",
+    geography_id="${currentLocation?.id}",
+), scenario="${scenarioId}")
+print(result["threshold"])`
+        : `from spm_calculator import load_release, SPMUnit
 
 release = load_release(${releaseMetadata ? `expected_sha256="${releaseMetadata.sha256}"` : ""})
 result = release.calculate_unit(SPMUnit(
@@ -307,14 +406,14 @@ print(result["threshold"] * inflation_factor)`
       availableYears.map((y) => ({
         value: y,
         label: `${y} ${
-          nowcast[y]
+          !isRolling && nowcast[y]
             ? "(nowcast)"
             : Number(y) > latestPublishedYear
               ? "(forecast)"
               : ""
         }`.trim(),
       })),
-    [availableYears, latestPublishedYear, nowcast],
+    [availableYears, latestPublishedYear, nowcast, isRolling],
   );
 
   // ── Render ──────────────────────────────────────────────────
@@ -329,11 +428,27 @@ print(result["threshold"] * inflation_factor)`
       )}
       <SidebarSection title="Threshold year">
         <SelectInput
+          id="spm-year"
+          aria-label="Threshold year"
           options={yearSelectOptions}
           value={year}
           onChange={setYear}
         />
       </SidebarSection>
+
+      {isRolling && (
+        <SidebarSection title="Real spending">
+          <SelectInput
+            id="spm-scenario"
+            aria-label="Real spending"
+            options={Object.entries(forecast.scenarios ?? {}).map(
+              ([value, scenario]) => ({ value, label: scenario.label }),
+            )}
+            value={scenarioId}
+            onChange={setScenarioId}
+          />
+        </SidebarSection>
+      )}
 
       <SidebarDivider />
 
@@ -418,7 +533,10 @@ print(result["threshold"] * inflation_factor)`
       </SidebarSection>
 
       {locationError && (
-        <div className="mx-4 mb-4 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+        <div
+          role="alert"
+          className="mx-4 mb-4 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive"
+        >
           {locationError}
         </div>
       )}
@@ -430,20 +548,28 @@ print(result["threshold"] * inflation_factor)`
           <div className="flex justify-between">
             <span>Data source</span>
             <span className="font-medium text-foreground">
-              {latestMetroYear} Census workbook
+              {isRolling
+                ? `${year} rolling windows`
+                : `${latestMetroYear} Census workbook`}
             </span>
           </div>
           <div className="flex justify-between">
             <span>Housing share</span>
             <span className="font-medium text-foreground">
-              {methodology.housingShares[tenure]}
+              {isRolling
+                ? Number.isFinite(methodology.housingShares[tenure])
+                  ? methodology.housingShares[tenure].toFixed(3)
+                  : "Unavailable"
+                : methodology.housingShares[tenure]}
             </span>
           </div>
           {selectedLocationRentIndex !== null && (
             <div className="flex justify-between">
               <span>Rent index</span>
               <span className="font-medium text-foreground">
-                {selectedLocationRentIndex.toFixed(3)}
+                {Number.isFinite(selectedLocationRentIndex)
+                  ? selectedLocationRentIndex.toFixed(3)
+                  : "Unavailable"}
               </span>
             </div>
           )}
@@ -478,19 +604,70 @@ print(result["threshold"] * inflation_factor)`
     },
   ];
 
+  const yearTableColumns = [
+    {
+      key: "year",
+      header: "Year",
+      format: (value) => (
+        <span
+          aria-current={value === year ? "date" : undefined}
+          className={value === year ? "font-semibold" : undefined}
+        >
+          {value}
+        </span>
+      ),
+    },
+    {
+      key: "nationalBase",
+      header: "National base",
+      align: "right",
+      format: (value) => fmtCurrency(value),
+    },
+    {
+      key: "adjustment",
+      header: "Location factor",
+      align: "right",
+      format: (value) =>
+        value === null ? "Unavailable" : `\u00D7${value.toFixed(3)}`,
+    },
+    {
+      key: "localThreshold",
+      header: "Local threshold",
+      align: "right",
+      format: (value) => fmtCurrency(value),
+    },
+  ];
+
   return (
     <DashboardShell>
       <SidebarLayout sidebar={sidebar} sidebarWidth="320px">
         <ResultsPanel>
-          <div className="space-y-6">
+          <div className="min-w-0 space-y-6">
             {/* Primary result */}
-            <div>
+            <div data-testid="primary-result">
               <div className="mb-4 flex flex-wrap items-center gap-2">
                 <Title order={2} className="text-xl">
                   {currentLocation?.label ?? "Loading geography"}
                 </Title>
                 <Badge variant="secondary">{selectedTenureLabel}</Badge>
-                {yearIsForecast && <Badge variant="warning">Forecast</Badge>}
+                {yearIsForecast && (
+                  <Badge variant="warning">
+                    {isRolling ? "Research forecast" : "Forecast"}
+                  </Badge>
+                )}
+                {isRolling && selectedEntry && (
+                  <Badge
+                    variant={
+                      selectedEntry.geography_status === "published_anchor"
+                        ? "secondary"
+                        : "warning"
+                    }
+                  >
+                    {selectedEntry.geography_status === "published_anchor"
+                      ? `${year} published geography anchor`
+                      : "Modeled geography and housing shares"}
+                  </Badge>
+                )}
                 {yearIsNowcast && (
                   <Badge variant="warning">Nowcast — not BLS</Badge>
                 )}
@@ -504,7 +681,13 @@ print(result["threshold"] * inflation_factor)`
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <MetricCard
                   label="SPM threshold"
-                  value={threshold === null ? "..." : fmtCurrency(threshold)}
+                  value={
+                    threshold === null
+                      ? isRolling
+                        ? "Unavailable"
+                        : "..."
+                      : fmtCurrency(threshold)
+                  }
                   format="string"
                 />
                 <MetricCard
@@ -534,11 +717,59 @@ print(result["threshold"] * inflation_factor)`
                 />
                 <MetricCard
                   label="Location factor"
-                  value={geoadj === null ? "..." : geoadj.toFixed(3)}
+                  value={
+                    geoadj === null
+                      ? isRolling
+                        ? "Unavailable"
+                        : "..."
+                      : geoadj.toFixed(3)
+                  }
                   format="string"
                 />
               </div>
+              {isRolling && (
+                <ForecastWarnings
+                  forecast={forecast}
+                  scenarioId={scenarioId}
+                  year={year}
+                  entry={selectedEntry}
+                  areaId={selectedGeographyId}
+                />
+              )}
             </div>
+
+            {isRolling && (
+              <Card data-testid="year-by-year-card" className="min-w-0">
+                <CardHeader>
+                  <CardTitle>Year by year</CardTitle>
+                  <CardDescription>
+                    {currentLocation?.label} · {selectedTenureLabel} ·{" "}
+                    {numAdults} adults, {numChildren} children ·{" "}
+                    {selectedScenario?.label}. National bases are for two adults
+                    and two children; local thresholds use your household.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div
+                    className="overflow-x-auto"
+                    role="region"
+                    aria-label="Year-by-year thresholds"
+                    tabIndex={0}
+                  >
+                    <DataTable
+                      columns={yearTableColumns}
+                      data={yearComparisonData}
+                      styles={{ root: { minWidth: "440px" } }}
+                    />
+                  </div>
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    2024: published geography anchor. 2025: published national
+                    base with modeled geography and housing shares. 2026–2030:
+                    conditional research forecasts.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
 
             <Separator />
 
@@ -582,7 +813,18 @@ print(result["threshold"] * inflation_factor)`
                             : "Published by BLS"}
                       </Badge>
                     </div>
-                    {yearIsForecast && (
+                    {isRolling && (
+                      <p
+                        className="pt-1 text-xs text-muted-foreground"
+                        data-testid="forecast-disclaimer"
+                      >
+                        Both spending scenarios are conditional research
+                        forecasts, not BLS or CBO forecasts. Published national
+                        2024 and 2025 values are retained; geography and housing
+                        shares are modeled from 2025.
+                      </p>
+                    )}
+                    {yearIsForecast && !isRolling && (
                       <p
                         className="pt-1 text-xs text-muted-foreground"
                         data-testid="forecast-disclaimer"
@@ -756,8 +998,9 @@ print(result["threshold"] * inflation_factor)`
               <CardHeader>
                 <CardTitle>How this is calculated</CardTitle>
                 <CardDescription>
-                  National base thresholds adjusted using Census SPM area rent
-                  indices
+                  {isRolling
+                    ? "National bases, rolling CE spending and ACS rent windows"
+                    : "National base thresholds adjusted using Census SPM area rent indices"}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3 text-sm leading-6">
@@ -766,20 +1009,65 @@ print(result["threshold"] * inflation_factor)`
                   <code className="font-mono">equivalence_scale</code> ×{" "}
                   <code className="font-mono">geoadj[tenure]</code>
                 </p>
+                {isRolling && (
+                  <div className="space-y-3">
+                    <p data-testid="source-windows">
+                      <strong>{year} source windows</strong>: CE{" "}
+                      {ceSurveyWindow}
+                      {selectedEntry?.ce_window &&
+                        ` · ${selectedEntry.ce_window.observed_quarters} observed / ${selectedEntry.ce_window.projected_quarters} projected quarters`}
+                      . ACS{" "}
+                      {selectedEntry?.acs_window
+                        ? `${selectedEntry.acs_window.start}\u2013${selectedEntry.acs_window.end} · ${selectedEntry.acs_window.observed_years} observed / ${selectedEntry.acs_window.projected_years} projected years`
+                        : "Unavailable"}
+                      .
+                    </p>
+                    <p>
+                      <strong>Common price assumptions</strong>:{" "}
+                      {annualForecastAssumptions ||
+                        "No price projections supplied"}
+                      . <strong>Selected real spending growth</strong>:{" "}
+                      {Number.isFinite(selectedScenario?.realGrowthRate)
+                        ? `${(selectedScenario.realGrowthRate * 100).toFixed(2)}% per year`
+                        : "Unavailable"}
+                      . New observations are projected; rolling history is
+                      retained. CE real spending and ACS rent assumptions are
+                      separate.
+                    </p>
+                    <p className="text-muted-foreground">
+                      Research note: public PUMS rents are fractionally mapped
+                      from PUMAs to Census areas; results are anchored to
+                      published 2024 geography. CE replication is approximate;
+                      uncertainty is not estimated.
+                    </p>
+                  </div>
+                )}
                 <ul className="list-disc space-y-1 pl-6 text-muted-foreground">
                   <li>
-                    <strong>Base</strong>: BLS FCSUti thresholds for the
-                    reference family (2 adults, 2 children), by tenure, from
-                    BLS, estimated over CE quarters {ceSurveyWindow}.
-                    {yearIsForecast &&
-                      ` The ${year} forecast compounds inflation assumptions from the published ${projectionBaseYear} base; it does not estimate a new CE expenditure window.`}
-                    The 2019–2024 values use the corrected workbook BLS
-                    published July 17, 2026, and 2025 uses the current workbook
-                    published August 24, 2026. National 2025 renter base ={" "}
-                    <span className="font-mono">
-                      {fmtCurrency(baseThresholds["2025"].renter)}
-                    </span>
-                    .
+                    {isRolling ? (
+                      <>
+                        <strong>Base</strong>: published national BLS thresholds
+                        for 2024 and 2025; later reference-family thresholds are
+                        conditional research forecasts using each year's CE
+                        window.
+                      </>
+                    ) : (
+                      <>
+                        <strong>Base</strong>: BLS FCSUti thresholds for the
+                        reference family (2 adults, 2 children), by tenure, from
+                        BLS, estimated over CE quarters {ceSurveyWindow}.
+                        {yearIsForecast &&
+                          ` The ${year} forecast compounds inflation assumptions from the published ${projectionBaseYear} base; it does not estimate a new CE expenditure window.`}
+                        The 2019–2024 values use the corrected workbook BLS
+                        published July 17, 2026, and 2025 uses the current
+                        workbook published August 24, 2026. National 2025 renter
+                        base ={" "}
+                        <span className="font-mono">
+                          {fmtCurrency(baseThresholds["2025"].renter)}
+                        </span>
+                        .
+                      </>
+                    )}
                   </li>
                   <li>
                     <strong>Equivalence scale</strong>: Betson three-parameter.
@@ -790,22 +1078,54 @@ print(result["threshold"] * inflation_factor)`
                     Reference 2A2C = <code className="font-mono">3^0.7</code>.
                   </li>
                   <li>
-                    <strong>GEOADJ</strong>: Census {latestMetroYear} rent
-                    indices for identified metro and state residual
-                    metro/nonmetro areas. The housing share for the selected
-                    tenure adjusts only the housing portion of the national
-                    base: renter {methodology.housingShares.renter}, owner with
-                    mortgage {methodology.housingShares.owner_with_mortgage},
-                    owner without mortgage{" "}
-                    {methodology.housingShares.owner_without_mortgage}. The app
-                    uses the published Census area definitions; it does not
-                    construct separate state, county or district thresholds.
-                    Housing shares and rent indices carried into another year
-                    are approximations. These calculated thresholds combine the
-                    selected national series with the bundled geography vintage
-                    and may differ from the original Census workbook amounts.
+                    {isRolling ? (
+                      <>
+                        <strong>GEOADJ</strong>:{" "}
+                        <code className="font-mono">
+                          1 + housing_share * (rent_index - 1)
+                        </code>
+                        , using the selected scenario and year's inputs for
+                        Census metro/nonmetro areas. Housing shares: renter{" "}
+                        {fmtInput(methodology.housingShares.renter)}, owner with
+                        mortgage{" "}
+                        {fmtInput(
+                          methodology.housingShares.owner_with_mortgage,
+                        )}
+                        , owner without mortgage{" "}
+                        {fmtInput(
+                          methodology.housingShares.owner_without_mortgage,
+                        )}
+                        .
+                      </>
+                    ) : (
+                      <>
+                        <strong>GEOADJ</strong>: Census {latestMetroYear} rent
+                        indices for identified metro and state residual
+                        metro/nonmetro areas. The housing share for the selected
+                        tenure adjusts only the housing portion of the national
+                        base: renter {methodology.housingShares.renter}, owner
+                        with mortgage{" "}
+                        {methodology.housingShares.owner_with_mortgage}, owner
+                        without mortgage{" "}
+                        {methodology.housingShares.owner_without_mortgage}. The
+                        app uses the published Census area definitions; it does
+                        not construct separate state, county or district
+                        thresholds. Housing shares and rent indices carried into
+                        another year are approximations. These calculated
+                        thresholds combine the selected national series with the
+                        bundled geography vintage and may differ from the
+                        original Census workbook amounts.
+                      </>
+                    )}
                   </li>
                 </ul>
+                {isRolling && (
+                  <ForecastMethodology
+                    forecast={forecast}
+                    scenarioId={scenarioId}
+                    year={year}
+                  />
+                )}
                 <p className="text-xs text-muted-foreground">
                   Census methodology:{" "}
                   <a
@@ -844,20 +1164,28 @@ print(result["threshold"] * inflation_factor)`
               <CardHeader>
                 <CardTitle>Reproduce with Python</CardTitle>
                 <CardDescription>
-                  Replay this release without credentials or a data download
+                  {isRolling
+                    ? "Reproduce this scenario with the preview Python API in calculator PR36"
+                    : "Replay this release without credentials or a data download"}
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <pre className="overflow-x-auto rounded-lg bg-gray-900 p-4 text-sm leading-6 text-white">
+                <pre className="overflow-x-auto rounded-lg bg-muted p-4 text-sm leading-6 text-foreground">
                   <code>{packageSnippet}</code>
                 </pre>
                 <div className="mt-4 flex flex-wrap gap-2">
                   <Button
                     variant="default"
                     size="sm"
-                    onClick={() => window.open(PYPI_URL, "_blank")}
+                    onClick={() =>
+                      window.open(
+                        isRolling ? PREVIEW_URL : PYPI_URL,
+                        "_blank",
+                        "noopener,noreferrer",
+                      )
+                    }
                   >
-                    PyPI
+                    {isRolling ? "Preview Python API" : "PyPI"}
                   </Button>
                   <Button
                     variant="outline"
@@ -878,16 +1206,44 @@ print(result["threshold"] * inflation_factor)`
               {releaseMetadata && (
                 <p data-testid="release-provenance">
                   Release {releaseMetadata.id} · information date{" "}
-                  {releaseMetadata.informationDate}. Housing shares:{" "}
-                  {shareProvenance?.reference_year ?? 2024}
-                  {shareProvenance?.status === "carried"
-                    ? " (carried to the selected year)"
-                    : ""}
+                  {releaseMetadata.informationDate}
+                  {!isRolling && (
+                    <>
+                      . Housing shares:{" "}
+                      {shareProvenance?.reference_year ?? 2024}
+                      {shareProvenance?.status === "carried"
+                        ? " (carried to the selected year)"
+                        : ""}
+                    </>
+                  )}
                   . SHA-256:{" "}
                   <code className="break-all">{releaseMetadata.sha256}</code>
                 </p>
               )}
-              {yearIsForecast && (
+              {isRolling && (
+                <p className="mt-2" data-testid="forecast-provenance">
+                  Rolling CE + ACS research forecast · information date{" "}
+                  {forecast.informationDate}. Forecast SHA-256:{" "}
+                  <code className="break-all">{forecast.contentSha256}</code>.{" "}
+                  Base release SHA-256:{" "}
+                  <code className="break-all">
+                    {forecast.baseReleaseSha256}
+                  </code>
+                  . Assumption SHA-256:{" "}
+                  <code className="break-all">{forecast.assumptionSha256}</code>
+                  .{" "}
+                  <a
+                    className="underline"
+                    href={PREVIEW_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Preview Python API: calculator PR36
+                  </a>
+                  . This API is not yet published on PyPI.
+                </p>
+              )}
+              {yearIsForecast && !isRolling && (
                 <p className="mt-2" data-testid="forecast-provenance">
                   Forecast assumptions are separate from the published release.
                   Assumption SHA-256:{" "}
@@ -906,7 +1262,7 @@ print(result["threshold"] * inflation_factor)`
                 >
                   {metroSource}
                 </a>
-                {packageVersion ? (
+                {packageVersion && !isRolling ? (
                   <>
                     {" · "}
                     <a

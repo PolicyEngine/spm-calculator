@@ -9,9 +9,9 @@ Calculate [Supplemental Poverty Measure (SPM)](https://www.census.gov/topics/inc
 
 **[Try the SPM Threshold Calculator](https://spm-calculator.vercel.app/)** - Calculate thresholds by family composition and housing tenure for the official areas in the Census SPM workbook: named metropolitan statistical areas and state residual Metro/Nonmetro areas.
 
-The rebuilt calculator runs entirely in your browser. It bundles national thresholds through published 2025 and Census 2024 SPM area rent indices with an explicit release hash. National thresholds provide the calculation's base and reference values; the app selects an official Census area. No browser credential or Census request is required. Housing shares are fixed to 2024 and identified as carried approximations for other years. Applying the 2024 geographic inputs to another year's national base does not produce a published Census threshold for that year.
+The rebuilt calculator runs entirely in your browser. It bundles national thresholds through published 2025 and uses Census 2024 SPM area indices and housing shares as geographic anchors. National thresholds provide the calculation's base and reference values; the app selects an official Census area. No browser credential or Census request is required. The separately versioned research forecast advances the CE and ACS windows and updates housing shares and rent indices. The 2025 local amount combines a published national base with modeled geographic inputs.
 
-The app also offers 2026–2030 price-only forecasts from the 2025 base, using the package's stated inflation assumptions: 2.3% for 2026, 2.2% for 2027, and 2.0% annually for 2028–2030. These assumptions have no external forecast vintage and do not estimate consumption growth or forecast uncertainty. They are exported separately from published release years, with their own assumption hash and Python reproduction snippet.
+The app offers 2026–2030 forecasts under both a CE real-spending trend and zero real spending growth. Prices follow the package's stated assumptions: 2.3% inflation for 2026, 2.2% for 2027, and 2.0% annually for 2028–2030. These assumptions have no external forecast vintage. The app displays retrospective comparisons, source windows, sample-support warnings and a Python reproduction snippet. See [rolling forecasts](docs/rolling-forecasts.md) for the real-growth fit, rent-vintage bridge and research limitations. Forecast uncertainty is not estimated.
 
 This branch is an **unpublished 0.5.0 rebuild**. The public calculator remains on its existing deployment until a separate production promotion. The corrected national series changes some legacy numerical outputs; see [compatibility and rollout](docs/spm-releases.md#compatibility-and-rollout).
 
@@ -63,6 +63,22 @@ print(result["threshold"], result["provenance"])
 ```
 
 Save the content hash and supply `expected_sha256=` to `load_release` on replay. The CLI supports `info`, `verify`, `calculate` and `export --format csv`. Unsupported years fail; new projections require explicitly identified inputs and methods. See [release contract and integration boundaries](docs/spm-releases.md), [current CE replication](docs/current-ce-replication.md), [PE integration](docs/policyengine-release-integration.md), and [Axiom integration](docs/axiom-integration.md).
+
+The preview forecast API uses the complete selected-year inputs:
+
+```python
+from spm_calculator import load_forecast, SPMUnit
+
+projection = load_forecast()  # Supply a retained expected_sha256 for replay.
+result = projection.calculate_unit(
+    SPMUnit("family-1", 2, 2, "renter", 2026,
+            geography_kind="metro", geography_id="35620"),
+    scenario="ce_trend",  # Or "zero_real".
+)
+print(result["threshold"], result["forecast_sha256"])
+```
+
+`load_forecast` is part of [PR 36](https://github.com/PolicyEngine/spm-calculator/pull/36), not a published PyPI API. Existing PE, Axiom and Microcosm production paths have not adopted this research artifact.
 
 The existing calculator API remains available for legacy callers:
 
@@ -164,7 +180,7 @@ Following BLS methodology (updated September 2021, corrected July 17, 2026):
 
 ### Geographic Adjustment (GEOADJ)
 
-For official Census SPM areas, the browser combines the workbook's rent indices with the release's national thresholds and tenure-specific housing shares. It identifies the geographic vintage and carried shares; the resulting amounts need not equal the workbook's earlier published thresholds.
+For official Census SPM areas, the browser combines the selected year's rent indices, national thresholds and tenure-specific housing shares. Published 2024 geographic inputs anchor the research projection. Modeled local amounts need not equal published Census workbook thresholds; the browser identifies their component statuses and source windows.
 
 The same formula is available to Python researchers for custom geographies built from ACS rents. Those estimates do not define official Census SPM areas:
 ```

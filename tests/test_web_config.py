@@ -11,7 +11,8 @@ from scripts.generate_geoadj_data import (
     generate_all_thresholds,
     generate_nowcast_evaluations,
 )
-from spm_calculator.forecast import forecast_thresholds
+from spm_calculator.release import SPMUnit, canonical_bytes
+from spm_calculator.rolling_forecast import load_forecast
 
 REPO = Path(__file__).parents[1]
 CONFIG = REPO / "web/public/data/spm_config.json"
@@ -89,7 +90,7 @@ def test_committed_browser_export_matches_official_area_contract():
     assert config["baseThresholds"]["2025"] == pytest.approx(PUBLISHED_2025)
 
 
-def test_forecast_layer_replays_package_assumptions_separately():
+def test_forecast_layer_replays_rolling_artifact_separately():
     config = build_config()
     forecast = config["forecast"]
     assert set(forecast["thresholdsByYear"]) == {
@@ -97,23 +98,51 @@ def test_forecast_layer_replays_package_assumptions_separately():
     }
     assert "2026" not in config["baseThresholds"]
     assert config["nowcast"] == {}
-    assert forecast["factorsByYear"]["2026"] == pytest.approx(1.023)
-    assert forecast["factorsByYear"]["2030"] == pytest.approx(
-        1.023 * 1.022 * 1.02**3
-    )
+    projection = load_forecast()
+    document = projection.to_dict()
+    assert forecast["method"] == "rolling_ce_acs_v1"
+    assert forecast["contentSha256"] == projection.content_sha256
+    assert forecast["cpiProjections"]["2026"] == 0.023
+    assert forecast["defaultScenario"] == "ce_trend"
     for year, thresholds in forecast["thresholdsByYear"].items():
-        assert thresholds == pytest.approx(forecast_thresholds(int(year)))
-    assumptions = {
-        key: forecast[key]
-        for key in (
-            "method",
-            "baseYear",
-            "baseReleaseSha256",
-            "cpiProjections",
-        )
-    }
+        assert thresholds == projection.entry(int(year))["thresholds"]
     digest = hashlib.sha256(
-        json.dumps(assumptions, sort_keys=True, separators=(",", ":")).encode()
+        canonical_bytes(document["assumptions"])
     ).hexdigest()
     assert forecast["assumptionSha256"] == digest
     assert forecast["baseReleaseSha256"] == config["releaseMetadata"]["sha256"]
+
+
+@pytest.mark.parametrize("scenario", ["ce_trend", "zero_real"])
+@pytest.mark.parametrize("year", range(2024, 2031))
+def test_browser_inputs_reproduce_standalone_local_threshold(year, scenario):
+    config = build_config()
+    projection = load_forecast()
+    entry = config["forecast"]["scenarios"][scenario]["years"][str(year)]
+    assert set(entry["rent_indices"]) == set(config["metroAreas"])
+    for area in ("35620", "41860"):
+        unit = SPMUnit(
+            "family",
+            1,
+            2,
+            "renter",
+            year,
+            geography_kind="metro",
+            geography_id=area,
+        )
+        result = projection.calculate_unit(unit, scenario=scenario)
+        factor = 1 + entry["housing_shares"]["renter"] * (
+            entry["rent_indices"][area] - 1
+        )
+        browser_amount = (
+            entry["thresholds"]["renter"]
+            * result["equivalence_factor"]
+            * factor
+        )
+        assert browser_amount == pytest.approx(result["threshold"])
+        assert entry["ce_window"]["end"] == f"{year}Q1"
+        assert entry["acs_window"]["end"] == year - 1
+    if year == 2025:
+        assert entry["national_status"] == "published"
+        assert entry["geography_status"] == "modeled"
+        assert entry["thresholds"] == pytest.approx(PUBLISHED_2025)

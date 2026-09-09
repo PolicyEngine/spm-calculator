@@ -13,6 +13,7 @@ chapters:
   - file: bls-2026-correction
   - file: spm-releases
   - file: current-ce-replication
+  - file: rolling-forecasts
   - file: policyengine-release-integration
   - file: microcosm-integration
   - file: axiom-integration

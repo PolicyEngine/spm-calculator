@@ -3,20 +3,55 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import re
 from pathlib import Path
 
 from spm_calculator.equivalence_scale import REFERENCE_RAW_SCALE
-from spm_calculator.forecast import (
-    CPI_PROJECTIONS,
-    calculate_cumulative_inflation,
-)
 from spm_calculator.release import load_release
+from spm_calculator.rolling_forecast import load_forecast
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "web/public/data/release_config.json"
+
+
+def build_forecast_config(projection, *, base_release_sha256):
+    """Export the same complete scenario entries as the offline consumer."""
+    document = projection.to_dict()
+    if document["base_release_sha256"] != base_release_sha256:
+        raise ValueError("Forecast and published release anchors differ")
+    latest = document["national_anchor_year"]
+    default = document["default_scenario"]
+    return {
+        "method": document["method"],
+        "baseYear": latest,
+        "latestPublishedYear": latest,
+        "baseReleaseSha256": base_release_sha256,
+        "contentSha256": document["content_sha256"],
+        "assumptionSha256": document["assumption_sha256"],
+        "informationDate": document["information_date"],
+        "cpiProjections": document["assumptions"]["price_projections"],
+        "defaultScenario": default,
+        "source": "CE and ACS rolling-window research projection",
+        "uncertainty": "not estimated",
+        "scenarios": {
+            identity: {
+                "label": scenario["label"],
+                "realGrowthRate": scenario["real_growth_rate"],
+                "years": scenario["years"],
+            }
+            for identity, scenario in document["scenarios"].items()
+        },
+        "thresholdsByYear": {
+            year: entry["thresholds"]
+            for year, entry in document["scenarios"][default]["years"].items()
+            if int(year) > latest
+        },
+        "realGrowthDiagnostics": document["real_growth_diagnostics"],
+        "validation": document["validation"],
+        "rentSensitivity": document["rent_sensitivity"],
+        "methodologyUrl": "https://github.com/PolicyEngine/spm-calculator/blob/max/spm-release-rebuild-20260908/docs/rolling-forecasts.md",
+    }
 
 
 def build_config():
@@ -30,24 +65,7 @@ def build_config():
     ).group(1)
     metro = document["geographies"]["metro"]
     latest = release.latest_published_year
-    # Forecasts are a separate assumption layer, not published release years.
-    assumptions = {
-        "method": "price_only_inflation_assumptions",
-        "baseYear": latest,
-        "baseReleaseSha256": release.content_sha256,
-        "cpiProjections": {
-            str(year): rate
-            for year, rate in CPI_PROJECTIONS.items()
-            if year > latest
-        },
-    }
-    forecast_hash = hashlib.sha256(
-        json.dumps(assumptions, sort_keys=True, separators=(",", ":")).encode()
-    ).hexdigest()
-    factors = {
-        year: calculate_cumulative_inflation(latest, int(year))
-        for year in assumptions["cpiProjections"]
-    }
+    projection = load_forecast()
     # Census's workbook includes named MSAs and state residual Metro/Nonmetro
     # areas. Custom ACS rent estimates remain in the immutable Python release
     # for research replay but are not official SPM areas or browser inputs.
@@ -80,23 +98,9 @@ def build_config():
                 "referenceFamilyRaw": REFERENCE_RAW_SCALE,
             },
         },
-        "forecast": {
-            **assumptions,
-            "latestPublishedYear": latest,
-            "assumptionSha256": forecast_hash,
-            "source": "Package inflation assumptions; no external forecast vintage",
-            "uncertainty": "not estimated",
-            "factorsByYear": factors,
-            "thresholdsByYear": {
-                year: {
-                    tenure: amount * factor
-                    for tenure, amount in release.entry(latest)[
-                        "thresholds"
-                    ].items()
-                }
-                for year, factor in factors.items()
-            },
-        },
+        "forecast": build_forecast_config(
+            projection, base_release_sha256=release.content_sha256
+        ),
         "nowcast": {},
         "nowcastEvaluation": archived.get("nowcastEvaluation", {}),
         "paperUrl": archived["paperUrl"],

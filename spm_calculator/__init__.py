@@ -45,6 +45,8 @@ _EXPORTS = {
     "SPMRelease": "release",
     "SPMUnit": "release",
     "load_release": "release",
+    "SPMForecast": "rolling_forecast",
+    "load_forecast": "rolling_forecast",
 }
 
 __all__ = list(_EXPORTS)
