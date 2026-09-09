@@ -93,12 +93,14 @@ def test_receipt_covers_every_published_canonical_year_and_tenure():
 def test_source_checksums_and_vintage_are_independently_reconciled():
     source = json.loads((ROOT / RECEIPT["canonical_source_path"]).read_text())
     corrected = source["series"][RECEIPT["canonical_series"]]
-    assert corrected["provenance"]["sha256"] == (
-        RECEIPT["workbooks"]["corrected_2005_2024"]["sha256"]
+    assert (
+        corrected["provenance"]["sha256"]
+        == (RECEIPT["workbooks"]["corrected_2005_2024"]["sha256"])
     )
     current = corrected["segments"]["bls-published-2025"]["provenance"]
-    assert current["sha256"] == (
-        RECEIPT["workbooks"]["current_through_2025"]["sha256"]
+    assert (
+        current["sha256"]
+        == (RECEIPT["workbooks"]["current_through_2025"]["sha256"])
     )
     vintage = RECEIPT["annual_page_vintage"]
     old = get_published_thresholds(2024, series=vintage["superseded_series"])

@@ -1,7 +1,5 @@
 """Release corruption, temporal leakage and household boundary checks."""
 
-import csv
-import io
 import json
 import runpy
 import shutil
@@ -135,7 +133,6 @@ def test_pinned_geography_and_unknown_area_handling():
         release.calculate_unit(
             SPMUnit("u", 2, 2, "renter", 2025, geographic_adjustment=0.1)
         )
-
 
 
 def test_release_builder_reproduces_exact_bundled_bytes():

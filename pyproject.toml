@@ -40,8 +40,7 @@ ce = [
 dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
-    "black>=23.0",
-    "ruff>=0.1",
+    "ruff>=0.3",
 ]
 
 [project.scripts]
@@ -68,10 +67,6 @@ spm_calculator = [
     "data/current/*.csv",
     "data/current/*.xlsx",
 ]
-
-[tool.black]
-line-length = 79
-extend-exclude = "\\.ipynb$"
 
 [tool.ruff]
 line-length = 79

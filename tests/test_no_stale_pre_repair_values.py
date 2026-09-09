@@ -21,6 +21,6 @@ def test_tracked_repository_has_no_stale_pre_repair_markers():
             capture_output=True,
             text=True,
         )
-        assert (
-            result.returncode == 1
-        ), f"Found superseded marker {marker!r}:\n{result.stdout}"
+        assert result.returncode == 1, (
+            f"Found superseded marker {marker!r}:\n{result.stdout}"
+        )

@@ -89,3 +89,4 @@ dist/
 web/.next/
 web/out/
 benchmark_output/
+.env*
