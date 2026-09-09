@@ -137,48 +137,6 @@ def test_pinned_geography_and_unknown_area_handling():
         )
 
 
-def test_cli_and_reader_work_without_site_packages():
-    # -S removes all installed third-party packages. Core reader, scale and
-    # CLI must run on the standard library alone; no network access is used.
-    code = "from spm_calculator import load_release, SPMUnit; r=load_release(); assert r.calculate_unit(SPMUnit('u',1,1,'renter',2025))['threshold']>0; import sys; assert not any(n in sys.modules for n in ('numpy','pandas','policyengine','microcosm'))"
-    subprocess.run([sys.executable, "-S", "-c", code], cwd=ROOT, check=True)
-    proc = subprocess.run(
-        [
-            sys.executable,
-            "-S",
-            "-m",
-            "spm_calculator",
-            "export",
-            "--format",
-            "csv",
-        ],
-        cwd=ROOT,
-        check=True,
-        capture_output=True,
-        text=True,
-    )
-    rows = list(csv.DictReader(io.StringIO(proc.stdout)))
-    assert len(rows) == len(load_release().years) * 3
-    assert rows[-1]["housing_share_reference_year"] == "2024"
-    proc = subprocess.run(
-        [
-            sys.executable,
-            "-S",
-            "-m",
-            "spm_calculator",
-            "calculate",
-            "--year",
-            "2026",
-            "--adults",
-            "2",
-        ],
-        cwd=ROOT,
-        capture_output=True,
-        text=True,
-    )
-    assert proc.returncode == 2
-    assert "no entry" in proc.stderr
-
 
 def test_release_builder_reproduces_exact_bundled_bytes():
     subprocess.run(
@@ -212,18 +170,3 @@ def test_new_download_cannot_be_backdated_into_existing_release(tmp_path):
         cwd=ROOT,
         check=True,
     )
-
-
-def test_five_legacy_policyengine_imports_remain_compatible():
-    from spm_calculator.equivalence_scale import spm_equivalence_scale
-    from spm_calculator.forecast import (
-        HISTORICAL_THRESHOLDS,
-        get_latest_published_year,
-    )
-    from spm_calculator.geoadj import get_cd_geoadj, get_housing_share
-
-    assert get_latest_published_year() == 2025
-    assert HISTORICAL_THRESHOLDS[2025]["renter"] == 41700.555713
-    assert get_housing_share("renter") == 0.443
-    assert isinstance(get_cd_geoadj(601, year=2023, tenure="renter"), float)
-    assert spm_equivalence_scale(2, 2) == 1.0

@@ -30,11 +30,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from build_threshold_series import TENURES, parse_workbook  # noqa: E402
 
-from spm_calculator.forecast import (  # noqa: E402
+from spm_calculator.published_thresholds import (  # noqa: E402
     HISTORICAL_THRESHOLDS,
+    get_published_thresholds,
     get_standard_errors,
     get_tenure_shares,
-    get_thresholds,
 )
 
 FROZEN_WORKBOOK_URL = (
@@ -338,7 +338,7 @@ def compare_page_2025(html: str) -> list[str]:
         live = parse_chart_1_table(html)
     except ValueError as error:
         return [f"2025 page Chart 1: {error}"]
-    packaged = get_thresholds(2025, allow_forecast=False)
+    packaged = get_published_thresholds(2025)
     divergences = []
     for tenure in sorted(set(live) | set(packaged)):
         live_value = live.get(tenure)
@@ -363,9 +363,8 @@ def check_page_vintage(
     skipped rather than fabricated by forecasting.
     """
     try:
-        superseded = get_thresholds(
+        superseded = get_published_thresholds(
             latest_year,
-            allow_forecast=False,
             series="census-published-pre-correction",
         )
     except ValueError:

@@ -52,7 +52,7 @@ from spm_calculator.ce_threshold import (
     calculate_base_thresholds,
     load_ce_quarter,
 )
-from spm_calculator.forecast import get_thresholds
+from spm_calculator.published_thresholds import get_published_thresholds
 
 REPO = Path(__file__).resolve().parent.parent
 OUT_DIR = REPO / "benchmark_output"
@@ -116,10 +116,10 @@ def load_quarter_store() -> dict[tuple[int, int], pd.DataFrame]:
 
 def reference_series(year: int) -> dict[str, dict[str, float]]:
     return {
-        "published": get_thresholds(
+        "published": get_published_thresholds(
             year, series="census-published-pre-correction"
         ),
-        "corrected": get_thresholds(year, allow_forecast=False),
+        "corrected": get_published_thresholds(year),
     }
 
 

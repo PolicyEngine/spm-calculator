@@ -49,7 +49,9 @@ class TestCECalculation:
             CPI_SERIES,
             get_packaged_cpi_series,
         )
-        from spm_calculator.forecast import get_thresholds
+        from spm_calculator.published_thresholds import (
+            get_published_thresholds,
+        )
 
         calculated = calculate_base_thresholds(
             target_year=2024,
@@ -60,7 +62,7 @@ class TestCECalculation:
                 for series in CPI_SERIES.values()
             },
         )
-        corrected = get_thresholds(2024, allow_forecast=False)
+        corrected = get_published_thresholds(2024)
 
         tolerance = 0.06
 

@@ -177,9 +177,9 @@ def test_stages_reconcile_and_entrypoint_preserves_return_shape():
         ("median_share", 0.83),
     ],
 )
-def test_projection_rejects_mixed_replication_configurations(option, value):
-    from spm_calculator.projection import ProjectionInput, project_thresholds
-
+def test_replication_configurations_have_distinct_methodology_ids(
+    option, value
+):
     cpi = flat_cpi()
     for series in cpi.values():
         series.loc[2025] = 100.0
@@ -192,34 +192,6 @@ def test_projection_rejects_mixed_replication_configurations(option, value):
         base["methodology_config"][option]
         != target["methodology_config"][option]
     )
-    official = ProjectionInput(
-        2024,
-        dict.fromkeys(base["thresholds"], 30000),
-        "published",
-        "2026-09-08",
-        "synthetic-official",
-        "synthetic",
-    )
-
-    def dated(year, result):
-        return ProjectionInput(
-            year,
-            result["thresholds"],
-            "replication",
-            "2026-09-08",
-            f"synthetic-{year}",
-            result["methodology_id"],
-        )
-
-    with pytest.raises(ValueError, match="same methodology"):
-        project_thresholds(
-            official,
-            2025,
-            as_of="2026-09-08",
-            method="replication_ratio",
-            replicated_base=dated(2024, base),
-            replicated_target=dated(2025, target),
-        )
 
 
 def test_method_configuration_identity_is_independent_of_target_year():

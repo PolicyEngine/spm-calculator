@@ -1,0 +1,119 @@
+{
+  "2021": {
+    "cache_path": "normalized/2021-11f0a6d4cbff51bf377f61e34b07184118a5ecf620868a48c96b0720971849e5.npz",
+    "columns": [
+      "record_id",
+      "source_vintage",
+      "cohort_year",
+      "source_year",
+      "puma_geoid",
+      "rent",
+      "weight",
+      "raw_gross_rent",
+      "adjhsg",
+      "projected",
+      "top_rent",
+      "top_electricity",
+      "top_gas",
+      "top_fuel",
+      "top_water",
+      "rent_lower_bound"
+    ],
+    "normalization_logic_sha256": "2c02fb82bba6992f4fa0db844781a4d7bb610cb6f3680b03d188daa1a49936ba",
+    "parser_sha256": "d96fb6556f3a019025c2bd7dfdef5b9f5d05a7a4d819ab568f3a8bc41bf2aed3",
+    "sha256": "f407c8677c70baa37d22fdc4b0780f459ac4db46f405868836f052f62d774041",
+    "source_sha256": [
+      "7a0f6d2d86990343bce760a2b679d26f19272a7518399a03ca7e19bf74e92b19"
+    ],
+    "topcodes_sha256": "71711e030f56a187e0787795de04e077f0cce91ac21d41ab28b7aa3ff7c231e4",
+    "valid_pumas_sha256": "3b81a64caf404041aa44811a7076ad0cae1f300588423227b1b089d37058da3b"
+  },
+  "2022": {
+    "cache_path": "normalized/2022-0db3a6b05c8dfc26ff84c1feaab1e8a1c66c9f1a69eb2a8bbd640b2efc97d92b.npz",
+    "columns": [
+      "record_id",
+      "source_vintage",
+      "cohort_year",
+      "source_year",
+      "puma_geoid",
+      "rent",
+      "weight",
+      "raw_gross_rent",
+      "adjhsg",
+      "projected",
+      "top_rent",
+      "top_electricity",
+      "top_gas",
+      "top_fuel",
+      "top_water",
+      "rent_lower_bound"
+    ],
+    "normalization_logic_sha256": "ff5fa220fa295f464d29fe682823433980ebd19059e2bab0260eec923575ecf5",
+    "parser_sha256": "b78294f297734aa8968fa8ac449cdf7f8dc002efb9f98eab605cd08ef47c405d",
+    "sha256": "0aebe418e3bd70342cc4b2e72bcb883e3cea565906c1cafaa9bd21f452bd9a8f",
+    "source_sha256": [
+      "45e08155e78bbfff1e251d99d911070700baf615f0690c97e67790333728add5",
+      "b325a63784d834def25c07959777dd0c1602a0767c27ac1877718ae3f2376d41"
+    ],
+    "topcodes_sha256": "eacb03b68d083bc9431300bda7e76e897a9356bde9d508c1d38db205260875cd",
+    "valid_pumas_sha256": "e5849a3366acf7a25f7ac90dfb148c5b8352a1f365da6db07d53a4d786f81ce6"
+  },
+  "2023": {
+    "cache_path": "normalized/2023-3f41887ef77588d83d620202cdf4e6d77eef2e45a50e309fd1d990da9afb8e37.npz",
+    "columns": [
+      "record_id",
+      "source_vintage",
+      "cohort_year",
+      "source_year",
+      "puma_geoid",
+      "rent",
+      "weight",
+      "raw_gross_rent",
+      "adjhsg",
+      "projected",
+      "top_rent",
+      "top_electricity",
+      "top_gas",
+      "top_fuel",
+      "top_water",
+      "rent_lower_bound"
+    ],
+    "normalization_logic_sha256": "ff5fa220fa295f464d29fe682823433980ebd19059e2bab0260eec923575ecf5",
+    "parser_sha256": "b78294f297734aa8968fa8ac449cdf7f8dc002efb9f98eab605cd08ef47c405d",
+    "sha256": "85db2bb76d0da444b985f91c487908373369b670d8e9f28b31d8f8583cce5adc",
+    "source_sha256": [
+      "2380c0ae7f062a42c016b494a26084ca0e24b75d07927a19ed1afc4529da0bf8"
+    ],
+    "topcodes_sha256": "eacb03b68d083bc9431300bda7e76e897a9356bde9d508c1d38db205260875cd",
+    "valid_pumas_sha256": "e5849a3366acf7a25f7ac90dfb148c5b8352a1f365da6db07d53a4d786f81ce6"
+  },
+  "2024": {
+    "cache_path": "normalized/2024-64f4bcc2d2db1cce3cbd87ee01b2acd1fe13b9c323c24075f25543019015ee0c.npz",
+    "columns": [
+      "record_id",
+      "source_vintage",
+      "cohort_year",
+      "source_year",
+      "puma_geoid",
+      "rent",
+      "weight",
+      "raw_gross_rent",
+      "adjhsg",
+      "projected",
+      "top_rent",
+      "top_electricity",
+      "top_gas",
+      "top_fuel",
+      "top_water",
+      "rent_lower_bound"
+    ],
+    "normalization_logic_sha256": "ff5fa220fa295f464d29fe682823433980ebd19059e2bab0260eec923575ecf5",
+    "parser_sha256": "b78294f297734aa8968fa8ac449cdf7f8dc002efb9f98eab605cd08ef47c405d",
+    "sha256": "c4f146414d4b438cfc9b64dabd09d43334fe5b1235c4cca3aa5ca53822902996",
+    "source_sha256": [
+      "f3ff4545eab3da1cf4cbc5b245a926b67eb055fe95ac87fa2d5f1dd9ba95c23c"
+    ],
+    "topcodes_sha256": "eacb03b68d083bc9431300bda7e76e897a9356bde9d508c1d38db205260875cd",
+    "valid_pumas_sha256": "e5849a3366acf7a25f7ac90dfb148c5b8352a1f365da6db07d53a4d786f81ce6"
+  }
+}

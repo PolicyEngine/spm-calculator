@@ -799,6 +799,8 @@ def forecast_from_frames(
     end_year: int = 2030,
     include_backtest: bool = True,
     information_date: str = INFORMATION_DATE,
+    start_year: int | None = None,
+    published_housing_shares: Mapping[int, Mapping[str, float]] | None = None,
 ) -> dict:
     """Transport-free core; skipping backtests produces unvalidated research."""
     date.fromisoformat(information_date)
@@ -807,7 +809,13 @@ def forecast_from_frames(
     observed = _observed_at_origin(observed_frames, national_anchor_year)
     _validate_prices(cpi_series, min(observed)[0], end_year)
     share_anchor = _shares(housing_share_anchor)
-    for year in range(share_anchor_year, national_anchor_year + 1):
+    first_year = share_anchor_year if start_year is None else start_year
+    if first_year > share_anchor_year:
+        raise ValueError("Start year must not follow the share anchor")
+    supplied_shares = dict(published_housing_shares or {})
+    for values in supplied_shares.values():
+        _shares(values)
+    for year in range(first_year, national_anchor_year + 1):
         if year not in published_thresholds:
             raise ValueError(f"Missing published anchor thresholds for {year}")
         _tenure_values(published_thresholds[year], "Published thresholds")
@@ -828,7 +836,7 @@ def forecast_from_frames(
     for sid in SCENARIOS:
         rate = growth["applied_log_rate"] if sid == "ce_trend" else 0.0
         years = {}
-        for year in range(share_anchor_year, end_year + 1):
+        for year in range(first_year, end_year + 1):
             raw, metadata = project_ce_window(
                 observed,
                 origin_year=national_anchor_year,
@@ -858,14 +866,18 @@ def forecast_from_frames(
                 }
             )
             shares = (
-                dict(share_anchor)
-                if year == share_anchor_year
-                else {
-                    tenure: share_anchor[tenure]
-                    * raw_shares[tenure]
-                    / raw_share_anchor[tenure]
-                    for tenure in TENURES
-                }
+                dict(supplied_shares[year])
+                if year in supplied_shares
+                else (
+                    dict(share_anchor)
+                    if year == share_anchor_year
+                    else {
+                        tenure: share_anchor[tenure]
+                        * raw_shares[tenure]
+                        / raw_share_anchor[tenure]
+                        for tenure in TENURES
+                    }
+                )
             )
             _tenure_values(thresholds, "Forecast thresholds")
             _shares(shares)
@@ -882,7 +894,7 @@ def forecast_from_frames(
                 ),
                 "housing_share_status": (
                     "published_anchor"
-                    if year == share_anchor_year
+                    if year == share_anchor_year or year in supplied_shares
                     else "modeled"
                 ),
             }
@@ -927,8 +939,8 @@ def forecast_from_frames(
             "price_weights": "Historical bridge and training weights frozen at origin five-year CE window; each target estimator recalculates its future-window CPI component weights",
             "remaining_deflator": "After donor collection-year to projected collection-year scaling, estimator applies only projected collection-year to threshold-year inflation",
             "real_growth": "Uniform component scaling exp(real_log_rate * donor-to-target year difference); composition repeats, no full behavioral response",
-            "national_formula": "published_origin * replication_target / replication_origin; published 2024/2025 returned directly",
-            "housing_share_formula": "Census_share_anchor * (0.82 * SU_mean_target / replication_target) / (0.82 * SU_mean_anchor / replication_anchor)",
+            "national_formula": "published_origin * replication_target / replication_origin; published historical thresholds returned directly",
+            "housing_share_formula": "Published BLS_share_anchor * (0.82 * SU_mean_target / replication_target) / (0.82 * SU_mean_anchor / replication_anchor); supplied published historical shares returned directly",
             "uncertainty": "Not estimated; OLS slope SE is a fit diagnostic only",
             "research_approximations": [
                 "Annual instead of quarterly CPI by collection year",
@@ -1036,8 +1048,8 @@ def build_ce_forecast(
     published_thresholds: dict[int, dict[str, float]],
     housing_share_anchor: dict[str, float],
     national_anchor_year: int = 2025,
-    share_anchor_year: int = 2024,
-    end_year: int = 2030,
+    share_anchor_year: int = 2025,
+    end_year: int = 2035,
     inflation_rates: dict[int, float],
     include_backtest: bool = True,
     information_date: str = INFORMATION_DATE,
@@ -1052,9 +1064,9 @@ def build_ce_forecast(
         raise ValueError(
             "Current release requires complete CE backtest validation"
         )
-    if (national_anchor_year, share_anchor_year) != (2025, 2024):
+    if (national_anchor_year, share_anchor_year) != (2025, 2025):
         raise ValueError(
-            "Current release requires 2025 national and 2024 share anchors"
+            "Current release requires published2025 national and share anchors"
         )
     canonical = corrected_published_thresholds()
     if any(
@@ -1063,6 +1075,24 @@ def build_ce_forecast(
     ):
         raise ValueError(
             "Published thresholds must match corrected revised-method series, including 2019 Revised"
+        )
+    from spm_calculator.forecast_inputs import (
+        load_horizon_inputs,
+        projection_rates,
+    )
+
+    horizon = load_horizon_inputs()
+    published_shares = {
+        int(year): values
+        for year, values in horizon["published_housing_shares"].items()
+    }
+    if housing_share_anchor != published_shares[2025]:
+        raise ValueError(
+            "Housing share anchor must match corrected published BLS2025 shares"
+        )
+    if inflation_rates != projection_rates(end_year=end_year):
+        raise ValueError(
+            "Future prices must match the pinned CBO annual-average growth path"
         )
     cpi_document = json.loads(Path(cpi_path).read_text())
     prices = {
@@ -1082,20 +1112,21 @@ def build_ce_forecast(
         share_anchor_year=share_anchor_year,
         end_year=end_year,
         information_date=information_date,
+        start_year=2022,
+        published_housing_shares=published_shares,
     )
     root = Path(__file__).resolve().parent.parent
     paths = [
         "spm_calculator/ce_forecast.py",
         "spm_calculator/ce_threshold.py",
+        "spm_calculator/published_thresholds.py",
         "spm_calculator/fcsuti_cpi.py",
         "spm_calculator/equivalence_scale.py",
+        "spm_calculator/forecast_inputs.py",
     ]
     script = root / "scripts/build_ce_forecast.py"
     if script.exists():
         paths.append("scripts/build_ce_forecast.py")
-        paths.extend(
-            ["spm_calculator/forecast.py", "spm_calculator/geoadj.py"]
-        )
     result["code_sha256"] = {path: _sha256(root / path) for path in paths}
     sources.extend(
         [
@@ -1108,6 +1139,8 @@ def build_ce_forecast(
                 "note": cpi_document.get("note"),
             },
             {
+                "id": "bls-spm-thresholds",
+                "url": "https://www.bls.gov/pir/spm/spm_thresholds.xlsx",
                 "kind": "published_thresholds",
                 "path": "spm_calculator/data/bls/threshold_series.json",
                 "sha256": _sha256(
@@ -1119,6 +1152,23 @@ def build_ce_forecast(
         ]
     )
     result["sources"] = sources
+    result["sources"].extend(horizon["sources"])
+    result["sources"].append(
+        {
+            "kind": "horizon_inputs",
+            "path": "spm_calculator/data/current/forecast_horizon_inputs.json",
+            "sha256": _sha256(
+                root
+                / "spm_calculator/data/current/forecast_horizon_inputs.json"
+            ),
+        }
+    )
+    result["assumptions"]["price_source"] = horizon["prices"]
+    result["assumptions"]["housing_share_source"] = {
+        "id": "bls-spm-shares",
+        "definition": horizon["housing_share_definition"],
+        "anchor_year": 2025,
+    }
     result["assumptions"]["inflation_rates"] = {
         str(year): float(inflation_rates[year])
         for year in range(2026, end_year + 1)

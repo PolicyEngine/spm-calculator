@@ -1,0 +1,37 @@
+{
+  "check_dtype": false,
+  "check_exact": true,
+  "columns": [
+    "record_id",
+    "source_vintage",
+    "cohort_year",
+    "source_year",
+    "puma_geoid",
+    "rent",
+    "weight",
+    "raw_gross_rent",
+    "adjhsg",
+    "projected",
+    "top_rent",
+    "top_electricity",
+    "top_gas",
+    "top_fuel",
+    "top_water",
+    "rent_lower_bound"
+  ],
+  "dtype_note": "Only persisted NumPy vs pandas string dtype differences are ignored.",
+  "manifest_sha256": "7f9dd53454eeac90a83437643944e47d60d27d35cf3a99d2a988c39be25b99a8",
+  "normalization_logic_sha256": "2c02fb82bba6992f4fa0db844781a4d7bb610cb6f3680b03d188daa1a49936ba",
+  "parser_sha256": "d96fb6556f3a019025c2bd7dfdef5b9f5d05a7a4d819ab568f3a8bc41bf2aed3",
+  "records": 616858,
+  "retained_normalized_sha256": "f407c8677c70baa37d22fdc4b0780f459ac4db46f405868836f052f62d774041",
+  "source_sha256": [
+    "7a0f6d2d86990343bce760a2b679d26f19272a7518399a03ca7e19bf74e92b19"
+  ],
+  "unchanged_product_receipts": [
+    2022,
+    2023,
+    2024
+  ],
+  "verification": "raw-source reparse exactly equals all retained normalized records"
+}

@@ -1,8 +1,12 @@
 """Source-universe and revision safeguards for Census PUMS inputs."""
 
 import copy
+import hashlib
+import json
 import zipfile
+from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -185,3 +189,110 @@ def test_normalized_cache_cannot_skip_changed_geography_validation(tmp_path):
     changed["area_allocations"] = [{"puma_geoid": "0100200"}]
     with pytest.raises(ValueError, match="absent from pinned geography"):
         load_pums_records(tmp_path, 2024, changed)
+
+
+def test_2017_numeric_ids_and_2010_pumas_survive_historical_normalization(
+    tmp_path,
+):
+    rows = pd.concat(
+        [
+            housing(
+                SERIALNO=(
+                    "2017000000001" if year == 2017 else f"{year}HU0000001"
+                ),
+                ADJHSG=1105263 if year == 2017 else 1000000,
+            )
+            for year in range(2017, 2022)
+        ],
+        ignore_index=True,
+    ).rename(columns={"STATE": "ST", "TYPEHUGQ": "TYPE"})
+    source = tmp_path / "2021/csv_hus.zip"
+    source.parent.mkdir()
+    with zipfile.ZipFile(source, "w") as archive:
+        archive.writestr("psam_husa.csv", rows.to_csv(index=False))
+        for letter in "bcd":
+            archive.writestr(
+                f"psam_hus{letter}.csv", rows.iloc[:0].to_csv(index=False)
+            )
+    bundle = {
+        "sources": [
+            {"cache_path": "2021/csv_hus.zip", "sha256": sha256_file(source)}
+        ],
+        "topcodes": {
+            str(year): topcodes()["2024"] for year in range(2017, 2022)
+        },
+        "area_allocations": [{"puma_geoid": "0100100"}],
+    }
+    result = load_pums_records(tmp_path, 2021, bundle)
+    assert result.record_id.iloc[0] == "2017000000001"
+    assert result.cohort_year.tolist() == list(range(2017, 2022))
+    assert set(result.puma_geoid) == {"0100100"}
+    assert result.rent.iloc[0] == pytest.approx(1105.263)
+
+
+@pytest.mark.parametrize("vintage", [2021, 2022, 2023, 2024])
+@pytest.mark.parametrize(
+    "helper", ["_historical_housing", "_restore_historical_record_ids"]
+)
+def test_historical_helper_mutations_invalidate_only_2021_pinned_cache(
+    tmp_path, monkeypatch, vintage, helper
+):
+    import spm_calculator.acs_forecast_sources as sources
+
+    bundle = cache_bundle(tmp_path)
+    source_hashes = [bundle["sources"][0]["sha256"]]
+    cached = tmp_path / "normalized.npz"
+    np.savez_compressed(cached, rent=np.array([1100.0]))
+    product = {
+        "cache_path": cached.name,
+        "columns": ["rent"],
+        "sha256": sha256_file(cached),
+        "normalization_logic_sha256": sources.normalization_logic_sha256(
+            vintage
+        ),
+        "source_sha256": source_hashes,
+        "topcodes_sha256": hashlib.sha256(
+            json.dumps(bundle["topcodes"], sort_keys=True).encode()
+        ).hexdigest(),
+        "valid_pumas_sha256": hashlib.sha256(
+            json.dumps(["0100100"]).encode()
+        ).hexdigest(),
+    }
+    manifest = tmp_path / "data/current/acs_normalized_products.json"
+    manifest.parent.mkdir(parents=True)
+    manifest.write_text(json.dumps({str(vintage): product}))
+    monkeypatch.setattr(sources, "__file__", str(tmp_path / "sources.py"))
+    assert (
+        sources._pinned_normalized(tmp_path, vintage, bundle, source_hashes)
+        is not None
+    )
+
+    def changed_historical_helper(data):
+        return data
+
+    monkeypatch.setattr(sources, helper, changed_historical_helper)
+    retained = sources._pinned_normalized(
+        tmp_path, vintage, bundle, source_hashes
+    )
+    if vintage == 2021:
+        assert retained is None
+    else:
+        assert retained.rent.tolist() == [1100.0]
+
+
+def test_historical_identity_fix_preserves_existing_2022_2024_pins():
+    import spm_calculator.acs_forecast_sources as sources
+
+    manifest = (
+        Path(sources.__file__).parent
+        / "data/current/acs_normalized_products.json"
+    )
+    products = json.loads(manifest.read_text())
+    for vintage in (2022, 2023, 2024):
+        assert (
+            sources.normalization_logic_sha256(vintage)
+            == products[str(vintage)]["normalization_logic_sha256"]
+        )
+    assert sources.normalization_logic_sha256(2021) != (
+        sources.normalization_logic_sha256(2022)
+    )

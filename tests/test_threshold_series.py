@@ -14,15 +14,19 @@ from importlib import resources
 import pytest
 
 from scripts.build_threshold_series import build_document
-from spm_calculator.forecast import (
+from spm_calculator.published_thresholds import (
     DEFAULT_SERIES,
+    HISTORICAL_THRESHOLDS,
+    LATEST_PUBLISHED_YEAR,
     LEGACY_SERIES,
     get_available_series,
     get_available_years,
+    get_latest_published_year,
+    get_published_thresholds,
     get_series_provenance,
     get_standard_errors,
     get_tenure_shares,
-    get_thresholds,
+    get_threshold_with_metadata,
 )
 
 TRUSTED_CORRECTED_WORKBOOK_SHA256 = (
@@ -45,12 +49,64 @@ class TestSeriesRegistry:
 
     def test_unknown_series_raises(self):
         with pytest.raises(ValueError, match="Unknown threshold series"):
-            get_thresholds(2024, series="nope")
+            get_published_thresholds(2024, series="nope")
+
+
+class TestSourceOnlyAccess:
+    @pytest.mark.parametrize(
+        "accessor",
+        [
+            get_published_thresholds,
+            get_threshold_with_metadata,
+        ],
+    )
+    @pytest.mark.parametrize("year", [1999, 2004, 2026, 2035, 2100])
+    def test_unavailable_years_raise_without_forecasting(self, accessor, year):
+        with pytest.raises(ValueError, match="not available"):
+            accessor(year)
+
+    @pytest.mark.parametrize(
+        "series",
+        [
+            "census-published-pre-correction",
+            LEGACY_SERIES,
+        ],
+    )
+    def test_archival_series_do_not_fall_back_to_corrected_data(self, series):
+        assert get_latest_published_year(series) == 2024
+        assert 2025 not in get_available_years(series)
+        with pytest.raises(ValueError, match="not available"):
+            get_published_thresholds(2025, series=series)
+        with pytest.raises(ValueError, match="not available"):
+            get_threshold_with_metadata(2025, series=series)
+
+    def test_returned_thresholds_cannot_change_the_source(self):
+        values = get_published_thresholds(2025)
+        values["renter"] = 0
+        assert get_published_thresholds(2025)["renter"] == 41700.555713
+        assert HISTORICAL_THRESHOLDS[2025]["renter"] == 41700.555713
+
+    def test_metadata_is_an_independent_source_snapshot(self):
+        metadata = get_threshold_with_metadata(2025)
+        metadata["thresholds"]["renter"] = 0
+        metadata["provenance"]["sha256"] = "changed"
+        metadata["segment_provenance"]["bls_stated_growth_percent"][
+            "renter"
+        ] = 0
+        fresh = get_threshold_with_metadata(2025)
+        assert fresh["thresholds"]["renter"] == 41700.555713
+        assert (
+            fresh["provenance"]["sha256"] == TRUSTED_CORRECTED_WORKBOOK_SHA256
+        )
+        assert (
+            fresh["segment_provenance"]["bls_stated_growth_percent"]["renter"]
+            == 6.325
+        )
 
 
 class TestCorrectedSeries:
     def test_default_series_is_corrected(self):
-        assert get_thresholds(2024) == get_thresholds(
+        assert get_published_thresholds(2024) == get_published_thresholds(
             2024, series=DEFAULT_SERIES
         )
 
@@ -75,14 +131,14 @@ class TestCorrectedSeries:
     def test_2019_uses_revised_column(self):
         """The canonical splice takes the workbook's "2019 Revised"
         column for 2019, matching the operative Census series."""
-        thresholds = get_thresholds(2019)
+        thresholds = get_published_thresholds(2019)
         assert thresholds["owner_with_mortgage"] == pytest.approx(29076.17484)
         assert thresholds["renter"] == pytest.approx(28913.050035)
 
     def test_full_precision_survives_round_trip(self):
         """BLS warns that all significant digits matter; the packaged
         values must not be rounded to whole dollars."""
-        renter = get_thresholds(2024)["renter"]
+        renter = get_published_thresholds(2024)["renter"]
         assert renter != round(renter)
 
     def test_standard_errors_and_shares(self):
@@ -92,7 +148,7 @@ class TestCorrectedSeries:
         assert sum(shares.values()) == pytest.approx(1.0, abs=1e-6)
 
     def test_2025_continues_corrected_series_at_full_precision(self):
-        values = get_thresholds(2025, allow_forecast=False)
+        values = get_published_thresholds(2025)
         assert values == pytest.approx(
             {
                 "owner_with_mortgage": 41322.707394,
@@ -105,6 +161,13 @@ class TestCorrectedSeries:
             "owner_without_mortgage": 34326,
             "renter": 41701,
         }
+
+    def test_metadata_identifies_published_2025_segment(self):
+        metadata = get_threshold_with_metadata(2025)
+        assert metadata["source"] == "published"
+        assert metadata["series"] == DEFAULT_SERIES
+        assert metadata["segment"] == "bls-published-2025"
+        assert metadata["segment_provenance"]["retrieved"] == "2026-09-04"
 
     def test_2025_segment_records_page_provenance_and_growth(self):
         ref = resources.files("spm_calculator").joinpath(
@@ -140,6 +203,7 @@ class TestCorrectedSeries:
         assert years[0] == 2005
         assert years[-1] == 2025
         assert len(years) == 21
+        assert get_latest_published_year() == LATEST_PUBLISHED_YEAR == 2025
 
 
 class TestPublishedPreCorrectionSeries:
@@ -159,7 +223,7 @@ class TestPublishedPreCorrectionSeries:
     )
     def test_matches_p60_reports(self, year, expected):
         mtg, no_mtg, renter = expected
-        thresholds = get_thresholds(
+        thresholds = get_published_thresholds(
             year, series="census-published-pre-correction"
         )
         assert thresholds["owner_with_mortgage"] == mtg
@@ -171,10 +235,10 @@ class TestPublishedPreCorrectionSeries:
         less than 2% — the sanity bound that distinguishes BLS's code
         error from this package's earlier hand-entry errors (up to 8%)."""
         for year in range(2019, 2025):
-            published = get_thresholds(
+            published = get_published_thresholds(
                 year, series="census-published-pre-correction"
             )
-            corrected = get_thresholds(year)
+            corrected = get_published_thresholds(year)
             for tenure, value in published.items():
                 assert abs(corrected[tenure] / value - 1) < 0.02, (
                     year,
@@ -186,9 +250,12 @@ class TestLegacySeries:
     def test_legacy_values_preserved_verbatim(self):
         """Results produced with spm-calculator <= 0.3.1 stay
         reproducible through the legacy series."""
-        thresholds = get_thresholds(2024, series=LEGACY_SERIES)
+        thresholds = get_published_thresholds(2024, series=LEGACY_SERIES)
         assert thresholds["renter"] == 39430
-        assert get_thresholds(2020, series=LEGACY_SERIES)["renter"] == 28881
+        assert (
+            get_published_thresholds(2020, series=LEGACY_SERIES)["renter"]
+            == 28881
+        )
 
     def test_legacy_2022_2023_documented_as_unsourced(self):
         """The legacy 2022-2023 values match no BLS/Census publication;

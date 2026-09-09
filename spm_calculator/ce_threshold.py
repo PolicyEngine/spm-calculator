@@ -105,15 +105,15 @@ def _default_cache_dir() -> Path:
 
 def _get_bls_published_thresholds_2024() -> dict[str, float]:
     """Return the 2024 published BLS thresholds from the single source
-    of truth (``forecast.HISTORICAL_THRESHOLDS``)."""
-    from .forecast import HISTORICAL_THRESHOLDS
+    of truth (``published_thresholds.HISTORICAL_THRESHOLDS``)."""
+    from .published_thresholds import HISTORICAL_THRESHOLDS
 
     return HISTORICAL_THRESHOLDS[2024].copy()
 
 
 # Kept for backwards compatibility with callers that imported the
 # module-level constant. The canonical source is
-# ``spm_calculator.forecast.HISTORICAL_THRESHOLDS[2024]``; mirroring
+# ``spm_calculator.published_thresholds.HISTORICAL_THRESHOLDS[2024]``; mirroring
 # it as a dict here avoids the drift risk of two copies.
 BLS_PUBLISHED_THRESHOLDS_2024 = _get_bls_published_thresholds_2024()
 
@@ -1151,10 +1151,9 @@ def calculate_base_thresholds(
     except Exception as e:
         if use_published_fallback:
             try:
-                # Lazy import avoids a circular import at module load.
-                from .forecast import get_thresholds
+                from .published_thresholds import get_published_thresholds
 
-                fallback = get_thresholds(target_year, allow_forecast=False)
+                fallback = get_published_thresholds(target_year)
                 warnings.warn(
                     f"CE calculation failed ({e}); using published BLS "
                     f"thresholds for {target_year}.",
@@ -1171,11 +1170,8 @@ def get_published_thresholds(year: int) -> dict[str, float]:
     """
     Get published BLS SPM thresholds for a given year.
 
-    Sources from ``forecast.HISTORICAL_THRESHOLDS`` so the available
-    range stays in lockstep with the forecast path. Previously this
-    function hard-coded 2022–2024 while the forecast module had 2015–2024,
-    so `get_published_thresholds(2020)` raised even though the published
-    value existed.
+    Sources from ``published_thresholds.HISTORICAL_THRESHOLDS`` so the
+    available years match the bundled published source record.
 
     Args:
         year: Calendar year
@@ -1186,8 +1182,7 @@ def get_published_thresholds(year: int) -> dict[str, float]:
     Raises:
         ValueError: If published thresholds not available for the year
     """
-    # Lazy import avoids a circular import at module load.
-    from .forecast import HISTORICAL_THRESHOLDS
+    from .published_thresholds import HISTORICAL_THRESHOLDS
 
     if year in HISTORICAL_THRESHOLDS:
         return HISTORICAL_THRESHOLDS[year].copy()

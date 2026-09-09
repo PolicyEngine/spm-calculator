@@ -29,6 +29,17 @@ def example_document():
             "thresholds": dict.fromkeys(TENURES, base),
             "housing_shares": dict.fromkeys(TENURES, share),
             "rent_indices": {"A": index, "B": 0.8},
+            "geography_by_area": {
+                code: {
+                    "status": "published_anchor"
+                    if year == 2024
+                    else "modeled",
+                    "anchor_status": "published_anchor",
+                    "official_published_area": True,
+                    "source_ids": ["source"],
+                }
+                for code in ("A", "B")
+            },
             "national_status": "published" if year <= 2025 else "forecast",
             "geography_status": (
                 "published_anchor" if year == 2024 else "modeled"
@@ -54,7 +65,7 @@ def example_document():
     trend["2026"]["thresholds"] = dict.fromkeys(TENURES, 130)
     trend["2026"]["housing_shares"] = dict.fromkeys(TENURES, 0.6)
     document = {
-        "schema_version": 1,
+        "schema_version": 2,
         "method": "rolling_ce_acs_v1",
         "units": "USD/year",
         "reference_family": {"adults": 2, "children": 2},
@@ -63,9 +74,20 @@ def example_document():
         "created_on": "2026-09-09",
         "base_release_sha256": "a" * 64,
         "default_scenario": "ce_trend",
-        "areas": {"A": {"name": "Area A"}, "B": {"name": "Area B"}},
+        "areas": {
+            "A": {"name": "Area A", "area_type": "msa"},
+            "B": {"name": "Area B", "area_type": "state_nonmetro"},
+        },
+        "county_assignments": {
+            "county_vintage": "2020",
+            "boundary_vintage": "2013-02-28",
+            "assignment_method": "research_county_assignment",
+            "maps": {"current": {"01001": "A", "01003": "B"}},
+            "year_maps": {str(y): "current" for y in (2024, 2025, 2026)},
+        },
         "sources": [
             {
+                "id": "source",
                 "url": "https://example.org/source",
                 "sha256": "b" * 64,
                 "available_on": "2026-09-09",
@@ -93,8 +115,67 @@ def example_document():
     document["assumption_sha256"] = hashlib.sha256(
         canonical_bytes(document["assumptions"])
     ).hexdigest()
+    document["county_assignments"]["sha256"] = hashlib.sha256(
+        canonical_bytes(document["county_assignments"])
+    ).hexdigest()
     document["content_sha256"] = forecast_digest(document)
     return document
+
+
+def test_county_assignment_is_an_area_lookup_with_explicit_provenance():
+    projection = SPMForecast.from_dict(example_document())
+    assignment = projection.resolve_county(2026, "01001")
+    assert assignment["area_id"] == "A"
+    assert assignment["kind"] == "metro"
+    assert assignment["county_vintage"] == "2020"
+    assert assignment["status"] == "research_assignment"
+    assert projection.areas_for_year(2024)["A"]["status"] == "published_anchor"
+    assert projection.areas_for_year(2026)["A"]["status"] == "modeled"
+    for county in (1001, "1001", "99999", None):
+        with pytest.raises(ValueError):
+            projection.resolve_county(2026, county)
+    with pytest.raises(ValueError, match="vintage"):
+        projection.resolve_county(2026, "01001", county_vintage="2010")
+    with pytest.raises(ValueError, match="no entry"):
+        projection.resolve_county(2037, "01001")
+
+
+def test_year_specific_area_universe_and_unanchored_status():
+    document = example_document()
+    document["areas"]["C"] = {
+        "name": "Residual modeled",
+        "area_type": "modeled_residual_metro",
+    }
+    for scenario in document["scenarios"].values():
+        entry = scenario["years"]["2026"]
+        entry["rent_indices"]["C"] = entry["rent_indices"].pop("B")
+        entry["geography_by_area"].pop("B")
+        entry["geography_by_area"]["C"] = {
+            "status": "modeled_unanchored",
+            "anchor_status": "modeled_unanchored",
+            "official_published_area": False,
+            "source_ids": ["source"],
+        }
+        entry["geography_status"] = "mixed"
+    assignment = document["county_assignments"]
+    assignment["maps"]["later"] = {"01001": "A", "01003": "C"}
+    assignment["year_maps"]["2026"] = "later"
+    assignment["sha256"] = hashlib.sha256(
+        canonical_bytes({k: v for k, v in assignment.items() if k != "sha256"})
+    ).hexdigest()
+    document["content_sha256"] = forecast_digest(document)
+    projection = SPMForecast.from_dict(document)
+    assert set(projection.areas_for_year(2024)) == {"A", "B"}
+    assert set(projection.areas_for_year(2026)) == {"A", "C"}
+    assert projection.resolve_county(2024, "01003")["area_id"] == "B"
+    assert projection.resolve_county(2026, "01003")["area_id"] == "C"
+    result = projection.geography_factor(
+        2026, "renter", kind="metro", geoid="C"
+    )
+    assert result["status"] == "modeled_unanchored"
+    assert result["official_published_area"] is False
+    with pytest.raises(ValueError, match="unavailable"):
+        projection.geography_factor(2026, "renter", kind="metro", geoid="B")
 
 
 def unit(year=2026, **kwargs):

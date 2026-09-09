@@ -12,6 +12,8 @@ import json
 import math
 from pathlib import Path
 
+from spm_calculator.acs_forecast_sources import load_historical_source_bundle
+from spm_calculator.forecast_inputs import load_horizon_inputs
 from spm_calculator.release import TENURES, canonical_bytes, load_release
 from spm_calculator.rolling_forecast import DEFAULT_FORECAST, seal_forecast
 
@@ -191,6 +193,24 @@ def validate_evaluations(ce, acs, areas):
 
 def _verify_component_inputs(ce, acs):
     identities = {**ce["code_sha256"], **acs["metadata"]["generator_identity"]}
+    horizon = load_horizon_inputs()
+    historical = load_historical_source_bundle()
+    identities["scripts/build_forecast_inputs.py"] = horizon[
+        "generator_sha256"
+    ]
+    identities["scripts/build_acs_2021_inputs.py"] = historical[
+        "generator_sha256"
+    ]
+    if (
+        sha256(CURRENT / "acs_2021_source_manifest.json")
+        != historical["manifest_sha256"]
+    ):
+        raise ValueError("Historical source manifest changed")
+    if (
+        historical["county_assignment_sha256"]
+        != horizon["county_assignments"]["sha256"]
+    ):
+        raise ValueError("Historical county assignment changed")
     if not identities:
         raise ValueError("Scientific components must identify their code")
     for name, digest in identities.items():
@@ -210,9 +230,11 @@ def _verify_component_inputs(ce, acs):
 
 def _sources(ce, acs, checks):
     result = []
+    seen = {}
     for group, entries in (
         ("ce", ce["sources"]),
         ("acs", acs["sources"]),
+        ("horizon", load_horizon_inputs()["sources"]),
         ("check", [checks["bls_cpi"], checks["census_publication_check"]]),
     ):
         for index, source in enumerate(entries):
@@ -226,15 +248,21 @@ def _sources(ce, acs, checks):
                 # Original derived-CSV receipts remain in the ACS component.
                 continue
             if not url and name:
-                url = f"https://github.com/PolicyEngine/spm-calculator/blob/ba808adc7e452ddc2411bbcb82c7f6dab3198c0f/{name}"
+                url = "https://github.com/PolicyEngine/spm-calculator"
             if not url:
                 raise ValueError(
                     "Scientific source is missing its URL or package identity"
                 )
+            identity = source.get("id", f"{group}-{index:03d}")
+            if identity in seen:
+                if seen[identity] != source["sha256"]:
+                    raise ValueError("Conflicting scientific source identity")
+                continue
+            seen[identity] = source["sha256"]
             result.append(
                 {
                     **source,
-                    "id": f"{group}-{index:03d}",
+                    "id": identity,
                     "url": url,
                     "available_on": INFO_DATE,
                     "availability_note": "Exact source bytes retained by the research build; this date does not reconstruct historical availability.",
@@ -268,25 +296,22 @@ def _growth_diagnostics(growth):
 
 def assemble(ce, acs, *, checks, component_sha256):
     release = load_release()
-    published = release.to_dict()
-    areas = {
-        identity: {"name": row["name"]}
-        for identity, row in published["geographies"]["metro"]["areas"].items()
-    }
+    horizon = load_horizon_inputs()
+    areas = horizon["areas"]
+    official_areas = horizon["historical"]["2024"]["rent_indices"]
     if (
-        len(areas) != 341
-        or ce["information_date"] != INFO_DATE
+        ce["information_date"] != INFO_DATE
         or acs["metadata"]["information_date"] != INFO_DATE
     ):
-        raise ValueError("Forecast area count or information date mismatch")
-    validation = validate_evaluations(ce, acs, areas)
+        raise ValueError("Forecast information date mismatch")
+    validation = validate_evaluations(ce, acs, official_areas)
     code = _verify_component_inputs(ce, acs)
-    expected_years = {str(y) for y in range(2024, 2031)}
+    expected_years = {str(y) for y in range(2022, 2036)}
     if set(acs["indices_by_year"]) != expected_years or set(
         ce["scenarios"]
     ) != set(SCENARIOS):
         raise ValueError(
-            "Forecast requires both scenarios and all 2024–2030 years"
+            "Forecast requires both scenarios and all 2022–2035 years"
         )
     scenarios = {}
     for identity in SCENARIOS:
@@ -309,7 +334,7 @@ def assemble(ce, acs, *, checks, component_sha256):
                 raise ValueError(
                     "ACS observed/projected cohorts do not cover the target window"
                 )
-            if set(diagnostics["areas"]) != set(areas):
+            if set(diagnostics["areas"]) != set(acs["indices_by_year"][year]):
                 raise ValueError("Missing area support diagnostics")
             if (
                 int(year) <= 2025
@@ -317,30 +342,30 @@ def assemble(ce, acs, *, checks, component_sha256):
                 != release.entry(int(year))["thresholds"]
             ):
                 raise ValueError("Published national anchor changed")
-            if year == "2024":
-                if (
-                    entry["housing_shares"]
-                    != release.entry(2024)["housing_shares"]
-                ):
-                    raise ValueError("Published housing-share anchor changed")
-                expected_indices = {
-                    i: row["rent_index"]
-                    for i, row in published["geographies"]["metro"][
-                        "areas"
-                    ].items()
-                }
-                if acs["indices_by_year"][year] != expected_indices:
+            if (
+                int(year) <= 2025
+                and entry["housing_shares"]
+                != horizon["published_housing_shares"][year]
+            ):
+                raise ValueError("Published BLS housing-share anchor changed")
+            if int(year) <= 2024:
+                official = horizon["historical"][year]["rent_indices"]
+                if {
+                    code: acs["indices_by_year"][year][code]
+                    for code in official
+                } != official:
                     raise ValueError("Published geographic anchor changed")
             years[year] = {
                 "thresholds": entry["thresholds"],
                 "housing_shares": entry["housing_shares"],
+                "national_source_ids": ["bls-spm-thresholds"],
+                "housing_share_source_ids": ["bls-spm-shares"],
                 "rent_indices": acs["indices_by_year"][year],
                 "national_status": (
                     "published" if int(year) <= 2025 else "forecast"
                 ),
-                "geography_status": (
-                    "published_anchor" if year == "2024" else "modeled"
-                ),
+                "geography_status": "mixed",
+                "geography_by_area": acs["geography_by_year"][year],
                 "housing_share_status": entry["housing_share_status"],
                 "ce_window": entry["window"],
                 "acs_window": {
@@ -395,7 +420,7 @@ def assemble(ce, acs, *, checks, component_sha256):
     )
     return seal_forecast(
         {
-            "schema_version": 1,
+            "schema_version": 2,
             "method": "rolling_ce_acs_v1",
             "units": "USD/year",
             "reference_family": {"adults": 2, "children": 2},
@@ -406,6 +431,7 @@ def assemble(ce, acs, *, checks, component_sha256):
             "national_anchor_year": 2025,
             "default_scenario": "ce_trend",
             "areas": areas,
+            "county_assignments": horizon["county_assignments"],
             "scenarios": scenarios,
             "assumptions": assumptions,
             "assumption_sha256": hashlib.sha256(
@@ -431,6 +457,10 @@ def build_document():
             CE_PATH,
             ACS_PATH,
             CURRENT / "forecast_source_checks.json",
+            CURRENT / "forecast_horizon_inputs.json",
+            CURRENT / "acs_2021_source_inputs.json",
+            CURRENT / "acs_2021_source_manifest.json",
+            CURRENT / "acs_normalized_products.json",
         )
     }
     return assemble(

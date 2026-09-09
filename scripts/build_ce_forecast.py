@@ -18,8 +18,10 @@ from spm_calculator.ce_forecast import (
     build_ce_forecast,
     corrected_published_thresholds,
 )
-from spm_calculator.forecast import CPI_PROJECTIONS
-from spm_calculator.geoadj import TENURE_HOUSING_SHARES
+from spm_calculator.forecast_inputs import (
+    load_horizon_inputs,
+    projection_rates,
+)
 
 
 def main() -> None:
@@ -47,8 +49,10 @@ def main() -> None:
         cache_dir=args.cache_dir,
         cpi_path=args.cpi_input,
         published_thresholds=corrected_published_thresholds(),
-        housing_share_anchor=dict(TENURE_HOUSING_SHARES),
-        inflation_rates=dict(CPI_PROJECTIONS),
+        housing_share_anchor=load_horizon_inputs()["published_housing_shares"][
+            "2025"
+        ],
+        inflation_rates=projection_rates(),
         information_date=args.information_date,
     )
     content = (

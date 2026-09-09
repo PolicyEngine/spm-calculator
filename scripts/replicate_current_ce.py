@@ -1,8 +1,10 @@
 """Replay cached CE 2019–2025 windows with explicit sample policies.
 
-This writes a CURRENT retrospective experiment, never frozen forecast
-commitments. No network requests are made. Every zip/member and CPI input
+This writes a CURRENT retrospective source replication against published
+thresholds. No network requests are made. Every zip/member and CPI input
 is hashed, and original CE availability dates remain explicitly unknown.
+Output defaults to benchmark_output/ce_source_replication_2019_2025.json;
+the archived package receipt is immutable.
 Run: uv run --no-sync python scripts/replicate_current_ce.py
 """
 
@@ -26,16 +28,11 @@ from spm_calculator.ce_threshold import (
     normalize_ce_sample,
     replicate_thresholds,
 )
-from spm_calculator.fcsuti_cpi import (
-    CPI_SERIES,
-    FCSUTI_WEIGHTS,
-    get_fcsuti_inflation_factor,
-)
-from spm_calculator.forecast import get_thresholds
-from spm_calculator.projection import ProjectionInput, project_thresholds
+from spm_calculator.published_thresholds import get_published_thresholds
 
 ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_OUTPUT = (
+DEFAULT_OUTPUT = ROOT / "benchmark_output/ce_source_replication_2019_2025.json"
+ARCHIVED_RECEIPT = (
     ROOT / "spm_calculator/data/current/ce_replication_2019_2025.json"
 )
 KEEP = {
@@ -88,128 +85,6 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def _dated(year, values, kind, source_id, methodology_id, date):
-    return ProjectionInput(year, values, kind, date, source_id, methodology_id)
-
-
-def projection_evaluation(results, cpi_series, as_of):
-    """Current-method retrospective evaluation, with honest current dates."""
-    rows = []
-    for target in range(2020, 2026):
-        official = _dated(
-            target - 1,
-            get_thresholds(target - 1, allow_forecast=False),
-            "published",
-            "corrected-canonical-threshold-series",
-            "bls-corrected-2026-07-17-continuation",
-            as_of,
-        )
-        previous = _dated(
-            target - 1,
-            results[str(target - 1)]["variants"]["exclude_unresolved"][
-                "thresholds"
-            ],
-            "replication",
-            f"current-ce-{target - 1}",
-            results[str(target - 1)]["variants"]["exclude_unresolved"][
-                "methodology_id"
-            ],
-            as_of,
-        )
-        current = _dated(
-            target,
-            results[str(target)]["variants"]["exclude_unresolved"][
-                "thresholds"
-            ],
-            "replication",
-            f"current-ce-{target}",
-            results[str(target)]["variants"]["exclude_unresolved"][
-                "methodology_id"
-            ],
-            as_of,
-        )
-        cpi_ratio = float(
-            cpi_series[CPI_SERIES["all_items"]][target]
-            / cpi_series[CPI_SERIES["all_items"]][target - 1]
-        )
-        fcsuti_ratio = get_fcsuti_inflation_factor(
-            target - 1, target, weights=FCSUTI_WEIGHTS, cpi_series=cpi_series
-        )
-        for rule in ("cpi_u", "fcsuti_cpi", "replication_ratio", "blend"):
-            kwargs = {}
-            method = (
-                rule
-                if rule in ("replication_ratio", "blend")
-                else "price_only"
-            )
-            if method in ("replication_ratio", "blend"):
-                kwargs.update(
-                    replicated_base=previous, replicated_target=current
-                )
-            if method in ("price_only", "blend"):
-                price_method = (
-                    "cpi_u"
-                    if rule == "cpi_u"
-                    else "static_fcsuti_rebased_prior_year"
-                )
-                ratio = cpi_ratio if rule == "cpi_u" else fcsuti_ratio
-                kwargs.update(
-                    price_base=_dated(
-                        target - 1,
-                        100.0,
-                        "price",
-                        "pinned-cpi",
-                        price_method,
-                        as_of,
-                    ),
-                    price_target=_dated(
-                        target,
-                        100 * ratio,
-                        "price",
-                        "pinned-cpi",
-                        price_method,
-                        as_of,
-                    ),
-                )
-            result = project_thresholds(
-                official, target, as_of=as_of, method=method, **kwargs
-            )
-            actual = get_thresholds(target, allow_forecast=False)
-            errors = {
-                tenure: 100 * (value / actual[tenure] - 1)
-                for tenure, value in result["thresholds"].items()
-            }
-            rows.append(
-                {
-                    "rule": rule,
-                    "target_year": target,
-                    "projection": result,
-                    "errors_percent": errors,
-                    "mean_absolute_error_percent": float(
-                        np.mean(np.abs(list(errors.values())))
-                    ),
-                }
-            )
-    return {
-        "classification": "retrospective_current_method_not_a_frozen_commitment",
-        "information_date_policy": "All observations conservatively dated at this replay; no historical release dates inferred",
-        "price_method_note": "Static FCSUti component weights rebased to each prior year; differs from frozen backtest's fixed 2019 price base",
-        "rows": rows,
-        "summary_2020_2025": {
-            rule: float(
-                np.mean(
-                    [
-                        row["mean_absolute_error_percent"]
-                        for row in rows
-                        if row["rule"] == rule
-                    ]
-                )
-            )
-            for rule in ("cpi_u", "fcsuti_cpi", "replication_ratio", "blend")
-        },
-    }
-
-
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -224,6 +99,8 @@ def main():
     )
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     args = parser.parse_args()
+    if args.output.resolve() == ARCHIVED_RECEIPT.resolve():
+        parser.error("--output cannot overwrite the archived package receipt")
     as_of = datetime.now(timezone.utc).date().isoformat()
     cpi_document = json.loads(args.cpi_input.read_text())
     cpi_series = {
@@ -283,7 +160,7 @@ def main():
             )
             variants[name] = result
         baseline = variants["exclude_unresolved"]["thresholds"]
-        actual = get_thresholds(year, allow_forecast=False)
+        actual = get_published_thresholds(year)
         sensitivity = {
             name: {
                 tenure: 100
@@ -337,12 +214,11 @@ def main():
         "spm_calculator/ce_threshold.py",
         "spm_calculator/fcsuti_cpi.py",
         "spm_calculator/equivalence_scale.py",
-        "spm_calculator/projection.py",
-        "spm_calculator/forecast.py",
+        "spm_calculator/published_thresholds.py",
         "scripts/replicate_current_ce.py",
     ]
     doc = {
-        "schema_version": 1,
+        "schema_version": 2,
         "generated_by": "scripts/replicate_current_ce.py",
         "generated_on": as_of,
         "classification": "current_retrospective_research",
@@ -374,7 +250,7 @@ def main():
                 ROOT / "spm_calculator/data/bls/threshold_series.json"
             ),
             "series_id": "bls-corrected-2026-07-17",
-            "selection": "canonical published splice with 2025 continuation; no forecast",
+            "selection": "published source splice with 2025 continuation",
         },
         "source_bundles": bundles,
         "source_quarters": sources,
@@ -393,9 +269,6 @@ def main():
             },
         ],
         "results": results,
-        "projection_evaluation": projection_evaluation(
-            results, cpi_series, as_of
-        ),
         "limitations": [
             "Youth sensitivity compares explicit assumptions; it does not identify the correct BLS classification",
             "Tenure sensitivity changes assignment/exclusion policy; official BLS handling remains unverified",
@@ -403,7 +276,7 @@ def main():
             "No sampling replicate weights or imputation uncertainty estimated",
             "CE original publication/revision dates are unknown; these are current cached vintages, not reconstructed real-time inputs",
             "Raw weight sums are CU-interview mass over overlapping windows, not unique national population totals",
-            "No new 2026 forecast or commitment is made",
+            "Source replication only; this receipt does not construct forecasts or commitments",
         ],
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)

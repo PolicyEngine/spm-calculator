@@ -1,4 +1,9 @@
-"""Optional parity checks against a real Census CPS ASEC HDFStore."""
+"""Optional source parity checks against a real Census CPS ASEC HDFStore.
+
+Use the archived Census national source and the file's geography factors to
+check the published Census amounts. Current canonical forecast thresholds use
+the revised BLS source and are tested separately.
+"""
 
 from __future__ import annotations
 
@@ -9,12 +14,9 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from spm_calculator import (
-    SPMCalculator,
-    spm_equivalence_scale,
-    spm_threshold_match,
-    spm_unit_id_match,
-)
+from spm_calculator.equivalence_scale import spm_equivalence_scale
+from spm_calculator.published_thresholds import get_published_thresholds
+from spm_calculator.validation import spm_threshold_match, spm_unit_id_match
 
 pytestmark = pytest.mark.skipif(
     not os.environ.get("SPM_CALCULATOR_ASEC_H5"),
@@ -49,11 +51,12 @@ def test_asec_spm_unit_id_inference_matches_census_above_floor():
         assert report["match"], report
 
 
-def test_asec_thresholds_match_census_within_tolerance():
+def test_asec_source_thresholds_match_census_within_tolerance():
     _, spm_unit = _load_asec_tables()
 
-    calculator = SPMCalculator(year=2024)
-    base_thresholds = calculator.get_base_thresholds()
+    base_thresholds = get_published_thresholds(
+        2024, series="census-published-pre-correction"
+    )
     tenure = (
         pd.to_numeric(
             spm_unit["SPM_TENMORTSTATUS"],

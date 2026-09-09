@@ -49,7 +49,7 @@ def _counts(window, observed, projected, total):
 def _validate(document):
     if (
         type(document.get("schema_version")) is not int
-        or document["schema_version"] != 1
+        or document["schema_version"] != 2
     ):
         raise ValueError("Unsupported forecast schema_version")
     if document.get("method") != METHOD:
@@ -79,10 +79,22 @@ def _validate(document):
     for identity, area in areas.items():
         _text(identity, "area id")
         _text(area.get("name"), "area name")
+        if area.get("area_type") not in {
+            "msa",
+            "state_metro_residual",
+            "state_nonmetro",
+            "modeled_residual_metro",
+        }:
+            raise ValueError("Invalid area type")
     sources = document.get("sources")
     if not isinstance(sources, list) or not sources:
         raise ValueError("Forecast must identify its sources")
+    source_ids = set()
     for source in sources:
+        identity = _text(source.get("id"), "source id")
+        if identity in source_ids:
+            raise ValueError("Duplicate source id")
+        source_ids.add(identity)
         _text(source.get("url"), "source URL")
         _hash(source.get("sha256"), "source sha256")
         if (
@@ -124,15 +136,55 @@ def _validate(document):
                     if field == "housing_shares" and number >= 1:
                         raise ValueError("Housing shares must be below one")
             indices = entry.get("rent_indices")
-            if not isinstance(indices, dict) or set(indices) != set(areas):
+            geography = entry.get("geography_by_area")
+            if (
+                not isinstance(indices, dict)
+                or not indices
+                or set(indices) - set(areas)
+                or not isinstance(geography, dict)
+                or set(geography) != set(indices)
+            ):
                 raise ValueError("Every year requires complete area coverage")
+            for area_id, value in geography.items():
+                if value.get("status") not in {
+                    "published_anchor",
+                    "modeled",
+                    "modeled_unanchored",
+                }:
+                    raise ValueError("Invalid area geography status")
+                anchor = value.get("anchor_status")
+                if anchor not in {"published_anchor", "modeled_unanchored"}:
+                    raise ValueError("Invalid area anchor status")
+                if type(value.get("official_published_area")) is not bool:
+                    raise ValueError("Area publication status must be boolean")
+                if value["official_published_area"] != (
+                    anchor == "published_anchor"
+                ):
+                    raise ValueError(
+                        "Modeled area cannot claim an official anchor"
+                    )
+                if (
+                    value["status"] == "published_anchor"
+                    and anchor != "published_anchor"
+                ) or (
+                    anchor == "modeled_unanchored"
+                    and value["status"] != "modeled_unanchored"
+                ):
+                    raise ValueError("Inconsistent area and anchor statuses")
+                refs = value.get("source_ids")
+                if (
+                    not isinstance(refs, list)
+                    or not refs
+                    or set(refs) - source_ids
+                ):
+                    raise ValueError("Area must identify known sources")
             for value in indices.values():
                 _number(value, "rent index", positive=True)
             diagnostics = entry.get("median_diagnostics", {})
             if not isinstance(diagnostics, dict):
                 raise ValueError("median_diagnostics must be an object")
             for area_id, diagnostic in diagnostics.items():
-                if area_id not in areas or not isinstance(diagnostic, dict):
+                if area_id not in indices or not isinstance(diagnostic, dict):
                     raise ValueError("Invalid area median diagnostic")
                 for flag in (
                     "thin_support",
@@ -159,9 +211,17 @@ def _validate(document):
                             raise ValueError(f"Invalid diagnostic {field}")
             if entry.get("national_status") not in {"published", "forecast"}:
                 raise ValueError("Invalid national status")
-            for field in ("geography_status", "housing_share_status"):
-                if entry.get(field) not in {"published_anchor", "modeled"}:
-                    raise ValueError(f"Invalid {field}")
+            if entry.get("geography_status") not in {
+                "published_anchor",
+                "modeled",
+                "mixed",
+            }:
+                raise ValueError("Invalid geography_status")
+            if entry.get("housing_share_status") not in {
+                "published_anchor",
+                "modeled",
+            }:
+                raise ValueError("Invalid housing_share_status")
             ce = entry["ce_window"]
             if (
                 ce.get("start") != f"{target - 5}Q2"
@@ -175,6 +235,42 @@ def _validate(document):
                     "ACS window must match the SPM reference year"
                 )
             _counts(acs, "observed_years", "projected_years", 5)
+    assignment = document.get("county_assignments")
+    if not isinstance(assignment, dict):
+        raise ValueError("Forecast requires county assignment provenance")
+    for field in ("county_vintage", "boundary_vintage", "assignment_method"):
+        _text(assignment.get(field), field)
+    maps, year_maps = assignment.get("maps"), assignment.get("year_maps")
+    if (
+        not isinstance(maps, dict)
+        or not maps
+        or not isinstance(year_maps, dict)
+        or set(year_maps) != year_set
+    ):
+        raise ValueError("Incomplete county assignment year coverage")
+    for mapping in maps.values():
+        if not isinstance(mapping, dict) or not mapping:
+            raise ValueError("Empty county assignment map")
+        for county, area_id in mapping.items():
+            if (
+                not isinstance(county, str)
+                or not re.fullmatch(r"\d{5}", county)
+                or area_id not in areas
+            ):
+                raise ValueError("Invalid county assignment")
+    for scenario in scenarios.values():
+        for year, entry in scenario["years"].items():
+            if year_maps[year] not in maps or set(
+                maps[year_maps[year]].values()
+            ) - set(entry["rent_indices"]):
+                raise ValueError(
+                    "County assigned to an area unavailable that year"
+                )
+    actual = hashlib.sha256(
+        canonical_bytes({k: v for k, v in assignment.items() if k != "sha256"})
+    ).hexdigest()
+    if _hash(assignment.get("sha256"), "assignment sha256") != actual:
+        raise ValueError("County assignment hash mismatch")
     expected = _hash(document.get("content_sha256"), "content_sha256")
     if forecast_digest(document) != expected:
         raise ValueError("SPM forecast content hash mismatch")
@@ -194,7 +290,9 @@ class SPMForecast:
     _json: bytes
     _identity: tuple
     _entries: object
+    _calculation_entries: object
     _areas: object
+    _assignments: object
 
     @classmethod
     def from_dict(cls, document, *, expected_sha256=None, as_of=None):
@@ -245,7 +343,81 @@ class SPMForecast:
                 }
             ),
         )
+        # Unit calculations decode only one area's immutable inputs. Decoding
+        # every area's support diagnostics per household is unnecessarily costly.
+        object.__setattr__(
+            obj,
+            "_calculation_entries",
+            MappingProxyType(
+                {
+                    identity: MappingProxyType(
+                        {
+                            int(year): MappingProxyType(
+                                {
+                                    "entry": canonical_bytes(
+                                        {
+                                            k: v
+                                            for k, v in entry.items()
+                                            if k
+                                            not in {
+                                                "rent_indices",
+                                                "geography_by_area",
+                                                "median_diagnostics",
+                                            }
+                                        }
+                                    ),
+                                    "areas": MappingProxyType(
+                                        {
+                                            code: canonical_bytes(
+                                                {
+                                                    "rent_index": value,
+                                                    "geography": entry[
+                                                        "geography_by_area"
+                                                    ][code],
+                                                    "diagnostics": entry.get(
+                                                        "median_diagnostics",
+                                                        {},
+                                                    ).get(code, {}),
+                                                }
+                                            )
+                                            for code, value in entry[
+                                                "rent_indices"
+                                            ].items()
+                                        }
+                                    ),
+                                }
+                            )
+                            for year, entry in scenario["years"].items()
+                        }
+                    )
+                    for identity, scenario in snapshot["scenarios"].items()
+                }
+            ),
+        )
         obj._check_as_of(as_of)
+        assignment = snapshot["county_assignments"]
+        object.__setattr__(
+            obj,
+            "_assignments",
+            MappingProxyType(
+                {
+                    "metadata": canonical_bytes(
+                        {
+                            k: v
+                            for k, v in assignment.items()
+                            if k not in {"maps", "year_maps"}
+                        }
+                    ),
+                    "year_maps": MappingProxyType(assignment["year_maps"]),
+                    "maps": MappingProxyType(
+                        {
+                            name: MappingProxyType(rows)
+                            for name, rows in assignment["maps"].items()
+                        }
+                    ),
+                }
+            ),
+        )
         return obj
 
     def to_dict(self):
@@ -276,15 +448,36 @@ class SPMForecast:
             )
 
     def entry(self, year, *, scenario=None, as_of=None):
+        identity = self._validate_selection(year, scenario, as_of)
+        return json.loads(self._entries[identity][year])
+
+    def _validate_selection(self, year, scenario, as_of):
         _year(year)
         self._check_as_of(as_of)
         identity = self.default_scenario if scenario is None else scenario
         if identity not in self._entries:
             raise ValueError(f"Unknown forecast scenario: {identity}")
-        packed = self._entries[identity].get(year)
-        if packed is None:
+        if year not in self._entries[identity]:
             raise ValueError(f"Forecast has no entry for {year}")
-        return json.loads(packed)
+        return identity
+
+    def _calculation_entry(self, year, scenario, as_of, geoid=None):
+        identity = self._validate_selection(year, scenario, as_of)
+        packed = self._calculation_entries[identity][year]
+        entry = json.loads(packed["entry"])
+        code = str(geoid)
+        selected = packed["areas"].get(code)
+        area = json.loads(selected) if selected is not None else None
+        entry["rent_indices"] = (
+            {} if area is None else {code: area["rent_index"]}
+        )
+        entry["geography_by_area"] = (
+            {} if area is None else {code: area["geography"]}
+        )
+        entry["median_diagnostics"] = (
+            {} if area is None else {code: area["diagnostics"]}
+        )
+        return entry
 
     def _geography(self, entry, tenure, kind, geoid):
         if tenure not in TENURES:
@@ -296,7 +489,7 @@ class SPMForecast:
         if kind != "metro":
             raise ValueError(f"Forecast geography is unsupported: {kind}")
         identity = str(geoid)
-        if identity not in self._areas:
+        if identity not in entry["rent_indices"]:
             raise ValueError(f"Forecast geography unavailable: {identity}")
         rent_index = entry["rent_indices"][identity]
         share = entry["housing_shares"][tenure]
@@ -306,10 +499,58 @@ class SPMForecast:
             "area_id": identity,
             "name": json.loads(self._areas[identity])["name"],
             "rent_index": rent_index,
-            "status": entry["geography_status"],
+            "area_type": json.loads(self._areas[identity])["area_type"],
+            **entry["geography_by_area"][identity],
             "diagnostics": entry.get("median_diagnostics", {}).get(
                 identity, {}
             ),
+        }
+
+    def areas_for_year(self, year, *, scenario=None, as_of=None):
+        """Return the selected year's area menu with each component's status."""
+        entry = self.entry(year, scenario=scenario, as_of=as_of)
+        return {
+            area_id: {**json.loads(self._areas[area_id]), **metadata}
+            for area_id, metadata in entry["geography_by_area"].items()
+        }
+
+    def resolve_county(
+        self,
+        year,
+        county_fips,
+        *,
+        county_vintage="2020",
+        scenario=None,
+        as_of=None,
+    ):
+        """Assign a county to its SPM area; counties are not estimation units."""
+        identity = self._validate_selection(year, scenario, as_of)
+        meta = json.loads(self._assignments["metadata"])
+        if county_vintage != meta["county_vintage"]:
+            raise ValueError(f"Unsupported county vintage: {county_vintage}")
+        if not isinstance(county_fips, str) or not re.fullmatch(
+            r"\d{5}", county_fips
+        ):
+            raise ValueError("County FIPS must be a five-digit string")
+        map_id = self._assignments["year_maps"][str(year)]
+        area_id = self._assignments["maps"][map_id].get(county_fips)
+        if (
+            area_id is None
+            or area_id
+            not in self._calculation_entries[identity][year]["areas"]
+        ):
+            raise ValueError(
+                f"County assignment unavailable for {county_fips}/{year}"
+            )
+        return {
+            "area_id": area_id,
+            "kind": "metro",
+            "county_fips": county_fips,
+            "county_vintage": county_vintage,
+            "boundary_vintage": meta["boundary_vintage"],
+            "assignment_method": meta["assignment_method"],
+            "assignment_sha256": meta["sha256"],
+            "status": "research_assignment",
         }
 
     def geography_factor(
@@ -322,7 +563,7 @@ class SPMForecast:
         geoid=None,
         as_of=None,
     ):
-        entry = self.entry(year, scenario=scenario, as_of=as_of)
+        entry = self._calculation_entry(year, scenario, as_of, geoid)
         return self._geography(entry, tenure, kind, geoid)
 
     def calculate_unit(self, unit, *, scenario=None, as_of=None):
@@ -330,7 +571,9 @@ class SPMForecast:
         if not isinstance(unit, SPMUnit):
             raise TypeError("calculate_unit requires an SPMUnit")
         identity = self.default_scenario if scenario is None else scenario
-        entry = self.entry(unit.year, scenario=identity, as_of=as_of)
+        entry = self._calculation_entry(
+            unit.year, identity, as_of, unit.geography_id
+        )
         geography = (
             {
                 "factor": unit.geographic_adjustment,

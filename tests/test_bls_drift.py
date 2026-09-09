@@ -126,13 +126,12 @@ class TestPageVintage:
             calls.append((year, kwargs))
             raise ValueError("not published in this series")
 
-        monkeypatch.setattr(drift, "get_thresholds", unavailable)
+        monkeypatch.setattr(drift, "get_published_thresholds", unavailable)
         assert drift.check_page_vintage(2025, page_html=PAGE_TABLE) == []
         assert calls == [
             (
                 2025,
                 {
-                    "allow_forecast": False,
                     "series": "census-published-pre-correction",
                 },
             )

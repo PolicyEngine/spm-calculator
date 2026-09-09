@@ -1,4 +1,4 @@
-"""Offline commands for inspecting and applying a pinned SPM release."""
+"""Offline commands for inspecting and applying a pinned SPM forecast."""
 
 from __future__ import annotations
 
@@ -7,7 +7,8 @@ import csv
 import json
 import sys
 
-from .release import TENURES, SPMUnit, load_release
+from .release import TENURES, SPMUnit
+from .rolling_forecast import load_forecast
 
 
 def main(argv=None):
@@ -15,25 +16,35 @@ def main(argv=None):
         prog="spm-calculator", description=__doc__
     )
     parser.add_argument(
-        "--release", help="Local release JSON; default is the bundled release"
+        "--forecast",
+        help="Local forecast JSON; default is the bundled artifact",
     )
     parser.add_argument(
-        "--expect-sha256", help="Independently retained release content digest"
+        "--expect-sha256",
+        help="Independently retained forecast content digest",
     )
     parser.add_argument(
         "--as-of", help="Required information date (YYYY-MM-DD)"
     )
+    parser.add_argument(
+        "--scenario", help="Scenario identity; default is the artifact default"
+    )
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser(
-        "info", help="Show release identity, coverage and sources"
+        "info", help="Show artifact identity, coverage and sources"
     )
     commands.add_parser(
-        "verify", help="Verify schema, content digest and information date"
+        "verify", help="Verify schema, digest and information date"
     )
     table = commands.add_parser(
-        "export", help="Export the release or its national threshold table"
+        "export",
+        help="Export the artifact or selected scenario's national table",
     )
     table.add_argument("--format", choices=("json", "csv"), default="json")
+    areas = commands.add_parser(
+        "areas", help="List the selected year's actual SPM estimation areas"
+    )
+    areas.add_argument("--year", type=int, required=True)
     calc = commands.add_parser(
         "calculate", help="Compute one annual SPM unit threshold"
     )
@@ -43,27 +54,45 @@ def main(argv=None):
     calc.add_argument("--tenure", choices=TENURES, default="renter")
     calc.add_argument("--resources", type=float)
     calc.add_argument("--unit-id", default="unit-1")
-    calc.add_argument(
-        "--geography-kind",
-        choices=(
-            "national",
-            "metro",
-            "congressional_district",
-            "state",
-            "county",
-        ),
-        default="national",
+    location = calc.add_mutually_exclusive_group(required=True)
+    location.add_argument(
+        "--national",
+        action="store_true",
+        help="Explicitly use the national reference",
     )
-    calc.add_argument("--geography-id")
-    calc.add_argument("--geographic-adjustment", type=float)
-    calc.add_argument("--allow-estimated", action="store_true")
+    location.add_argument(
+        "--area",
+        help="SPM estimation-area ID (MSA, residual metro or state nonmetro)",
+    )
+    location.add_argument(
+        "--county", help="Resolve a five-digit county FIPS to its SPM area"
+    )
+    calc.add_argument("--county-vintage", default="2020")
     args = parser.parse_args(argv)
     try:
-        release = load_release(
-            args.release, expected_sha256=args.expect_sha256, as_of=args.as_of
+        forecast = load_forecast(
+            args.forecast, expected_sha256=args.expect_sha256, as_of=args.as_of
         )
+        scenario = (
+            forecast.default_scenario
+            if args.scenario is None
+            else args.scenario
+        )
+        # Validate the scenario even for commands that do not calculate an amount.
+        forecast.entry(forecast.years[0], scenario=scenario, as_of=args.as_of)
         if args.command == "calculate":
-            result = release.calculate_unit(
+            assignment = None
+            area = args.area
+            if args.county is not None:
+                assignment = forecast.resolve_county(
+                    args.year,
+                    args.county,
+                    county_vintage=args.county_vintage,
+                    scenario=scenario,
+                    as_of=args.as_of,
+                )
+                area = assignment["area_id"]
+            result = forecast.calculate_unit(
                 SPMUnit(
                     unit_id=args.unit_id,
                     num_adults=args.adults,
@@ -71,56 +100,66 @@ def main(argv=None):
                     tenure=args.tenure,
                     year=args.year,
                     resources=args.resources,
-                    geography_kind=args.geography_kind,
-                    geography_id=args.geography_id,
-                    geographic_adjustment=args.geographic_adjustment,
+                    geography_kind="national" if args.national else "metro",
+                    geography_id=area,
                 ),
-                allow_estimated=args.allow_estimated,
+                scenario=scenario,
                 as_of=args.as_of,
+            )
+            if assignment is not None:
+                result["provenance"]["county_assignment"] = assignment
+        elif args.command == "areas":
+            result = forecast.areas_for_year(
+                args.year, scenario=scenario, as_of=args.as_of
             )
         elif args.command == "export":
             if args.format == "csv":
                 writer = csv.writer(sys.stdout, lineterminator="\n")
                 writer.writerow(
                     [
-                        "release_id",
-                        "release_sha256",
+                        "forecast_id",
+                        "forecast_sha256",
+                        "scenario",
                         "year",
-                        "status",
+                        "national_status",
                         "tenure",
                         "threshold",
                         "housing_share",
-                        "housing_share_reference_year",
                         "housing_share_status",
+                        "geography_status",
                     ]
                 )
-                for year in release.years:
-                    entry = release.entry(year, allow_estimated=True)
+                for year in forecast.years:
+                    entry = forecast.entry(
+                        year, scenario=scenario, as_of=args.as_of
+                    )
                     for tenure in TENURES:
-                        share = entry["housing_share_provenance"]
                         writer.writerow(
                             [
-                                release.release_id,
-                                release.content_sha256,
+                                forecast.forecast_id,
+                                forecast.content_sha256,
+                                scenario,
                                 year,
-                                entry["status"],
+                                entry["national_status"],
                                 tenure,
                                 entry["thresholds"][tenure],
                                 entry["housing_shares"][tenure],
-                                share["reference_year"],
-                                share["status"],
+                                entry["housing_share_status"],
+                                entry["geography_status"],
                             ]
                         )
                 return 0
-            result = release.to_dict()
+            result = forecast.to_dict()
         else:
-            doc = release.to_dict()
+            doc = forecast.to_dict()
             result = {
-                "release_id": release.release_id,
-                "content_sha256": release.content_sha256,
+                "forecast_id": forecast.forecast_id,
+                "content_sha256": forecast.content_sha256,
                 "valid": True,
                 "information_date": doc["information_date"],
-                "years": release.years,
+                "years": forecast.years,
+                "scenario": scenario,
+                "scenarios": list(doc["scenarios"]),
                 "sources": doc["sources"],
                 "verification_scope": "Schema and integrity; not a source-authenticity signature",
             }

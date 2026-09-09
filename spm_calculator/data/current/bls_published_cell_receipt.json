@@ -1,0 +1,229 @@
+{
+  "schema_version": 1,
+  "verified_on": "2026-09-09",
+  "finding": "All 12 canonical national tenure thresholds for 2022-2025 equal literal published BLS workbook cells at full floating-point precision. Their decimal places originate in BLS source cells; the package does not reconstruct these national bases with its CE estimator.",
+  "reference_family": {
+    "adults": 2,
+    "children": 2
+  },
+  "canonical_series": "bls-corrected-2026-07-17",
+  "canonical_source_path": "spm_calculator/data/bls/threshold_series.json",
+  "precision_note": "xml_numeric_literal preserves the exact OOXML text. published_full_precision is the same binary float read by openpyxl and packaged JSON; shortest decimal float rendering can omit binary serialization tails. Whole-dollar chart values are display rounding, not replacement source precision.",
+  "rounding": "Nearest whole dollar, Decimal ROUND_HALF_UP; none of these cells is a half-dollar tie.",
+  "verification": {
+    "workbook_method": "Read bundled ZIP worksheet XML directly; confirm numeric cells contain v and no f, compare exact literal text and floating-point value; independently reconcile package published source and both canonical forecast scenarios in tests.",
+    "web_method": "Opened BLS correction landing page and its Chart data link, 2022-2024 narrative pages, 2025 publication page and Chart 1/Chart 2 pages using web browsing on verified_on.",
+    "live_workbook_bytes_refetched": false,
+    "live_workbook_limitation": "Web browsing cannot parse XLSX content; direct Python HTTPS retrieval failed DNS resolution in this sandbox. SHA-256 values identify bundled original-source bytes and match their pre-existing threshold-series provenance; this receipt does not claim a fresh live-workbook checksum."
+  },
+  "workbooks": {
+    "corrected_2005_2024": {
+      "path": "spm_calculator/data/bls/spm_threshold_200524_corrected.xlsx",
+      "source_url": "https://www.bls.gov/pir/spm/spm_threshold_200524_corrected.xlsx",
+      "sha256": "e7931a1f2540d52877d6fd14a8ed1e421e977a85c952ae1b6f690a04d904f2cb",
+      "published": "2026-07-17",
+      "bundled_provenance_retrieved": "2026-07-17",
+      "sheet": "2005-2024",
+      "worksheet_part": "xl/worksheets/sheet1.xml",
+      "year_header_row": 3,
+      "literal_cell_type": "numeric; no formula element"
+    },
+    "current_through_2025": {
+      "path": "spm_calculator/data/bls/spm_thresholds.xlsx",
+      "source_url": "https://www.bls.gov/pir/spm/spm_thresholds.xlsx",
+      "sha256": "95f39fb5479ee5c196de627e06e10efd59af5148cf1c8466924e3fb2e5e2bd3b",
+      "published": "2026-08-24",
+      "bundled_provenance_retrieved": "2026-09-04",
+      "sheet": "2005-2024",
+      "worksheet_part": "xl/worksheets/sheet1.xml",
+      "year_header_row": 3,
+      "literal_cell_type": "numeric; no formula element"
+    }
+  },
+  "pages": {
+    "corrected_2019_2024_chart": {
+      "source_url": "https://www.bls.gov/pir/spm/spm_correction_chart_data.htm",
+      "landing_url": "https://www.bls.gov/pir/spm/spm_thresholds_2024_correction.htm",
+      "last_modified": "2026-07-17",
+      "vintage": "corrected 2019-2024 release",
+      "table": "Corrected SPM Thresholds (in dollars): 2019–2024"
+    },
+    "current_2025_chart_1": {
+      "source_url": "https://www.bls.gov/pir/spm/spm_chart_1_2025_data.htm",
+      "landing_url": "https://www.bls.gov/pir/spm/spm_thresholds_2025.htm",
+      "last_modified": "2026-08-24",
+      "vintage": "2025 published release",
+      "table": "Research Supplemental Poverty Measure (in dollars), 2025"
+    },
+    "current_2025_chart_2": {
+      "source_url": "https://www.bls.gov/pir/spm/spm_chart_2_2025_data.htm",
+      "last_modified": "2026-08-28",
+      "vintage": "corrected 2024 and published 2025 comparison",
+      "whole_dollar_values": {
+        "2024": {
+          "owner_with_mortgage": 39231,
+          "owner_without_mortgage": 32879,
+          "renter": 39220
+        },
+        "2025": {
+          "owner_with_mortgage": 41323,
+          "owner_without_mortgage": 34326,
+          "renter": 41701
+        }
+      }
+    },
+    "bls_precision_instruction": {
+      "source_url": "https://www.bls.gov/pir/spmhome.htm",
+      "section": "SPM Thresholds and Related Statistics",
+      "quote": "use of all of the significant digits presented in the spreadsheets are necessary for inclusion in calculations",
+      "interpretation": "BLS explicitly instructs users to retain spreadsheet significant digits because precision affects resulting dollar values."
+    }
+  },
+  "annual_page_vintage": {
+    "source_urls": [
+      "https://www.bls.gov/pir/spm/spm_thresholds_2022.htm",
+      "https://www.bls.gov/pir/spm/spm_thresholds_2023.htm",
+      "https://www.bls.gov/pir/spm/spm_thresholds_2024.htm"
+    ],
+    "last_modified": "2026-07-17",
+    "observed_status": "These live annual narrative pages contain correction notices and refer to the corrected release; they currently do not supply annual threshold tables.",
+    "superseded_series": "census-published-pre-correction",
+    "superseded_2024_values": {
+      "owner_with_mortgage": 39068,
+      "owner_without_mortgage": 32586,
+      "renter": 39430
+    },
+    "interpretation": "The archived pre-correction values represent a different publication vintage. They are not the rounded values of the corrected cells."
+  },
+  "records": [
+    {
+      "year": 2022,
+      "tenure": "owner_with_mortgage",
+      "workbook_id": "corrected_2005_2024",
+      "cell": "T4",
+      "xml_numeric_literal": "33978.493165",
+      "published_full_precision": 33978.493165,
+      "page_whole_dollars": 33978,
+      "page_id": "corrected_2019_2024_chart",
+      "corroborating_workbook_id": "current_through_2025"
+    },
+    {
+      "year": 2022,
+      "tenure": "owner_without_mortgage",
+      "workbook_id": "corrected_2005_2024",
+      "cell": "T7",
+      "xml_numeric_literal": "28454.915504000001",
+      "published_full_precision": 28454.915504,
+      "page_whole_dollars": 28455,
+      "page_id": "corrected_2019_2024_chart",
+      "corroborating_workbook_id": "current_through_2025"
+    },
+    {
+      "year": 2022,
+      "tenure": "renter",
+      "workbook_id": "corrected_2005_2024",
+      "cell": "T10",
+      "xml_numeric_literal": "34140.062994",
+      "published_full_precision": 34140.062994,
+      "page_whole_dollars": 34140,
+      "page_id": "corrected_2019_2024_chart",
+      "corroborating_workbook_id": "current_through_2025"
+    },
+    {
+      "year": 2023,
+      "tenure": "owner_with_mortgage",
+      "workbook_id": "corrected_2005_2024",
+      "cell": "U4",
+      "xml_numeric_literal": "36966.237639999999",
+      "published_full_precision": 36966.23764,
+      "page_whole_dollars": 36966,
+      "page_id": "corrected_2019_2024_chart",
+      "corroborating_workbook_id": "current_through_2025"
+    },
+    {
+      "year": 2023,
+      "tenure": "owner_without_mortgage",
+      "workbook_id": "corrected_2005_2024",
+      "cell": "U7",
+      "xml_numeric_literal": "30587.725237999999",
+      "published_full_precision": 30587.725238,
+      "page_whole_dollars": 30588,
+      "page_id": "corrected_2019_2024_chart",
+      "corroborating_workbook_id": "current_through_2025"
+    },
+    {
+      "year": 2023,
+      "tenure": "renter",
+      "workbook_id": "corrected_2005_2024",
+      "cell": "U10",
+      "xml_numeric_literal": "37230.752854999999",
+      "published_full_precision": 37230.752855,
+      "page_whole_dollars": 37231,
+      "page_id": "corrected_2019_2024_chart",
+      "corroborating_workbook_id": "current_through_2025"
+    },
+    {
+      "year": 2024,
+      "tenure": "owner_with_mortgage",
+      "workbook_id": "corrected_2005_2024",
+      "cell": "V4",
+      "xml_numeric_literal": "39230.994457000001",
+      "published_full_precision": 39230.994457,
+      "page_whole_dollars": 39231,
+      "page_id": "corrected_2019_2024_chart",
+      "corroborating_workbook_id": "current_through_2025"
+    },
+    {
+      "year": 2024,
+      "tenure": "owner_without_mortgage",
+      "workbook_id": "corrected_2005_2024",
+      "cell": "V7",
+      "xml_numeric_literal": "32878.594848000001",
+      "published_full_precision": 32878.594848,
+      "page_whole_dollars": 32879,
+      "page_id": "corrected_2019_2024_chart",
+      "corroborating_workbook_id": "current_through_2025"
+    },
+    {
+      "year": 2024,
+      "tenure": "renter",
+      "workbook_id": "corrected_2005_2024",
+      "cell": "V10",
+      "xml_numeric_literal": "39219.893902000003",
+      "published_full_precision": 39219.893902,
+      "page_whole_dollars": 39220,
+      "page_id": "corrected_2019_2024_chart",
+      "corroborating_workbook_id": "current_through_2025"
+    },
+    {
+      "year": 2025,
+      "tenure": "owner_with_mortgage",
+      "workbook_id": "current_through_2025",
+      "cell": "W4",
+      "xml_numeric_literal": "41322.707393999997",
+      "published_full_precision": 41322.707394,
+      "page_whole_dollars": 41323,
+      "page_id": "current_2025_chart_1"
+    },
+    {
+      "year": 2025,
+      "tenure": "owner_without_mortgage",
+      "workbook_id": "current_through_2025",
+      "cell": "W7",
+      "xml_numeric_literal": "34325.997719999999",
+      "published_full_precision": 34325.99772,
+      "page_whole_dollars": 34326,
+      "page_id": "current_2025_chart_1"
+    },
+    {
+      "year": 2025,
+      "tenure": "renter",
+      "workbook_id": "current_through_2025",
+      "cell": "W10",
+      "xml_numeric_literal": "41700.555713000002",
+      "published_full_precision": 41700.555713,
+      "page_whole_dollars": 41701,
+      "page_id": "current_2025_chart_1"
+    }
+  ]
+}

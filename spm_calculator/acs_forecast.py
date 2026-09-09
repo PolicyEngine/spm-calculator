@@ -46,7 +46,7 @@ def _records(records: pd.DataFrame) -> pd.DataFrame:
     required = {"record_id", "cohort_year", "puma_geoid", "rent", "weight"}
     if not required <= set(records):
         raise ValueError(
-            f"Missing record fields: {sorted(required-set(records))}"
+            f"Missing record fields: {sorted(required - set(records))}"
         )
     data = records.copy()
     if "source_vintage" in data and data.source_vintage.nunique() != 1:
@@ -275,7 +275,7 @@ def summarize_window(
             areas[code]["thin_support"] = True
     if set(areas) != set(area_codes):
         raise ValueError(
-            f"Missing positive area coverage: {set(area_codes)-set(areas)}"
+            f"Missing positive area coverage: {set(area_codes) - set(areas)}"
         )
     assigned = sum(x["allocated_weight"] for x in areas.values())
     if not np.isclose(assigned + unassigned, national_weight, rtol=1e-10):
@@ -361,9 +361,18 @@ def project_acs_windows(
     end_spm_year: int = 2030,
     nominal_rent_growth_by_year: Mapping[int, float],
     price_growth_by_year: Mapping[int, float],
+    anchor_status_by_area: Mapping[str, str] | None = None,
 ) -> dict:
     """Anchor rolling ratios; bridge whole PUMS products on common cohorts."""
     anchor = _anchors(official_anchor_indices)
+    anchor_status = dict(
+        anchor_status_by_area or {code: "published_anchor" for code in anchor}
+    )
+    if set(anchor_status) != set(anchor) or set(anchor_status.values()) - {
+        "published_anchor",
+        "modeled_unanchored",
+    }:
+        raise ValueError("Anchor statuses must cover all areas explicitly")
     old, new = _records(baseline_records), _records(observed_records)
     if donor_year != observed_acs_end_year or set(new.cohort_year) != set(
         range(donor_year - 4, donor_year + 1)
@@ -447,15 +456,20 @@ def project_acs_windows(
         diagnostics[str(year)] = summary
     # The published anchor is used exactly. Its PUMS approximation's warning
     # remains in model_rent_index_topcode_warning, not the official index.
-    for area in anchor_summary["areas"].values():
-        area["rent_index_topcode_warning"] = False
-        area["rent_index_topcode_sources"] = {}
-        area["rent_index_topcode_scope"] = "published_anchor_not_pums_estimate"
+    for code, area in anchor_summary["areas"].items():
+        if anchor_status[code] == "published_anchor":
+            area["rent_index_topcode_warning"] = False
+            area["rent_index_topcode_sources"] = {}
+            area["rent_index_topcode_scope"] = (
+                "published_anchor_not_pums_estimate"
+            )
+        area["anchor_status"] = anchor_status[code]
     return {
         "indices_by_year": indices,
         "diagnostics_by_year": diagnostics,
         "metadata": {
             "anchor_spm_year": anchor_spm_year,
+            "anchor_status_by_area": anchor_status,
             "anchor_acs_window": [anchor_spm_year - 5, anchor_spm_year - 1],
             "observed_acs_end_year": observed_acs_end_year,
             "donor_year": donor_year,
@@ -470,6 +484,7 @@ def project_acs_windows(
             },
             "support_threshold": SUPPORT_THRESHOLD,
             "support_rule": "min(unique originals, allocation-expected originals, donor-collapsed Kish)<30; projected windows also flag thin donor support",
+            "thin_support_policy": "Retain the computed area/window estimate with immutable support counts and warnings; no donor widening, carryforward or substitution. Empty or nonpositive numerical support raises an error.",
             "kish_interpretation": "Unequal-weight diagnostic; not survey-design effective sample size",
             "uncertainty_status": "Survey-design uncertainty and forecast intervals are not estimated",
             "index_topcoding_interpretation": "Potential sensitivity from local or national medians in any contributing target, anchor or overlap ratio; conservative input flags, not known bias or confidence intervals. Exact published anchors are not PUMS estimates.",

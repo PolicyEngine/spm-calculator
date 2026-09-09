@@ -225,6 +225,30 @@ def test_bridge_reference_warning_survives_after_censored_cohort_leaves():
         ]
 
 
+def test_unpublished_modeled_anchor_retains_topcode_warning():
+    old = records(range(2019, 2024))
+    old["top_rent"] = True
+    old["rent_lower_bound"] = 50.0
+    result = project(
+        old,
+        records(range(2020, 2025)),
+        anchor_status_by_area={
+            "1001": "modeled_unanchored",
+            "1002": "published_anchor",
+        },
+    )
+    areas = result["diagnostics_by_year"]["2024"]["areas"]
+    assert areas["1001"]["rent_index_topcode_warning"]
+    assert not areas["1002"]["rent_index_topcode_warning"]
+    assert areas["1001"]["anchor_status"] == "modeled_unanchored"
+    with pytest.raises(ValueError, match="Anchor statuses"):
+        project(
+            old,
+            records(range(2020, 2025)),
+            anchor_status_by_area={"1001": "published_anchor"},
+        )
+
+
 def test_holdout_ratio_warning_includes_origin_denominator():
     origin = records([2022], values_b={2022: 200})
     origin["weight"] = [1.0, 3.0]
@@ -299,3 +323,39 @@ def test_allocation_tolerance_only_accepts_floating_point_roundoff():
     mapping.loc[0, "fraction"] = 1.001
     with pytest.raises(ValueError, match="allocation"):
         summarize_window(records([2024]), mapping, ["1001", "1002"])
+
+
+def test_thin_support_keeps_computed_2035_window_and_rejects_missing_area():
+    old = records(
+        range(2019, 2024), values_a={y: 60 for y in range(2019, 2024)}
+    )
+    new = records(
+        range(2020, 2025),
+        values_a={y: 200 if y == 2024 else 60 for y in range(2020, 2025)},
+    )
+    rates = {y: 0.03 for y in range(2025, 2036)}
+    result = project_acs_windows(
+        old,
+        new,
+        allocations(),
+        {"1001": 0.6, "1002": 1.0},
+        end_spm_year=2035,
+        nominal_rent_growth_by_year=rates,
+        price_growth_by_year=rates,
+    )
+    future = result["diagnostics_by_year"]["2035"]["areas"]["1001"]
+    assert future["thin_support"]
+    assert future["unique_records"] == 1
+    assert future["donor_support"]["unique_records"] == 1
+    assert future["kish_effective_count"] == pytest.approx(1)
+    assert (
+        result["indices_by_year"]["2035"]["1001"]
+        != result["indices_by_year"]["2024"]["1001"]
+    )
+    with pytest.raises(ValueError, match="Missing positive area coverage"):
+        summarize_window(new, allocations(), ["1001", "1002", "absent"])
+    for value in (0, -1, float("nan")):
+        invalid = new.copy()
+        invalid.loc[0, "weight"] = value
+        with pytest.raises(ValueError, match="weight|complete"):
+            summarize_window(invalid, allocations(), ["1001", "1002"])

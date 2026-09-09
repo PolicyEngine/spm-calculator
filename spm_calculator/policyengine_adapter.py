@@ -1,22 +1,21 @@
-"""Explicit SPM release integration for PolicyEngine's country formulas.
+"""Canonical forecast integration for PolicyEngine's SPM measurement formulas.
 
-Importing this module does not import PolicyEngine. The optional model imports
-occur only when building a reform. The release and options are immutable;
-evaluation receipts and once-per-year warning bookkeeping are private copies.
-This is a development integration, not a certified population-data bundle.
+PolicyEngine owns resources and benefit rules. This adapter supplies only SPM
+measurement inputs and final canonical amounts, with one storage cast. Importing
+it does not import PolicyEngine or change process-wide model state.
 """
 
 from __future__ import annotations
 
 import copy
-import math
-import warnings
 from dataclasses import dataclass, field
 from importlib import metadata
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
+
+from .errors import SPMInputError
 
 if TYPE_CHECKING:
-    from .release import SPMRelease
+    from .rolling_forecast import SPMForecast
 
 
 FORMULA_OWNED_INPUTS = frozenset(
@@ -26,8 +25,8 @@ FORMULA_OWNED_INPUTS = frozenset(
         "spm_unit_spm_threshold",
         "spm_unit_spm_threshold_housing_portion",
         "spm_unit_geographic_adjustment",
-        "spm_unit_count_adults",
-        "spm_unit_count_children",
+        "spm_measurement_adults",
+        "spm_measurement_children",
         "spm_unit_capped_housing_subsidy",
         "spm_unit_net_income",
         "spm_unit_benefits",
@@ -35,14 +34,12 @@ FORMULA_OWNED_INPUTS = frozenset(
         "spm_unit_is_in_deep_spm_poverty",
         "poverty_line",
         "poverty_gap",
-        "is_adult",
-        "is_child",
     }
 )
 
 
 def runtime_versions():
-    """Actual installed distributions, rather than a certified bundle label."""
+    """Return installed distributions without asserting data certification."""
     result = {}
     for package in (
         "policyengine",
@@ -58,24 +55,24 @@ def runtime_versions():
 
 
 def validate_policyengine_inputs(entity_records):
-    """Reject inputs which would bypass SPM formulas; never rewrite membership.
+    """Reject inputs that bypass SPM formulas without rewriting membership.
 
-    Accept an entity -> sequence-of-records mapping, or entity -> DataFrame
-    mapping. Observed Census outputs may be retained under separate report-only
-    names. This check does not certify population data or its resource methods.
+    Generic benefit-eligibility adult/child counts are outside this contract.
+    Observed Census outputs can be retained under separate report-only names.
     """
     conflicts = []
     for entity, records in entity_records.items():
-        if hasattr(records, "columns"):
-            keys = set(records.columns)
-        else:
-            keys = {key for record in records for key in record}
+        keys = (
+            set(records.columns)
+            if hasattr(records, "columns")
+            else {key for record in records for key in record}
+        )
         conflicts.extend(
             f"{entity}.{name}" for name in sorted(keys & FORMULA_OWNED_INPUTS)
         )
     if conflicts:
         raise ValueError(
-            "SPM release formulas cannot run with computed outputs supplied as inputs: "
+            "SPM formulas cannot run with computed outputs supplied as inputs: "
             + ", ".join(conflicts)
             + ". Retain observed Census values under separate report-only names."
         )
@@ -83,24 +80,22 @@ def validate_policyengine_inputs(entity_records):
 
 @dataclass(frozen=True)
 class PolicyEngineSPMProvider:
-    """A simulation-specific immutable release and explicit consumer policies.
+    """One verified forecast/scenario with explicit location selection.
 
-    ``pe_cpi_u`` is PE-owned extrapolation, not release data. A supplied forecast
-    wins only when ``allow_estimated`` is explicit. Unknown geography errors by
-    default. ``geographic_adjustment`` is a whole-threshold factor, not rent.
+    The default resolves each unit's observed county through the artifact's
+    year-specific area assignment. A household caller may explicitly select
+    ``national`` or one ``metro`` area. Unknown years, counties and areas fail;
+    there is no consumer extrapolation or location fallback policy.
     """
 
-    release: SPMRelease
-    year_policy: str = "pe_cpi_u"
-    allow_estimated: bool = False
-    geography_kind: str = "national"
-    geography_id: Optional[str] = None
-    geographic_adjustment: Optional[float] = None
-    geography_vintage: Optional[str] = None
-    missing_geography: str = "error"
-    as_of: Optional[str] = None
-    _warned_years: set = field(
-        default_factory=set, init=False, repr=False, compare=False
+    forecast: SPMForecast
+    scenario: str | None = None
+    geography_kind: str = "county"
+    geography_id: str | None = None
+    county_vintage: str = "2020"
+    as_of: str | None = None
+    _amount_cache: dict = field(
+        default_factory=dict, init=False, repr=False, compare=False
     )
     _year_receipts: dict = field(
         default_factory=dict, init=False, repr=False, compare=False
@@ -110,396 +105,335 @@ class PolicyEngineSPMProvider:
     )
 
     def __post_init__(self):
-        from .release import SPMRelease
+        from .rolling_forecast import SPMForecast
 
-        if not isinstance(self.release, SPMRelease):
-            raise TypeError("release must be a verified SPMRelease")
-        snapshot = SPMRelease.from_dict(
-            self.release.to_dict(),
-            expected_sha256=self.release.content_sha256,
-            as_of=self.as_of,
+        if not isinstance(self.forecast, SPMForecast):
+            raise TypeError("forecast must be a verified SPMForecast")
+        # SPMForecast is immutable and returns detached accessor results.
+        scenario = (
+            self.forecast.default_scenario
+            if self.scenario is None
+            else self.scenario
         )
-        object.__setattr__(self, "release", snapshot)
-        if self.year_policy not in {"error", "pe_cpi_u"}:
-            raise ValueError("year_policy must be error or pe_cpi_u")
-        if not isinstance(self.allow_estimated, bool):
-            raise ValueError("allow_estimated must be boolean")
-        if self.missing_geography not in {"error", "national"}:
-            raise ValueError("missing_geography must be error or national")
-        if self.geography_kind not in {
-            "national",
-            "metro",
-            "congressional_district",
-            "explicit",
-        }:
-            raise ValueError("Unsupported geography_kind")
-        if self.geography_kind == "explicit":
-            value = self.geographic_adjustment
-            if (
-                isinstance(value, bool)
-                or not isinstance(value, (int, float))
-                or not math.isfinite(value)
-                or value <= 0
-            ):
-                raise ValueError(
-                    "Explicit geographic adjustment must be finite and positive"
-                )
-            if (
-                not isinstance(self.geography_vintage, str)
-                or not self.geography_vintage.strip()
-                or self.geography_id is not None
-            ):
-                raise ValueError(
-                    "Explicit adjustment needs its vintage and no area id"
-                )
-        elif self.geographic_adjustment is not None:
+        self.forecast.entry(
+            self.forecast.years[0], scenario=scenario, as_of=self.as_of
+        )
+        object.__setattr__(self, "scenario", scenario)
+        if self.geography_kind not in {"county", "national", "metro"}:
             raise ValueError(
-                "geographic_adjustment requires geography_kind='explicit'"
+                "geography_kind must be county, national or metro"
             )
-        elif (
-            self.geography_kind == "national" and self.geography_id is not None
-        ):
-            raise ValueError("National geography does not take an area id")
-        elif self.geography_kind == "metro" and self.geography_id is None:
-            raise ValueError("Metro geography requires an area id")
+        if self.geography_kind == "metro":
+            if not isinstance(self.geography_id, str) or not self.geography_id:
+                raise ValueError("Metro selection requires an area id")
+        elif self.geography_id is not None:
+            raise ValueError("Only a fixed metro selection takes geography_id")
+        if not isinstance(self.county_vintage, str) or not self.county_vintage:
+            raise ValueError("county_vintage must be explicit")
 
-    def snapshot(self):
-        """Fresh provider state for one simulation; no process-wide switching."""
-        return type(self)(
+    def snapshot(self, *, copy_receipts=False):
+        """Create private state; clones with retained holders keep their receipts."""
+        snapshot = type(self)(
             **{
                 name: getattr(self, name)
                 for name in (
-                    "release",
-                    "year_policy",
-                    "allow_estimated",
+                    "forecast",
+                    "scenario",
                     "geography_kind",
                     "geography_id",
-                    "geographic_adjustment",
-                    "geography_vintage",
-                    "missing_geography",
+                    "county_vintage",
                     "as_of",
                 )
             }
         )
+        if copy_receipts:
+            snapshot._year_receipts.update(copy.deepcopy(self._year_receipts))
+            snapshot._geography_receipts.update(
+                copy.deepcopy(self._geography_receipts)
+            )
+        return snapshot
 
-    def year_metadata(self, year, *, cpi_u=None):
-        """Return an isolated entry plus exact evaluated CPI provenance."""
+    def year_metadata(self, year):
         if isinstance(year, bool) or not isinstance(year, int):
             raise ValueError("year must be an integer")
-        existing = (
-            self.release.entry(year, allow_estimated=True, as_of=self.as_of)
-            if year in self.release.years
-            else None
-        )
-        if existing is not None and (
-            existing["status"] == "published" or self.allow_estimated
-        ):
-            entry = existing
-            entry["geography_threshold_year"] = year
-        else:
-            base_year = self.release.latest_published_year
-            if self.year_policy == "error":
-                raise ValueError(
-                    f"No permitted release entry for {year}; estimated entries require allow_estimated=True"
-                )
-            if year <= base_year:
-                raise ValueError(
-                    f"Cannot extrapolate a missing or unpermitted past/interior year {year}"
-                )
-            if cpi_u is None:
-                raise ValueError(
-                    "PE CPI extrapolation requires the actual model CPI-U parameter"
-                )
-            base = self.release.entry(base_year, as_of=self.as_of)
-            endpoints = {}
-            for name, endpoint_year in (("base", base_year), ("target", year)):
-                instant = f"{endpoint_year}-02-01"
-                value = float(cpi_u(instant))
-                if not math.isfinite(value) or value <= 0:
-                    raise ValueError(
-                        "Model CPI-U endpoints must be finite and positive"
-                    )
-                endpoints[name] = {
-                    "year": endpoint_year,
-                    "instant": instant,
-                    "value": value,
-                    "classification": "unknown_model_parameter_classification",
-                }
-            ratio = endpoints["target"]["value"] / endpoints["base"]["value"]
-            share_provenance = copy.deepcopy(base["housing_share_provenance"])
-            share_provenance.update(
-                status="carried",
-                carried_from_threshold_year=base_year,
-                target_year=year,
-                consumer_extrapolation=True,
+        if year not in self._year_receipts:
+            self._year_receipts[year] = self.forecast.entry(
+                year, scenario=self.scenario, as_of=self.as_of
             )
-            entry = {
-                "status": "consumer_extrapolation",
-                "methodology_id": "pe_cpi_u",
-                "method": "pe_cpi_u",
-                "base_year": base_year,
-                "target_year": year,
-                "base_release_sha256": self.release.content_sha256,
-                "thresholds": {
-                    tenure: value * ratio
-                    for tenure, value in base["thresholds"].items()
-                },
-                "housing_shares": copy.deepcopy(base["housing_shares"]),
-                "housing_share_provenance": share_provenance,
-                "source_ids": list(base["source_ids"]),
-                "geography_threshold_year": base_year,
-                "uncertainty": {
-                    "kind": "unavailable",
-                    "note": "No extrapolation interval estimated",
-                },
-                "cpi": {
-                    "parameter_path": "gov.bls.cpi.cpi_u",
-                    "series": "PE model CPI-U parameter",
-                    "ratio": ratio,
-                    **endpoints,
-                    "classification_note": "Model parameter metadata does not establish observed versus projected endpoint values",
-                    "parameter_metadata": copy.deepcopy(
-                        getattr(cpi_u, "metadata", {})
-                    ),
-                    "runtime_versions": runtime_versions(),
-                },
-                "unused_release_estimate": (
-                    None
-                    if existing is None
-                    else {
-                        "status": existing["status"],
-                        "methodology_id": existing["methodology_id"],
-                        "release_id": self.release.release_id,
-                        "year": year,
-                        "reason": "allow_estimated=False",
-                    }
-                ),
-            }
-            if year not in self._warned_years:
-                warnings.warn(
-                    f"SPM {year} uses PE CPI-U consumer extrapolation from published {base_year}; it is not a published release threshold",
-                    UserWarning,
-                    stacklevel=2,
-                )
-                self._warned_years.add(year)
-        entry.update(
-            release_id=self.release.release_id,
-            release_sha256=self.release.content_sha256,
-            year=year,
-        )
-        self._year_receipts[year] = copy.deepcopy(entry)
-        return copy.deepcopy(entry)
+        return copy.deepcopy(self._year_receipts[year])
 
-    def geography_metadata(self, year, tenure, *, geoid=None, cpi_u=None):
-        """Resolve only release-pinned geography or an explicit caller factor."""
-        entry = self.year_metadata(year, cpi_u=cpi_u)
-        if self.geography_kind == "explicit":
-            result = {
-                "factor": float(self.geographic_adjustment),
-                "kind": "explicit",
-                "status": "caller_supplied",
-                "vintage": self.geography_vintage,
-            }
-        else:
-            identity = (
-                self.geography_id if self.geography_id is not None else geoid
-            )
-            if self.geography_kind == "national":
-                identity = None
-            result = self.release.geography_factor(
-                entry["geography_threshold_year"],
-                tenure,
-                kind=self.geography_kind,
-                geoid=identity,
-                missing=self.missing_geography,
-                allow_estimated=self.allow_estimated,
-            )
-        if result["factor"] + entry["housing_shares"][tenure] - 1 < 0:
+    def calculate_unit(
+        self, *, year, adults, children, tenure, county_fips=None
+    ):
+        """Execute the canonical calculator; preserve resolved input provenance."""
+        from .release import SPMUnit
+
+        assignment = None
+        kind, identity = self.geography_kind, self.geography_id
+        if kind == "county":
+            if county_fips is None or county_fips == "":
+                raise SPMInputError(
+                    "SPM_GEOGRAPHY_REQUIRED",
+                    "Choose an SPM area, provide county FIPS, or explicitly select national geography; state alone does not identify an SPM area",
+                )
+            try:
+                assignment = self.forecast.resolve_county(
+                    year,
+                    county_fips,
+                    county_vintage=self.county_vintage,
+                    scenario=self.scenario,
+                    as_of=self.as_of,
+                )
+            except ValueError as error:
+                raise SPMInputError(
+                    "SPM_GEOGRAPHY_UNAVAILABLE", str(error)
+                ) from error
+            kind, identity = assignment["kind"], assignment["area_id"]
+        elif county_fips is not None:
             raise ValueError(
-                "Geographic adjustment implies a negative housing portion"
+                "County input conflicts with explicit geography selection"
             )
-        result.update(
-            target_year=year,
-            tenure=tenure,
-            housing_share_provenance=copy.deepcopy(
-                entry["housing_share_provenance"]
+        if kind == "metro" and identity not in self.forecast.areas_for_year(
+            year, scenario=self.scenario, as_of=self.as_of
+        ):
+            raise SPMInputError(
+                "SPM_GEOGRAPHY_UNAVAILABLE",
+                f"SPM area {identity!r} is unavailable for {year}",
+            )
+        result = self.forecast.calculate_unit(
+            SPMUnit(
+                unit_id="policyengine",
+                year=year,
+                num_adults=adults,
+                num_children=children,
+                tenure=tenure,
+                geography_kind=kind,
+                geography_id=identity,
             ),
+            scenario=self.scenario,
+            as_of=self.as_of,
         )
-        key = (year, tenure, result.get("kind"), result.get("area_id"))
-        self._geography_receipts[key] = copy.deepcopy(result)
-        return copy.deepcopy(result)
+        if year not in self._year_receipts:
+            self._year_receipts[year] = self.forecast.entry(
+                year, scenario=self.scenario, as_of=self.as_of
+            )
+        if assignment is not None:
+            result["provenance"]["county_assignment"] = assignment
+        self._geography_receipts[(year, tenure, county_fips, identity)] = {
+            "year": year,
+            "tenure": tenure,
+            "geography": copy.deepcopy(result["provenance"]["geography"]),
+            "county_assignment": copy.deepcopy(assignment),
+        }
+        return result
+
+    def _amounts(self, year, adults, children, tenure, county):
+        key = (year, adults, children, tenure, county)
+        if key not in self._amount_cache:
+            result = self.calculate_unit(
+                year=year,
+                adults=adults,
+                children=children,
+                tenure=tenure,
+                county_fips=county,
+            )
+            self._amount_cache[key] = tuple(
+                result[name]
+                for name in (
+                    "reference_threshold",
+                    "unadjusted_threshold",
+                    "geographic_factor",
+                    "threshold",
+                    "housing_portion",
+                )
+            )
+        return self._amount_cache[key]
 
     def provenance(self):
-        """Only JSON-compatible receipts; never expose provider objects."""
+        """Report calculation inputs; data certification belongs to the bundle."""
         return {
-            "integration_status": "development_household_integration",
-            "release_id": self.release.release_id,
-            "release_sha256": self.release.content_sha256,
-            "information_date": self.release.to_dict()["information_date"],
-            "year_policy": self.year_policy,
-            "allow_estimated": self.allow_estimated,
-            "missing_geography": self.missing_geography,
+            "forecast_id": self.forecast.forecast_id,
+            "forecast_sha256": self.forecast.content_sha256,
+            "scenario": self.scenario,
+            "geography_kind": self.geography_kind,
             "runtime_versions": runtime_versions(),
             "years": {
                 str(year): copy.deepcopy(value)
                 for year, value in sorted(self._year_receipts.items())
             },
-            "geographies": [
-                copy.deepcopy(value)
-                for value in self._geography_receipts.values()
-            ],
-            "composition_method": "Existing PolicyEngine SPM membership and is_adult/is_child formulas; Census independent-teen parity not established",
-            "population_data_certified": False,
+            "geographies": copy.deepcopy(
+                list(self._geography_receipts.values())
+            ),
+            "composition_method": "age >= 18 or age >= 15 with explicit SPM independence role; native SPM membership",
+            "storage_method": "canonical final amount cast once to model dtype",
         }
 
 
-def build_policyengine_reform(provider):
-    """Build per-simulation formula classes over an immutable release snapshot.
-
-    The returned class exposes its bound ``spm_release_provider`` for receipts.
-    Caller-supplied formula outputs must first pass validate_policyengine_inputs.
-    """
+def policyengine_amount(unit, period, field):
+    """Return one raw canonical float64 amount for native country formulas."""
     import numpy as np
-    from policyengine_core.periods import YEAR
-    from policyengine_core.reforms import Reform
+
+    fields = (
+        "reference_threshold",
+        "unadjusted_threshold",
+        "geographic_factor",
+        "threshold",
+        "housing_portion",
+    )
+    if field not in fields:
+        raise ValueError(f"Unknown SPM amount field: {field}")
+    index = fields.index(field)
+    bound = unit.simulation.tax_benefit_system.spm_forecast_provider
+    adults = unit("spm_measurement_adults", period)
+    children = unit("spm_measurement_children", period)
+    if np.any(adults < 1):
+        raise SPMInputError(
+            "SPM_COMPOSITION_REQUIRED",
+            "SPM unit has no classified adult: supply source-backed independence or household head/spouse structure",
+        )
+    tenures = unit("spm_unit_tenure_type", period).decode_to_str()
+    counties = (
+        unit.household("county_fips", period)
+        if bound.geography_kind == "county"
+        else [None] * len(adults)
+    )
+    rows = [
+        bound._amounts(
+            int(period.start.year),
+            int(a),
+            int(k),
+            str(t).lower(),
+            None
+            if c is None
+            else (c.decode() if isinstance(c, bytes) else str(c)),
+        )
+        for a, k, t, c in zip(adults, children, tenures, counties)
+    ]
+    return np.asarray([row[index] for row in rows], dtype=np.float64)
+
+
+def build_policyengine_variables():
+    """Create shared formula classes that resolve their simulation's provider.
+
+    Formula closures never capture a provider or another simulation's cache.
+    Country models register these variables before reading situation inputs.
+    """
+    from policyengine_core.periods import ETERNITY, YEAR
     from policyengine_core.variables import Variable
-    from policyengine_us.entities import SPMUnit
-    from policyengine_us.variables.household.income.spm_unit.spm_unit_tenure_type import (
-        SPMUnitTenureType,
+    from policyengine_us.entities import Person, SPMUnit
+
+    class is_household_spouse(Variable):
+        value_type = bool
+        entity = Person
+        definition_period = ETERNITY
+        label = "Explicit household spouse role"
+
+    class is_spm_independent_minor_role(Variable):
+        value_type = bool
+        entity = Person
+        definition_period = ETERNITY
+        label = "SPM independence role from source or household structure"
+
+        def formula(person, period, parameters):
+            return person("is_household_head", period) | person(
+                "is_household_spouse", period
+            )
+
+    class spm_measurement_adults(Variable):
+        value_type = int
+        entity = SPMUnit
+        definition_period = YEAR
+        label = "Adults under SPM measurement classification"
+
+        def formula(unit, period, parameters):
+            age = unit.members("age", period)
+            role = unit.members("is_spm_independent_minor_role", period)
+            return unit.sum((age >= 18) | ((age >= 15) & role))
+
+    class spm_measurement_children(Variable):
+        value_type = int
+        entity = SPMUnit
+        definition_period = YEAR
+        label = "Children under SPM measurement classification"
+
+        def formula(unit, period, parameters):
+            return unit.nb_persons() - unit("spm_measurement_adults", period)
+
+    def amount_variable(name, index, label, currency=True):
+        def formula(unit, period, parameters):
+            # Return each canonical final amount directly, never multiply
+            # independently rounded model intermediates.
+            return policyengine_amount(
+                unit,
+                period,
+                (
+                    "reference_threshold",
+                    "unadjusted_threshold",
+                    "geographic_factor",
+                    "threshold",
+                    "housing_portion",
+                )[index],
+            )
+
+        attributes = {
+            "value_type": float,
+            "entity": SPMUnit,
+            "definition_period": YEAR,
+            "label": label,
+            "formula": formula,
+            "__module__": __name__,
+        }
+        if currency:
+            attributes["unit"] = "currency-USD"
+        return type(name, (Variable,), attributes)
+
+    return (
+        is_household_spouse,
+        is_spm_independent_minor_role,
+        spm_measurement_adults,
+        spm_measurement_children,
+        amount_variable(
+            "spm_unit_reference_spm_threshold",
+            0,
+            "Canonical SPM reference threshold",
+        ),
+        amount_variable(
+            "spm_unit_unadjusted_spm_threshold",
+            1,
+            "Canonical SPM threshold before geography",
+        ),
+        amount_variable(
+            "spm_unit_geographic_adjustment",
+            2,
+            "Canonical SPM geographic adjustment",
+            False,
+        ),
+        amount_variable(
+            "spm_unit_spm_threshold", 3, "Canonical SPM poverty threshold"
+        ),
+        amount_variable(
+            "spm_unit_spm_threshold_housing_portion",
+            4,
+            "Canonical SPM housing portion",
+        ),
     )
 
-    from .equivalence_scale import spm_equivalence_scale
+
+def build_policyengine_reform(provider):
+    """Install the shared variables and a private provider on a model system."""
+    from policyengine_core.reforms import Reform
 
     if not isinstance(provider, PolicyEngineSPMProvider):
         raise TypeError("provider must be a PolicyEngineSPMProvider")
     bound = provider.snapshot()
+    variables = build_policyengine_variables()
 
-    def tenure_keys(spm_unit, period):
-        tenure = spm_unit("spm_unit_tenure_type", period)
-        result = np.full(len(tenure), "", dtype=object)
-        for enum in SPMUnitTenureType:
-            result = np.where(tenure == enum, enum.name.lower(), result)
-        if np.any(result == ""):
-            raise ValueError("Unrecognized PolicyEngine SPM tenure")
-        return result
-
-    def entry(period, parameters):
-        return bound.year_metadata(
-            period.start.year, cpi_u=parameters.gov.bls.cpi.cpi_u
-        )
-
-    class spm_unit_reference_spm_threshold(Variable):
-        value_type = float
-        entity = SPMUnit
-        definition_period = YEAR
-        label = "SPM reference threshold from an explicit release"
-        unit = "currency-USD"
-
-        def formula(spm_unit, period, parameters):
-            values = entry(period, parameters)["thresholds"]
-            return np.array(
-                [values[key] for key in tenure_keys(spm_unit, period)]
-            )
-
-    class spm_unit_unadjusted_spm_threshold(Variable):
-        value_type = float
-        entity = SPMUnit
-        definition_period = YEAR
-        label = "SPM threshold before geographic adjustment"
-        unit = "currency-USD"
-
-        def formula(spm_unit, period, parameters):
-            adults = spm_unit("spm_unit_count_adults", period)
-            children = spm_unit("spm_unit_count_children", period)
-            if np.any(
-                ~np.isfinite(adults)
-                | ~np.isfinite(children)
-                | (adults < 1)
-                | (children < 0)
-                | (adults != np.floor(adults))
-                | (children != np.floor(children))
-            ):
-                raise ValueError(
-                    "SPM release calculation requires at least one classified "
-                    "SPM adult and nonnegative whole child counts; minor-only "
-                    "units need an explicit classification decision"
-                )
-            return spm_unit(
-                "spm_unit_reference_spm_threshold", period
-            ) * spm_equivalence_scale(adults, children)
-
-    class spm_unit_geographic_adjustment(Variable):
-        value_type = float
-        entity = SPMUnit
-        definition_period = YEAR
-        label = "Explicit release geographic adjustment"
-        default_value = 1.0
-
-        def formula(spm_unit, period, parameters):
-            tenures = tenure_keys(spm_unit, period)
-            geoids = (
-                spm_unit.household("congressional_district_geoid", period)
-                if bound.geography_kind == "congressional_district"
-                and bound.geography_id is None
-                else [None] * len(tenures)
-            )
-            values = {}
-            result = []
-            for tenure, geoid in zip(tenures, geoids):
-                identity = None if geoid is None else str(int(geoid))
-                key = (tenure, identity)
-                if key not in values:
-                    values[key] = bound.geography_metadata(
-                        period.start.year,
-                        tenure,
-                        geoid=identity,
-                        cpi_u=parameters.gov.bls.cpi.cpi_u,
-                    )["factor"]
-                result.append(values[key])
-            return np.asarray(result)
-
-    class spm_unit_spm_threshold(Variable):
-        value_type = float
-        entity = SPMUnit
-        definition_period = YEAR
-        label = "SPM poverty threshold from an explicit release"
-        unit = "currency-USD"
-
-        def formula(spm_unit, period, parameters):
-            return spm_unit(
-                "spm_unit_unadjusted_spm_threshold", period
-            ) * spm_unit("spm_unit_geographic_adjustment", period)
-
-    class spm_unit_spm_threshold_housing_portion(Variable):
-        value_type = float
-        entity = SPMUnit
-        definition_period = YEAR
-        label = "Housing portion from the selected SPM release"
-        unit = "currency-USD"
-
-        def formula(spm_unit, period, parameters):
-            shares = entry(period, parameters)["housing_shares"]
-            housing_share = np.array(
-                [shares[key] for key in tenure_keys(spm_unit, period)]
-            )
-            geoadj = spm_unit("spm_unit_geographic_adjustment", period)
-            return spm_unit("spm_unit_unadjusted_spm_threshold", period) * (
-                geoadj + housing_share - 1
-            )
-
-    variables = (
-        spm_unit_reference_spm_threshold,
-        spm_unit_unadjusted_spm_threshold,
-        spm_unit_geographic_adjustment,
-        spm_unit_spm_threshold,
-        spm_unit_spm_threshold_housing_portion,
-    )
-
-    class release_reform(Reform):
+    class forecast_reform(Reform):
         def apply(self):
+            self.spm_forecast_provider = bound.snapshot()
             for variable in variables:
                 self.update_variable(variable)
 
-    release_reform.__name__ = f"SPMRelease_{bound.release.content_sha256}"
-    release_reform.spm_release_provider = bound
-    return release_reform
+    forecast_reform.__name__ = f"SPMForecast_{bound.forecast.content_sha256}"
+    forecast_reform.spm_forecast_provider = bound
+    return forecast_reform

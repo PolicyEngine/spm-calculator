@@ -1,4 +1,4 @@
-"""Release selection, immutable providers and PE's input contract."""
+"""Canonical forecast selection, native SPM membership and real model parity."""
 
 from copy import deepcopy
 
@@ -6,326 +6,259 @@ import pytest
 
 from spm_calculator.policyengine_adapter import (
     PolicyEngineSPMProvider,
+    build_policyengine_reform,
     validate_policyengine_inputs,
 )
-from spm_calculator.release import TENURES, SPMRelease, seal_release
+from spm_calculator.rolling_forecast import SPMForecast, seal_forecast
+from tests.test_rolling_forecast import example_document
 
 
 @pytest.fixture
-def synthetic_release():
-    """Deliberately synthetic values; these are not published BLS estimates."""
-    entry = {
-        "status": "published",
-        "methodology_id": "synthetic-test",
-        "available_on": "2026-09-08",
-        "source_ids": ["synthetic"],
-        "thresholds": dict.fromkeys(TENURES, 40000.0),
-        "housing_shares": dict.fromkeys(TENURES, 0.4),
-        "housing_share_provenance": {
-            "source_id": "synthetic",
-            "reference_year": 2024,
-            "status": "carried",
-            "note": "Synthetic carried share fixture",
-        },
-        "uncertainty": {"kind": "unavailable"},
-    }
-    forecast = deepcopy(entry)
-    forecast.update(status="forecast", methodology_id="synthetic-forecast")
-    forecast["thresholds"] = dict.fromkeys(TENURES, 50000.0)
-    forecast["housing_shares"] = dict.fromkeys(TENURES, 0.5)
-    return SPMRelease.from_dict(
-        seal_release(
-            {
-                "schema_version": 1,
-                "release_id": "synthetic-pe-test",
-                "created_on": "2026-09-08",
-                "information_date": "2026-09-08",
-                "units": "USD/year",
-                "reference_family": {"adults": 2, "children": 2},
-                "sources": [
-                    {
-                        "id": "synthetic",
-                        "url": "https://example.org/synthetic",
-                        "sha256": "0" * 64,
-                        "available_on": "2026-09-08",
-                    }
-                ],
-                "years": {"2025": entry, "2026": forecast},
-                "geographies": {
-                    "congressional_district": {
-                        "id": "synthetic-cd",
-                        "year": 2023,
-                        "source_id": "synthetic",
-                        "areas": {
-                            "101": {
-                                "name": "Synthetic district",
-                                "rent_index": 1.5,
-                            }
-                        },
-                    }
-                },
+def synthetic_forecast():
+    doc = example_document()
+    for scenario in doc["scenarios"].values():
+        for entry in scenario["years"].values():
+            entry["thresholds"] = {
+                key: value * 500 for key, value in entry["thresholds"].items()
             }
+    return SPMForecast.from_dict(seal_forecast(doc))
+
+
+def test_selected_year_and_scenario_have_no_consumer_uprating(
+    synthetic_forecast,
+):
+    provider = PolicyEngineSPMProvider(synthetic_forecast)
+    other = PolicyEngineSPMProvider(synthetic_forecast, scenario="zero_real")
+    for year in synthetic_forecast.years:
+        result = provider.calculate_unit(
+            year=year,
+            adults=2,
+            children=2,
+            tenure="renter",
+            county_fips="01001",
         )
-    )
-
-
-def synthetic_cpi(instant):
-    return {"2025-02-01": 100.0, "2026-02-01": 110.0, "2027-02-01": 121.0}[
-        instant
-    ]
-
-
-@pytest.mark.parametrize("year_policy", ["error", "pe_cpi_u"])
-@pytest.mark.parametrize("allow_estimated", [False, True])
-def test_published_entry_always_wins(
-    synthetic_release, year_policy, allow_estimated
-):
-    provider = PolicyEngineSPMProvider(
-        synthetic_release,
-        year_policy=year_policy,
-        allow_estimated=allow_estimated,
-    )
-    assert provider.year_metadata(2025)["thresholds"]["renter"] == 40000
-
-
-@pytest.mark.parametrize("year_policy", ["error", "pe_cpi_u"])
-def test_opted_in_forecast_wins(synthetic_release, year_policy):
-    provider = PolicyEngineSPMProvider(
-        synthetic_release, year_policy=year_policy, allow_estimated=True
-    )
-    assert provider.year_metadata(2026)["status"] == "forecast"
-    assert provider.year_metadata(2026)["housing_shares"]["renter"] == 0.5
-
-
-def test_estimate_declined_can_extrapolate_with_cpi_receipt(synthetic_release):
-    provider = PolicyEngineSPMProvider(synthetic_release)
-    with pytest.warns(UserWarning, match="consumer extrapolation"):
-        entry = provider.year_metadata(2026, cpi_u=synthetic_cpi)
-    assert entry["thresholds"]["renter"] == pytest.approx(44000)
-    assert entry["status"] == "consumer_extrapolation"
-    assert entry["unused_release_estimate"]["status"] == "forecast"
-    assert entry["cpi"]["ratio"] == 1.1
+        assert (
+            result["reference_threshold"]
+            == synthetic_forecast.entry(year)["thresholds"]["renter"]
+        )
+        assert result["provenance"]["county_assignment"]["area_id"] == "A"
     assert (
-        entry["cpi"]["target"]["classification"]
-        == "unknown_model_parameter_classification"
+        provider.year_metadata(2026)["thresholds"]
+        != other.year_metadata(2026)["thresholds"]
     )
-    assert entry["housing_share_provenance"]["reference_year"] == 2024
-    assert (
-        entry["housing_share_provenance"]["carried_from_threshold_year"]
-        == 2025
-    )
-    assert entry["housing_shares"]["renter"] == 0.4
-    # Returned dictionaries cannot alter provider results.
-    entry["thresholds"]["renter"] = 1
-    assert provider.year_metadata(2026, cpi_u=synthetic_cpi)["thresholds"][
-        "renter"
-    ] == pytest.approx(44000)
+    with pytest.raises(ValueError, match="no entry"):
+        provider.year_metadata(2036)
+    assert "consumer_extrapolation" not in str(provider.provenance())
+    assert "national_fallback" not in str(provider.provenance())
 
 
-def test_strict_policy_rejects_declined_estimate_and_missing_year(
-    synthetic_release,
+def test_location_requires_available_county_or_explicit_selection(
+    synthetic_forecast,
 ):
-    provider = PolicyEngineSPMProvider(synthetic_release, year_policy="error")
-    for year in (2024, 2026, 2027):
+    provider = PolicyEngineSPMProvider(synthetic_forecast)
+    kwargs = dict(year=2025, adults=2, children=2, tenure="renter")
+    for county in (None, "99999", "1001", 1001):
         with pytest.raises(ValueError):
-            provider.year_metadata(year, cpi_u=synthetic_cpi)
+            provider.calculate_unit(**kwargs, county_fips=county)
+    for kind in ("congressional_district", "explicit", "state"):
+        with pytest.raises(ValueError, match="geography_kind"):
+            PolicyEngineSPMProvider(synthetic_forecast, geography_kind=kind)
+    national = PolicyEngineSPMProvider(
+        synthetic_forecast, geography_kind="national"
+    )
+    assert (
+        national.calculate_unit(**kwargs)["geography_status"]
+        == "explicit_national"
+    )
+    with pytest.raises(ValueError, match="conflicts"):
+        national.calculate_unit(**kwargs, county_fips="01001")
+    area = PolicyEngineSPMProvider(
+        synthetic_forecast, geography_kind="metro", geography_id="A"
+    )
+    assert (
+        area.calculate_unit(**kwargs)["threshold"]
+        == provider.calculate_unit(**kwargs, county_fips="01001")["threshold"]
+    )
 
 
-def test_cpi_never_backcasts(synthetic_release):
-    with pytest.raises(ValueError, match="past|before|interior"):
-        PolicyEngineSPMProvider(synthetic_release).year_metadata(
-            2024, cpi_u=synthetic_cpi
-        )
+@pytest.mark.parametrize(
+    "keyword,value",
+    [
+        ("year_policy", "pe_cpi_u"),
+        ("allow_estimated", True),
+        ("missing_geography", "national"),
+    ],
+)
+def test_removed_fallback_options_rejected(synthetic_forecast, keyword, value):
+    with pytest.raises(TypeError):
+        PolicyEngineSPMProvider(synthetic_forecast, **{keyword: value})
 
 
-def test_pinned_geography_and_explicit_fallback(synthetic_release):
+def test_unknown_explicit_area_uses_structured_geography_error(
+    synthetic_forecast,
+):
+    from spm_calculator.errors import SPMInputError
+
     provider = PolicyEngineSPMProvider(
-        synthetic_release, geography_kind="congressional_district"
+        synthetic_forecast, geography_kind="metro", geography_id="unknown"
     )
-    assert provider.geography_metadata(2025, "renter", geoid="101")[
-        "factor"
-    ] == pytest.approx(1.2)
-    with pytest.raises(ValueError, match="unavailable"):
-        provider.geography_metadata(2025, "renter", geoid="9999")
-    fallback = PolicyEngineSPMProvider(
-        synthetic_release,
-        geography_kind="congressional_district",
-        missing_geography="national",
-    )
-    result = fallback.geography_metadata(2025, "renter", geoid="9999")
-    assert result["factor"] == 1
-    assert result["status"] == "explicit_national_fallback"
+    with pytest.raises(SPMInputError) as raised:
+        provider.calculate_unit(
+            year=2025, adults=2, children=2, tenure="renter"
+        )
+    assert raised.value.code == "SPM_GEOGRAPHY_UNAVAILABLE"
+    assert provider.provenance()["geographies"] == []
 
 
-def test_input_contract_preserves_unit_members_and_rejects_baked_results():
+def test_provider_snapshot_and_provenance_cannot_mutate_calculation(
+    synthetic_forecast,
+):
+    provider = PolicyEngineSPMProvider(synthetic_forecast)
+    other = provider.snapshot()
+    entry = provider.year_metadata(2025)
+    entry["thresholds"]["renter"] = 1
+    assert provider.year_metadata(2025)["thresholds"]["renter"] == 55000
+    assert other.provenance()["years"] == {}
+    receipt = provider.provenance()
+    receipt["years"].clear()
+    assert provider.provenance()["years"]
+
+
+def test_input_ownership_is_limited_to_spm_measurement():
     records = {
-        "spm_unit": [
-            {"spm_unit_id": "u1", "members": ["a", "b"]},
-            {"spm_unit_id": "u2", "members": ["c"]},
-        ],
         "person": [
-            {"person_id": "a", "spm_unit_id": "u1", "age": 40},
-            {"person_id": "c", "spm_unit_id": "u2", "age": 20},
+            {
+                "age": 16,
+                "is_spm_independent_minor_role": True,
+                "is_adult": False,
+            }
         ],
+        "spm_units": [{"members": ["a"], "spm_unit_count_adults": 0}],
     }
-    original = deepcopy(records)
+    before = deepcopy(records)
     validate_policyengine_inputs(records)
-    assert records == original
-    records["spm_unit"][1]["spm_unit_spm_threshold"] = 123
+    assert records == before
+    records["spm_units"][0]["spm_unit_spm_threshold"] = 123
     with pytest.raises(ValueError, match="spm_unit_spm_threshold"):
         validate_policyengine_inputs(records)
-    assert records["spm_unit"][1]["members"] == ["c"]
 
 
-@pytest.mark.parametrize("status", ["nowcast", "forecast"])
-@pytest.mark.parametrize("allow_estimated", [False, True])
-@pytest.mark.parametrize("year_policy", ["error", "pe_cpi_u"])
-def test_estimated_entry_precedence_cross_product(
-    synthetic_release, status, allow_estimated, year_policy
-):
-    doc = synthetic_release.to_dict()
-    doc["years"]["2026"]["status"] = status
-    release = SPMRelease.from_dict(seal_release(doc))
-    provider = PolicyEngineSPMProvider(
-        release, allow_estimated=allow_estimated, year_policy=year_policy
-    )
-    if allow_estimated:
-        assert provider.year_metadata(2026)["status"] == status
-    elif year_policy == "error":
-        with pytest.raises(ValueError, match="permitted"):
-            provider.year_metadata(2026, cpi_u=synthetic_cpi)
-    else:
-        with pytest.warns(UserWarning):
-            result = provider.year_metadata(2026, cpi_u=synthetic_cpi)
-        assert result["unused_release_estimate"]["status"] == status
-        assert result["thresholds"]["renter"] == pytest.approx(44000)
-
-
-@pytest.mark.parametrize("allow_estimated", [False, True])
-def test_absent_future_year_uses_published_base_and_warns_once(
-    synthetic_release, allow_estimated, recwarn
-):
-    provider = PolicyEngineSPMProvider(
-        synthetic_release, allow_estimated=allow_estimated
-    )
-    first = provider.year_metadata(2027, cpi_u=synthetic_cpi)
-    second = provider.year_metadata(2027, cpi_u=synthetic_cpi)
-    assert first == second
-    assert first["base_year"] == 2025
-    assert first["thresholds"]["renter"] == pytest.approx(48400)
-    assert first["unused_release_estimate"] is None
-    assert len(recwarn) == 1
-
-
-def test_explicit_whole_factor_requires_vintage_and_nonnegative_housing(
-    synthetic_release,
-):
-    with pytest.raises(ValueError, match="vintage"):
-        PolicyEngineSPMProvider(
-            synthetic_release,
-            geography_kind="explicit",
-            geographic_adjustment=1.2,
-        )
-    provider = PolicyEngineSPMProvider(
-        synthetic_release,
-        geography_kind="explicit",
-        geographic_adjustment=0.5,
-        geography_vintage="Synthetic supplied factor",
-    )
-    with pytest.raises(ValueError, match="negative housing"):
-        provider.geography_metadata(2025, "renter")
-
-
-def test_representative_entity_tables_preserve_native_membership():
-    pd = pytest.importorskip("pandas")
-    people = pd.DataFrame(
-        {
-            "person_id": [1, 2, 3, 4, 5, 6],
-            "spm_unit_id": [10, 10, 10, 20, 30, 30],
-            "household_id": [1, 1, 1, 1, 2, 2],
-            "age": [40, 12, 8, 25, 40, 42],
-        }
-    )
-    units = pd.DataFrame(
-        {
-            "spm_unit_id": [10, 20, 30],
-            "spm_unit_tenure_type": [
-                "RENTER",
-                "RENTER",
-                "OWNER_WITH_MORTGAGE",
-            ],
-            "spm_unit_net_income_reported": [40000, 12000, 60000],
-        }
-    )
-    before = {
-        "person": people.copy(deep=True),
-        "spm_unit": units.copy(deep=True),
+def situation(people, units):
+    """Explicit native memberships; no computed SPM outputs supplied."""
+    names = list(people)
+    return {
+        "people": people,
+        "tax_units": {"tax": {"members": names}},
+        "spm_units": {
+            key: {"members": members} for key, members in units.items()
+        },
+        "families": {"family": {"members": names}},
+        "marital_units": {key: {"members": [key]} for key in names},
+        "households": {
+            "household": {"members": names, "county_fips": {2025: "01001"}}
+        },
     }
-    validate_policyengine_inputs({"person": people, "spm_unit": units})
-    pd.testing.assert_frame_equal(people, before["person"])
-    pd.testing.assert_frame_equal(units, before["spm_unit"])
-    units["spm_unit_spm_threshold"] = [100, 200, 300]
-    with pytest.raises(ValueError, match="computed outputs"):
-        validate_policyengine_inputs({"person": people, "spm_unit": units})
 
 
-def test_actual_country_engine_preserves_multiple_native_spm_units(
-    synthetic_release,
-):
-    """Engineering integration fixture; no population weights or poverty-rate claim."""
+def actual_simulation(synthetic_forecast, people, units):
     country = pytest.importorskip("policyengine_us")
-    from spm_calculator.policyengine_adapter import build_policyengine_reform
-    from spm_calculator.release import SPMUnit
+    reform = build_policyengine_reform(
+        PolicyEngineSPMProvider(synthetic_forecast)
+    )
+    from policyengine_us.system import CountryTaxBenefitSystem
 
-    people = {
-        "a": {"age": {2025: 40}},
-        "b": {"age": {2025: 12}},
-        "c": {"age": {2025: 8}},
-        "d": {"age": {2025: 25}},
-        "e": {"age": {2025: 40}},
-        "f": {"age": {2025: 42}},
-    }
-    units = {
-        "u1": {"members": ["a", "b", "c"]},
-        "u2": {"members": ["d"]},
-        "u3": {"members": ["e", "f"]},
-    }
-    validate_policyengine_inputs(
-        {"person": people.values(), "spm_unit": units.values()}
+    system = reform(CountryTaxBenefitSystem())
+    return country.Simulation(
+        situation=situation(people, units), tax_benefit_system=system
+    ), reform
+
+
+def test_actual_country_native_membership_single_cast_and_household_minor(
+    synthetic_forecast,
+):
+    import numpy as np
+
+    sim, reform = actual_simulation(
+        synthetic_forecast,
+        {
+            "head": {
+                "age": {2025: 16},
+                "is_household_head": {"eternity": True},
+            },
+            "child": {"age": {2025: 1}},
+            "adult": {"age": {2025: 35}},
+            "dependent": {"age": {2025: 17}},
+        },
+        {
+            "minor_family": ["head", "child"],
+            "adult_family": ["adult", "dependent"],
+        },
     )
-    simulation = country.Simulation(
-        situation={"people": people, "spm_units": units},
-        reform=build_policyengine_reform(
-            PolicyEngineSPMProvider(synthetic_release)
-        ),
-    )
-    assert list(simulation.calculate("spm_unit_count_adults", 2025)) == [
-        1,
-        1,
-        2,
-    ]
-    assert list(simulation.calculate("spm_unit_count_children", 2025)) == [
-        2,
-        0,
-        0,
-    ]
+    assert list(sim.spm_unit.ids) == ["minor_family", "adult_family"]
+    assert list(sim.calculate("spm_measurement_adults", 2025)) == [1, 1]
+    assert list(sim.calculate("spm_measurement_children", 2025)) == [1, 1]
+    # Generic benefit eligibility still treats the 16-year-old as a child.
+    assert not bool(sim.calculate("is_adult", 2025)[0])
+    values = sim.calculate("spm_unit_spm_threshold", 2025)
+    tenures = sim.calculate("spm_unit_tenure_type", 2025).decode_to_str()
     expected = [
-        synthetic_release.calculate_unit(
-            SPMUnit(
-                unit_id=key,
-                num_adults=a,
-                num_children=c,
-                tenure="renter",
-                year=2025,
-            )
+        reform.spm_forecast_provider.calculate_unit(
+            year=2025,
+            adults=1,
+            children=1,
+            tenure=str(tenure).lower(),
+            county_fips="01001",
         )["threshold"]
-        for key, a, c in [("u1", 1, 2), ("u2", 1, 0), ("u3", 2, 0)]
+        for tenure in tenures
     ]
-    assert list(
-        simulation.calculate("spm_unit_spm_threshold", 2025)
-    ) == pytest.approx(expected, abs=0.01)
-    assert list(
-        simulation.calculate("spm_unit_spm_threshold", 2025, map_to="person")
-    ) == pytest.approx(
-        [expected[0]] * 3 + [expected[1]] + [expected[2]] * 2, abs=0.01
+    assert np.array_equal(values, np.asarray(expected).astype(values.dtype))
+    housing = sim.calculate("spm_unit_spm_threshold_housing_portion", 2025)
+    expected_housing = [
+        reform.spm_forecast_provider.calculate_unit(
+            year=2025,
+            adults=1,
+            children=1,
+            tenure=str(tenure).lower(),
+            county_fips="01001",
+        )["housing_portion"]
+        for tenure in tenures
+    ]
+    assert np.array_equal(
+        housing, np.asarray(expected_housing).astype(housing.dtype)
     )
+
+
+@pytest.mark.parametrize(
+    "person,expected",
+    [
+        ({"age": {2025: 16}, "is_household_head": {"eternity": True}}, 1),
+        ({"age": {2025: 16}, "is_household_spouse": {"eternity": True}}, 1),
+        (
+            {
+                "age": {2025: 17},
+                "is_spm_independent_minor_role": {"eternity": True},
+            },
+            1,
+        ),
+        ({"age": {2025: 16}}, 0),
+        ({"age": {2025: 14}, "is_household_head": {"eternity": True}}, 0),
+        (
+            {
+                "age": {2025: 16},
+                "is_household_head": {"eternity": True},
+                "is_spm_independent_minor_role": {"eternity": False},
+            },
+            0,
+        ),
+    ],
+)
+def test_actual_minor_role_contract(synthetic_forecast, person, expected):
+    sim, _ = actual_simulation(
+        synthetic_forecast, {"person": person}, {"unit": ["person"]}
+    )
+    assert int(sim.calculate("spm_measurement_adults", 2025)[0]) == expected
+    if expected:
+        assert sim.calculate("spm_unit_spm_threshold", 2025)[0] > 0
+    else:
+        with pytest.raises(ValueError, match="no classified adult"):
+            sim.calculate("spm_unit_spm_threshold", 2025)

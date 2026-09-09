@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import ast
 import hashlib
+import inspect
 import json
+import textwrap
 import zipfile
 from pathlib import Path
 
@@ -65,6 +68,26 @@ def load_source_bundle() -> dict:
     return json.loads(path.read_text())
 
 
+def load_historical_source_bundle() -> dict:
+    """Read the2021product inputs with their complete content fingerprint."""
+    from spm_calculator.release import canonical_bytes
+
+    path = Path(__file__).parent / "data/current/acs_2021_source_inputs.json"
+    bundle = json.loads(path.read_text())
+    digest = hashlib.sha256(
+        canonical_bytes(
+            {
+                key: value
+                for key, value in bundle.items()
+                if key != "content_sha256"
+            }
+        )
+    ).hexdigest()
+    if bundle.get("content_sha256") != digest:
+        raise ValueError("Historical ACS source bundle hash mismatch")
+    return bundle
+
+
 def apply_puma_update(
     original: pd.DataFrame, update: pd.DataFrame
 ) -> pd.DataFrame:
@@ -114,7 +137,7 @@ def normalize_housing(
     required = RAW_COLUMNS - {"ST", "PUMA10", "PUMA20"}
     if not required <= set(raw):
         raise ValueError(
-            f"Missing housing fields: {sorted(required-set(raw))}"
+            f"Missing housing fields: {sorted(required - set(raw))}"
         )
     data = raw.loc[_universe(raw) & (raw.GRNTP > 0) & (raw.WGTP > 0)].copy()
     if data.empty:
@@ -195,6 +218,75 @@ def normalize_housing(
     return normalized
 
 
+def normalization_logic_sha256(vintage: int) -> str:
+    """Fingerprint the normalization steps used by this product vintage."""
+    functions = (_universe, normalize_housing, apply_puma_update)
+    if vintage == 2021:
+        functions += (_historical_housing, _restore_historical_record_ids)
+    logic = "".join(
+        ast.dump(ast.parse(textwrap.dedent(inspect.getsource(function))))
+        for function in functions
+    ) + json.dumps(COMPONENTS, sort_keys=True)
+    return hashlib.sha256(logic.encode()).hexdigest()
+
+
+def _pinned_normalized(cache_dir, vintage, bundle, source_hashes):
+    """Reuse retained normalized bytes only when every scientific input agrees.
+
+    Function AST identity ignores formatting while detecting normalization
+    changes. Source archives are verified by the caller before this shortcut.
+    """
+    manifest = (
+        Path(__file__).parent / "data/current/acs_normalized_products.json"
+    )
+    products = json.loads(manifest.read_text())
+    product = products.get(str(vintage))
+    if product is None:
+        return None
+    inputs = {
+        "normalization_logic_sha256": normalization_logic_sha256(vintage),
+        "source_sha256": source_hashes,
+        "topcodes_sha256": hashlib.sha256(
+            json.dumps(bundle["topcodes"], sort_keys=True).encode()
+        ).hexdigest(),
+        "valid_pumas_sha256": hashlib.sha256(
+            json.dumps(
+                sorted({r["puma_geoid"] for r in bundle["area_allocations"]})
+            ).encode()
+        ).hexdigest(),
+    }
+    if any(product[k] != value for k, value in inputs.items()):
+        return None
+    path = cache_dir / product["cache_path"]
+    if not path.exists():
+        return None
+    verify_file(path, product["sha256"])
+    with np.load(path, allow_pickle=False) as archive:
+        return pd.DataFrame({key: archive[key] for key in product["columns"]})
+
+
+def _historical_housing(raw):
+    """Adapt the documented 2017–21 field/ID representation without changing IDs."""
+    raw = raw.rename(columns={"ST": "STATE"}) if "STATE" not in raw else raw
+    if "TYPEHUGQ" not in raw and "TYPE" in raw:
+        raw = raw.rename(columns={"TYPE": "TYPEHUGQ"})
+    raw = raw.copy()
+    numeric = raw.SERIALNO.str.fullmatch(r"2017\d{9}")
+    raw.loc[numeric, "SERIALNO"] = (
+        "2017HU" + raw.loc[numeric, "SERIALNO"].str[4:]
+    )
+    return raw
+
+
+def _restore_historical_record_ids(data):
+    """Restore original numeric 2017 IDs after the common housing normalizer."""
+    numeric = data.record_id.str.startswith("2017HU")
+    data.loc[numeric, "record_id"] = (
+        "2017" + data.loc[numeric, "record_id"].str[6:]
+    )
+    return data
+
+
 def load_pums_records(
     cache_dir: Path,
     vintage: int,
@@ -210,6 +302,15 @@ def load_pums_records(
     sources = {s["cache_path"]: s for s in bundle["sources"]}
     for name in paths:
         verify_file(cache_dir / name, sources[name]["sha256"])
+    if use_normalized_cache:
+        retained = _pinned_normalized(
+            cache_dir,
+            vintage,
+            bundle,
+            [sources[name]["sha256"] for name in paths],
+        )
+        if retained is not None:
+            return retained
     fingerprint = hashlib.sha256(
         json.dumps(
             {
@@ -246,7 +347,7 @@ def load_pums_records(
             with archive.open(member) as stream:
                 for chunk in pd.read_csv(
                     stream,
-                    usecols=lambda c: c in RAW_COLUMNS,
+                    usecols=lambda c: c in RAW_COLUMNS or c == "TYPE",
                     dtype={
                         "SERIALNO": str,
                         "STATE": str,
@@ -257,6 +358,8 @@ def load_pums_records(
                     },
                     chunksize=250_000,
                 ):
+                    if vintage == 2021:
+                        chunk = _historical_housing(chunk)
                     chunk = chunk.loc[_universe(chunk)].copy()
                     if not chunk.empty:
                         chunks.append(chunk)
@@ -275,6 +378,8 @@ def load_pums_records(
                     updates.append(chunk.loc[chunk.SERIALNO.isin(selected)])
         raw = apply_puma_update(raw, pd.concat(updates, ignore_index=True))
     data = normalize_housing(raw, vintage, bundle["topcodes"])
+    if vintage == 2021:
+        data = _restore_historical_record_ids(data)
     if data.record_id.duplicated().any() or set(data.cohort_year) != set(
         range(vintage - 4, vintage + 1)
     ):
