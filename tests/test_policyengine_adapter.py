@@ -1,9 +1,11 @@
 """Canonical forecast selection, native SPM membership and real model parity."""
 
 from copy import deepcopy
+from math import isfinite
 
 import pytest
 
+from spm_calculator.errors import SPMInputError
 from spm_calculator.policyengine_adapter import (
     PolicyEngineSPMProvider,
     build_policyengine_reform,
@@ -108,6 +110,72 @@ def test_unknown_explicit_area_uses_structured_geography_error(
         )
     assert raised.value.code == "SPM_GEOGRAPHY_UNAVAILABLE"
     assert provider.provenance()["geographies"] == []
+
+
+@pytest.mark.parametrize("year", [2021, 2036])
+@pytest.mark.parametrize("geography", ["national", "metro", "county"])
+def test_missing_measurement_year_has_same_typed_error_for_every_geography(
+    synthetic_forecast, year, geography
+):
+    provider = PolicyEngineSPMProvider(
+        synthetic_forecast,
+        geography_kind=geography,
+        geography_id="A" if geography == "metro" else None,
+    )
+    with pytest.raises(SPMInputError) as raised:
+        provider.calculate_unit(
+            year=year,
+            adults=2,
+            children=2,
+            tenure="renter",
+            county_fips="01001" if geography == "county" else None,
+        )
+    assert raised.value.code == "SPM_YEAR_UNAVAILABLE"
+    assert str(year) in str(raised.value)
+    assert provider.provenance()["years"] == {}
+    assert provider.provenance()["geographies"] == []
+
+
+@pytest.mark.parametrize("year", [2021, 2036])
+def test_missing_requested_year_metadata_has_typed_error(
+    synthetic_forecast, year
+):
+    provider = PolicyEngineSPMProvider(synthetic_forecast)
+    with pytest.raises(SPMInputError) as raised:
+        provider.year_metadata(year)
+    assert raised.value.code == "SPM_YEAR_UNAVAILABLE"
+    assert provider.provenance()["years"] == {}
+
+
+@pytest.mark.parametrize("year", [2021, 2036])
+@pytest.mark.parametrize("geography", ["national", "metro"])
+def test_actual_tax_only_calculation_does_not_require_forecast_year(
+    synthetic_forecast, year, geography
+):
+    """Forecast coverage is checked by a measurement, never tax-only work."""
+    country = pytest.importorskip("policyengine_us")
+    from policyengine_us.system import CountryTaxBenefitSystem
+
+    reform = build_policyengine_reform(
+        PolicyEngineSPMProvider(
+            synthetic_forecast,
+            geography_kind=geography,
+            geography_id="A" if geography == "metro" else None,
+        )
+    )
+    sim = country.Simulation(
+        situation=situation(
+            {"adult": {"age": {year: 35}}}, {"unit": ["adult"]}
+        ),
+        tax_benefit_system=reform(CountryTaxBenefitSystem()),
+    )
+    tax = sim.calculate("spm_unit_federal_tax", year)
+    assert len(tax) == 1
+    assert isfinite(float(tax[0]))
+    assert (
+        sim.tax_benefit_system.spm_forecast_provider.provenance()["years"]
+        == {}
+    )
 
 
 def test_provider_snapshot_and_provenance_cannot_mutate_calculation(

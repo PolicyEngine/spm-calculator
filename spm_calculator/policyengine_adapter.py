@@ -153,9 +153,19 @@ class PolicyEngineSPMProvider:
             )
         return snapshot
 
+    def _validate_year(self, year):
+        """Reject unsupported years only when a measurement is requested."""
+        if (
+            isinstance(year, bool)
+            or not isinstance(year, int)
+            or year not in self.forecast.years
+        ):
+            raise SPMInputError(
+                "SPM_YEAR_UNAVAILABLE", f"Forecast has no entry for {year!r}"
+            )
+
     def year_metadata(self, year):
-        if isinstance(year, bool) or not isinstance(year, int):
-            raise ValueError("year must be an integer")
+        self._validate_year(year)
         if year not in self._year_receipts:
             self._year_receipts[year] = self.forecast.entry(
                 year, scenario=self.scenario, as_of=self.as_of
@@ -168,6 +178,7 @@ class PolicyEngineSPMProvider:
         """Execute the canonical calculator; preserve resolved input provenance."""
         from .release import SPMUnit
 
+        self._validate_year(year)
         assignment = None
         kind, identity = self.geography_kind, self.geography_id
         if kind == "county":
