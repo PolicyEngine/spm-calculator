@@ -424,3 +424,53 @@ def test_browser_inputs_reproduce_standalone_local_threshold(
         assert browser_amount == pytest.approx(result["threshold"])
         assert entry["ce_window"]["end"] == f"{year}Q1"
         assert entry["acs_window"]["end"] == year - 1
+
+
+def test_export_rejects_a_source_change_during_derivation(
+    tmp_path, monkeypatch
+):
+    from scripts import export_web_release as exporter
+
+    source = tmp_path / "forecast.json"
+    source_bytes = exporter.FORECAST.read_bytes()
+    source.write_bytes(source_bytes)
+    output = tmp_path / "public/data/release_config.json"
+    original_build = exporter.build_config
+
+    def build_then_change_source(**kwargs):
+        config = original_build(**kwargs)
+        source.write_bytes(source_bytes + b"\n")
+        return config
+
+    monkeypatch.setattr(exporter, "FORECAST", source)
+    monkeypatch.setattr(exporter, "OUT", output)
+    monkeypatch.setattr(exporter, "build_config", build_then_change_source)
+    with pytest.raises(SystemExit, match="changed during export"):
+        exporter.export()
+    assert not output.exists()
+    assert not output.parent.exists()
+
+
+def test_export_check_requires_an_intact_pinned_download(
+    tmp_path, monkeypatch, config
+):
+    from scripts import export_web_release as exporter
+
+    output = tmp_path / "release_config.json"
+    output.write_bytes(encode_config(config))
+    monkeypatch.setattr(exporter, "OUT", output)
+    with pytest.raises(SystemExit, match="Pinned audit download differs"):
+        exporter.export(check=True)
+    audit = (
+        output.parent
+        / "canonical"
+        / config["forecast"]["auditArtifact"]["name"]
+    )
+    audit.parent.mkdir()
+    audit.write_bytes(b"corrupt")
+    with pytest.raises(
+        SystemExit, match="Existing pinned audit download is corrupt"
+    ):
+        exporter.export()
+    assert audit.read_bytes() == b"corrupt"
+    assert output.read_bytes() == encode_config(config)

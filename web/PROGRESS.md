@@ -15,7 +15,8 @@ Compact export and client loading implemented; validation and review in progress
 - Canonical content hash refreshed to `b9dbf5ae49697e3bf3abee2fa22b7429703412cb1e58478938a682a0dfddc821`; source file SHA-256 `76ab8435f087f167ad01b8495ebd016415ba8086f32bfbd3dab961dcc8976c0a`. The byte-identical file is copied to a content-addressed explicit download under `web/public/data/canonical/`.
 - Client fetch handles base paths, loading, errors, retries, unmount cancellation, and request timeout. No scientific JSON enters SSR/RSC.
 - Selected-area Massachusetts/Sumter historical warnings and accurate 2029 donor-distribution stabilization note are visible; material topcoding/thin-support diagnostics preserved.
-- Python export suite: 57 passed; export/audit `--check`: passed. Full Vitest suite: 115 passed, including 205,212 numerical replays and all actual year menus. Webpack production static build: passed. No browser/UX verification performed.
+- Python export suite: 59 passed; export/audit `--check`: passed. Full Vitest suite: 115 passed, including 205,212 numerical replays and all actual year menus. Webpack production static build: passed. No browser/UX verification performed.
+- Added passing export-integrity regressions: source mutation during derivation writes nothing; missing/corrupt pinned audit downloads fail checks and are never overwritten.
 - Compact JSON: 1,225,568 bytes / 109,965 gzip (95.92% / 94.72% smaller than baseline).
 
 ## Next
