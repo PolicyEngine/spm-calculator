@@ -1,67 +1,25 @@
-# SPM Calculator
+# SPM calculator
 
-Calculate [Supplemental Poverty Measure (SPM)](https://www.census.gov/topics/income-poverty/supplemental-poverty-measure.html) thresholds for any US geography and year.
+Use the local 1.0.0 candidate to calculate Supplemental Poverty Measure
+thresholds from published 2025 national values and tenure housing shares,
+or conditional CE/ACS rolling forecasts through 2035. Standalone calculations
+read bundled, verified inputs offline. This documentation does not announce
+package, website, PolicyEngine wrapper or API publication.
 
-## Overview
+Start with the [quickstart](quickstart.md) for Python and CLI examples. The
+[API reference](api.md) describes `SPMForecast`, `SPMUnit`, year-specific area
+assignment and source metadata. The default artifact covers 2022–2035;
+unknown years and locations fail instead of triggering a runtime projection.
 
-The SPM is an alternative poverty measure developed by the Census Bureau that accounts for:
+A county identifies an assignment to an SPM estimation area for the selected
+year. National is an explicit choice. Local amounts can use modeled rent
+indices even when national thresholds are published; inspect each component's
+status and the area's diagnostics.
 
-- **Geographic housing costs** - Thresholds vary by ~50% from lowest (West Virginia, ~0.84) to highest (Hawaii, ~1.27) cost areas
-- **Housing tenure** - Different thresholds for renters, owners with mortgages, and owners without mortgages
-- **Family composition** - Thresholds scale with family size using a three-parameter equivalence scale
-
-This package provides tools to calculate SPM thresholds at any geographic level supported by the American Community Survey.
-
-## The SPM Threshold Formula
-
-```
-threshold = base_threshold[tenure] × equivalence_scale × geoadj[tenure]
-```
-
-Where:
-- **base_threshold** comes from the BLS Consumer Expenditure Survey (5-year rolling)
-- **equivalence_scale** adjusts for family composition
-- **geoadj** adjusts for local housing costs using official Census metro thresholds where available and tenure-specific ACS rent adjustments elsewhere
-
-## Installation
-
-```bash
-pip install spm-calculator
-```
-
-## Quick Example
-
-```python
-from spm_calculator import SPMCalculator
-
-# Initialize for a specific year
-calc = SPMCalculator(year=2024)
-
-# Calculate threshold for a family in the New York metro area
-threshold = calc.calculate_threshold(
-    num_adults=2,
-    num_children=2,
-    tenure="renter",
-    geography_type="metro_area",
-    geography_id="35620"
-)
-print(f"SPM threshold: ${threshold:,.0f}")
-# SPM threshold: $45,736
-```
-
-## Supported Geographies
-
-| Geography Type | Description | Example ID |
-|---------------|-------------|------------|
-| `nation` | National average | `"US"` |
-| `state` | 50 states + DC | `"06"` (California) |
-| `county` | ~3,200 counties | `"06075"` (San Francisco) |
-| `congressional_district` | 435 districts | `"0611"` (CA-11) |
-| `metro_area` | Metropolitan areas | `"41860"` (SF-Oakland) |
-| `puma` | Public Use Microdata Areas | `"0600101"` |
-| `tract` | Census tracts | `"06075010100"` |
-
-## Contents
+Read [validation](validation.md) alongside [rolling forecasts](rolling-forecasts.md)
+for the source checks, conditional assumptions and unresolved uncertainty.
+[Historical correction and experiment records](bls-2026-correction.md) remain
+separate from current runtime examples.
 
 ```{tableofcontents}
 ```

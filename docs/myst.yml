@@ -1,7 +1,7 @@
 version: 1
 project:
   title: SPM Calculator
-  description: Calculate Supplemental Poverty Measure thresholds for any US geography and year
+  description: Published national SPM inputs and conditional CE/ACS forecasts for supported areas, 2022–2035
   keywords:
     - poverty
     - SPM

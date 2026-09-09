@@ -5,8 +5,8 @@ chapters:
   - file: methodology
   - file: api
     sections:
-      - file: api/calculator
-      - file: api/geoadj
+      - file: api/forecast
+      - file: api/geography
       - file: api/equivalence_scale
       - file: api/units
   - file: validation

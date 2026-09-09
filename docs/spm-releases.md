@@ -1,76 +1,130 @@
-# SPM releases and integration boundaries
+# Forecast artifacts and archived releases
 
-The SPM package owns the measurement method and publishes reproducible data. Its reader and household calculation work without PolicyEngine, Microcosm, Axiom, a data download or credentials. The development version is 0.5.0; it is not yet a registry release.
+The local 1.0.0 candidate uses the canonical schema-2 forecast artifact for
+standalone calculations and current model adapters. Its default coverage is
+2022–2035, with `ce_trend` and `zero_real` scenarios. Published 2025 national
+thresholds and BLS shelter/utilities shares remain exact inputs; modeled local
+rent indices and future values carry their own statuses.
 
-| Component | Owns | Consumes |
-| --- | --- | --- |
-| SPM package | CE sample policy, expenditure construction, threshold estimation, named projections, releases | Pinned BLS/Census inputs; CE survey design weights |
-| Microcosm | Entity links, typed weights, population construction and calibration | SPM release and explicit SPM unit classification |
-| PolicyEngine | Taxes, benefits, resources and household/population simulation | Selected SPM release through formula providers |
-| Axiom | Native rule execution and execution receipts | Versioned national thresholds; explicitly external equivalence and geographic factors in this first bridge |
+This checkout does not establish a PyPI release, website promotion or
+PolicyEngine wrapper/API production adoption. The accompanying country
+candidate reads forecast configuration by default. It does not require an
+opt-in historical release path or support year/geography fallback flags.
 
-PE can migrate its execution to Axiom while the release contract stays the same. The initial Axiom adapter is a partial bridge: the real Rust engine applies the released threshold to supplied factors and compares supplied annual resources. It does not yet calculate the fractional-power equivalence scale, construct resource units or calculate the household's taxes and benefits. The permanent user API is the separate `policyengine.py` repository; its development SPM hook is described in [PE integration](policyengine-release-integration.md).
+## Schema-2 forecast contract
 
-## Release contract
+The default file is
+[`rolling_forecast_2026_09_09.json`](../spm_calculator/data/current/rolling_forecast_2026_09_09.json).
+`SPMForecast.from_dict` and `load_forecast` validate it. The archived
+`data/releases/schema-v1.json` describes schema-1 releases, not this schema-2
+forecast; the forecast's current validator is
+[`rolling_forecast.py`](../spm_calculator/rolling_forecast.py).
 
-`spm_calculator/data/releases/spm-2026-09-08.json` binds:
+| Field or path | Meaning |
+| --- | --- |
+| `schema_version` | Integer `2`. |
+| `method` | `rolling_ce_acs_v1`. |
+| `units` | `USD/year`. |
+| `reference_family` | `{"adults": 2, "children": 2}`. |
+| `forecast_id`, `content_sha256` | Artifact identity and canonical content digest. |
+| `created_on`, `information_date` | Build and retained-information dates. |
+| `base_release_sha256` | Identity of the archived published input release used by assembly. |
+| `sources` | List of source IDs, URLs, hashes and availability metadata. |
+| `assumptions`, `assumption_sha256` | Declared assumptions and their digest. |
+| `component_sha256`, `code_sha256` | Component and implementation identities. |
+| `default_scenario` | Currently `ce_trend`. |
+| `scenarios.<scenario>.years.<year>` | Selected-year values, statuses and window diagnostics; JSON year keys are strings. |
+| `areas.<area_id>` | Area name and actual area type. |
+| `county_assignments` | County vintage, boundary metadata, mapping digest, `year_maps` and `maps`. |
+| `validation`, `forward_test`, `rent_sensitivity` | Evaluation and sensitivity records with their stated scope. |
 
-- Schema version, release id, creation and information dates, USD/year and the two-adult/two-child reference family.
-- National values by target year and tenure, publication/estimate status, method id, source identities and uncertainty information.
-- Housing shares with their own source, reference year and published/carried/assumed status. These shares affect both geography and the cap on housing assistance counted as resources.
-- Pinned geographic rent indices and source snapshots. The current release bundles official 2024 Census SPM area data and optional 2023 ACS state/county/district research inputs. The custom ACS adjustments are not official SPM thresholds. Areas with nonpositive published rents are explicitly excluded.
-- Source checksums and availability dates. Unknown publication dates remain null. The September 8 availability date is conservative snapshot evidence, not a reconstructed real-time information set.
+Inspect these actual field names rather than constructing an incomplete
+artifact by hand:
 
-The JSON Schema is [schema-v1.json](../spm_calculator/data/releases/schema-v1.json). The Python reader additionally checks content digests, dates, cross-references and numeric invariants. A digest is an integrity check; source authenticity requires a separately trusted digest or signed distribution.
+```python
+from spm_calculator import load_forecast
 
-The content hash is SHA-256 of UTF-8 JSON with sorted keys, compact separators, non-ASCII characters preserved and nonfinite numbers prohibited, excluding only `content_sha256`. Accessors return copies; the provider retains immutable bytes. A supplied `as_of` cannot predate the release information date. No lookup silently downloads a newer release or substitutes an absent year.
-
-The first release uses the corrected BLS national series through 2025. It carries fixed three-decimal 2024 housing shares into other years as an approximation. Geographic thresholds recompute `1 - housing_share + housing_share * rent_index`; they do not claim exact reproduction of Census metro amounts based on the earlier national series and rounding. Published national standard errors do not quantify this geographic/share approximation.
-
-## Browser geography scope
-
-The app exports only the official areas in the [Census 2024 SPM workbook](https://www2.census.gov/programs-surveys/demo/tables/p60/287/SPM-pov-threshold-2024.xlsx): 260 named MSAs, 34 state residual Metro areas and 47 state Nonmetro areas. These 341 entries are all available through the release's `metro` geography kind. State residual entries represent the Census-defined residual area, not an entire state.
-
-The browser does not export the release's custom ACS state, county or district rent lookup tables. National thresholds remain calculation inputs and reference values, rather than an app location choice. Python research helpers and the sealed release retain their existing inputs for compatibility and reproducibility; restricting the browser export leaves the release bytes and content hash unchanged.
-
-The browser's [rolling forecasts](rolling-forecasts.md) form a separate research layer above the sealed release. They advance the CE and ACS windows, estimate missing observations under explicit price and real-spending assumptions, and recompute housing shares and rent indices. Published national 2025 values remain exact, while 2025 geographic inputs are modeled. Both a CE real-spending trend and zero real growth are available through 2030. The forecast has its own content and assumption hashes, retrospective comparisons and support diagnostics. `load_forecast` reproduces the displayed result with all selected-year inputs; `load_release` continues to identify the sealed published inputs. Forecast uncertainty is not estimated.
-
-Local-area population analysis should assign each SPM unit to its official Census area, preserving the mix of areas within a county or district. Microcosm owns those geographic assignments and boundary vintages. A single custom county or district rent adjustment is a different research estimate, not an official geographic SPM threshold.
-
-## Reproduce and use
-
-```sh
-uv run scripts/build_release.py --check
-uv run scripts/export_web_release.py --check
-uv run spm-calculator info
-uv run spm-calculator --expect-sha256 YOUR_RETAINED_HASH verify
-uv run spm-calculator calculate --year 2025 --adults 2 --children 2 --tenure renter
-uv run spm-calculator export --format csv > thresholds.csv
+forecast = load_forecast()
+document = forecast.to_dict()
+assert document["schema_version"] == 2
+assert document["units"] == "USD/year"
+assert document["reference_family"] == {"adults": 2, "children": 2}
+entry = document["scenarios"]["ce_trend"]["years"]["2025"]
+print(entry["national_status"], entry["housing_share_status"])
+print(entry["thresholds"]["renter"], entry["housing_shares"]["renter"])
+assignment = forecast.resolve_county(2025, "06037", county_vintage="2020")
+print(entry["geography_by_area"][assignment["area_id"]])
 ```
 
-The reader and scalar calculation also run in a Python interpreter with site packages disabled. Legacy data-download APIs retain their installed dependencies. New ACS source acquisition for optional Python research is separate from replay: `scripts/build_acs_snapshot.py` requires a caller-supplied Census key, writes no credentials, and stores the raw tables. The website imports only the generated national and official Census area inputs; it does not acquire or export custom ACS rent lookups.
+Each year entry contains `thresholds`, `housing_shares`, `rent_indices`,
+`national_status`, `housing_share_status`, `geography_status`,
+`geography_by_area`, `median_diagnostics`, `ce_window` and `acs_window`, plus
+national and housing-share source IDs. `thresholds` and `housing_shares` are
+keyed by the three named tenures. `rent_indices`, `geography_by_area` and
+`median_diagnostics` are keyed by area ID.
 
-Adult and child counts are already classified SPM counts. Age alone does not establish dependency for every minor-headed unit. CE estimation therefore has a separate, named unresolved-composition policy with weight diagnostics. See [current CE replication](current-ce-replication.md). Microcosm population weights must not replace CE design weights or calibrate away a poverty-rate validation error.
+The area metadata's `official_published_area` flag identifies its official
+anchor status, not whether every target-year amount is published. Inspect
+`status`, `anchor_status`, source IDs and support diagnostics. An entry-wide
+`geography_status="mixed"` must not be shown as the selected area's status.
+County mapping records describe assignments separately; county is never the
+estimation unit. See [geography](api/geography.md).
 
-Projections use explicit inputs through `projection.ProjectionInput` and `project_thresholds`. Consumption ratios are anchored to an official base; price-only and blend alternatives retain their method identities. Current corrected-data results are retrospective. They neither replace the frozen 2025 commitment nor establish long-horizon accuracy or an uncertainty interval.
+## Integrity and information dates
 
-## Compatibility and rollout
+The content digest is SHA-256 of UTF-8 JSON with sorted keys, compact separators,
+unescaped non-ASCII text and no nonfinite numbers, excluding `content_sha256`
+itself. File-byte hashes differ because indentation and the embedded digest
+change the serialized bytes. Retain a reviewed content digest independently
+and pass it to `load_forecast(expected_sha256=...)` on replay.
 
-Version 0.5.0 deliberately changes numerical values exposed by the existing `HISTORICAL_THRESHOLDS` constant to the corrected canonical series and moves the latest published year to 2025. The `package-legacy-0.3` series remains available for old results. The five imports consumed by PE retain their signatures and return shapes. The year-less `get_housing_share(tenure)` remains exactly 0.434, 0.323 and 0.443; only the explicit provider reads year-specific share fields.
+Accessors return detached values; the verified forecast remains immutable.
+An `as_of` earlier than `information_date` fails. The retained-source dates do
+not reconstruct a historical real-time information set. Hashes establish
+integrity against an expectation, not source authenticity or signed admission.
+A provenance-only source refresh changes the artifact and bound runtime bundle
+identities even if all amounts remain equal.
 
-The old PE requirement `spm-calculator>=0.2.0` would admit this correction automatically on upgrade. The paired PE draft must pin the reviewed calculator Git commit while the package is unpublished, with an eventual registry pin of `spm-calculator==0.5.0`. Coordinate that PE pin before any package publication. This work prepares draft changes; it does not merge, publish or deploy them.
+## Responsibilities
 
-The new PE adapter defaults to labeled model-CPI extrapolation beyond the published base. The standalone reader defaults to error. Estimated release entries require explicit opt-in; a declined estimate is identified if the provider extrapolates instead. Provenance includes model parameter identity, endpoint values/classifications, and carried housing-share metadata. Unknown classification is not described as observed inflation. Existing legacy PE extrapolation and geography fallback outside this adapter remain legacy behavior.
+| Component | Responsibility |
+| --- | --- |
+| SPM calculator | Published lookup, CE/ACS estimation, assumptions, artifact validation, equivalence and measurement amounts. |
+| PolicyEngine | Native membership and measurement roles, tax/benefit/resource formulas, simulation-specific forecast configuration and storage casts. |
+| Microcosm Frame | Declared entity links, typed weights, immutable provenance and native population accounting. |
+| Axiom core | Native primitive classification and related unit counts, dated parameter/scale lookups, threshold/housing/poverty arithmetic and execution receipts. |
 
-Actual local native-engine and wrapper checks are development integration evidence. They do not certify a production PE data bundle or a complete US migration to Axiom. The current published PE wrapper lacks the new SPM release hook, and the public calculator still needs a separately authorized production deployment.
+The Axiom adapter exports a bounded canonical equivalence table because the
+runtime lacks fractional power. It does not receive final thresholds or
+geographic/equivalence factors as per-unit facts. See
+[actual Axiom execution and numeric limits](axiom-integration.md). None of these
+adapters supplies population certification or turns conditional forecasts into
+published statistics.
 
-## Unpublished 0.5.0 release notes
+## Archived inputs and experiments
 
-These notes describe the development rebuild and provide the source for an eventual manually prepared GitHub release body. The repository does not compile changelog fragments. Version 0.5.0 remains unpublished; these notes do not announce a package release or production rollout.
+The sealed schema-1 file
+[`spm-2026-09-08.json`](../spm_calculator/data/releases/spm-2026-09-08.json)
+and `SPMRelease` reader remain for archived input replay. That artifact contains
+its original carried-share/geography assumptions and content identity. It is
+not the current CLI, country/provider, Frame or Axiom runtime selection path.
+Preserving it does not reinstate removed calculator or projection APIs.
 
-- Carry BLS's full-precision 2025 SPM thresholds into the published series, retain the superseded PolicyEngine nowcast for evaluation with an explicit warning, and forecast 2026 onward from the published 2025 base. Strengthen BLS drift detection across multiple sources, make CE/CPI replication inputs fail closed, and record the corrected four-rule projection backtest.
-- Add immutable offline SPM releases, a CLI, explicit CE sample policies and diagnostics, named projections, optional adapters that execute real Axiom and Microcosm software, and PE formula integration. Bundle browser geography data and bind its values to the same release. Version 0.5.0 intentionally changes legacy national threshold values to the corrected BLS series through published 2025; coordinate exact PE dependency pins before publication.
-- Restrict the public calculator and its browser data export to official Census SPM areas: named metropolitan statistical areas and state residual Metro/Nonmetro areas. Remove custom ACS state, county and congressional district rent lookups from the browser; preserve national reference inputs, the immutable release and Python research interfaces.
-- Show selectable Census area search results and remove the calculator's duplicate navigation header.
-- An earlier development stage restored 2026–2030 price-only browser forecasts with explicit inflation assumptions, separate provenance and reproducible Python calculations. The rolling CE and ACS forecasts below supersede that stage.
-- Add rolling CE and ACS research forecasts with separate price and real-spending assumptions, year-specific rent indices and housing shares, historical comparisons, support diagnostics and an offline Python consumer. The browser projects through 2030 while preserving published national values and sealed historical artifacts.
+The [2026 correction record](bls-2026-correction.md) preserves publication
+vintages, historical replication results and the frozen 2025 forecast.
+The [September 8 CE experiment](current-ce-replication.md) records a separate
+retrospective exercise. Their committed amounts and commitments are not
+rewritten by the current rolling forecast or documentation updates.
+
+## Replay and verify
+
+```sh
+python -m spm_calculator.cli verify
+python -m spm_calculator.cli calculate --year 2025 --adults 2 --children 2 --tenure renter --national
+python -m spm_calculator.cli --scenario zero_real export --format csv
+```
+
+`--forecast`, `--expect-sha256`, `--as-of` and `--scenario` are global options
+placed before the subcommand. The [quickstart](quickstart.md) demonstrates a
+file/digest round trip. [Validation](validation.md) separates artifact checks
+from scientific source verification and optional real-runtime acceptance.

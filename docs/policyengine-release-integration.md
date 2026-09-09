@@ -1,132 +1,200 @@
-# PolicyEngine release integration
+# PolicyEngine integration
 
-The explicit-release adapter replaces the national threshold, equivalence-scale
-application, geographic adjustment and housing portion in one PolicyEngine
-simulation. The housing portion caps counted housing assistance and therefore
-also changes SPM resources. It uses the same release data as the standalone
-calculator; taxes and other benefits continue to run in the country model.
+The local PolicyEngine US candidate uses the canonical `SPMForecast` for SPM
+thresholds and housing portions by default. It keeps taxes, benefits and SPM
+resources in the country model. The housing portion affects the cap on counted
+housing assistance, so this measurement change can also change resources.
 
-This first integration requires the accompanying **development changes** in
-`PolicyEngine/policyengine.py`. The published wrapper does not yet accept
-`spm_release`. These checks do not certify a population-data bundle or complete
-the migration of US household rules to Axiom.
+These examples describe the accompanying development country model and
+`spm-calculator` **1.0.0 local candidate**. They do not establish publication,
+API deployment or certification of a population dataset. The wrapper and API
+production integration remain pending.
 
-## Public wrapper
+## Use the provider directly
 
-With the accompanying wrapper installed:
+The provider accepts a verified forecast, scenario and location selection. This
+example needs only the calculator; importing its provider does not import
+PolicyEngine.
 
 ```python
-import policyengine as pe
+from spm_calculator.policyengine_adapter import PolicyEngineSPMProvider
+from spm_calculator.rolling_forecast import load_forecast
 
-selection = pe.us.SPMReleaseSelection(
-    # Omit path to explicitly select the installed SPM package's bundle.
-    path="my-reviewed-spm-release.json",
-    expected_sha256="<the release's independently retained 64-character digest>",
-    year_policy="pe_cpi_u",
-    geography_kind="congressional_district",
-)
-result = pe.us.calculate_household(
-    people=[{"age": 40}, {"age": 40}, {"age": 8}, {"age": 5}],
-    spm_unit={"spm_unit_tenure_type": "RENTER"},
-    household={"state_code": "AL", "congressional_district_geoid": 101},
+forecast = load_forecast()
+provider = PolicyEngineSPMProvider(forecast, scenario="ce_trend")
+result = provider.calculate_unit(
     year=2025,
-    spm_release=selection,
-    extra_variables=[
-        "spm_unit_spm_threshold",
-        "spm_unit_spm_threshold_housing_portion",
-        "spm_unit_capped_housing_subsidy",
-    ],
+    adults=2,
+    children=2,
+    tenure="renter",
+    county_fips="01001",
 )
-print(result.spm_unit.spm_unit_spm_threshold)
-print(result.provenance["spm"])
+assignment = result["provenance"]["county_assignment"]
+area = result["provenance"]["geography"]
+print(round(result["threshold"], 2))
+print(assignment["area_id"], area["area_type"], area["status"])
+print(provider.provenance()["forecast_sha256"])
+
+# National geography is a deliberate selection.
+national = PolicyEngineSPMProvider(
+    forecast, scenario="zero_real", geography_kind="national"
+)
+national_result = national.calculate_unit(
+    year=2026, adults=2, children=2, tenure="renter"
+)
+assert national_result["geography_status"] == "explicit_national"
+print(round(national_result["threshold"], 2))
 ```
 
-The selection accepts a JSON mapping as well as a Pydantic object. External
-files require an expected content hash. The provider checks the hash and takes
-an immutable snapshot before constructing simulation-specific formulas. Two
-simulations can use different releases in the same process. Returning or
-modifying a provenance dictionary cannot change the formula snapshot.
+County is an assignment input, not an estimation unit. The provider resolves
+five-character FIPS against the selected year's area menu using
+`county_vintage="2020"`. The result retains the assignment and the area's
+`area_type`, `official_published_area`, `status` and `diagnostics`. The `metro`
+API kind also carries state nonmetro areas; inspect `area_type` for the actual
+type. A fixed area selection uses `geography_kind="metro"` and an available
+`geography_id` from `forecast.areas_for_year(year, scenario=...)`.
 
-Omitting `spm_release` preserves the country's existing threshold path. That
-legacy path still uses its fixed housing-share imports, its CPI-U uprating and
-its implicit national geographic fallback. Updating the installed package
-changes the legacy reference table to corrected values, but does not migrate
-those other behaviors to this adapter.
+The bundled forecast covers 2022–2035. Its published national entries and
+housing shares remain distinct from conditional CE/ACS forecasts and modeled
+geography. Read [rolling forecasts](rolling-forecasts.md) and
+[source validation](validation.md) before interpreting those statuses. There
+is no CPI extrapolation, estimated-year opt-in or missing-location fallback.
+Unknown years and locations fail.
 
-## Year selection and housing shares
+## Run the development country model
 
-| Target entry | Explicit provider behavior |
+Install the accompanying local country and calculator sources in an isolated
+environment. The following example uses `policyengine_us.Simulation`, which
+registers the calculator's variables before reading input records. Omitting
+`spm` selects the installed forecast's default scenario and county assignment.
+
+```python
+from policyengine_us import Simulation
+
+year = 2025
+people = {
+    "parent": {
+        "age": {year: 16},
+        "is_spm_independent_minor_role": True,
+    },
+    "child": {
+        "age": {year: 8},
+        "is_spm_independent_minor_role": False,
+    },
+    "adult": {
+        "age": {year: 35},
+        "is_spm_independent_minor_role": False,
+    },
+    "dependent": {
+        "age": {year: 17},
+        "is_spm_independent_minor_role": False,
+    },
+}
+members = list(people)
+situation = {
+    "people": people,
+    "tax_units": {"tax": {"members": members}},
+    "spm_units": {
+        "minor_family": {
+            "members": ["parent", "child"],
+            "spm_unit_tenure_type": {year: "RENTER"},
+        },
+        "adult_family": {
+            "members": ["adult", "dependent"],
+            "spm_unit_tenure_type": {year: "RENTER"},
+        },
+    },
+    "families": {"family": {"members": members}},
+    "marital_units": {name: {"members": [name]} for name in members},
+    "households": {
+        "household": {
+            "members": members,
+            "county_fips": {year: "01001"},
+        }
+    },
+}
+simulation = Simulation(situation=situation)
+assert simulation.spm_config["geography_kind"] == "county"
+assert simulation.calculate("spm_measurement_adults", year).tolist() == [1, 1]
+assert simulation.calculate("spm_measurement_children", year).tolist() == [1, 1]
+print(simulation.calculate("spm_unit_spm_threshold", year).tolist())
+print(simulation.calculate("spm_unit_spm_threshold_housing_portion", year).tolist())
+print(simulation.spm_config)
+assert str(year) in simulation.spm_provenance()["years"]
+
+# A new simulation can select national geography explicitly.
+national_simulation = Simulation(
+    situation=situation,
+    spm={"geography_kind": "national", "scenario": "zero_real"},
+)
+print(national_simulation.calculate("spm_unit_spm_threshold", year).tolist())
+```
+
+The four synthetic people form two native SPM units within one household.
+Classification counts a person as an SPM adult when
+`age >= 18 or (age >= 15 and is_spm_independent_minor_role)`. The 16-year-old
+parent therefore counts as an adult; the dependent 17-year-old counts as a
+child. This leaves the country's generic benefit-eligibility counts
+`spm_unit_count_adults` and `spm_unit_count_children` separate. A supplied
+primitive role takes precedence; when it is absent, the country derives it
+from explicit `is_household_head` and `is_household_spouse` inputs. Neither
+age ordering nor row order supplies these roles. The country raises
+`SPM_COMPOSITION_REQUIRED` when a measured unit has no classified adult.
+
+The country accepts exactly these `spm` settings:
+
+| Setting | Meaning |
 | --- | --- |
-| Published | Use the release entry. |
-| Nowcast or forecast, `allow_estimated=True` | Use the release estimate. |
-| Estimate declined or entry absent, `year_policy="error"` | Raise an error. |
-| Estimate declined or entry absent, `year_policy="pe_cpi_u"`, after the latest published year | Extrapolate the latest published base using the evaluated PE CPI-U ratio. |
-| Missing past/interior year | Raise an error; never backcast. |
+| `forecast_content_sha256` | Optional expected content digest of the installed artifact; mismatches fail. |
+| `scenario` | Named artifact scenario; the bundled default is `ce_trend`, with `zero_real` as a sensitivity. |
+| `geography_kind` | `county` by default, or explicit `metro` or `national`. |
+| `geography_id` | Required for a fixed `metro` selection; otherwise omitted. |
+| `county_vintage` | County assignment vintage; the bundled mapping uses `"2020"`. |
+| `as_of` | Optional availability-date constraint applied to the artifact. |
 
-The PE compatibility provider defaults to `pe_cpi_u`. This differs from the
-standalone release reader, which errors for absent years. PE extrapolation is
-labeled `consumer_extrapolation`, carries no estimated uncertainty interval,
-and emits a warning when a target year is first evaluated. Python warning
-filters still apply. Its receipt includes the base and target endpoint dates,
-values, ratio, parameter identity and actual model/core versions. Endpoint
-classification remains explicitly unknown when model metadata does not establish
-whether a value is observed or projected. It is not described as observed CPI.
+The country does not accept an external artifact path. For reproducibility,
+retain `simulation.spm_config` and `simulation.spm_provenance()` with the source
+and package identities used for a run. The latter records evaluated years,
+areas, the current content digest and runtime versions. Do not copy a stale
+digest from a documentation example.
 
-A declined release estimate remains visible in `unused_release_estimate`.
-Extrapolation carries the published base's housing shares, including their
-source and reference year. The first bundle uses the legacy 2024 shares where
-year-specific shares are unavailable, with explicit carried-value provenance.
-The legacy year-less `get_housing_share` values remain 0.434, 0.323 and 0.443 for
-owners with mortgages, owners without mortgages and renters, respectively.
-Tests with different shares use synthetic fixtures, not invented official data.
+## Input and resource contracts
 
-## Geography and input ownership
+SPM measurement requires native membership, ages, source-backed roles, tenure,
+and an available county or explicit area/national selection. State alone does
+not identify an SPM area. `SPM_GEOGRAPHY_REQUIRED` also applies when a resource
+output evaluates the housing cap, including units with zero housing assistance.
+Consequently, a successful state-only tax calculation does not establish that
+`household_net_income` or `marginal_tax_rate` can run with the same inputs.
 
-Select `national` explicitly, a pinned `metro` identifier, or
-`congressional_district`. The latter can take a fixed `geography_id` or use
-each SPM unit's containing household district. The release supplies the actual
-geography vintage. Unknown requested areas error unless
-`missing_geography="national"` was selected; that fallback remains in the
-provenance receipt with the requested identifier and reason.
+The provider supplies final canonical amounts; the country casts each final
+amount once to its storage dtype. In the validated country environment, stored
+float32 amounts may differ from the calculator's float64 values. Housing-cap
+arithmetic uses the raw canonical housing portion before the final storage
+cast. PolicyEngine continues to calculate actual assistance, HUD total tenant
+payment and all other resources.
 
-For an observed Census whole-threshold factor, use `geography_kind="explicit"`,
-`geographic_adjustment=<factor>` and `geography_vintage=<source/vintage>`.
-The factor must be finite, positive, and consistent with a nonnegative housing
-portion. It is not a raw local-to-national rent ratio.
+`validate_policyengine_inputs` rejects formula-owned SPM amounts, the new
+measurement counts, capped housing assistance and derived resource/poverty
+outputs. The country also rejects those columns when loading datasets. Keep
+observed Census values under separate report-only names. Neither validation
+nor forecast selection reconstructs native SPM membership or changes weights.
 
-The provider owns the threshold chain and derived housing cap. Its input check
-rejects baked threshold outputs, computed counts, capped housing subsidy,
-SPM net income and poverty outputs. Keep observed Census values under separate
-report-only names. The check never reconstructs or rewrites supplied native SPM
-unit IDs or membership. Existing PE `is_adult`/`is_child` formulas still classify
-members; exact Census independent-teen classification is not established here.
+## Wrapper and API status
 
-The population input audit identified an existing path that loads saved
-thresholds as model inputs and an AGI-based uprating override for that saved
-column. Household acceptance and the small multiple-unit input-contract fixture
-do not prove those production datasets have migrated. Population adoption must
-audit source columns and remove formula-owned outputs from the simulation input
-contract while preserving the reported values separately.
+The development wrapper contract is `pe.us.calculate_household(spm=...)` with
+an `SPMSelection` object or mapping containing the settings above. The wrapper
+resolves those settings against an independently selected bundle artifact
+and returns detached `provenance.spm_config` and `provenance.spm` receipts.
+Its development path requires a matching bundle configuration and country
+installation; the published wrapper/API production path has not been promoted.
+This guide does not prescribe a registry installation or claim a live endpoint.
 
-## Development model registration
-
-The wrapper's certified model pin can differ from the development country
-checkout. In that case ordinary wrapper import can fail its population-data
-compatibility check. For these household-only integration checks, set
-`POLICYENGINE_US_HOUSEHOLD_ONLY=1` **before importing PolicyEngine**. This explicit
-mode registers the installed country's actual variables and parameters but
-attaches no certified data manifest or certification. Population run/load/save,
-managed microsimulation and certified TRACE export are unavailable in this
-mode. The certified manifests remain unchanged.
-
-The checked development combination is Python 3.14.4, `policyengine` 5.3.0
-with the accompanying wrapper changes, `policyengine-us` 1.824.3,
-`policyengine-core` 3.30.2 and the accompanying SPM package. Install the bare
-wrapper plus the exact selected development dependencies; its `[us]` extra
-pins an older certified country/core pair. The final integration receipt
-records the actual SPM version/content hash and all source commit identities.
-
-The explicit provider rejects nonintegral or negative unit counts and units
-without a classified SPM adult. Minor-only units need a separate classification
-decision; they do not receive a zero threshold. Legacy formulas outside the
-provider retain their existing behavior.
+The executed country examples used the local country 1.824.7 candidate,
+PolicyEngine Core 3.30.1 and Python 3.13.9. These synthetic household examples
+establish an API contract, not population-data certification. A production
+population release must independently preserve native membership and weights,
+carry the source-backed independence primitive, and exclude saved formula
+outputs from the model input contract. The separate
+[Microcosm](microcosm-integration.md) and [Axiom](axiom-integration.md) adapters
+do not migrate the country's tax/benefit rules into Axiom.

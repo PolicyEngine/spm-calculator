@@ -614,18 +614,15 @@ print(result["threshold"])`;
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div
+                  <DataTable
                     className="overflow-x-auto"
                     role="region"
                     aria-label="Year-by-year thresholds"
                     tabIndex={0}
-                  >
-                    <DataTable
-                      columns={yearTableColumns}
-                      data={yearComparisonData}
-                      styles={{ root: { minWidth: "440px" } }}
-                    />
-                  </div>
+                    columns={yearTableColumns}
+                    data={yearComparisonData}
+                    styles={{ table: { minWidth: "520px" } }}
+                  />
                   <p className="mt-3 text-xs text-muted-foreground">
                     National thresholds and housing shares are published for
                     2022–2025. Geography status is specific to each area and
@@ -759,12 +756,18 @@ print(result["threshold"])`;
                   Tenure comparison
                 </Title>
                 <Text className="text-sm text-muted-foreground">
-                  {currentLocation?.label ?? "Area unavailable"}
+                  {currentLocation?.label ?? "Area unavailable"} · Two adults,
+                  two children
                 </Text>
               </div>
               <DataTable
+                className="overflow-x-auto"
+                role="region"
+                aria-label="Tenure thresholds"
+                tabIndex={0}
                 columns={tenureTableColumns}
                 data={tenureComparisonData}
+                styles={{ table: { minWidth: "440px" } }}
               />
             </div>
 

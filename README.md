@@ -1,231 +1,163 @@
 # spm-calculator
 
-Calculate [Supplemental Poverty Measure (SPM)](https://www.census.gov/topics/income-poverty/supplemental-poverty-measure.html) thresholds from a pinned statistical release, with standalone lookup, reproducible estimation and optional model adapters.
+Calculate Supplemental Poverty Measure (SPM) thresholds with published national
+inputs and conditional CE/ACS rolling forecasts. The package works offline for
+standalone calculations and supplies the same forecast artifact to optional
+PolicyEngine, Microcosm Frame and actual Axiom core integrations.
 
-[![Try the Calculator](https://img.shields.io/badge/Try-Calculator-teal)](https://spm-calculator.vercel.app/)
-[![Documentation](https://img.shields.io/badge/docs-github-green)](https://github.com/PolicyEngine/spm-calculator/tree/main/docs)
+This checkout is the **local 1.0.0 candidate**. These instructions describe this
+source, not an announced PyPI release or production website, wrapper or API
+promotion.
 
-## Interactive calculator
+## Published 2025 inputs
 
-**[Try the SPM Threshold Calculator](https://spm-calculator.vercel.app/)** - Calculate thresholds by family composition and housing tenure for the official areas in the Census SPM workbook: named metropolitan statistical areas and state residual Metro/Nonmetro areas.
+The national reference family has two SPM adults and two children. The bundled
+2025 thresholds and tenure-specific housing shares come from the BLS workbooks:
 
-The rebuilt calculator runs entirely in your browser. It bundles national thresholds through published 2025 and uses Census 2024 SPM area indices and housing shares as geographic anchors. National thresholds provide the calculation's base and reference values; the app selects an official Census area. No browser credential or Census request is required. The separately versioned research forecast advances the CE and ACS windows and updates housing shares and rent indices. The 2025 local amount combines a published national base with modeled geographic inputs.
+| Tenure | Annual national threshold, USD | Housing share |
+| --- | ---: | ---: |
+| Owner with mortgage | 41,322.707394 | 0.4285074824 |
+| Owner without mortgage | 34,325.997720 | 0.3120194707 |
+| Renter | 41,700.555713 | 0.4336857704 |
 
-The app offers 2026–2030 forecasts under both a CE real-spending trend and zero real spending growth. Prices follow the package's stated assumptions: 2.3% inflation for 2026, 2.2% for 2027, and 2.0% annually for 2028–2030. These assumptions have no external forecast vintage. The app displays retrospective comparisons, source windows, sample-support warnings and a Python reproduction snippet. See [rolling forecasts](docs/rolling-forecasts.md) for the real-growth fit, rent-vintage bridge and research limitations. Forecast uncertainty is not estimated.
+The [BLS housing-share workbook](spm_calculator/data/current/bls_spm_shares.xlsx)
+supplies the shelter-plus-utilities fractions. The [published-cell receipt](spm_calculator/data/current/bls_published_cell_receipt.json)
+links threshold cells to the source workbooks and rounded BLS page values.
+The [source and validation guide](docs/validation.md) distinguishes these
+published values from replicated or projected amounts. A published national
+base does not make a local 2025 estimate an official Census threshold: the
+selected area's rent input can be modeled.
 
-This branch is an **unpublished 0.5.0 rebuild**. The public calculator remains on its existing deployment until a separate production promotion. The corrected national series changes some legacy numerical outputs; see [compatibility and rollout](docs/spm-releases.md#compatibility-and-rollout).
+## Install this candidate locally
 
-### Run Locally
+From this checkout, using Python 3.9 or newer:
 
-**Next.js app (recommended):**
-```bash
-cd web
-bun install --frozen-lockfile
-bun run dev
+```sh
+python -m pip install -e .
 ```
 
-Generate and check browser inputs with `uv run scripts/export_web_release.py` and `uv run scripts/export_web_release.py --check`.
+A calculation needs no Census API key or source download. Optional integrations
+require their own runtime installations; see the linked guides below.
 
-## Overview
-
-The SPM threshold is calculated as:
-
-```
-threshold = base_threshold[tenure] × equivalence_scale × geoadj[tenure]
-```
-
-Where:
-- **base_threshold** varies by housing tenure (renter, owner with mortgage, owner without mortgage), calculated from 5-year rolling Consumer Expenditure Survey data
-- **equivalence_scale** adjusts for family composition using the official Betson three-parameter SPM scale
-- **geoadj** adjusts for housing costs using the rent index for an official Census SPM area and the selected tenure's housing share
-
-## Installation
-
-```bash
-pip install spm-calculator
-```
-
-## Quick Start
-
-For new integrations, select an immutable release. This path performs no network requests and does not import PE, Microcosm or Axiom:
+## Calculate a threshold
 
 ```python
-from spm_calculator import load_release, SPMUnit
+from spm_calculator import SPMUnit, load_forecast
 
-release = load_release()  # A fixed bundled artifact, not "latest" over the network.
-print(release.release_id, release.content_sha256)
-result = release.calculate_unit(SPMUnit(
-    unit_id="family-1", num_adults=2, num_children=2,
-    tenure="renter", year=2025,
-    geography_kind="metro", geography_id="35620",  # New York metro
-))
-print(result["threshold"], result["provenance"])
-```
-
-Save the content hash and supply `expected_sha256=` to `load_release` on replay. The CLI supports `info`, `verify`, `calculate` and `export --format csv`. Unsupported years fail; new projections require explicitly identified inputs and methods. See [release contract and integration boundaries](docs/spm-releases.md), [current CE replication](docs/current-ce-replication.md), [PE integration](docs/policyengine-release-integration.md), and [Axiom integration](docs/axiom-integration.md).
-
-The preview forecast API uses the complete selected-year inputs:
-
-```python
-from spm_calculator import load_forecast, SPMUnit
-
-projection = load_forecast()  # Supply a retained expected_sha256 for replay.
-result = projection.calculate_unit(
-    SPMUnit("family-1", 2, 2, "renter", 2026,
-            geography_kind="metro", geography_id="35620"),
-    scenario="ce_trend",  # Or "zero_real".
+forecast = load_forecast()
+result = forecast.calculate_unit(
+    SPMUnit(
+        unit_id="example-family",
+        num_adults=2,
+        num_children=2,
+        tenure="renter",
+        year=2025,
+        geography_kind="national",
+        resources=40_000,
+    )
 )
-print(result["threshold"], result["forecast_sha256"])
+print(f"Threshold: ${result['threshold']:,.2f}")  # $41,700.56
+print(result["is_in_poverty"])  # True
+print(forecast.forecast_id, forecast.content_sha256)
 ```
 
-`load_forecast` is part of [PR 36](https://github.com/PolicyEngine/spm-calculator/pull/36), not a published PyPI API. Existing PE, Axiom and Microcosm production paths have not adopted this research artifact.
+Here `resources` means already measured annual SPM resources, not gross income.
+Omit it when only a threshold is needed. `SPMUnit` accepts already classified
+counts. In person-based integrations, an adult is a person aged at least 18,
+or aged at least 15 with an explicit SPM independence role. Native SPM membership
+and source roles determine those counts; household size alone does not.
 
-The existing calculator API remains available for legacy callers:
+For a county, resolve its assignment for the target year, then calculate with
+that SPM estimation area:
 
 ```python
-from spm_calculator import SPMCalculator
+from spm_calculator import SPMUnit, load_forecast
 
-# Initialize calculator for a specific year
-calc = SPMCalculator(year=2024)
-
-# Get base thresholds by tenure (national, before geographic adjustment)
-base = calc.get_base_thresholds()
-# {'renter': 39219.89, 'owner_with_mortgage': 39231.0, 'owner_without_mortgage': 32878.59}
-
-# Get GEOADJ for a specific location
-geoadj = calc.get_geoadj("metro_area", "35620", tenure="renter")  # New York metro
-# 1.1599
-
-# Calculate threshold for a specific family in a specific location
-threshold = calc.calculate_threshold(
-    num_adults=2,
-    num_children=2,
-    tenure="renter",
-    geography_type="metro_area",
-    geography_id="35620"
+forecast = load_forecast()
+assignment = forecast.resolve_county(
+    2026, "06037", county_vintage="2020", scenario="ce_trend"
 )
-# A composition of the selected national series and pinned metro adjustment.
+result = forecast.calculate_unit(
+    SPMUnit(
+        "example-family", 2, 2, "renter", 2026,
+        geography_kind=assignment["kind"],
+        geography_id=assignment["area_id"],
+    ),
+    scenario="ce_trend",
+)
+print(result["threshold"], result["national_status"])
+print(result["provenance"]["geography"])
 ```
 
-Official Census area data are bundled with the package. The Python package also
-retains custom ACS rent calculations for research and compatibility. State,
-county, district, PUMA and tract rent adjustments are approximations, not
-official SPM geographic thresholds, and the browser does not offer them. Legacy
-data-download helpers may require `CENSUS_API_KEY`; the immutable release's
-retained state/county/district inputs replay offline.
+County is an assignment input, not an estimation unit. Use
+`forecast.areas_for_year(year, scenario=...)` to list that year's supported
+areas and their statuses. `metro` is the API kind for named MSAs, state residual
+metro/nonmetro areas and explicitly modeled residual areas; inspect `area_type`
+and `official_published_area` rather than inferring official status from the
+kind. National calculations are an explicit location choice. Unknown locations,
+years and scenarios raise errors.
 
-### SPM unit IDs
+## Conditional 2026–2035 forecasts
 
-If your data does not already include Census SPM resource-unit IDs, use
-`spm_unit_id` to create person-level IDs before calculating thresholds:
+The default schema-2 artifact covers 2022–2035. It preserves published national
+values through 2025 and projects 2026–2035 using moving five-year Consumer
+Expenditure Survey and American Community Survey windows. `ce_trend` is the
+default real-spending scenario; `zero_real` provides zero real-spending growth.
+The artifact records price assumptions, their source vintage, housing shares,
+rent indices, source windows and diagnostics separately for each selected year.
 
-```python
-from spm_calculator import spm_unit_id
+These are conditional research estimates. Public-use rent allocation,
+unresolved CE sample policies, fixed future donors and weights, and unestimated
+forecast uncertainty limit interpretation. Relative rent indices stabilize from
+2029 under the baseline donor and price assumptions even as windows advance;
+this is not evidence of persistent local growth differences. Read the
+[rolling forecast methods and validation limits](docs/rolling-forecasts.md)
+before comparing scenarios or historical geography series breaks.
 
-ids, diagnostics = spm_unit_id(persons, diagnostics=True)
+## Command line
+
+After local installation:
+
+```sh
+spm-calculator info
+spm-calculator verify
+spm-calculator calculate --year 2025 --adults 2 --children 2 --tenure renter --national
+spm-calculator --scenario ce_trend calculate --year 2026 --adults 2 --children 2 --county 06037
+spm-calculator areas --year 2035
+spm-calculator --scenario zero_real export --format csv
 ```
 
-The function preserves native `person_spm_unit_id`, `spm_unit_id`, or `SPM_ID`
-columns when present. Otherwise, it reconstructs units from the smallest
-available person-level inputs:
+Global options (`--forecast`, `--expect-sha256`, `--as-of`, `--scenario`) precede
+the subcommand. Retain a reviewed content digest and supply it on replay; the
+reader does not obtain a newer artifact over the network. See the
+[quickstart](docs/quickstart.md) and [artifact contract](docs/spm-releases.md).
 
-| Input class | Columns recognized by default |
-|-------------|-------------------------------|
-| Required | `household_id`, `person_household_id`, `H_SEQ`, or `PH_SEQ` |
-| Strongly recommended | `family_id`, `person_family_id`, or `PF_SEQ`; `age` or `A_AGE` |
-| Person pointers | `line_number`, `person_line_number`, or `A_LINENO`; `parent_id`, `mother_id`, `father_id`, `PEPAR1`, `PEPAR2`; `spouse_id` or `A_SPOUSE`; `unmarried_partner_id`, `partner_id`, `cohabiting_partner_id`, or `PECOHAB` |
-| Census SPM assignment flags | `SPM_WFOSTER22`, `SPM_WUI_LT15`, and `SPM_WNEWPARENT`; `SPM_WCOHABIT` is used only when no direct cohabiting partner pointer such as `PECOHAB` is available |
-| Generic fallback flags | `relationship_to_head`, `family_relationship`, or `A_FAMREL`; `is_foster_child` or `foster_child` |
+## Integrations and local app
 
-Diagnostics describe assignment provenance and missing recommended inputs; they
-do not summarize the resulting unit distribution.
+- [PolicyEngine](docs/policyengine-release-integration.md): the accompanying
+  country candidate reads forecast configuration by default and retains its
+  tax, benefit and resource formulas. Wrapper/API production adoption is not
+  published by this documentation.
+- [Microcosm Frame](docs/microcosm-integration.md): preserve native membership
+  and typed weights, attach canonical results and summarize with Frame operations.
+- [Axiom core](docs/axiom-integration.md): execute person classification,
+  native unit counts, bounded canonical scale lookup and threshold/housing/poverty
+  arithmetic in real core. The dense Microcosm AxiomEngine does not support this
+  bridge; exact decimal poverty boundaries can differ from Python float results.
 
-For parity checks against Census/native IDs or published thresholds:
+Run the browser candidate locally from `web` with `bun install --frozen-lockfile`
+and `bun run dev`. Its export consumes the canonical artifact. A local build
+or this README does not establish production deployment.
 
-```python
-from spm_calculator import spm_threshold_match, spm_unit_id_match
+## Sources and research history
 
-id_report = spm_unit_id_match(persons)
-threshold_report = spm_threshold_match(calculated, reference, atol=1.0)
-```
+- [Validation](docs/validation.md): published BLS cells and shares, Census
+  geography anchors, forecast comparisons and reproducible checks.
+- [Methodology](docs/methodology.md): threshold, housing and equivalence formulas.
+- [Current CE replication experiment](docs/current-ce-replication.md): source
+  policies, measured replication differences and unresolved approximations.
+- [2026 BLS correction and frozen experiments](docs/bls-2026-correction.md):
+  historical publication vintages and the immutable 2025 forecast commitment.
+- [API reference](docs/api.md): current calculation and membership interfaces.
 
-The optional ASEC parity tests run against a real Census CPS ASEC HDFStore when
-`SPM_CALCULATOR_ASEC_H5=/path/to/census_cps_2024.h5` is set.
-
-## Geography scope
-
-The browser offers the 341 areas in the [Census 2024 SPM workbook](https://www2.census.gov/programs-surveys/demo/tables/p60/287/SPM-pov-threshold-2024.xlsx): 260 named metropolitan statistical areas, 34 state residual Metro areas and 47 state Nonmetro areas. A state residual area such as “Alaska Metro” is a specific Census SPM area, not a statewide threshold.
-
-Python callers can use `metro` in the release API (`metro_area` in the legacy API) for those same areas. National reference calculations and custom ACS-based state, county, district, PUMA and tract helpers remain available separately. Their availability does not make custom rent adjustments official SPM thresholds.
-
-For a population within a county or congressional district, assign each unit to its official Census SPM area and apply that area's adjustment. A single threshold derived from the county or district median rent does not preserve the mix of SPM areas. Geographic assignment and boundary vintages belong in the data layer; see [Microcosm's geography work](https://github.com/PolicyEngine/microcosm/issues/48).
-
-## Data Sources
-
-- **Base thresholds**: [BLS Consumer Expenditure Survey](https://www.bls.gov/cex/) - 5-year rolling FCSUti (Food, Clothing, Shelter, Utilities, telephone, internet)
-- **Browser geographic adjustment**: [Census SPM Thresholds by Metro Area: 2024](https://www2.census.gov/programs-surveys/demo/tables/p60/287/SPM-pov-threshold-2024.xlsx) - Official SPM area rent indices
-- **Optional custom Python rent estimates**: [ACS 5-Year Estimates](https://www.census.gov/programs-surveys/acs) - Published rent tables; these custom adjustments are not official SPM thresholds
-- **Methodology**: [Census SPM Technical Documentation](https://www2.census.gov/programs-surveys/supplemental-poverty-measure/datasets/spm/spm_techdoc.pdf)
-
-## Methodology
-
-### Base Threshold Calculation
-
-Following BLS methodology (updated September 2021, corrected July 17, 2026):
-1. Load CE Interview PUMD collection quarters (T−5)Q2 through (T)Q1 for target year T (cached year bundles)
-2. Filter to consumer units with children
-3. Calculate FCSUti expenditures (shelter includes owner mortgage-principal outlays; UTIL already contains telephone)
-4. Convert to reference family (2 adults, 2 children) using equivalence scale
-5. Apply the BLS formula over the 47th-53rd percentile estimation sample: `0.82 × (1.2 × FCSUti_E − SU_E + SU_Eh)` (82% anchor since the 2026 correction; 83% before)
-
-### Geographic Adjustment (GEOADJ)
-
-For official Census SPM areas, the browser combines the selected year's rent indices, national thresholds and tenure-specific housing shares. Published 2024 geographic inputs anchor the research projection. Modeled local amounts need not equal published Census workbook thresholds; the browser identifies their component statuses and source windows.
-
-The same formula is available to Python researchers for custom geographies built from ACS rents. Those estimates do not define official Census SPM areas:
-```
-GEOADJ_t = (local_median_rent / national_median_rent) × housing_share_t + (1 - housing_share_t)
-```
-
-For 2024 thresholds, the tenure-specific housing shares are:
-- `0.443` for renters
-- `0.434` for owners with a mortgage
-- `0.323` for owners without a mortgage
-
-### Equivalence Scale
-
-The SPM uses the official Betson three-parameter scale:
-- Single adult with children: `(1 + 0.8 + 0.5 × (children - 1))^0.7`
-- Multiple adults with children: `(adults + 0.5 × children)^0.7`
-- One adult without children: `1.0`
-- Two adults without children: `1.41`
-- Three or more adults without children: `adults^0.7`
-- Normalized to the reference family `(2 adults, 2 children) = 3^0.7`
-
-## Data provenance and validation
-
-Packaged thresholds come from the official BLS workbook (bundled with recorded SHA-256, parsed by `scripts/build_threshold_series.py` — never hand-edited). Three series ship with the package:
-
-- `bls-corrected-2026-07-17` (default): the corrected series BLS published on July 17, 2026, spliced to BLS's published 2025 continuation from the current workbook; full precision, 2005-2025, with standard errors and tenure shares
-- `census-published-pre-correction`: what every published 2019-2024 SPM statistic used, cross-verified against the Census P60 reports
-- `package-legacy-0.3`: values shipped in spm-calculator ≤ 0.3.1, retained for reproducibility (2019-2023 contained hand-entry errors of up to 8% — see [docs/bls-2026-correction.md](docs/bls-2026-correction.md))
-
-| Tenure | 2024 corrected BLS | Package |
-|--------|--------------------|---------|
-| Renter | $39,219.89 | $39,219.89 |
-| Owner w/ mortgage | $39,231.00 | $39,231.00 |
-| Owner w/o mortgage | $32,878.59 | $32,878.59 |
-
-The full-precision BLS 2025 thresholds are $41,322.71 for owners with mortgages, $34,326.00 for owners without mortgages, and $41,700.56 for renters. The BLS publication page displays these as $41,323, $34,326, and $41,701.
-
-A weekly [drift-watch CI job](.github/workflows/bls-drift-watch.yaml) checks the frozen correction workbook, BLS's current workbook, and the rounded 2025 page table, opening an issue if the packaged series diverges. `get_thresholds(2025)` now returns published BLS values. The superseded `nowcast_thresholds(2025)` remains available as a historical forecasting commitment and warns callers to use the published series; its realized mean absolute error was 1.17%. The four-rule 2020-2024 backtest and the 2025 evaluation are recorded in [docs/bls-2026-correction.md](docs/bls-2026-correction.md). The independent CE-PUMD replication reproduces official threshold levels within 1-4.5% (without the in-kind benefit imputations); measured fidelity by year is documented there as well.
-
-Official metro thresholds are validated against [Census SPM Thresholds by Metro Area: 2024](https://www2.census.gov/programs-surveys/demo/tables/p60/287/SPM-pov-threshold-2024.xlsx) (pre-correction vintage; composed metro thresholds rescale onto the corrected national base until Census re-releases the workbook).
-
-## License
-
-MIT License - see [LICENSE](LICENSE) for details.
-
-## Contributing
-
-Contributions welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+[MIT license](LICENSE).

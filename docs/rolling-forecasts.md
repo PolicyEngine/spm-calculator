@@ -6,10 +6,14 @@ growth are separate assumptions. An inflation-only projection holds the real
 spending of new observations constant; it does not imply that actual real
 spending will remain constant.
 
-This is a public-data research projection. The [published release](spm-releases.md)
-and archived forecast commitments retain their original bytes. The new artifact
-has its own information date, source receipts and content digest. Its Python
-consumer works without PolicyEngine, Microcosm, Axiom or a network connection.
+The local version 1.0 candidate loads one canonical schema 2 artifact for
+2022–2035, with published national inputs through 2025 and conditional
+research forecasts thereafter. [Archived source snapshots](spm-releases.md)
+and forecast commitments retain their original bytes. The artifact records
+an information date of September 9, 2026, source receipts and a content
+digest. Its Python consumer works without PolicyEngine, Microcosm, Axiom or
+a network connection. Candidate publication and production deployment remain
+pending.
 
 ## Reference years and moving windows
 
@@ -21,6 +25,8 @@ uses the preceding five calendar years of ACS rents.
 
 | SPM reference year | CE collection window | Projected CE quarters | ACS calendar window | Projected ACS cohorts |
 | --- | --- | ---: | --- | ---: |
+| 2022 | 2017Q2–2022Q1 | 0 | 2017–2021 | 0 |
+| 2023 | 2018Q2–2023Q1 | 0 | 2018–2022 | 0 |
 | 2024 | 2019Q2–2024Q1 | 0 | 2019–2023 | 0 |
 | 2025 | 2020Q2–2025Q1 | 0 | 2020–2024 | 0 |
 | 2026 | 2021Q2–2026Q1 | 4 | 2021–2025 | 1 |
@@ -28,13 +34,16 @@ uses the preceding five calendar years of ACS rents.
 | 2028 | 2023Q2–2028Q1 | 12 | 2023–2027 | 3 |
 | 2029 | 2024Q2–2029Q1 | 16 | 2024–2028 | 4 |
 | 2030 | 2025Q2–2030Q1 | 20 | 2025–2029 | 5 |
+| 2035 | 2030Q2–2035Q1 | 20 | 2030–2034 | 5 |
 
-National thresholds for 2024 and 2025 use the published BLS values directly.
-Census's published 2024 indices and housing shares anchor geographic levels.
-The 2025 local amount uses a published national base and modeled geographic
-inputs; it is not a wholly published threshold. Census has [scheduled its
-2025 poverty release for September 15, 2026](https://www.census.gov/newsroom/press-releases/2026/2025-iphi-webinar-advisory.html).
-The source check records the actual acquisition date, September 9 UTC.
+National thresholds and housing shares for 2022–2025 use published BLS
+values directly. Published Census indices anchor represented areas in
+2022–2024; the post-2024 geographic projection uses the 2024 rent-index
+anchor. Residual areas without a published anchor remain explicitly modeled.
+A 2025 local amount therefore combines published national inputs with
+modeled geography. The [dated source check](../spm_calculator/data/current/forecast_source_checks.json)
+records that 2025 local geography was not yet published at the September 9
+information cutoff.
 
 ## Prices and real spending
 
@@ -46,9 +55,15 @@ missing-value patterns stay with that donor. Monetary expenditures scale by:
 `projected expenditure = donor expenditure × price factor × real spending factor`.
 
 The price factor uses the CE composite index with weights from the origin's
-five-year sample. Historical annual CPI observations are pinned. The package
-assumes inflation of 2.3% in 2026, 2.2% in 2027 and 2.0% in 2028–2030. These
-are declared scenarios, without an external BLS or CBO forecast vintage.
+five-year sample. Historical annual CPI observations are pinned. The future
+path uses the February 2026 CBO calendar-year CPI-U forecast:
+2.9248% in 2026, 2.5476% in 2027, 2.3614% in 2028, 2.2880% in 2029 and
+about 2.26% annually in 2030–2035. The [pinned CBO source](https://raw.githubusercontent.com/US-CBO/cbo-data/284a95665f9f2f74ed1f482feb629b43fce323da/data/economic/economic_projections/calendar_2026-02.csv)
+and [horizon inputs](../spm_calculator/data/current/forecast_horizon_inputs.json)
+record the exact annual levels and growth rates. Growth ratios apply to
+the observed BLS 2025 anchor. Applying aggregate growth uniformly to future
+CE price components and baseline rents is a package assumption; CBO does
+not supply those component or local-rent forecasts here.
 The committed BLS API receipt verifies all-items CPI-U annual averages of
 313.689 for 2024 and 321.943 for 2025. The latter covers eleven months:
 October 2025 data were not collected.
@@ -101,9 +116,9 @@ Future national thresholds use:
 `threshold(T,h) = published threshold(2025,h) × C(T,h) / C(2025,h)`.
 
 The estimator's housing fraction is `0.82 × tenure SU mean / C(T,h)`.
-The projected housing share equals the published Census 2024 share times
-the ratio of that estimated fraction in T to its value in 2024. Anchoring
-recovers the published base exactly. Shares outside (0,1) cause an error.
+The projected housing share equals the published BLS 2025 shelter-plus-
+utilities share times the ratio of that estimated fraction in T to its
+value in 2025. Anchoring recovers the published base exactly. Shares outside (0,1) cause an error.
 
 The sample and composite-price weights are recomputed inside each target
 window. Donor scaling uses the frozen origin weights to bridge price years;
@@ -112,14 +127,16 @@ This is an explicit approximation, with no second application of the same
 inflation interval.
 
 A positive real-growth assumption need not raise every tenure's threshold
-at every horizon. For 2026, the national renter threshold is $43,563.48 under
-`ce_trend`, compared with $43,621.68 under `zero_real`. The reselected band's
-mean FCSU spending rises by $76.00, while its overall SU mean rises by $127.16
-and renter SU mean falls by $33.04. BLS's tenure formula subtracts the overall
-SU mean and adds the tenure mean, so the housing adjustment offsets the
-increase in common spending. By 2030 the renter thresholds are $49,099.08
-and $48,061.18 respectively. These are generated research results from the
-pinned CE component, not published BLS forecasts.
+at every horizon. In 2026, the national renter threshold is $43,829.55 under
+`ce_trend`, compared with $43,888.11 under `zero_real`. The reselected
+band's mean FCSUti spending rises by $76.46, while its overall SU mean
+rises by $127.94 and its renter SU mean falls by $33.25. The formula
+subtracts the overall SU mean and adds the renter SU mean, so this housing
+adjustment offsets the increase in common spending. By
+2030, renter thresholds are $50,011.91 and $48,954.72 respectively; by 2035,
+they are $58,520.42 and $54,735.04. These are conditional research results
+from the [canonical artifact](../spm_calculator/data/current/rolling_forecast_2026_09_09.json),
+not published BLS forecasts.
 
 ## Geographic rent indices
 
@@ -130,12 +147,19 @@ once. The calculation pools weighted individual records; it does not average
 annual medians. Census explains [why multiyear estimates describe a pooled
 period](https://www.census.gov/newsroom/blogs/random-samplings/2022/03/period-estimates-american-community-survey.html).
 
-Public PUMS identifies PUMAs rather than exact Census SPM areas. A pinned
-fractional PUMA-to-county-to-area mapping uses 2020 geography and Census's
-2013 metropolitan definitions. This is a geographic approximation. The
-published 341-area menu does not partition every county: unmatched menu
-fractions remain in the full-US national median and are reported separately.
-Every requested area must have positive coverage.
+Public PUMS identifies PUMAs rather than exact Census SPM areas. Pinned
+fractional PUMA-to-county-to-area mappings use population allocation and
+Census's 2013 metropolitan definitions. Historical 2022 estimation uses
+2010 PUMAs; 2023 onward uses 2020 PUMAs. This approximates area membership
+and does not identify actual household counties.
+
+The menu has 349 areas in each year: 342 published areas and 7 unanchored
+modeled residuals in 2022, then 341 published-menu areas and 8 unanchored
+modeled residuals. The later years' published-menu identifiers carry modeled
+rent indices. Source population outside the published menu remains in the
+full-US denominator. Every calculated area must have positive coverage.
+County FIPS is a lookup input assigning a unit to its year-specific area,
+not a separate county estimation level.
 
 The 2019–2023 and 2020–2024 PUMS products have different weights and dollar
 vintages. Let R be the modeled ratio of local to national pooled median rent.
@@ -158,9 +182,35 @@ growth while leaving the deflator unchanged. The CE spending scenario does
 not change this ACS assumption.
 
 For housing share s and rent index I, the location factor is `1 + s × (I−1)`.
-Both s and I can change over time. Equal future growth alone does not imply
-a constant factor. A proportional local-to-national distribution throughout
-the entire history would instead preserve the rent-index ratio.
+Both s and I can change over time. Under this artifact's fixed 2024 donor
+distribution, uniform nominal growth and matching deflator, all 349 relative
+rent indices reach their final constant level in SPM year 2029, through
+2035. The first unchanged transition is 2029→2030. The 2029 window contains
+the observed 2024 cohort plus four projected cohorts; 2030 is the first
+all-projected window. The estimator continues advancing windows; it does
+not manually freeze rent values.
+
+Housing shares still move slightly from 2029 to 2030, so geographic factors
+change by up to about 0.0000001024 under `ce_trend`. After 2030, remaining
+factor changes are at floating-point precision. National dollar thresholds
+continue changing. These assumptions do not generate persistent local
+rent-growth differences. The artifact records this limit in
+`assumptions.acs.relative_index_stabilization`.
+
+### Historical series breaks
+
+The artifact preserves two 2022→2023 breaks rather than interpreting them
+as annual rent growth:
+
+| Area or assignment | 2022 rent index | 2023 rent index | Interpretation |
+| --- | ---: | ---: | --- |
+| Massachusetts Nonmetro (`25002`) | 1.551 | 1.043 | Published-source series break |
+| Sumter County, SC (`45085`) | 0.489 | 0.7155172413793104 | Assignment changes from published South Carolina Metro (`45001`) to unanchored modeled residual (`modeled_residual_metro:45`) |
+
+The selected area's `series_breaks` metadata labels both endpoints. Sumter's
+notice applies to that county assignment; it is not a statement that all
+counties in the modeled residual changed assignment. Values and source
+identities remain available for audit.
 
 ## Support and topcoding
 
@@ -169,7 +219,8 @@ combine their allocation-adjusted weights by original record before computing
 the Kish count, `(sum weights)² / sum(weights²)`. An expected whole-record
 count sums each original's geographic allocation fraction once. An area is
 flagged when the minimum of unique records, expected count and Kish count is
-below 30. This is a declared research heuristic, not a Census publication
+below 30. Projected windows also flag thin support in their original donor
+cohort. This is a declared research heuristic, not a Census publication
 standard or a survey-design effective sample size.
 
 The artifact reports cohort-specific cash-rent and utility topcoding flags,
@@ -225,33 +276,47 @@ Neither these tests nor the fitted trend provide forecast uncertainty bounds.
 
 ## Standalone calculation
 
-This preview API is developed in [calculator PR 36](https://github.com/PolicyEngine/spm-calculator/pull/36)
-and is not yet published on PyPI:
+Run this example from the local candidate checkout:
 
 ```python
-from spm_calculator import load_forecast, SPMUnit
+from spm_calculator import SPMUnit, load_forecast
 
-projection = load_forecast()  # Pass expected_sha256 to pin a retained artifact.
-result = projection.calculate_unit(
+forecast = load_forecast()
+assignment = forecast.resolve_county(2026, "06075", county_vintage="2020")
+area = forecast.areas_for_year(2026)[assignment["area_id"]]
+result = forecast.calculate_unit(
     SPMUnit(
         unit_id="household-1",
         num_adults=2,
         num_children=2,
         tenure="renter",
         year=2026,
-        geography_kind="metro",
-        geography_id="41860",
+        geography_kind=assignment["kind"],
+        geography_id=assignment["area_id"],
+        resources=50000,
     ),
     scenario="ce_trend",
 )
-print(result["threshold"])
+print(area["name"], area["area_type"], area["status"])
+print(round(result["threshold"], 2), result["is_in_poverty"])
 ```
 
-The result records the scenario, artifact identity, component statuses,
-year-specific inputs and selected-area diagnostics. Unknown areas, years and
-scenarios raise errors. An `as_of` date before the artifact's information
-date also raises an error. PolicyEngine, Axiom and Microcosm production
-integrations have not adopted this new research forecast in this change.
+Use `geography_kind="national"` without an area ID for an explicitly
+national calculation. `entry(year, scenario=...)` exposes each year's
+thresholds, shares, rent indices and windows. Results record the selected
+scenario, artifact identity and per-area diagnostics. An area's
+`official_published_area` describes its source-menu status; `status`
+describes the current geographic component.
+
+Unknown years, areas, counties, scenarios or county vintages raise errors.
+An `as_of` date before the information cutoff also raises. No alternate
+runtime release path or geographic substitution supplies missing inputs.
+Pass `expected_sha256` when loading a retained artifact to verify its content
+identity; retrieve the current identity from `forecast.content_sha256`.
+Local [provider](policyengine-release-integration.md),
+[Frame](microcosm-integration.md) and [real Axiom](axiom-integration.md)
+examples use this same artifact. They do not establish publication or
+production deployment of the candidate integrations.
 
 ## Rebuild and verify
 
@@ -259,11 +324,14 @@ Raw CE ZIPs and ACS PUMS products stay in configurable external caches. The
 component manifests pin their URLs and hashes; compact crosswalks and source
 receipts ship with the package. With matching raw source bytes cached:
 
+These commands regenerate outputs; use them only when intentionally rebuilding
+the scientific artifact, not to run a threshold calculation.
+
 ```sh
-uv run --no-sync python scripts/build_ce_forecast.py --output spm_calculator/data/current/ce_rolling_forecast.json
-uv run --no-sync python scripts/build_acs_forecast.py --output spm_calculator/data/current/acs_rolling_forecast.json
-uv run --no-sync python scripts/build_rolling_forecast.py
-uv run --no-sync python scripts/export_web_release.py
+python scripts/build_ce_forecast.py --output spm_calculator/data/current/ce_rolling_forecast.json
+python scripts/build_acs_forecast.py --output spm_calculator/data/current/acs_rolling_forecast.json
+python scripts/build_rolling_forecast.py
+python scripts/export_web_release.py
 ```
 
 Both scientific builders support `--cache-dir` and an offline `--check` that
@@ -273,8 +341,8 @@ input hashes, checks the official CPI receipt and required evaluation
 coverage, and reproduces the portable artifact without raw microdata:
 
 ```sh
-uv run --no-sync python scripts/build_rolling_forecast.py --check
-uv run --no-sync python scripts/export_web_release.py --check
+python scripts/build_rolling_forecast.py --check
+python scripts/export_web_release.py --check
 ```
 
 Changing scientific code or pinned inputs requires rebuilding the affected

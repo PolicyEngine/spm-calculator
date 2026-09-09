@@ -2,7 +2,7 @@
 
 On July 17, 2026, the Census Bureau [announced](https://www.census.gov/newsroom/press-releases/2026/statement-on-supplemental-poverty-measure.html) that BLS had found errors in the Supplemental Poverty Measure thresholds and would re-release SPM estimates for 2019–2024. BLS [reissued corrected thresholds](https://www.bls.gov/pir/spm/spm_thresholds_2024_correction.htm) the same day, attributing the errors to "corrections to the computer code used to generate the thresholds" introduced with the September 2021 methodology change, and re-derived the median anchor from 83% to 82% of the 47th–53rd percentile FCSUti average to minimize the break in series.
 
-This page documents what changed, what this package shipped before version 0.4, and the historical replication and forecast experiments. The separately dated [current CE experiment](current-ce-replication.md) records the September 8, 2026 implementation, source hashes, sample exclusions and sensitivity results. Historical tables below remain identified as historical results.
+This page documents what changed, what this package shipped before version 0.4, and the historical replication and forecast experiments. The local version 1.0 candidate now uses the [canonical 2022–2035 forecast](rolling-forecasts.md); its publication remains pending. Removed APIs named below identify historical experiments only. The separately dated [current CE experiment](current-ce-replication.md) records the September 8, 2026 implementation, source hashes, sample exclusions and sensitivity results. Historical tables below remain identified as historical results.
 
 ## How large the BLS correction is
 
@@ -50,7 +50,7 @@ Owner-tenure errors reach −7.4% (2019). The 2019–2020 rows appear to be misa
 
 The package's own data errors were several times larger than the BLS threshold revisions that prompted this work. The package errors arose in hand-entered reference data. BLS attributed its revisions to computation-code corrections; these are different failure mechanisms.
 
-## What 0.4 changes
+## What the 0.4 correction introduced
 
 - **Provenance-tracked series.** `scripts/build_threshold_series.py` is the only writer of the packaged data. It parses the frozen corrected 2005–2024 workbook and BLS's bundled current workbook, records both SHA-256 digests, and emits full-precision thresholds, standard errors, and tenure shares through 2025.
 - **Three bundled series.** `bls-corrected-2026-07-17` (default), `census-published-pre-correction` (what every published 2019–2024 SPM statistic used, cross-verified against two consecutive P60 reports per year), and `package-legacy-0.3` (verbatim, for reproducing results from earlier releases).
@@ -110,11 +110,11 @@ The CE replication retains the following expenditure and price approximations:
 - It omits home-internet expenditures because FMLI has no matching summary.
 - It omits BLS's in-kind imputations for broadband, LIHEAP, NSLP, WIC, and rental assistance.
 
-The rebuilt estimator also names unresolved minor-only-unit and tenure-3/5/6 sample policies, and documents its unverified midpoint-CDF convention. The [current experiment](current-ce-replication.md) measures youth-policy sensitivity up to 0.0411% and tenure-5/6 sensitivity up to 1.7372%; other approximation effects remain unmeasured. These results do not establish that all approximations are negligible. Separately, bundled metro adjustments derive from the selected Census metro workbook; applying them to a different national threshold vintage is a carried-geography approximation identified in the release.
+The rebuilt estimator also names unresolved minor-only-unit and tenure-3/5/6 sample policies, and documents its unverified midpoint-CDF convention. The [current experiment](current-ce-replication.md) measures youth-policy sensitivity up to 0.0411% and tenure-5/6 sensitivity up to 1.7372%; other approximation effects remain unmeasured. These results do not establish that all approximations are negligible. Separately, the current canonical calculation combines year-specific published or modeled rent indices with corrected BLS national thresholds and housing shares. This source-vintage combination does not reproduce the superseded Census local dollar thresholds. Per-area provenance identifies the geographic component and its limits.
 
 ## Projecting thresholds past the published years
 
-BLS re-estimates thresholds from the rolling five-year CE window, so the published series moves with consumption as well as prices. The historical retrospective backtest evaluated four projection rules over 2020–2024 using corrected prior-year bases and corrected actuals (`scripts/backtest_threshold_projection.py`). The frozen result is `spm_calculator/data/nowcast/backtest_2020_2024.json`. This experiment used corrected data and realized inputs, not authenticated historical information sets.
+BLS re-estimates thresholds from the rolling five-year CE window, so the published series moves with consumption as well as prices. The historical retrospective backtest evaluated four projection rules over 2020–2024 using corrected prior-year bases and corrected actuals (the now-removed `scripts/backtest_threshold_projection.py`). The frozen result is `spm_calculator/data/nowcast/backtest_2020_2024.json`. This experiment used corrected data and realized inputs, not authenticated historical information sets. The table preserves its original labels; “status quo” describes the historical comparator, not the current provider.
 
 | Rule | Mean abs error/yr | Worst year |
 |---|---|---|
@@ -125,7 +125,7 @@ BLS re-estimates thresholds from the rolling five-year CE window, so the publish
 
 The price-aging estimates were generally below the corrected actuals in the later years. Prices alone do not capture all changes in expenditures or benefit imputations, but this backtest does not separately identify those contributions. All methods use retrospective inputs; a prospective forecast must also account for expenditure and CPI values unavailable at its actual prediction date. The historical backtest ranks replication first. The blend remains the committed 2025 method, preserving the original selection rather than retrospectively changing that commitment.
 
-The **archived 2025 nowcast** (`nowcast_thresholds(2025)`, `spm_calculator/data/nowcast/nowcast_2025.json`) applied the blend to the corrected 2024 base:
+The **archived 2025 nowcast** (formerly exposed by `nowcast_thresholds(2025)`; retained as `spm_calculator/data/nowcast/nowcast_2025.json`) applied the blend to the corrected 2024 base:
 
 | Tenure | Replication ratio | FCSUti CPI ratio | Blend | Nowcast 2025 |
 |---|---|---|---|---|
@@ -135,6 +135,6 @@ The **archived 2025 nowcast** (`nowcast_thresholds(2025)`, `spm_calculator/data/
 
 Two data notes. 2025 CPI annual averages are 11-month means — BLS canceled the October 2025 CPI release during the federal shutdown. And computing the replicated 2025 threshold surfaced one more schema break: from the 2024Q2 files, CE replaces the `FOOD`/`FDHOME` summaries with `GROCER` (all grocery purchases, food and nonfood). The package currently approximates food at home as 80% of all `GROCER`; as noted below, BLS applies the 80% factor only to UCC 790210, so this is not an exact replication. Before the per-row vintage-aware construction, pooled windows silently zeroed food for redesign-era quarters and replicated 2025 thresholds *fell* 4–5% nominal — the same silent-schema-drift failure class as everything else on this page.
 
-BLS published the actual 2025 thresholds on August 24, 2026. `nowcast_thresholds(2025)` deliberately preserves the table above for evaluation, emits a warning, and directs current calculations to `get_thresholds(2025)`.
+BLS published the actual 2025 thresholds on August 24, 2026. The former `nowcast_thresholds` and `get_thresholds` APIs have been removed. The JSON archive preserves the table above for evaluation; current published lookup uses `get_published_thresholds(2025)`, and current unit calculations use `load_forecast().calculate_unit(...)`.
 
-The 2026 CE collection window ended in 2026Q1. This rebuild makes no new 2026 forecast or preregistration promise. Any future prospective commitment requires a real timestamp, a declared available-input cutoff and a prediction made before the relevant outcome is published.
+The 2026 CE collection window ended in 2026Q1. These historical experiments made no new 2026 forecast or preregistration promise. The separate [canonical rolling forecast](rolling-forecasts.md) now projects 2026–2035 conditional on its September 9, 2026 information set and declared donor, price and real-spending assumptions. Its retrospective checks are not a reconstructed real-time evaluation. Any prospective commitment requires a real timestamp, a declared available-input cutoff and a prediction made before the relevant outcome is published.

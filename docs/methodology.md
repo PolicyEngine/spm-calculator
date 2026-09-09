@@ -1,193 +1,165 @@
 # Methodology
 
-This document distinguishes published threshold lookup, approximate CE replication and projection. The package's research estimator follows the published Census/BLS framework with explicitly documented approximations; it does not claim exact reproduction of unpublished BLS code or imputation choices.
+The local version 1.0 candidate combines published national SPM thresholds
+and housing shares for 2022–2025 with conditional CE/ACS rolling forecasts
+for 2026–2035. `load_forecast()` reads the bundled schema 2 artifact offline.
+It does not require an estimated-year opt-in or retrieve missing inputs.
+Publication of this candidate and its production integrations remains pending.
 
-## Overview
+The [BLS 2025 publication](https://www.bls.gov/pir/spm/spm_thresholds_2025.htm)
+provides national thresholds for a two-adult, two-child reference unit.
+The geographic component has separate provenance: published Census rent
+indices where available, and explicitly modeled area estimates otherwise.
+A published national base does not make a modeled local threshold official.
 
-The Supplemental Poverty Measure (SPM) threshold represents the amount of resources a family needs to meet basic needs. Unlike the official poverty measure, the SPM:
+## Threshold calculation
 
-1. Varies by geographic location (housing costs)
-2. Accounts for housing tenure (renter vs. owner)
-3. Uses a different family unit definition (SPM unit vs. family)
-4. Includes more resources (tax credits, in-kind benefits)
+For tenure t, year T, classified adult/child counts A/C and area g:
 
-## The Threshold Formula
-
-```
-threshold = base_threshold[tenure] × equivalence_scale × geoadj[tenure]
-```
-
-## Component 1: Base Threshold
-
-The base threshold comes from the Bureau of Labor Statistics Consumer Expenditure (CE) Survey.
-
-### Data Source
-
-- **Survey**: Consumer Expenditure Interview Survey (PUMD)
-- **Time Period**: Rolling 5 years, lagged by 1 year
-- **Sample**: Consumer units with children
-
-### Expenditure Categories (FCSUti)
-
-The threshold is based on spending on:
-
-| Category | CE Variable(s) |
-|----------|---------------|
-| **F**ood | FOODPQ, FOODCQ |
-| **C**lothing | APPARPQ, APPARCQ |
-| **S**helter | SHELTPQ, SHELTCQ |
-| **U**tilities | UTILPQ, UTILCQ |
-| **t**elephone | TELEPHPQ, TELEPHCQ |
-| **i**nternet | (no FMLI summary variable; documented gap) |
-
-### Calculation Method
-
-1. Sum FCSUti expenditures for each consumer unit (shelter includes owner mortgage-principal outlays; UTIL already contains telephone)
-2. Convert each quarterly recall window to annual (× 4)
-3. Convert expenditures to target-year dollars using the sample-derived composite CPI weights and explicit annual CPI inputs (an approximation to BLS's quarterly treatment)
-4. Normalize to reference family (2A2C) using equivalence scale
-5. Apply the BLS formula over the estimation sample E (consumer units inside the 47th-53rd percentile range of equivalized FCSUti): `0.82 × (1.2 × FCSUti_E − SU_E + SU_Eh)`, where SU is shelter + utilities excluding telephone and h indexes housing tenure. The anchor was 83% before the July 17, 2026 correction (see [The 2026 BLS threshold correction](bls-2026-correction.md))
-
-CE `FINLWT21` survey weights govern the expenditure distribution and within-band averages. Population calibration weights must not replace them. The current midpoint-CDF convention has not been verified against BLS's exact percentile implementation. Original CE consumer units and repeated interviews remain separate from the population SPM units used for poverty calculations.
-
-For minor-only units (`FAM_SIZE == PERSLT18`), exact BLS adult/child treatment remains unresolved. The default calculation raises; research runs must explicitly select `youth_policy="exclude_unresolved"` or the nonofficial `legacy_recode` sensitivity. Excluding tenure 5/6 and assigning tenure 3 to owners with mortgage are also named research sample policies, not verified BLS instructions. The [current CE experiment](current-ce-replication.md) reports counts, weight mass, estimated levels and sensitivity. Other unresolved approximations include the post-redesign `GROCER` food allocation and omitted internet/in-kind expenditures.
-
-### 2024 Base Thresholds
-
-Corrected series published July 17, 2026:
-
-| Tenure | Threshold |
-|--------|-----------|
-| Renter | $39,219.89 |
-| Owner with mortgage | $39,231.00 |
-| Owner without mortgage | $32,878.59 |
-
-Source: [Corrected SPM Thresholds](https://www.bls.gov/pir/spm/spm_thresholds_2024_correction.htm) (workbook bundled in the package with recorded SHA-256; see [The 2026 BLS threshold correction](bls-2026-correction.md))
-
-## Component 2: Equivalence Scale
-
-The SPM uses the official Betson three-parameter equivalence scale to adjust thresholds for family size.
-
-### Formula
-
-For a single-adult unit with children:
-
-$$
-\text{raw\_scale} = (1 + 0.8 + 0.5 \times (C - 1))^{0.7}
-$$
-
-For multiple-adult units with children:
-
-$$
-\text{raw\_scale} = (A + 0.5 \times C)^{0.7}
-$$
-
-For childless units:
-- one adult: $1.0$
-- two adults: $1.41$
-- three or more adults: $A^{0.7}$
-
-The normalized scale divides by the reference-family raw scale:
-
-$$
-\text{equivalence\_scale} = \frac{\text{raw\_scale}}{3^{0.7}}
-$$
-
-These counts are already-classified SPM adults and children. Age alone does not resolve every teenage membership/dependency case. Household consumers validate supported compositions; the CE estimator owns its separate unresolved-unit sample policy.
-
-### Example Values
-
-| Family Type | Adults | Children | Equivalence Scale |
-|-------------|--------|----------|-------------------|
-| Single adult | 1 | 0 | 0.463 |
-| Couple | 2 | 0 | 0.653 |
-| Reference (2A2C) | 2 | 2 | 1.000 |
-| Single parent, 2 kids | 1 | 2 | 0.830 |
-| Large family | 3 | 4 | 1.430 |
-
-## Component 3: Geographic Adjustment (GEOADJ)
-
-The GEOADJ factor adjusts for differences in housing costs across geographic areas.
-For public metro areas, the package uses the official Census metro thresholds directly.
-For custom geographies derived from ACS rents, the adjustment is tenure-specific.
-
-### Formula
-
-$$
-\text{GEOADJ}_t = \frac{\text{local\_median\_rent}}{\text{national\_median\_rent}} \times \text{housing\_share}_t + (1 - \text{housing\_share}_t)
-$$
-
-Where:
-- renter housing share = 0.443
-- owner with mortgage housing share = 0.434
-- owner without mortgage housing share = 0.323
-
-These are the fixed 2024-derived legacy accessor values. Explicit releases identify the share reference year and any carried-value approximation; they must not label carried 2024 shares as official target-year shares. New provider calculations use the selected release's shares. The release's geographic identifier and year also determine its rent or metro inputs; unknown requested areas raise unless a caller explicitly selects a documented fallback.
-
-### Data Source
-
-- **Survey**: American Community Survey (ACS) 5-Year Estimates
-- **Table**: B25031 (Median Gross Rent by Bedrooms)
-- **Variable**: 2-bedroom units with complete kitchen and plumbing
-
-### Range of Values
-
-| Area | Approximate GEOADJ |
-|------|-------------------|
-| Alabama Nonmetro (renter) | ~0.80 |
-| National average | 1.00 |
-| New York metro (renter) | ~1.16 |
-| San Jose metro (renter) | ~1.52 |
-
-Because the housing share differs by tenure, owner adjustments are flatter than renter adjustments.
-
-## Supported Geographies
-
-The ACS publishes median rent data at multiple geographic levels. This table describes source coverage; actual offline support is limited to areas present in the selected release, and is not a promise that every listed area has an available estimate:
-
-| Level | Count | Example |
-|-------|-------|---------|
-| Nation | 1 | US |
-| State | 51 | California |
-| County | ~3,200 | San Francisco County |
-| Congressional District | 435 | CA-11 |
-| Metro Area | ~400 | SF-Oakland-Berkeley |
-| PUMA | ~2,300 | (varies) |
-| Census Tract | ~84,000 | (varies) |
-
-## Forecasting
-
-Published lookup consumes a pinned release. Missing years raise by default;
-an explicitly supplied estimated entry requires opt-in. The archived 2025
-nowcast remains available for evaluation, separately from the published
-2025 threshold.
-
-The generic projection helper anchors to an official base:
-
-```
-projected threshold = official base × replicated target / replicated base
+```text
+unadjusted threshold = national threshold(T,t) × equivalence factor(A,C)
+geographic factor = 1 + housing share(T,t) × (rent index(T,g) − 1)
+threshold = unadjusted threshold × geographic factor
+housing portion = unadjusted threshold × housing share(T,t) × rent index(T,g)
+in poverty = resources < threshold
 ```
 
-It also supports price-only ratios and explicit blends. Each input carries
-its year, methodology, source identity and availability date. Inputs later
-than `as_of` are rejected. The helper does not itself predict unobserved
-expenditures or prices. Current-method historical results are retrospective;
-they do not replace frozen forecasts or demonstrate real-time accuracy.
-See [current CE replication](current-ce-replication.md).
+Explicit national calculations use a geographic factor of one. Results
+retain the selected scenario, source identity, component statuses, windows
+and area diagnostics. Resources are optional; without them `is_in_poverty`
+is `None`. This package does not forecast population characteristics or
+SPM resources.
 
-Legacy calculator and PE paths retain their documented CPI extrapolation
-behavior. The new PE compatibility adapter labels any such result as
-consumer extrapolation with its base release and evaluated model CPI
-ratio; it is not a published release entry. Projecting poverty rates also
-requires projected population characteristics and resources, which this
-threshold estimator does not supply. No new consumption-based 2026 forecast is
-made in this CE research experiment. The browser separately offers 2026–2030
-price-only projections using explicit inflation assumptions; see
-[SPM releases](spm-releases.md#browser-geography-scope).
+## Published national inputs
 
-## References
+The canonical artifact uses the corrected BLS national series. It preserves
+the numeric cells in the bundled workbooks; whole-dollar web-page amounts
+are display rounding. BLS asks users to retain spreadsheet significant
+digits when calculating with the thresholds. The [source-cell validation](validation.md)
+records worksheet locations and provenance.
 
-- [Census SPM Methodology](https://www.census.gov/topics/income-poverty/supplemental-poverty-measure.html)
-- [BLS SPM Thresholds](https://www.bls.gov/pir/spm/spm_thresholds_2024.htm)
-- [Census SPM Technical Documentation](https://www2.census.gov/programs-surveys/supplemental-poverty-measure/datasets/spm/spm_techdoc.pdf)
-- [Geographic Adjustments Working Paper (2024)](https://www2.census.gov/library/working-papers/2024/demo/sehsd-wp2024-12.pdf)
+| Tenure | 2025 national threshold, dollars | 2025 housing share |
+| --- | ---: | ---: |
+| Owner with mortgage | 41,322.707394 | 0.4285074824 |
+| Owner without mortgage | 34,325.997720 | 0.3120194707 |
+| Renter | 41,700.555713 | 0.4336857704 |
+
+Sources: [BLS threshold workbook](https://www.bls.gov/pir/spm/spm_thresholds.xlsx)
+and [BLS shares workbook](https://www.bls.gov/pir/spm/spm_shares.xlsx), retained
+with source receipts in the package. Housing share means Total Shelter
+Share plus Total Utilities Share, excluding telephone and internet. It is
+different from the tenure population shares returned by
+`published_thresholds.get_tenure_shares`.
+
+```python
+from spm_calculator import get_published_thresholds, load_forecast
+
+forecast = load_forecast()
+entry = forecast.entry(2025)
+assert entry["thresholds"] == get_published_thresholds(2025)
+assert entry["national_status"] == "published"
+assert entry["housing_share_status"] == "published_anchor"
+print(entry["thresholds"]["renter"], entry["housing_shares"]["renter"])
+# 41700.555713 0.4336857704
+```
+
+## Equivalence scale and unit composition
+
+The Betson three-parameter scale adjusts the reference threshold for
+classified SPM adults and children. Its raw scale is:
+
+| Composition | Raw scale |
+| --- | --- |
+| One adult with children | `(1 + 0.8 + 0.5 × (C − 1))**0.7` |
+| Multiple adults with children | `(A + 0.5 × C)**0.7` |
+| One adult, no children | `1.0` |
+| Two adults, no children | `1.41` |
+| Three or more adults, no children | `A**0.7` |
+
+Divide by `3**0.7` to normalize to two adults and two children.
+`SPMUnit` requires at least one classified adult.
+
+Population adapters use native SPM membership. A person is an SPM adult
+when `age >= 18`, or when `age >= 15` and
+`is_spm_independent_minor_role` is true. When that primitive role is
+unavailable, callers must supply explicit household-head and spouse inputs.
+Neither age ordering nor row order identifies those roles. For example,
+a 16-year-old independent head and a dependent child form a one-adult,
+one-child SPM unit under this contract.
+
+This population classification does not resolve the separate research
+sample-policy uncertainty for minor-only CE consumer units. CE interviews
+and population SPM units are distinct observations.
+
+## Geographic assignment and estimation
+
+The supported geographic inputs are explicit national selection or an area
+in `forecast.areas_for_year(year)`. The API calls its area namespace
+`"metro"`; each area's `area_type` identifies whether it is an MSA, state
+nonmetro area or state metro residual. Use the selected year's menu and
+metadata instead of assuming all entries are MSAs or published estimates.
+
+`resolve_county(year, county_fips, county_vintage="2020")` assigns a county
+to an area. County is an assignment input, not the rent-estimation unit.
+The assignment is a research mapping and can change with year. The
+calculator does not estimate a county rent or substitute another geography
+when a requested county or area is unavailable. Selecting national geography
+is an explicit caller decision.
+
+For the published areas, 2022–2024 rent indices come from the selected year's
+Census workbook. Combining those indices with corrected BLS thresholds and
+housing shares does not reproduce the superseded Census workbook's dollar
+thresholds. The 2022 menu contains 342 published areas plus 7 modeled
+residuals; 2023 onward contains 341 published-menu areas plus 8 modeled
+residuals. A published area identifier can have a modeled index in later
+years. See [rolling forecasts](rolling-forecasts.md) for the historical
+breaks, model support and post-2024 construction.
+
+The research ACS estimator pools cash-rented, occupied, two-bedroom PUMS
+housing records with complete kitchen and plumbing, positive gross rent and
+positive survey weights. It applies `GRNTP × ADJHSG / 1,000,000` once and
+uses weighted local-to-national median ratios. Fractional PUMA allocations
+approximate area membership; county crosswalks do not recover confidential
+household locations. Thin support and topcoding remain visible in results.
+
+## CE replication and future windows
+
+The research estimator uses twenty CE collection quarters, `(T−5)Q2`
+through `TQ1`, for threshold year T. It selects consumer units with children
+and uses the original `FINLWT21` survey weights for expenditures and
+percentiles. Population calibration weights must not replace them.
+
+FMLI expenditures cover food, clothing, shelter, utilities and telephone.
+`UTIL` already includes telephone. Shelter includes observed mortgage
+principal outlays. Food construction handles the 2024 redesign using an
+explicit `GROCER` allocation approximation. There is no matching FMLI
+internet summary, and the estimator omits BLS in-kind benefit imputations.
+
+The pipeline annualizes each quarterly recall window by four, converts to
+target-year prices using explicit annual CPI, and normalizes to the
+reference composition. It selects the inclusive 47th–53rd percentile band
+of equivalized expenditures with a weighted midpoint-CDF convention. For
+that band E and tenure h, it computes:
+
+```text
+0.82 × (1.2 × FCSUti_E − SU_E + SU_Eh)
+```
+
+SU excludes telephone. The [2026 BLS correction](bls-2026-correction.md)
+changed the anchor from 83% to 82%. Annual rather than quarterly price
+treatment, the percentile implementation, food allocation, omitted
+internet/in-kind amounts and selected sample policies prevent a claim of
+exact BLS reproduction. The [September 8 CE experiment](current-ce-replication.md)
+quantifies selected sample-policy sensitivities, while preserving its
+original receipt and tables.
+
+For 2026–2035, the current estimator advances each twenty-quarter window
+using same-season observed donors. It anchors national levels and housing
+shares to published BLS 2025 inputs. `ce_trend` applies a declared
+half-shrunk near-median real-expenditure trend; `zero_real` holds donor real
+spending constant. Both apply the pinned February 2026 CBO aggregate CPI-U
+growth path under explicit component and rent assumptions.
+
+These are conditional research forecasts, not BLS/Census forecasts or
+estimated uncertainty bounds. The [rolling-forecast documentation](rolling-forecasts.md)
+provides the window table, formulas, evaluation results and donor limits.

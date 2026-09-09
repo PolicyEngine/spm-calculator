@@ -1,28 +1,40 @@
-# Current CE replication and projection experiment
+# September 8, 2026 CE replication experiment
 
 This experiment was run on September 8, 2026, from the cached CE Interview
 PUMD files. It is a retrospective experiment with the corrected published
 threshold series. It does not alter the original 2025 forecast commitment
 or establish a real-time forecast evaluation.
 
-The executable pipeline is `scripts/replicate_current_ce.py`; its complete
-result is
-`spm_calculator/data/current/ce_replication_2019_2025.json`. Run it with:
+The immutable result is
+[ce_replication_2019_2025.json](../spm_calculator/data/current/ce_replication_2019_2025.json).
+It includes the archived projection evaluation and identities of code that
+has since been removed. The current script replays the source-replication
+stages into a separate output; it does not regenerate the historical
+projection evaluation or overwrite this receipt.
+
+To inspect the current command without loading CE data:
 
 ```sh
-uv run --no-sync python scripts/replicate_current_ce.py
+python scripts/replicate_current_ce.py --help
+```
+
+A deliberate cached-source replay can use:
+
+```sh
+python scripts/replicate_current_ce.py --output benchmark_output/ce_source_replication_2019_2025.json
 ```
 
 The script requires the cached CE ZIPs in
 `~/.cache/spm-calculator/ce-pumd` (or `--cache-dir`) and the explicitly
 selected annual CPI file (`--cpi-input`). It refuses to download missing
-CE inputs and does not call the CPI API. The result records SHA-256 hashes
+CE inputs and does not call the CPI API. The current replay records SHA-256 hashes
 for all 11 ZIPs, 44 selected quarter members, the CPI file and the source
 code. Original CE publication and revision dates are unknown; the manifest
 records that these exact bytes were available at the replay date.
 
 ## Scientific stages
 
+The current functions live in `spm_calculator.ce_threshold`.
 `normalize_ce_sample` validates the reported counts and survey weights,
 selects the child-CU sample, and records every exclusion reason, count and
 weight. `construct_normalized_expenditures` constructs expenditures,
@@ -32,7 +44,8 @@ uses a stable positional selection of the inclusive 47–53 midpoint-CDF
 band and records its observations, weights, component averages and
 tenure-specific averages. `replicate_thresholds` combines the stages and
 returns their diagnostics. The original `calculate_base_thresholds`
-entry point retains its dictionary return shape.
+entry point returns a threshold dictionary. These are research tools,
+separate from the canonical `load_forecast().calculate_unit(...)` consumer.
 
 The percentile convention is explicit but has not been matched to BLS's
 unpublished percentile implementation. Degenerate small samples use the
@@ -103,16 +116,17 @@ and the percentile convention remain separately unmeasured approximations.
 The youth result does not establish that these other approximations are
 negligible. No sampling or imputation uncertainty interval is estimated.
 
-## Projection interface and evaluation
+## Archived projection evaluation
 
-`projection.ProjectionInput` carries the year, values, source identity,
-method and availability date. `project_thresholds` supports an official
-base multiplied by the replication growth ratio, a price-index ratio,
-or a declared blend. It rejects inputs dated after the requested `as_of`,
-incompatible base/target years or methods, and unused supplied inputs.
-It never fetches missing data or invents an uncertainty interval.
+The September 8 experiment used the former `projection.ProjectionInput`
+and `project_thresholds` interfaces. Those APIs have been removed; their
+names here identify the archived experiment, not executable current
+instructions. The former helper multiplied an official base by a
+replication ratio, price-index ratio or declared blend and checked dated
+input compatibility. The immutable receipt preserves that experiment's
+inputs and code identities.
 
-For the current 2020–2025 retrospective exercise, mean absolute percentage
+For that 2020–2025 retrospective exercise, mean absolute percentage
 errors across the three tenures and six target years are:
 
 | Method | Mean absolute percentage error |
@@ -126,13 +140,16 @@ The inputs are conservatively dated at this replay, rather than assigned
 invented historical availability dates. Composite-price inputs use the
 static shares rebased to each previous year, differing from the fixed
 2019 price base in the frozen historical experiment. These comparisons
-are new current-method results and must not replace the old commitments
-or be described as new prospective evidence. They make no new 2026
-forecast. Future forecasting can supply genuinely predicted missing
-inputs under the same dated contract, with its own validation.
+describe the September 8 method and must not replace earlier commitments
+or be described as prospective evidence. This archived experiment made
+no new 2026 forecast. The separate [canonical rolling forecast](rolling-forecasts.md)
+now advances CE and ACS windows through 2035 under explicit conditional
+assumptions and carries its own evaluation.
 
 Replication results carry a stable configuration fingerprint covering sample
 policies, mortgage-principal treatment, annualization, the median share,
-percentile convention, and CPI input mode. Projection inputs use each result's
-actual fingerprint and reject mixed methods. The receipt hashes the published
-threshold series and its loader as well as the CE and CPI implementation.
+percentile convention, and CPI input mode. The archived projection inputs
+used each result's actual fingerprint to reject mixed methods. The immutable receipt retains the published
+threshold series and its then-current loader identity, alongside CE and
+CPI source identities. Current rolling components carry separate code
+and input hashes.
