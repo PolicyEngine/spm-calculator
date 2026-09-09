@@ -1,1 +1,0 @@
-Restrict the public calculator and its browser data export to the official Census SPM areas: named metropolitan statistical areas and state residual Metro/Nonmetro areas. Remove custom ACS state, county and congressional district rent lookups from the browser; preserve national reference inputs, the immutable release and Python research interfaces.

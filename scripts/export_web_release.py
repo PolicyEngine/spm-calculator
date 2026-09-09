@@ -50,7 +50,7 @@ def build_forecast_config(projection, *, base_release_sha256):
         "realGrowthDiagnostics": document["real_growth_diagnostics"],
         "validation": document["validation"],
         "rentSensitivity": document["rent_sensitivity"],
-        "methodologyUrl": "https://github.com/PolicyEngine/spm-calculator/blob/max/spm-release-rebuild-20260908/docs/rolling-forecasts.md",
+        "methodologyUrl": "https://github.com/PolicyEngine/spm-calculator/blob/ba808adc7e452ddc2411bbcb82c7f6dab3198c0f/docs/rolling-forecasts.md",
     }
 
 

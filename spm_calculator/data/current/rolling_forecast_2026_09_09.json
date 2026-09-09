@@ -4246,7 +4246,7 @@
   "code_sha256": {
     "scripts/build_acs_forecast.py": "8c1024e94d6a075194a3febb650be898eb04a3241274d2d26e30479bdd657c7d",
     "scripts/build_ce_forecast.py": "90757a23607c994bd7e784f15a88c3771b3bf3d63fdc3dc17253e09efed23f39",
-    "scripts/build_rolling_forecast.py": "947c37d2866be1621bea6e0cbde721753e759acefd8f29d7518d4ca903de84d8",
+    "scripts/build_rolling_forecast.py": "5716668c8d24db57d9c151afe10c0b0d68e38c034c0ea02e161e7f99a6a74455",
     "spm_calculator/acs_forecast.py": "3b0a7c014d6ca5e2c7c53e8cb235c51fb2107027803176ecb4bd72b4b3e8fa3d",
     "spm_calculator/acs_forecast_sources.py": "b78294f297734aa8968fa8ac449cdf7f8dc002efb9f98eab605cd08ef47c405d",
     "spm_calculator/ce_forecast.py": "7c6921136a3f862e8ded657cd3e8dc01ecb5d7b7a2a189c0adcc376708b5afdd",
@@ -4263,7 +4263,7 @@
     "spm_calculator/data/current/ce_rolling_forecast.json": "eb16c7e3f4afcc558ca8c4f87ef1c3adc747b41de19ffc402cbd851bc9817af2",
     "spm_calculator/data/current/forecast_source_checks.json": "b716a7cab7714e788a9bc329bbec98973881a09c20833c50d36d738e59ce90b3"
   },
-  "content_sha256": "28986fe11e438770ba9ffd7e50385a728800360151c088192749ccf6870652c9",
+  "content_sha256": "a7111e7398c566190902040a46b310a0c62fce806c5a06622677fd703eb97fc0",
   "created_on": "2026-09-09",
   "default_scenario": "ce_trend",
   "forecast_id": "spm-rolling-2026-09-09",
@@ -279174,7 +279174,7 @@
         "CUUR0000SEED": "FRED CUUR0000SEED (annual mean)",
         "CUUR0000SEFV": "FRED CUUR0000SEFV (annual mean)"
       },
-      "url": "https://github.com/PolicyEngine/spm-calculator/blob/max/spm-release-rebuild-20260908/spm_calculator/data/bls/cpi_annual.json"
+      "url": "https://github.com/PolicyEngine/spm-calculator/blob/ba808adc7e452ddc2411bbcb82c7f6dab3198c0f/spm_calculator/data/bls/cpi_annual.json"
     },
     {
       "availability_note": "Exact source bytes retained by the research build; this date does not reconstruct historical availability.",
@@ -279188,7 +279188,7 @@
       ],
       "series_id": "bls-corrected-2026-07-17",
       "sha256": "d998f60012f51519e81861eaf18db3a7fc9e4de1f376e1c2ce5623bc3bbc3c2f",
-      "url": "https://github.com/PolicyEngine/spm-calculator/blob/max/spm-release-rebuild-20260908/spm_calculator/data/bls/threshold_series.json"
+      "url": "https://github.com/PolicyEngine/spm-calculator/blob/ba808adc7e452ddc2411bbcb82c7f6dab3198c0f/spm_calculator/data/bls/threshold_series.json"
     },
     {
       "acquired_at_utc": "2026-09-09T02:43:09.236477+00:00",
@@ -279346,7 +279346,7 @@
       "id": "acs-017",
       "package_path": "spm_calculator/data/current/acs_forecast_inputs.json",
       "sha256": "39bd7832a0fad56ad0206c270e6106c384339d79fd569de25743f3f5adb51ba4",
-      "url": "https://github.com/PolicyEngine/spm-calculator/blob/max/spm-release-rebuild-20260908/spm_calculator/data/current/acs_forecast_inputs.json"
+      "url": "https://github.com/PolicyEngine/spm-calculator/blob/ba808adc7e452ddc2411bbcb82c7f6dab3198c0f/spm_calculator/data/current/acs_forecast_inputs.json"
     },
     {
       "acquired_at_utc": "2026-09-09",
@@ -279363,7 +279363,7 @@
       "id": "acs-019",
       "package_path": "spm_calculator/data/bls/cpi_annual.json",
       "sha256": "03f0214e6b8393292ad3c412651fd7df0d8a36aaf5125f77c0bb65b3f10ca104",
-      "url": "https://github.com/PolicyEngine/spm-calculator/blob/max/spm-release-rebuild-20260908/spm_calculator/data/bls/cpi_annual.json"
+      "url": "https://github.com/PolicyEngine/spm-calculator/blob/ba808adc7e452ddc2411bbcb82c7f6dab3198c0f/spm_calculator/data/bls/cpi_annual.json"
     },
     {
       "availability_note": "Exact source bytes retained by the research build; this date does not reconstruct historical availability.",
@@ -279371,7 +279371,7 @@
       "id": "acs-020",
       "package_path": "spm_calculator/forecast.py",
       "sha256": "367c124844976e557484c6591c49c7ebca8c87a27828b29999b64f02989da597",
-      "url": "https://github.com/PolicyEngine/spm-calculator/blob/max/spm-release-rebuild-20260908/spm_calculator/forecast.py"
+      "url": "https://github.com/PolicyEngine/spm-calculator/blob/ba808adc7e452ddc2411bbcb82c7f6dab3198c0f/spm_calculator/forecast.py"
     },
     {
       "acquired_at_utc": "2026-09-09T02:48:18.424733+00:00",

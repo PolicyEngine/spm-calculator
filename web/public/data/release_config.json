@@ -366,7 +366,7 @@
     "baseYear": 2025,
     "latestPublishedYear": 2025,
     "baseReleaseSha256": "762ad5347fe4b6b1eabbc3189f83ddae296329e7c3f6630f0db22204dfaffaf6",
-    "contentSha256": "28986fe11e438770ba9ffd7e50385a728800360151c088192749ccf6870652c9",
+    "contentSha256": "a7111e7398c566190902040a46b310a0c62fce806c5a06622677fd703eb97fc0",
     "assumptionSha256": "78032181398a755a14f93ac99e66e37a4df3fec60065c13250a37b51ed3847a3",
     "informationDate": "2026-09-09",
     "cpiProjections": {
@@ -275232,7 +275232,7 @@
         "2030": 0.02
       }
     },
-    "methodologyUrl": "https://github.com/PolicyEngine/spm-calculator/blob/max/spm-release-rebuild-20260908/docs/rolling-forecasts.md"
+    "methodologyUrl": "https://github.com/PolicyEngine/spm-calculator/blob/ba808adc7e452ddc2411bbcb82c7f6dab3198c0f/docs/rolling-forecasts.md"
   },
   "nowcast": {},
   "nowcastEvaluation": {

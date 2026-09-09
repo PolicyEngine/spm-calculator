@@ -226,7 +226,7 @@ def _sources(ce, acs, checks):
                 # Original derived-CSV receipts remain in the ACS component.
                 continue
             if not url and name:
-                url = f"https://github.com/PolicyEngine/spm-calculator/blob/max/spm-release-rebuild-20260908/{name}"
+                url = f"https://github.com/PolicyEngine/spm-calculator/blob/ba808adc7e452ddc2411bbcb82c7f6dab3198c0f/{name}"
             if not url:
                 raise ValueError(
                     "Scientific source is missing its URL or package identity"

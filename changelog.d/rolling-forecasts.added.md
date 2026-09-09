@@ -1,1 +1,0 @@
-Add rolling CE and ACS research forecasts with separate price and real-spending assumptions, year-specific rent indices and housing shares, historical comparisons, support diagnostics, and an offline Python consumer. The browser projects through 2030 while preserving published national values and sealed historical artifacts.
