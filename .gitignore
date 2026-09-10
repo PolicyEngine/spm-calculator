@@ -88,5 +88,8 @@ dist/
 .vercel
 web/.next/
 web/out/
+web/e2e-site/
+web/playwright-report/
+web/test-results/
 benchmark_output/
 .env*
