@@ -180,7 +180,9 @@ test("future years, real spending, and household controls update real results", 
   await expect(threshold(page)).not.toHaveText(zeroThreshold);
   await expect(threshold(page)).toHaveText(/^\$[\d,]+$/);
   const familyThreshold = await threshold(page).textContent();
-  await page.getByRole("button", { name: "No mortgage", exact: true }).click();
+  const noMortgage = page.getByRole("tab", { name: "No mortgage", exact: true });
+  await noMortgage.click();
+  await expect(noMortgage).toHaveAttribute("aria-selected", "true");
   await expect(threshold(page)).not.toHaveText(familyThreshold);
   await expect(page.getByTestId("primary-result")).toContainText("Owner without mortgage");
   await expect(page.getByTestId("forecast-provenance")).toContainText(expectedContent);
