@@ -235,7 +235,7 @@ for (const failure of ["failed", "stalled"]) {
     if (failure === "stalled") {
       await expect(page.getByRole("status")).toHaveText("Loading thresholds and geographic inputs…");
     }
-    await expect(page.getByRole("alert")).toContainText("We couldn’t load the calculator data", { timeout: 35_000 });
+    await expect(page.getByRole("alert").filter({ hasText: "We couldn’t load the calculator data" })).toBeVisible({ timeout: 35_000 });
     expect(intercepted).toBe(1);
     await expect(page.getByTestId("primary-result")).toHaveCount(0);
     const recovered = page.waitForResponse((response) => response.url() === dataURL);
