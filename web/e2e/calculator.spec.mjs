@@ -219,3 +219,95 @@ test("canonical download and package provenance match the served calculation", a
     await expect(footnote).toContainText("Publication on PyPI is not confirmed for this build.");
   }
 });
+
+for (const failure of ["failed", "stalled"]) {
+  test(`calculator recovers from a ${failure} data request using the real server`, async ({ page }, testInfo) => {
+    if (failure === "stalled") test.setTimeout(90_000);
+    const { dataURL } = observations.get(testInfo);
+    let intercepted = 0;
+    await page.route(dataURL, async (route) => {
+      intercepted++;
+      if (failure === "failed") await route.abort("failed");
+      // A stalled request gets no response. The production loader must abort
+      // it after its real 30-second timeout; the retry is not intercepted.
+    }, { times: 1 });
+    await page.reload({ waitUntil: "domcontentloaded" });
+    if (failure === "stalled") {
+      await expect(page.getByRole("status")).toHaveText("Loading thresholds and geographic inputs…");
+    }
+    await expect(page.getByRole("alert")).toContainText("We couldn’t load the calculator data", { timeout: 35_000 });
+    expect(intercepted).toBe(1);
+    await expect(page.getByTestId("primary-result")).toHaveCount(0);
+    const recovered = page.waitForResponse((response) => response.url() === dataURL);
+    await page.getByRole("button", { name: "Try again", exact: true }).click();
+    const response = await recovered;
+    expect(response.ok()).toBe(true);
+    const data = await response.json();
+    expect(data.forecast).toEqual(source.forecast);
+    expect(data.geographies).toEqual(source.geographies);
+    await expect(page.getByTestId("primary-result")).toBeVisible();
+    await expect(threshold(page)).toHaveText(/^\$[\d,]+$/);
+    await expect(page.getByRole("button", { name: "Try again", exact: true })).toHaveCount(0);
+  });
+}
+
+test("an unavailable area stays explicit until the user selects a valid area", async ({ page }) => {
+  const area = page.getByLabel("SPM estimation area", { exact: true });
+  const year = page.getByLabel("Threshold year", { exact: true });
+  await year.selectOption("2022");
+  await area.selectOption("45001");
+  await expect(threshold(page)).toHaveText(/^\$[\d,]+$/);
+  await year.selectOption("2023");
+  await expect(area).toHaveValue("");
+  await expect(area.getByRole("option", { name: "Selected area unavailable in 2023", exact: true })).toBeDisabled();
+  await expect(area.locator('option[value="45001"]')).toHaveCount(0);
+  await expect(threshold(page)).toHaveText("Unavailable");
+  await area.selectOption("modeled_residual_metro:45");
+  await expect(threshold(page)).toHaveText(/^\$[\d,]+$/);
+  await expect(page.getByTestId("primary-result").getByRole("heading")).toHaveText(menu(2023)["modeled_residual_metro:45"].name);
+});
+
+test("Massachusetts and Sumter series breaks remain visible in later years", async ({ page }) => {
+  const area = page.getByLabel("SPM estimation area", { exact: true });
+  const year = page.getByLabel("Threshold year", { exact: true });
+  const warning = page.getByTestId("historical-series-break-warning");
+  for (const id of ["25002", "modeled_residual_metro:45"]) {
+    await year.selectOption("2023");
+    await area.selectOption(id);
+    const disclosure = geography(2023)[id].series_breaks[0];
+    await expect(warning).toContainText(`${disclosure.from_year}→${disclosure.to_year}: ${disclosure.interpretation}`);
+    await year.selectOption("2035");
+    await expect(warning).toContainText(disclosure.interpretation);
+  }
+  await area.selectOption("41940");
+  await expect(warning).toHaveCount(0);
+});
+
+test("rental support and topcoding diagnostics follow the actual area and year", async ({ page }) => {
+  const area = page.getByLabel("SPM estimation area", { exact: true });
+  const year = page.getByLabel("Threshold year", { exact: true });
+  const diagnostics = source.geographies[yearEntry(2035).geographyRef].median_diagnostics;
+  const thin = Object.keys(diagnostics).find((id) => diagnostics[id].thin_support);
+  const topcoded = Object.keys(diagnostics).find((id) => !diagnostics[id].thin_support && diagnostics[id].rent_index_topcode_warning);
+  expect(thin).toBeTruthy();
+  expect(topcoded).toBeTruthy();
+  expect(menu(2035)[thin]).toBeTruthy();
+  expect(menu(2035)[topcoded]).toBeTruthy();
+  await year.selectOption("2035");
+  const warning = page.getByTestId("primary-result").getByTestId("median-diagnostics-warning");
+  for (const id of [thin, topcoded]) {
+    await area.selectOption(id);
+    const entry = diagnostics[id];
+    await expect(warning).toContainText(entry.thin_support ? "Thin rental support" : "Rental topcoding");
+    await expect(warning).toContainText(`${entry.unique_records.toLocaleString("en-US")} unique records`);
+    await expect(warning).toContainText(`Kish effective count ${entry.kish_effective_count.toFixed(1)}`);
+    await expect(warning).toContainText(`${(entry.topcoded_weight_share * 100).toFixed(1)}% topcoded weight`);
+    await expect(warning).toContainText("Repeated future cohorts do not add independent observations");
+    await expect(warning).toContainText("not a survey-design effective sample size");
+    if (entry.rent_index_topcode_warning) await expect(warning).toContainText("including its vintage bridge");
+    await expect(threshold(page)).toHaveText(/^\$[\d,]+$/);
+  }
+  await year.selectOption("2024");
+  await expect(warning).toHaveCount(0);
+  await expect(threshold(page)).toHaveText(/^\$[\d,]+$/);
+});

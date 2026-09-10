@@ -1,5 +1,7 @@
 # Canonical web performance handoff
 
+This document preserves the original performance and source snapshot below. Its original pending-browser list and artifact hashes are historical. The current browser suite in `e2e/calculator.spec.mjs` covers search, headers, forecast years, failed/stalled request recovery, unavailable areas, historical series breaks, rental diagnostics and the currently linked audit download on both mounts. Acceptance requires successful hosted runs bound to the exact reviewed revision. Final public acceptance with published-package metadata remains a separate release requirement; a test definition or development run does not establish it.
+
 The canonical calculator now fetches a compact UI export once, with loading, error, retry, cancellation and timeout handling. No forecast data is embedded in SSR HTML, RSC, or the application JavaScript bundles. This work is committed and ready for root's CUA browser checks and publication/deployment workflow. No push or deployment was performed; live UX has not been verified.
 
 | Artifact | Before, bytes | After, bytes | Before gzip, bytes | After gzip, bytes |
