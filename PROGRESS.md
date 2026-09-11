@@ -1,3 +1,30 @@
+# Documentation refresh for the published 1.0.0 release — September 11, 2026
+
+## State
+
+In progress. Updating README and documentation prose so it states the
+published release facts instead of describing an unpublished local candidate.
+Scientific content is out of scope and must not change.
+
+## Done
+
+- Verified spm-calculator 1.0.0 on PyPI, uploaded 2026-09-11T15:45:10Z from
+  main commit 22bab36e; both the wheel and the sdist are present.
+- Installed the published wheel in an isolated environment: it calculates
+  offline and its bundled artifact content digest matches the pin recorded in
+  [the artifact contract](docs/spm-releases.md),
+  `3d86d5c4c0423480e6b69b75d222ffa4a7a2639e4094df5ba2504af01be17173`.
+- Verified the live app, documentation hub and paper all serve HTTP 200.
+- Recorded a baseline for the 28 documentation Python examples: 22 pass
+  offline; 6 need optional runtimes or a preceding block's variables.
+
+## Next
+
+- Replace the pre-publication wording, rebuild the MyST documentation, rerun
+  the examples and lint, and open the pull request.
+
+---
+
 # Equivalent-code provenance adaptation — September 9, 2026
 
 ## State
