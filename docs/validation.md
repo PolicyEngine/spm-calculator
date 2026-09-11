@@ -1,116 +1,116 @@
 # Validation
 
-This document describes how `spm-calculator` is validated against official
-threshold sources and the package's own deterministic formulas.
+Validation checks source fidelity, deterministic calculation and research
+forecast performance separately. The local version 1.0 candidate uses
+published BLS national inputs through 2025 and conditional forecasts through
+2035. Passing source checks does not establish exact replication of BLS
+code, prospective forecast accuracy or publication of a production service.
 
-## Base Threshold Validation
+## Published BLS cells and source vintages
 
-### Published BLS Values
+The canonical 2022–2025 national inputs match numeric cells in the bundled
+BLS workbooks. The [cell receipt](../spm_calculator/data/current/bls_published_cell_receipt.json)
+records original workbook bytes, worksheet coordinates and numeric text.
+BLS directs users to keep the spreadsheet's significant digits in
+calculations on its [SPM methodology page](https://www.bls.gov/pir/spm/spmhome.htm).
 
-We validate base thresholds against BLS published values:
+| Year | Tenure | Worksheet cell | Canonical dollars | BLS page dollars |
+| --- | --- | --- | ---: | ---: |
+| 2024 | Owner with mortgage | `V4` | 39,230.994457 | 39,231 |
+| 2024 | Owner without mortgage | `V7` | 32,878.594848 | 32,879 |
+| 2024 | Renter | `V10` | 39,219.893902 | 39,220 |
+| 2025 | Owner with mortgage | `W4` | 41,322.707394 | 41,323 |
+| 2025 | Owner without mortgage | `W7` | 34,325.997720 | 34,326 |
+| 2025 | Renter | `W10` | 41,700.555713 | 41,701 |
 
-| Year | Tenure | BLS Published | Calculator | Difference |
-|------|--------|--------------|------------|------------|
-| 2024 | Renter | $39,430 | $39,430 | 0% |
-| 2024 | Owner w/ mortgage | $39,068 | $39,068 | 0% |
-| 2024 | Owner w/o mortgage | $32,586 | $32,586 | 0% |
-| 2023 | Renter | $36,606 | $36,606 | 0% |
-| 2023 | Owner w/ mortgage | $36,192 | $36,192 | 0% |
-| 2023 | Owner w/o mortgage | $30,347 | $30,347 | 0% |
+All cells are on worksheet `2005-2024`, including the 2025 column. Sources:
+[corrected workbook](https://www.bls.gov/pir/spm/spm_threshold_200524_corrected.xlsx),
+[current workbook](https://www.bls.gov/pir/spm/spm_thresholds.xlsx),
+[corrected chart data](https://www.bls.gov/pir/spm/spm_correction_chart_data.htm)
+and [2025 Chart 1](https://www.bls.gov/pir/spm/spm_chart_1_2025_data.htm).
+The earlier Census 2024 amounts—39,068, 32,586 and 39,430 dollars—belong to
+a superseded publication vintage. They are not rounding of the corrected
+cells. The [correction history](bls-2026-correction.md) preserves those
+historical comparisons.
 
-Source: [BLS SPM Thresholds](https://www.bls.gov/pir/spm/spm_thresholds_2024.htm)
+The package also checks BLS housing shares, source hashes, normalized ACS
+product receipts and scientific component identities. A live source drift
+check can detect a changed source or stale copy; matching official bytes
+cannot diagnose an error inside the official calculation.
 
-### CE Survey Reconstruction
+## Geography and calculation checks
 
-When reconstructing thresholds from CE Survey data, we target:
+The tests preserve each published Census rent index at its historical
+anchor and check modeled area diagnostics separately. The canonical formula
+combines the selected year's rent index with corrected BLS national inputs
+and housing shares. It does not claim equality to the superseded Census
+workbook's local dollar thresholds.
 
-- Within 2% of published values when using the same data years
-- Consistent ranking across tenure types: owner without mortgage < owner with mortgage approximately renter
-- Correct use of the FCSUti CPI adjustment into threshold-year dollars
-
-## GEOADJ Validation
-
-### Official Metro Thresholds
-
-For metro areas and nonmetro areas, we validate against the published Census
-2024 workbook of 2-adult, 2-child thresholds.
-
-| Geography | Tenure | Census published | Calculator | Difference |
-|-----------|--------|------------------|------------|------------|
-| Alabama Nonmetro | Renter | $31,622 | $31,622 | 0% |
-| New York metro | Renter | $45,736 | $45,736 | 0% |
-| San Jose metro | Renter | $59,815 | $59,815 | 0% |
-
-The bundled metro data also preserves the raw Census rent index separately from
-the tenure-specific threshold adjustment.
-
-### ACS-Derived Geographies
-
-For states, counties, congressional districts, PUMAs, and tracts, we validate
-the transformation itself:
-
-```python
-GEOADJ_t = (local_rent / national_rent) * housing_share_t + (1 - housing_share_t)
-```
-
-where `housing_share_t` is tenure-specific.
-
-## Equivalence Scale Validation
-
-The Betson three-parameter equivalence scale is deterministic:
+County tests check year-specific area assignment and vintage validation.
+County is not a rent-estimation unit. Unknown inputs raise; national
+selection is explicit. Thin support, topcoding and published-to-modeled
+series breaks remain in the result provenance.
 
 ```python
-from spm_calculator import spm_equivalence_scale
+from spm_calculator import SPMUnit, load_forecast, spm_equivalence_scale
 
-# Reference family
+forecast = load_forecast()
 assert spm_equivalence_scale(2, 2) == 1.0
-
-# Known values
-assert abs(spm_equivalence_scale(1, 0) - 0.4634630568) < 1e-9
-assert abs(spm_equivalence_scale(2, 0) - 0.6534829100) < 1e-9
+assert abs(spm_equivalence_scale(1, 0) - 1 / 3**0.7) < 1e-12
+assert abs(spm_equivalence_scale(2, 0) - 1.41 / 3**0.7) < 1e-12
+result = forecast.calculate_unit(SPMUnit(
+    unit_id="reference", num_adults=2, num_children=2,
+    tenure="renter", year=2025, geography_kind="national",
+))
+assert result["threshold"] == 41700.555713
+assert result["geographic_factor"] == 1.0
+assert result["geography_status"] == "explicit_national"
 ```
 
-## SPM Unit ID Validation
+Real Microcosm Frame checks cover native membership, primitive adult/child
+classification and typed survey weights. The [Axiom integration](axiom-integration.md)
+checks the real core runtime and reports its composition-domain and decimal
+boundary limits; dense `AxiomEngine` does not support the required relations
+and dated derived rules.
 
-SPM unit IDs are arbitrary labels, so validation compares the person partition
-within each household rather than the literal ID values. `spm_unit_id_match`
-reports household and person-weighted household match rates.
+## Research evaluation limits
 
-An optional ASEC parity test runs when `SPM_CALCULATOR_ASEC_H5` points to a
-Census CPS ASEC HDFStore:
+The [rolling forecast evaluation](rolling-forecasts.md#retrospective-evaluation)
+uses 21 CE origin/target folds, or 63 tenure results, conditional on realized
+prices and current source vintages. Overall MAPE is 2.8428% for `ce_trend`,
+3.1487% for `zero_real` and 5.3117% for CPI extrapolation. These are not
+real-time forecast error estimates.
 
-```bash
-SPM_CALCULATOR_ASEC_H5=/path/to/census_cps_2024.h5 pytest tests/test_asec_parity.py
+The ACS 2023→2024 holdout covers 341 published areas. Its equal-area MAPE
+is 1.2537%, versus 1.7284% for unchanged indices. It tests the donor
+mechanism, not the later cross-vintage bridge or unanchored residual areas.
+The frozen 2025 geographic forward comparison remains pending official
+inputs. No survey-design or forecast uncertainty interval is estimated.
+
+## Run offline checks
+
+From the source checkout with its development dependencies installed:
+
+```sh
+python scripts/build_rolling_forecast.py --check
+SKIP_CE_DOWNLOAD=1 python -m pytest -q tests/test_bls_published_cell_receipt.py tests/test_threshold_series.py tests/test_equivalence_scale.py tests/test_rolling_forecast.py tests/test_rolling_forecast_artifact.py tests/test_scientific_refresh.py tests/test_current_ce_artifact.py
 ```
 
-The default floor is a 99% household partition match rate. If the HDFStore
-contains `PECOHAB`, the test requires exact partition parity. With the full raw
-2025 CPS ASEC person columns for the 2024 data year, including `PECOHAB`, the
-default reconstruction matched all 55,762 household partitions.
+The assembly check uses committed CE/ACS components and source receipts;
+it does not rebuild raw microdata or download inputs. The scientific
+[rebuild instructions](rolling-forecasts.md#rebuild-and-verify) describe
+separate cached-source calculations.
 
-## Running Validation Tests
+An optional ASEC check requires an external Census CPS ASEC HDFStore:
 
-```bash
-# Run all tests
-pytest tests/ -v
-
-# Run with coverage
-pytest tests/ --cov=spm_calculator --cov-report=html
+```sh
+SPM_CALCULATOR_ASEC_H5=/path/to/census_cps_2024.h5 python -m pytest -q tests/test_asec_parity.py
 ```
 
-## Automated CI Validation
-
-Every PR runs validation tests against:
-
-1. Published BLS threshold values
-2. Official Census metro thresholds
-3. Tenure-specific GEOADJ formulas
-4. Equivalence scale formulas
-
-## Reporting Issues
-
-If you find discrepancies between calculated and expected values:
-
-1. Check the data year. ACS and CE data are released with lags.
-2. Verify the geography identifier format.
-3. Open an issue at [GitHub Issues](https://github.com/PolicyEngine/spm-calculator/issues).
+It compares household partitions rather than arbitrary SPM ID labels,
+requires a 99% household match floor, and requires exact partition parity
+when `PECOHAB` is present. Its threshold check deliberately uses the
+archived pre-correction Census national series and the file's own
+geographic factors. It validates that historical source, not current
+canonical revised-BLS forecast amounts. Without the fixture, these tests
+skip.

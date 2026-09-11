@@ -1,175 +1,148 @@
 # Quickstart
 
-## Installation
+These examples target the local 1.0.0 candidate. Install this checkout with
+Python 3.9 or newer:
 
-```bash
-pip install spm-calculator
+```sh
+python -m pip install -e .
 ```
 
-You'll need a Census API key for custom ACS-based geographies like states,
-counties, congressional districts, PUMAs, and tracts. Official Census metro
-thresholds are bundled and work without any API key.
+The bundled artifact supports offline calculations without a Census API key.
+Optional PolicyEngine, Microcosm and Axiom integrations need their own runtimes.
+This page does not describe an already published package or service upgrade.
 
-1. Get a free key at [https://api.census.gov/data/key_signup.html](https://api.census.gov/data/key_signup.html)
-2. Set it as an environment variable:
-
-```bash
-export CENSUS_API_KEY="your_key_here"
-```
-
-## Basic Usage
-
-### Single Threshold Calculation
+## Published national values and shares
 
 ```python
-from spm_calculator import SPMCalculator
+from spm_calculator import SPMUnit, load_forecast
 
-# Initialize calculator for 2024
-calc = SPMCalculator(year=2024)
+forecast = load_forecast()
+entry = forecast.entry(2025)
+for tenure, threshold in entry["thresholds"].items():
+    print(tenure, threshold, entry["housing_shares"][tenure])
 
-# Calculate threshold for reference family (2 adults, 2 children)
-# as a renter at the national level
-threshold = calc.calculate_threshold(
-    num_adults=2,
-    num_children=2,
-    tenure="renter",
-    geography_type="nation",
-    geography_id="US"
+result = forecast.calculate_unit(
+    SPMUnit("example", 2, 2, "renter", 2025, geography_kind="national")
 )
-print(f"National renter threshold: ${threshold:,.0f}")
-# National renter threshold: $39,430
+print(round(result["threshold"], 2))  # 41700.56
+print(result["national_status"])  # published
+print(result["housing_share_status"])  # published_anchor
 ```
 
-### Different Tenure Types
+`entry["thresholds"]` gives annual USD for the two-adult/two-child reference
+family. `entry["housing_shares"]` gives fractions, not dollar amounts. The
+published 2025 renter housing share is `0.4336857704`; the national housing
+portion is the family's scaled national threshold times that share. Source
+identities and exact published threshold cells are described in
+[validation](validation.md).
 
-Thresholds vary significantly by housing tenure:
+## Select a year, scenario and area
 
 ```python
-calc = SPMCalculator(year=2024)
+from spm_calculator import SPMUnit, load_forecast
 
-for tenure in ["renter", "owner_with_mortgage", "owner_without_mortgage"]:
-    threshold = calc.calculate_threshold(
-        num_adults=2,
-        num_children=2,
-        tenure=tenure,
-        geography_type="nation",
-        geography_id="US"
-    )
-    print(f"{tenure}: ${threshold:,.0f}")
+forecast = load_forecast()
+year, scenario = 2026, "ce_trend"
+areas = forecast.areas_for_year(year, scenario=scenario)
+assignment = forecast.resolve_county(
+    year, "06037", county_vintage="2020", scenario=scenario
+)
+print(areas[assignment["area_id"]])
 
-# renter: $39,430
-# owner_with_mortgage: $39,068
-# owner_without_mortgage: $32,586
+unit = SPMUnit(
+    "los-angeles-example", 2, 2, "renter", year,
+    geography_kind=assignment["kind"],
+    geography_id=assignment["area_id"],
+    resources=40_000,
+)
+result = forecast.calculate_unit(unit, scenario=scenario)
+print(result["threshold"], result["housing_portion"], result["is_in_poverty"])
+print(result["provenance"]["geography"])
 ```
 
-### Geographic Variation
+Resolve the county again when the year changes. Preserve `assignment` alongside
+the result if its lookup provenance is needed; the scalar `calculate_unit`
+method only receives the resolved area. The CLI and population adapters attach
+county-assignment provenance themselves.
 
-The same family has different thresholds in different locations:
+`metro` is the calculation kind for supported SPM estimation areas, including
+state residual and modeled residual areas. Each record's `area_type`,
+`official_published_area` and `status` describe its actual interpretation.
+To choose an area directly, use `geography_kind="metro"` and an ID from
+`areas_for_year`. To choose national, use `geography_kind="national"` and omit
+the area ID. A state name alone is not an SPM location. Unknown counties, areas,
+years and scenarios fail; there are no runtime fallback flags.
+
+## Compare scenarios or units
 
 ```python
-calc = SPMCalculator(year=2024)
+from spm_calculator import SPMUnit, load_forecast
 
-locations = [
-    ("nation", "US", "National"),
-    ("metro_area", "1002", "Alabama Nonmetro"),
-    ("metro_area", "35620", "New York metro"),
-    ("metro_area", "41940", "San Jose metro"),
+forecast = load_forecast()
+units = [
+    SPMUnit("single-adult", 1, 0, "renter", 2035, geography_kind="national"),
+    SPMUnit("reference", 2, 2, "renter", 2035, geography_kind="national"),
 ]
-
-for geo_type, geo_id, name in locations:
-    threshold = calc.calculate_threshold(
-        num_adults=2,
-        num_children=2,
-        tenure="renter",
-        geography_type=geo_type,
-        geography_id=geo_id
-    )
-    print(f"{name}: ${threshold:,.0f}")
+for scenario in ("ce_trend", "zero_real"):
+    results = [forecast.calculate_unit(unit, scenario=scenario) for unit in units]
+    print(scenario, [round(result["threshold"], 2) for result in results])
 ```
 
-### Batch Calculation
+These scenarios condition future expenditures on their declared assumptions;
+they do not supply forecast confidence intervals or population/resource
+projections. See [rolling forecasts](rolling-forecasts.md).
 
-Calculate thresholds for multiple SPM units at once:
+`SPMUnit` counts are already classified SPM adults and children. Person-based
+adapters use age ≥18, or age ≥15 with an explicit independent-minor role, inside
+native SPM membership. An absent independence column may use explicit household
+head/spouse roles. Row order and the oldest person's age are not role inputs.
+
+## Retain a reviewed artifact
 
 ```python
-import numpy as np
-from spm_calculator import SPMCalculator
+import json
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from spm_calculator import load_forecast
 
-calc = SPMCalculator(year=2024)
-
-# Multiple families in different locations
-thresholds = calc.calculate_thresholds(
-    num_adults=np.array([1, 2, 2, 3]),
-    num_children=np.array([0, 0, 2, 4]),
-    tenure=["renter", "renter", "owner_with_mortgage", "renter"],
-    geography_type="state",
-    geography_ids=["06", "54", "06", "15"]  # CA, WV, CA, HI
-)
-
-print(thresholds)
+forecast = load_forecast()
+# For later replay, retain the reviewed content digest separately from the file.
+reviewed_digest = forecast.content_sha256
+with TemporaryDirectory() as directory:
+    path = Path(directory) / "forecast.json"
+    path.write_text(json.dumps(forecast.to_dict()), encoding="utf-8")
+    replay = load_forecast(path, expected_sha256=reviewed_digest)
+    assert replay.content_sha256 == reviewed_digest
 ```
 
-## Understanding the Components
+This round trip demonstrates integrity, not independent source authentication.
+An `as_of` earlier than the artifact's `information_date` fails. The current
+artifact uses a conservative retained-source cutoff; it is not a reconstructed
+historical information set. See the [artifact contract](spm-releases.md).
 
-### Base Thresholds
+## Command line
 
-Get the underlying base thresholds (before geographic adjustment):
+Use the installed command or replace `spm-calculator` with
+`python -m spm_calculator.cli` when running directly from the checkout:
 
-```python
-calc = SPMCalculator(year=2024)
-base = calc.get_base_thresholds()
-print(base)
-# {'renter': 39430, 'owner_with_mortgage': 39068, 'owner_without_mortgage': 32586}
+```sh
+spm-calculator info
+spm-calculator verify
+spm-calculator calculate --year 2025 --adults 2 --children 2 --tenure renter --national
+spm-calculator --scenario ce_trend calculate --year 2026 --adults 2 --children 2 --county 06037 --county-vintage 2020
+spm-calculator --scenario zero_real calculate --year 2035 --adults 1 --children 0 --area 35620 --resources 30000
+spm-calculator areas --year 2022
+spm-calculator --scenario zero_real export --format csv
 ```
 
-### Geographic Adjustment (GEOADJ)
+`calculate` requires exactly one of `--national`, `--area` or `--county`.
+Put global options before the subcommand. `--forecast FILE` selects an artifact,
+`--expect-sha256 DIGEST` verifies a separately retained content hash, and
+`--as-of YYYY-MM-DD` enforces the information-date boundary. `export --format json`
+exports the whole artifact, including both scenarios; CSV exports the selected
+scenario's national thresholds and shares. CLI validation failures exit with
+status 2.
 
-Get the tenure-specific GEOADJ factor for any geography:
-
-```python
-calc = SPMCalculator(year=2024)
-
-# National is always 1.0
-print(calc.get_geoadj("nation", "US", tenure="renter"))  # 1.0
-
-# Official metro adjustment from bundled Census data
-print(calc.get_geoadj("metro_area", "35620", tenure="renter"))  # ~1.160 (New York)
-
-# Low-cost official metro area
-print(calc.get_geoadj("metro_area", "1002", tenure="renter"))  # ~0.802 (Alabama Nonmetro)
-```
-
-For ACS-derived custom geographies:
-
-```python
-import os
-from spm_calculator import SPMCalculator
-
-os.environ["CENSUS_API_KEY"] = "your_key_here"
-
-calc = SPMCalculator(year=2024)
-print(calc.get_geoadj("state", "06", tenure="renter"))  # California
-```
-
-### Equivalence Scale
-
-Calculate the equivalence scale directly:
-
-```python
-from spm_calculator import spm_equivalence_scale
-
-# Reference family (2A2C) = 1.0
-print(spm_equivalence_scale(2, 2))  # 1.0
-
-# Single adult
-print(spm_equivalence_scale(1, 0))  # ~0.463
-
-# Large family
-print(spm_equivalence_scale(3, 4))  # ~1.430
-```
-
-## Next Steps
-
-- See [methodology](methodology.md) for details on how thresholds are calculated
-- See [API documentation](api/calculator.md) for full API documentation
-- See [validation](validation.md) for validation against published values
+Continue with [PolicyEngine](policyengine-release-integration.md),
+[real Microcosm Frames](microcosm-integration.md), or
+[actual Axiom core](axiom-integration.md).

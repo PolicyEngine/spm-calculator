@@ -1,0 +1,14 @@
+{
+  "artifact_sha256": "07cb8d0f6d7d49f031ba3c59585f04889c92e0a0cdaf51112f203250724abdf9",
+  "assurance": "development_unsigned",
+  "bundle_sha256": "ebce48e91bf7335924ce07566e9b6fcefc0ea668c5a75fac7d099518785f8942",
+  "engine": {
+    "artifact_format_version": 2,
+    "dependency_lock_sha256": "e556fd5ef7f298f7be1ca68c20f765af6f667682329766a556300a0417797628",
+    "execution_host_sha256": "a7b48c9aef987018776d1ee921aad985a458b2c5798d32b8369a30ea69eb73ac",
+    "repository": "https://github.com/TheAxiomFoundation/axiom-rules-engine",
+    "revision": "d142c645917817cf590e036fb99f99b2d4780e1a",
+    "version": "0.2.2"
+  },
+  "ok": true
+}

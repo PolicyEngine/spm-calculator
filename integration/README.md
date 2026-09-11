@@ -1,0 +1,31 @@
+# SPM release integration evidence
+
+This is development acceptance evidence for the 2026-09-08 rebuild. It does not certify a population bundle, publish a forecast, or promote production software.
+
+The shared release is `spm-2026-09-08`, content SHA-256 `762ad5347fe4b6b1eabbc3189f83ddae296329e7c3f6630f0db22204dfaffaf6`. The Axiom and PolicyEngine receipts use implementation commit `9e6ae4798458771231613b994df2345dd1685214` (SPM Calculator 0.5.0). Subsequent commits make a legacy numerical assertion portable and defer type annotations for Python 3.9; they leave the release and calculation results unchanged. Evidence is committed separately so receipts can identify an existing implementation commit without a circular hash.
+
+- [Actual Axiom receipt](axiom/2026-09-08/validation.json): 9 public synthetic units compared with standalone results, including the strict poverty boundary. Core commit `8ac3a54f60fa3737166ff0c986d9660f34a25435`, engine `d142c645917817cf590e036fb99f99b2d4780e1a`. The receipt contains executable/artifact/source hashes. This is a partial bridge: SPM supplies equivalence and geography; resources are supplied inputs. Rebuild the portable source closure for another executable/platform.
+- [Actual PolicyEngine wrapper receipt](policyengine/2026-09-08/validation.json): wrapper `bd5c73a2dda0b6ed6f79aaf635f5e72cad27e6e6`, country `3a4ff53654c75e4559b7d55374e8f00c0261b392`, versions 5.3.0/1.824.3, core 3.30.2. Explicit household-only development mode preserves certified manifests and refuses population execution. Published 2025 renter reference is 41,700.5546875 in PE's float32 representation; 2026 PE-owned CPI-U extrapolation is 42,702.7265625. The standalone 2025 source amount is 41,700.555713. This is not a released wrapper capability.
+- [CE research artifact](../spm_calculator/data/current/ce_replication_2019_2025.json): all seven 2019–2025 raw-data windows complete; artifact SHA-256 `d04e2a61552795f9d90e282045610774a4ff68f67b97067677358741f58a289c`. Its final replay includes the Python 3.9 annotation fix, records the existing parent commit and exact executed scientific source hashes, and produces unchanged numerical results. The artifact's source hashes are checked against this checkout.
+
+## Validation
+
+322 package tests passed on both Python 3.9 and 3.14; each run skipped 16 optional/default-disabled tests and excluded 4 slow tests. Actual CE windows were replayed separately. Additional acceptance: 12 real Axiom tests, 6 actual Microcosm Frame tests, 10 wrapper release tests, 12 existing US household API tests, and 12 native country threshold tests. Existing SPM housing/poverty YAML tests passed without golden changes before the country base refresh. Final wrapper and native amount checks passed again after refreshing the country base to 1.824.3. Expected pre-existing country warnings remain.
+
+The wheel and sdist build. An isolated wheel install with no dependencies can verify and calculate offline without NumPy, pandas, PE or Microcosm. Source/build drift checks, Black/Ruff, 10 offline browser tests, standalone/subpath Next builds, and the MyST documentation build pass. A hosted [Vercel preview](https://spm-calculator-pvwbzhg17-policy-engine.vercel.app/) was visually inspected in the in-app browser, including metro and county calculations using bundled geography data. Local browser navigation had previously failed with `ERR_NETWORK_IO_SUSPENDED`.
+
+The companion paper renders HTML and a 28-page PDF, with visual inspection of tables/provenance pages. Its guard and 9 mutation tests pass. Frozen forecasts, tags, manifests and proof bytes remain unchanged; new experiments are retrospective and have separate checksums. No new blockchain verification or forecast commitment is claimed.
+
+Independent reviews found and repaired configuration mixing, incomplete source hashes, unsupported adult-count handling, and source-date stamping. Remaining scientific limits are described in the methodology: replication errors around −2.77% to +1.67%, annual CPI and omitted-imputation approximations, carried 2024 housing shares, and unestimated uncertainty.
+
+## Drafts and promotion boundaries
+
+The country draft uses an exact Git dependency for review while 0.5.0 is unpublished. PyPI rejects that direct dependency in distribution metadata; the country repository auto-publishes on main. Do not merge it as-is. A separate promotion must protect old unbounded consumers, coordinate package publication, and replace the development pin with exactly `spm-calculator==0.5.0`.
+
+The live public calculator still has stale national data until a separate production deployment. Successful local builds and preview deployment do not resolve that public-delivery risk. GitHub CI status is reported on the draft PRs; local checks are not a claim that all hosted jobs have completed.
+
+## Geography scope correction — 2026-09-08
+
+The earlier county-preview check above records the initial rebuild's behavior. That behavior carried forward unofficial custom ACS rent thresholds that the January 25 metro-only design had removed; the April Next.js migration had reintroduced them. The rebuilt app now restricts selection and its exported data to the Census workbook's 341 official SPM areas: named MSAs and state residual Metro/Nonmetro areas. National thresholds remain calculation inputs and reference values. The browser export excludes custom state, county and district rent lookups.
+
+This correction preserves the sealed release, its content hash, Python research helpers and the historical execution receipts. Those retained custom calculations are research approximations, not official Census thresholds. Follow-up validation: 11 browser tests, 5 Python export/config tests, release and browser-export drift checks, Black, Ruff, and standalone/subpath builds pass. No production promotion is recorded here.

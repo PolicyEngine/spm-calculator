@@ -1,0 +1,103 @@
+name: Calculator browser QA
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      urls:
+        description: 'Optional public HTTPS surface URLs as a JSON array; empty runs both local builds'
+        type: string
+        default: ''
+      content_sha256:
+        description: 'Required for existing URLs: reviewed canonical content SHA-256'
+        type: string
+      package_version:
+        description: 'Required for existing URLs: expected spm-calculator package version'
+        type: string
+      package_status:
+        description: 'Expected distribution status for existing URLs'
+        type: choice
+        options: [published, local_preview]
+        default: published
+
+permissions:
+  contents: read
+
+jobs:
+  build-browser:
+    if: ${{ !inputs.urls }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - surface: standalone
+            base_path: ''
+          - surface: subpath
+            base_path: /us/spm-calculator
+    defaults:
+      run:
+        working-directory: web
+    env:
+      NEXT_PUBLIC_BASE_PATH: ${{ matrix.base_path }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+      - run: bun install --frozen-lockfile
+      - run: bunx --no-install playwright install --with-deps chromium
+      - name: Build and mount the real static export
+        run: |
+          bun run build
+          mkdir -p "e2e-site${NEXT_PUBLIC_BASE_PATH}"
+          cp -R out/. "e2e-site${NEXT_PUBLIC_BASE_PATH}/"
+      - run: bun run test:e2e
+      - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: calculator-browser-${{ matrix.surface }}
+          path: |
+            web/playwright-report/
+            web/test-results/
+          retention-days: 14
+
+  existing-deployment:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.urls != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        url: ${{ fromJSON(inputs.urls) }}
+    defaults:
+      run:
+        working-directory: web
+    env:
+      SPM_E2E_BASE_URL: ${{ matrix.url }}
+      SPM_E2E_EXPECT_CONTENT_SHA256: ${{ inputs.content_sha256 }}
+      SPM_E2E_EXPECT_PACKAGE_VERSION: ${{ inputs.package_version }}
+      SPM_E2E_EXPECT_PACKAGE_STATUS: ${{ inputs.package_status }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+      - run: bun install --frozen-lockfile
+      - run: bunx --no-install playwright install --with-deps chromium
+      - name: Verify the existing public surface without deploying
+        run: bun run test:e2e
+      - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: calculator-deployment-${{ strategy.job-index }}
+          path: |
+            web/playwright-report/
+            web/test-results/
+          retention-days: 14

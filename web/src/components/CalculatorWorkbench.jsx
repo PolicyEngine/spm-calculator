@@ -1,17 +1,14 @@
 "use client";
 
-import {
-  startTransition,
-  useDeferredValue,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
-import { useSearchParams } from "next/navigation";
+import { useMemo, useState } from "react";
 
 import {
   DashboardShell,
-  Header,
+  Command,
+  CommandInput,
+  CommandList,
+  CommandItem,
+  CommandEmpty,
   SidebarLayout,
   InputPanel,
   ResultsPanel,
@@ -30,20 +27,11 @@ import {
   Badge,
   Text,
   Title,
-  Button,
   Separator,
-  logos,
-  Input,
 } from "@policyengine/ui-kit";
 
-import {
-  STATE_SELECTOR_OPTIONS,
-  calculateCustomGeoadj,
-  getAcsYearForThresholdYear,
-  loadCountyRentOptions,
-  loadDistrictRentOptions,
-  loadStateRentOptions,
-} from "@/lib/acsLookup";
+import { calculateGeoadj } from "@/lib/geoadj";
+import { ForecastMethodology, ForecastWarnings } from "./ForecastDiagnostics";
 
 const TENURE_OPTIONS = [
   { value: "renter", label: "Renter" },
@@ -57,18 +45,12 @@ const TENURE_LABELS = {
   owner_without_mortgage: "Owner without mortgage",
 };
 
-const GEOGRAPHY_OPTIONS = [
-  { value: "nation", label: "National average" },
-  { value: "metro_area", label: "Metro area" },
-  { value: "state", label: "State" },
-  { value: "county", label: "County" },
-  { value: "congressional_district", label: "Congressional district" },
-];
-
 const PYPI_URL = "https://pypi.org/project/spm-calculator/";
 const GITHUB_URL = "https://github.com/PolicyEngine/spm-calculator";
+const PREVIEW_URL = `${GITHUB_URL}/pull/36`;
 
 function fmtCurrency(value, fractionDigits = 0) {
+  if (!Number.isFinite(value)) return "Unavailable";
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
@@ -82,7 +64,11 @@ function fmtPercent(value) {
   return `${prefix}${value.toFixed(1)}%`;
 }
 
-function getRawEquivalenceScale(adults, children, methodology) {
+function fmtInput(value) {
+  return Number.isFinite(value) ? value.toFixed(3) : "Unavailable";
+}
+
+export function getRawEquivalenceScale(adults, children, methodology) {
   // Child-only ("0 adults, N children") units aren't valid SPM households,
   // so we return 0 rather than synthesising a single-parent scale from a
   // ghost adult. This matches the Python helper in
@@ -92,15 +78,18 @@ function getRawEquivalenceScale(adults, children, methodology) {
   if (children > 0) {
     if (adults === 1) {
       return (
-        1 +
-        methodology.equivalenceScale.singleAdultFirstChild +
-        methodology.equivalenceScale.additionalChild * Math.max(children - 1, 0)
-      ) ** methodology.equivalenceScale.economiesOfScale;
+        (1 +
+          methodology.equivalenceScale.singleAdultFirstChild +
+          methodology.equivalenceScale.additionalChild *
+            Math.max(children - 1, 0)) **
+        methodology.equivalenceScale.economiesOfScale
+      );
     }
 
     return (
-      adults + methodology.equivalenceScale.additionalChild * children
-    ) ** methodology.equivalenceScale.economiesOfScale;
+      (adults + methodology.equivalenceScale.additionalChild * children) **
+      methodology.equivalenceScale.economiesOfScale
+    );
   }
 
   if (adults === 1) return 1;
@@ -127,379 +116,222 @@ function describeEquivalenceFormula(adults, children, methodology) {
   return `${adults}^${economiesOfScale}`;
 }
 
-function getCeSurveyYears(thresholdYear) {
-  const endYear = Number(thresholdYear) - 2;
-  return Array.from({ length: 5 }, (_, index) => endYear - 4 + index);
+function rollingAdjustment(entry, areaId, tenure) {
+  if (!entry?.geography_by_area?.[areaId]) return null;
+  const rentIndex = entry?.rent_indices?.[areaId];
+  const housingShare = entry?.housing_shares?.[tenure];
+  if (
+    !Number.isFinite(rentIndex) ||
+    rentIndex <= 0 ||
+    !Number.isFinite(housingShare) ||
+    housingShare <= 0 ||
+    housingShare >= 1
+  )
+    return null;
+  return calculateGeoadj({ rentIndex, housingShare });
 }
 
 export default function CalculatorWorkbench({ data }) {
-  const searchParams = useSearchParams();
   const {
-    baseThresholds,
-    methodology,
+    methodology: baseMethodology,
     forecast,
-    metroAreas,
-    metroData,
+    areasByYear,
     packageVersion,
-    metroSource,
-    metroSourceUrl,
+    packageDistribution,
   } = data;
-  const isEmbedded =
-    searchParams.get("embed") === "true" ||
-    searchParams.get("embedded") === "true";
   const latestPublishedYear = forecast.latestPublishedYear;
-  // Metro rent indices ship as a single Census vintage. Historical years
-  // (< earliestMetroYear) are unsupported for metros because back-casting
-  // a current rent index to earlier base thresholds does not match any
-  // published BLS or Census table. Forecast years (> latestMetroYear)
-  // pin to the latest bundled vintage and surface a warning badge.
-  const earliestMetroYear = metroData?.earliestYear ?? latestPublishedYear;
-  const latestMetroYear = metroData?.latestYear ?? latestPublishedYear;
-  const availableYears = Object.keys(baseThresholds).sort(
+  const [scenarioId, setScenarioId] = useState(forecast.defaultScenario);
+  const selectedScenario = forecast.scenarios[scenarioId];
+  const availableYears = Object.keys(selectedScenario.years).sort(
     (left, right) => Number(right) - Number(left),
   );
-
+  const [year, setYear] = useState(String(latestPublishedYear));
+  const selectedEntry = selectedScenario.years[year];
+  const areas = areasByYear[year] ?? {};
   const metroEntries = useMemo(
     () =>
-      Object.entries(metroAreas).sort(([, left], [, right]) =>
-        left.name.localeCompare(right.name),
-      ),
-    [metroAreas],
+      Object.entries(areas)
+        .filter(([id]) => selectedEntry?.geography_by_area?.[id])
+        .sort(([, left], [, right]) => left.name.localeCompare(right.name)),
+    [areas, selectedEntry],
   );
-
-  const [year, setYear] = useState(String(latestPublishedYear));
+  const methodology = {
+    ...baseMethodology,
+    housingShares: selectedEntry?.housing_shares ?? {},
+  };
   const [numAdults, setNumAdults] = useState(2);
   const [numChildren, setNumChildren] = useState(2);
   const [tenure, setTenure] = useState("renter");
-  const [geographyType, setGeographyType] = useState("metro_area");
-  const [selectedStateFips, setSelectedStateFips] = useState("06");
-  const [selectedGeographyId, setSelectedGeographyId] = useState("35620");
-  const [locationQuery, setLocationQuery] = useState("");
-  const [acsLookup, setAcsLookup] = useState({
-    status: "idle",
-    error: "",
-    nationalMedianRent: null,
-    options: [],
-  });
-
-  const deferredLocationQuery = useDeferredValue(locationQuery);
-  const acsYear = useMemo(
-    () => getAcsYearForThresholdYear(Number(year)),
-    [year],
+  const [selectedGeographyId, setSelectedGeographyId] = useState(() =>
+    areas["35620"] ? "35620" : (Object.keys(areas)[0] ?? ""),
   );
-  const yearIsForecast = Number(year) > latestPublishedYear;
-  const ceSurveyYears = getCeSurveyYears(year);
-
-  useEffect(() => {
-    if (geographyType === "metro_area") {
-      setSelectedGeographyId((current) =>
-        metroAreas[current] ? current : "35620",
-      );
-      return;
-    }
-
-    if (geographyType === "nation") {
-      setSelectedGeographyId("US");
-      return;
-    }
-
-    let cancelled = false;
-
-    async function loadLookup() {
-      setAcsLookup({
-        status: "loading",
-        error: "",
-        nationalMedianRent: null,
-        options: [],
-      });
-
-      try {
-        let nextLookup;
-        if (geographyType === "state") {
-          nextLookup = await loadStateRentOptions(acsYear);
-        } else if (geographyType === "county") {
-          nextLookup = await loadCountyRentOptions(acsYear, selectedStateFips);
-        } else {
-          nextLookup = await loadDistrictRentOptions(acsYear, selectedStateFips);
-        }
-
-        if (cancelled) return;
-
-        setAcsLookup({
-          status: "ready",
-          error: "",
-          nationalMedianRent: nextLookup.nationalMedianRent,
-          options: nextLookup.options,
-        });
-
-        setSelectedGeographyId((current) => {
-          const preferredId =
-            geographyType === "state" ? selectedStateFips : nextLookup.options[0]?.id;
-          const hasCurrent = nextLookup.options.some(
-            (option) => option.id === current,
-          );
-          if (hasCurrent) return current;
-          if (preferredId) {
-            const hasPreferred = nextLookup.options.some(
-              (option) => option.id === preferredId,
-            );
-            if (hasPreferred) return preferredId;
-          }
-          return nextLookup.options[0]?.id ?? "";
-        });
-      } catch (error) {
-        if (cancelled) return;
-        setAcsLookup({
-          status: "error",
-          error:
-            error instanceof Error
-              ? error.message
-              : "Unable to load Census geography data.",
-          nationalMedianRent: null,
-          options: [],
-        });
-      }
-    }
-
-    loadLookup();
-    return () => {
-      cancelled = true;
-    };
-  }, [acsYear, geographyType, metroAreas, selectedStateFips]);
-
+  const [locationQuery, setLocationQuery] = useState("");
+  const selectedAreaStatus =
+    selectedEntry?.geography_by_area?.[selectedGeographyId];
+  const selectedArea = selectedAreaStatus ? areas[selectedGeographyId] : null;
+  const currentLocation = selectedArea
+    ? { id: selectedGeographyId, label: selectedArea.name }
+    : null;
+  const yearIsForecast = selectedEntry?.national_status === "forecast";
+  const geographyPublished = selectedAreaStatus?.status === "published_anchor";
+  const sharesPublished =
+    selectedEntry?.housing_share_status === "published_anchor";
+  const publishedPackage =
+    packageDistribution?.status === "published" &&
+    packageDistribution.version === packageVersion &&
+    packageDistribution.publishedVersion === packageVersion;
+  const packageUrl = publishedPackage
+    ? `${PYPI_URL}${packageVersion}/`
+    : PREVIEW_URL;
+  const packageLabel = publishedPackage
+    ? `spm-calculator ${packageVersion}`
+    : "Preview Python API: calculator PR36";
+  const ceSurveyWindow = selectedEntry?.ce_window
+    ? `${selectedEntry.ce_window.start}–${selectedEntry.ce_window.end}`
+    : "Unavailable";
+  const annualForecastAssumptions = Object.entries(
+    forecast.cpiProjections ?? {},
+  )
+    .sort(([a], [b]) => Number(a) - Number(b))
+    .map(([target, rate]) => `${target}: ${(rate * 100).toFixed(1)}%`)
+    .join("; ");
   const filteredMetroEntries = useMemo(() => {
-    const query = deferredLocationQuery.trim().toLowerCase();
-    if (!query) return metroEntries.slice(0, 150);
-    return metroEntries
-      .filter(([code, info]) =>
-        `${code} ${info.name}`.toLowerCase().includes(query),
-      )
-      .slice(0, 150);
-  }, [deferredLocationQuery, metroEntries]);
-
-  const filteredAcsOptions = useMemo(() => {
-    const query = deferredLocationQuery.trim().toLowerCase();
-    if (!query) return acsLookup.options.slice(0, 150);
-    return acsLookup.options
-      .filter((option) =>
-        `${option.id} ${option.label} ${option.shortLabel ?? ""}`
-          .toLowerCase()
-          .includes(query),
-      )
-      .slice(0, 150);
-  }, [acsLookup.options, deferredLocationQuery]);
-
-  const displayedMetroEntries = useMemo(() => {
-    const entries = new Map(filteredMetroEntries);
-    const selected = metroAreas[selectedGeographyId];
-    if (!entries.has(selectedGeographyId) && selected) {
-      entries.set(selectedGeographyId, selected);
-    }
-    return Array.from(entries.entries()).sort(([, left], [, right]) =>
-      left.name.localeCompare(right.name),
-    );
-  }, [filteredMetroEntries, metroAreas, selectedGeographyId]);
-
-  const displayedAcsOptions = useMemo(() => {
-    const entries = new Map(filteredAcsOptions.map((option) => [option.id, option]));
-    const selected = acsLookup.options.find(
-      (option) => option.id === selectedGeographyId,
-    );
-    if (selected && !entries.has(selectedGeographyId)) {
-      entries.set(selectedGeographyId, selected);
-    }
-    return Array.from(entries.values()).sort((left, right) =>
-      left.label.localeCompare(right.label),
-    );
-  }, [acsLookup.options, filteredAcsOptions, selectedGeographyId]);
-
-  // ── Derived calculations ────────────────────────────────────
-
-  const base = baseThresholds[year][tenure];
+    const query = locationQuery.trim().toLowerCase();
+    return query
+      ? metroEntries.filter(([id, area]) =>
+          `${id} ${area.name}`.toLowerCase().includes(query),
+        )
+      : metroEntries;
+  }, [locationQuery, metroEntries]);
+  const base = selectedEntry?.thresholds?.[tenure] ?? null;
   const rawScale = getRawEquivalenceScale(numAdults, numChildren, methodology);
+  const compositionValid =
+    Number.isInteger(numAdults) &&
+    numAdults >= 1 &&
+    Number.isInteger(numChildren) &&
+    numChildren >= 0;
   const equivalenceScale =
     rawScale / methodology.equivalenceScale.referenceFamilyRaw;
-
-  const selectedMetroData =
-    geographyType === "metro_area" ? metroAreas[selectedGeographyId] : null;
-  const selectedCustomLocation =
-    geographyType === "state" ||
-    geographyType === "county" ||
-    geographyType === "congressional_district"
-      ? acsLookup.options.find((option) => option.id === selectedGeographyId)
+  function areaAdjustment(areaTenure) {
+    return selectedArea
+      ? rollingAdjustment(selectedEntry, selectedGeographyId, areaTenure)
       : null;
-
-  const currentLocation = useMemo(() => {
-    if (geographyType === "nation") {
-      return { id: "US", label: "United States", shortLabel: "Nation" };
-    }
-    if (selectedMetroData) {
-      return {
-        id: selectedGeographyId,
-        label: selectedMetroData.name,
-        shortLabel: "Metro area",
-      };
-    }
-    if (selectedCustomLocation) {
-      return {
-        id: selectedCustomLocation.id,
-        label: selectedCustomLocation.label,
-        shortLabel:
-          GEOGRAPHY_OPTIONS.find((option) => option.value === geographyType)
-            ?.label ?? geographyType,
-      };
-    }
-    return null;
-  }, [geographyType, selectedCustomLocation, selectedGeographyId, selectedMetroData]);
-
-  // Metros only support years >= earliestMetroYear. Older years come back
-  // as an error state (mirrors Python's ValueError in
-  // `_resolve_bundled_metro_year`) so the UI doesn't silently compound a
-  // 2024 rent index against a 2015 base threshold.
-  const metroYearIsHistorical =
-    geographyType === "metro_area" && Number(year) < earliestMetroYear;
-  const metroYearIsForecast =
-    geographyType === "metro_area" && Number(year) > latestMetroYear;
-
-  const geoadj = useMemo(() => {
-    if (geographyType === "nation") return 1;
-    if (geographyType === "metro_area" && metroYearIsHistorical) return null;
-    if (selectedMetroData) return selectedMetroData.adjustments[tenure];
-    if (selectedCustomLocation && acsLookup.nationalMedianRent) {
-      return calculateCustomGeoadj({
-        localMedianRent: selectedCustomLocation.medianRent,
-        nationalMedianRent: acsLookup.nationalMedianRent,
-        tenure,
-        housingShares: methodology.housingShares,
-      });
-    }
-    return null;
-  }, [
-    acsLookup.nationalMedianRent,
-    geographyType,
-    methodology.housingShares,
-    metroYearIsHistorical,
-    selectedCustomLocation,
-    selectedMetroData,
-    tenure,
-  ]);
-
-  const metroYearError = metroYearIsHistorical
-    ? `Metro rent indices are only published for ${earliestMetroYear} and later. ` +
-      `Select a national or custom ACS geography for ${year}, or choose ${earliestMetroYear} or later.`
-    : "";
-
-  const threshold = geoadj === null ? null : base * equivalenceScale * geoadj;
-  const monthlyThreshold = threshold === null ? null : threshold / 12;
-  const nationalReferenceThreshold = base;
-  const thresholdVsReference =
-    threshold === null
+  }
+  const geoadj = areaAdjustment(tenure);
+  const rollingDataUnavailable =
+    !selectedArea || geoadj === null || !Number.isFinite(base) || base <= 0;
+  const locationError = !selectedArea
+    ? `The selected area is unavailable in ${year}. Choose an area available for this year.`
+    : rollingDataUnavailable
+      ? "Rolling forecast data is unavailable for this area, tenure and year."
+      : "";
+  const threshold =
+    rollingDataUnavailable || !compositionValid
       ? null
-      : ((threshold - nationalReferenceThreshold) / nationalReferenceThreshold) * 100;
-
-  const officialReferenceThreshold =
-    geoadj === null ? null : baseThresholds[year][tenure] * geoadj;
-  const selectedTenureLabel = TENURE_LABELS[tenure] ?? tenure;
-
-  const selectedLocationRentIndex =
-    selectedMetroData?.rentIndex ??
-    (selectedCustomLocation && acsLookup.nationalMedianRent
-      ? selectedCustomLocation.medianRent / acsLookup.nationalMedianRent
-      : null);
-
-  const isLocationLoading =
-    geographyType !== "metro_area" &&
-    geographyType !== "nation" &&
-    acsLookup.status === "loading";
-  const locationError =
-    acsLookup.status === "error"
-      ? acsLookup.error
-      : metroYearError || "";
-
+      : base * equivalenceScale * geoadj;
+  const monthlyThreshold = threshold === null ? null : threshold / 12;
+  const thresholdVsReference =
+    threshold === null ? null : ((threshold - base) / base) * 100;
+  const officialReferenceThreshold = rollingDataUnavailable
+    ? null
+    : base * geoadj;
+  const selectedTenureLabel = TENURE_LABELS[tenure];
+  const selectedLocationRentIndex = selectedArea
+    ? selectedEntry?.rent_indices?.[selectedGeographyId]
+    : null;
   const tenureComparisonData = TENURE_OPTIONS.map((option) => {
-    let adjustment = 1;
-    let isReady = geographyType === "nation" || Boolean(selectedMetroData);
-
-    if (metroYearIsHistorical) {
-      isReady = false;
-    } else if (selectedMetroData) {
-      adjustment = selectedMetroData.adjustments[option.value];
-    } else if (selectedCustomLocation && acsLookup.nationalMedianRent) {
-      adjustment = calculateCustomGeoadj({
-        localMedianRent: selectedCustomLocation.medianRent,
-        nationalMedianRent: acsLookup.nationalMedianRent,
-        tenure: option.value,
-        housingShares: methodology.housingShares,
-      });
-      isReady = true;
-    }
-
-    const nationalBase = baseThresholds[year][option.value];
+    const adjustment = areaAdjustment(option.value);
+    const nationalBase = selectedEntry?.thresholds?.[option.value] ?? null;
     return {
       tenure: option.label,
       nationalBase,
-      locationThreshold: isReady ? nationalBase * adjustment : null,
-      adjustment: isReady ? adjustment : null,
+      adjustment,
+      locationThreshold:
+        adjustment === null || !Number.isFinite(nationalBase)
+          ? null
+          : nationalBase * adjustment,
     };
   });
+  const yearComparisonData = [...availableYears].reverse().map((targetYear) => {
+    const entry = selectedScenario.years[targetYear];
+    const nationalBase = entry?.thresholds?.[tenure] ?? null;
+    const adjustment = areasByYear[targetYear]?.[selectedGeographyId]
+      ? rollingAdjustment(entry, selectedGeographyId, tenure)
+      : null;
+    const areaStatus = entry?.geography_by_area?.[selectedGeographyId];
+    return {
+      year: targetYear,
+      nationalBase,
+      adjustment,
+      componentStatus: !areaStatus
+        ? "Area unavailable"
+        : `${entry.national_status === "published" ? "Published national base" : "Forecast national base"}; ${areaStatus.status === "published_anchor" ? "published geography" : "modeled geography"}; ${entry.housing_share_status === "published_anchor" ? "published shares" : "modeled shares"}`,
+      localThreshold:
+        !compositionValid ||
+        !Number.isFinite(nationalBase) ||
+        nationalBase <= 0 ||
+        adjustment === null
+          ? null
+          : nationalBase * equivalenceScale * adjustment,
+    };
+  });
+  const packageSnippet = !compositionValid
+    ? "# Enter valid classified adult and child counts to generate a calculation."
+    : rollingDataUnavailable
+      ? "# Rolling forecast data is unavailable for the selected area, tenure and year."
+      : `from spm_calculator import load_forecast, SPMUnit
 
-  const packageSnippet = `from spm_calculator import SPMCalculator
-
-calc = SPMCalculator(year=${year})
-threshold = calc.calculate_threshold(
-    num_adults=${numAdults},
-    num_children=${numChildren},
-    tenure="${tenure}",
-    geography_type="${geographyType}",
-    geography_id="${currentLocation?.id ?? "<loading>"}"
-)
-
-print(f"SPM threshold: \${threshold:,.0f}")`;
-
-  // ── Location selector options ───────────────────────────────
-
-  const locationSelectOptions = useMemo(() => {
-    if (geographyType === "metro_area") {
-      return displayedMetroEntries.map(([code, info]) => ({
-        value: code,
-        label: info.name,
-      }));
-    }
-    return displayedAcsOptions.map((option) => ({
-      value: option.id,
-      label: option.label,
-    }));
-  }, [geographyType, displayedMetroEntries, displayedAcsOptions]);
-
-  const stateSelectOptions = useMemo(
-    () =>
-      STATE_SELECTOR_OPTIONS.map((option) => ({
-        value: option.fips,
-        label: option.name,
-      })),
-    [],
-  );
-
-  const yearSelectOptions = useMemo(
-    () =>
-      availableYears.map((y) => ({
-        value: y,
-        label: `${y} ${Number(y) > latestPublishedYear ? "(forecast)" : ""}`.trim(),
-      })),
-    [availableYears, latestPublishedYear],
-  );
+projection = load_forecast(expected_sha256="${forecast.contentSha256}")
+result = projection.calculate_unit(SPMUnit(
+    unit_id="household-1",
+    num_adults=${numAdults}, num_children=${numChildren},
+    tenure="${tenure}", year=${year},
+    geography_kind="metro",
+    geography_id="${currentLocation.id}",
+), scenario="${scenarioId}")
+print(result["threshold"])`;
+  const locationSelectOptions = metroEntries.map(([value, area]) => ({
+    value,
+    label: area.name,
+  }));
+  const yearSelectOptions = availableYears.map((value) => ({
+    value,
+    label: `${value}${selectedScenario.years[value].national_status === "forecast" ? " (forecast)" : ""}`,
+  }));
 
   // ── Render ──────────────────────────────────────────────────
 
   const sidebar = (
     <InputPanel title="Household and geography">
+      {!compositionValid && (
+        <p role="alert">
+          Enter at least one classified SPM adult and a nonnegative whole number
+          of children. Minor-only units need a separate classification decision.
+        </p>
+      )}
       <SidebarSection title="Threshold year">
         <SelectInput
+          id="spm-year"
+          aria-label="Threshold year"
           options={yearSelectOptions}
           value={year}
           onChange={setYear}
         />
       </SidebarSection>
+
+      {
+        <SidebarSection title="Real spending">
+          <SelectInput
+            id="spm-scenario"
+            aria-label="Real spending"
+            options={Object.entries(forecast.scenarios ?? {}).map(
+              ([value, scenario]) => ({ value, label: scenario.label }),
+            )}
+            value={scenarioId}
+            onChange={setScenarioId}
+          />
+        </SidebarSection>
+      }
 
       <SidebarDivider />
 
@@ -507,13 +339,17 @@ print(f"SPM threshold: \${threshold:,.0f}")`;
         <div className="flex gap-3">
           <NumberInput
             label="Adults"
+            id="spm-adults"
+            aria-label="Adults"
             value={numAdults}
             onChange={setNumAdults}
-            min={0}
+            min={1}
             max={12}
           />
           <NumberInput
             label="Children"
+            id="spm-children"
+            aria-label="Children"
             value={numChildren}
             onChange={setNumChildren}
             min={0}
@@ -536,82 +372,57 @@ print(f"SPM threshold: \${threshold:,.0f}")`;
       <SidebarDivider />
 
       <SidebarSection title="Geography">
-        <SelectInput
-          label="Geography type"
-          options={GEOGRAPHY_OPTIONS}
-          value={geographyType}
-          onChange={(value) => {
-            startTransition(() => {
-              setGeographyType(value);
-              setLocationQuery("");
-            });
-          }}
-        />
-
-        {(geographyType === "county" ||
-          geographyType === "congressional_district") && (
-          <div className="mt-3">
-            <SelectInput
-              label="State"
-              options={stateSelectOptions}
-              value={selectedStateFips}
-              onChange={(value) => {
-                startTransition(() => {
-                  setSelectedStateFips(value);
-                  setLocationQuery("");
-                });
-              }}
+        <div className="space-y-3">
+          <Command label="Search SPM areas" shouldFilter={false}>
+            <p className="mb-1.5 text-sm font-medium text-muted-foreground">
+              Search SPM areas
+            </p>
+            <CommandInput
+              placeholder="New York, Alabama Nonmetro, 35620..."
+              value={locationQuery}
+              onValueChange={setLocationQuery}
             />
-          </div>
-        )}
-
-        {geographyType !== "nation" && (
-          <div className="mt-3 space-y-3">
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-muted-foreground">
-                Search
-              </label>
-              <Input
-                placeholder={
-                  geographyType === "metro_area"
-                    ? "New York, San Jose, 35620..."
-                    : geographyType === "state"
-                      ? "California, Texas..."
-                      : geographyType === "county"
-                        ? "Los Angeles, Cook..."
-                        : "CA-12, NY-01..."
-                }
-                value={locationQuery}
-                onChange={(event) => setLocationQuery(event.target.value)}
-              />
-            </div>
-
-            <SelectInput
-              label={
-                geographyType === "metro_area"
-                  ? "Metro area"
-                  : geographyType === "state"
-                    ? "State"
-                    : geographyType === "county"
-                      ? "County"
-                      : "District"
-              }
-              options={locationSelectOptions}
-              value={selectedGeographyId}
-              onChange={(value) => {
-                setSelectedGeographyId(value);
-                if (geographyType === "state") {
-                  setSelectedStateFips(value);
-                }
-              }}
-              disabled={isLocationLoading || Boolean(locationError)}
-            />
-          </div>
-        )}
+            {locationQuery.trim() && (
+              <CommandList label="Matching SPM areas" className="max-h-60">
+                <CommandEmpty>No SPM areas match your search.</CommandEmpty>
+                {filteredMetroEntries.map(([code, info]) => (
+                  <CommandItem
+                    key={code}
+                    value={code}
+                    onSelect={() => {
+                      setSelectedGeographyId(code);
+                      setLocationQuery("");
+                    }}
+                  >
+                    {info.name}
+                  </CommandItem>
+                ))}
+              </CommandList>
+            )}
+          </Command>
+          <SelectInput
+            id="spm-census-area"
+            aria-label="SPM estimation area"
+            label="SPM estimation area"
+            options={locationSelectOptions}
+            value={selectedArea ? selectedGeographyId : ""}
+            placeholder={
+              selectedArea ? undefined : `Selected area unavailable in ${year}`
+            }
+            onChange={setSelectedGeographyId}
+          />
+          <p className="text-xs leading-5 text-muted-foreground">
+            SPM estimation areas: MSAs, residual metro groups and state nonmetro
+            groups. Availability and publication status depend on the year.
+          </p>
+        </div>
       </SidebarSection>
 
       {locationError && (
-        <div className="mx-4 mb-4 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+        <div
+          role="alert"
+          className="mx-4 mb-4 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive"
+        >
           {locationError}
         </div>
       )}
@@ -623,37 +434,25 @@ print(f"SPM threshold: \${threshold:,.0f}")`;
           <div className="flex justify-between">
             <span>Data source</span>
             <span className="font-medium text-foreground">
-              {geographyType === "metro_area"
-                ? "2024 Census workbook"
-                : geographyType === "nation"
-                  ? "National baseline"
-                  : `ACS ${acsYear}`}
+              {year} rolling windows
             </span>
           </div>
           <div className="flex justify-between">
             <span>Housing share</span>
             <span className="font-medium text-foreground">
-              {methodology.housingShares[tenure]}
+              {fmtInput(methodology.housingShares[tenure])}
             </span>
           </div>
           {selectedLocationRentIndex !== null && (
             <div className="flex justify-between">
               <span>Rent index</span>
               <span className="font-medium text-foreground">
-                {selectedLocationRentIndex.toFixed(3)}
+                {Number.isFinite(selectedLocationRentIndex)
+                  ? selectedLocationRentIndex.toFixed(3)
+                  : "Unavailable"}
               </span>
             </div>
           )}
-          {geographyType !== "metro_area" &&
-            geographyType !== "nation" &&
-            selectedCustomLocation && (
-              <div className="flex justify-between">
-                <span>Median 2BR rent</span>
-                <span className="font-medium text-foreground">
-                  {fmtCurrency(selectedCustomLocation.medianRent)}
-                </span>
-              </div>
-            )}
         </div>
       </SidebarSection>
     </InputPanel>
@@ -675,42 +474,82 @@ print(f"SPM threshold: \${threshold:,.0f}")`;
       key: "locationThreshold",
       header: "Location threshold",
       align: "right",
-      format: (v) => (v === null ? "..." : fmtCurrency(v)),
+      format: (v) => (v === null ? "Unavailable" : fmtCurrency(v)),
     },
     {
       key: "adjustment",
       header: "Adjustment",
       align: "right",
-      format: (v) => (v === null ? "..." : `\u00D7${v.toFixed(3)}`),
+      format: (v) => (v === null ? "Unavailable" : `\u00D7${v.toFixed(3)}`),
+    },
+  ];
+
+  const yearTableColumns = [
+    {
+      key: "year",
+      header: "Year",
+      format: (value) => (
+        <span
+          aria-current={value === year ? "date" : undefined}
+          className={value === year ? "font-semibold" : undefined}
+        >
+          {value}
+        </span>
+      ),
+    },
+    {
+      key: "nationalBase",
+      header: "National base",
+      align: "right",
+      format: (value) => fmtCurrency(value),
+    },
+    {
+      key: "adjustment",
+      header: "Location factor",
+      align: "right",
+      format: (value) =>
+        value === null ? "Unavailable" : `\u00D7${value.toFixed(3)}`,
+    },
+    {
+      key: "localThreshold",
+      header: "Local threshold",
+      align: "right",
+      format: (value) => fmtCurrency(value),
+    },
+    {
+      key: "componentStatus",
+      header: "Component status",
+      format: (value) => value,
     },
   ];
 
   return (
     <DashboardShell>
-      <Header
-        navItems={[]}
-        logoSrc={logos.whiteWordmark}
-        logoHref="/"
-      />
-
       <SidebarLayout sidebar={sidebar} sidebarWidth="320px">
         <ResultsPanel>
-          <div className="space-y-6">
+          <div className="min-w-0 space-y-6">
             {/* Primary result */}
-            <div>
+            <div data-testid="primary-result">
               <div className="mb-4 flex flex-wrap items-center gap-2">
                 <Title order={2} className="text-xl">
-                  {currentLocation?.label ?? "Loading geography"}
+                  {currentLocation?.label ?? "Area unavailable"}
                 </Title>
-                <Badge variant="secondary">
-                  {selectedTenureLabel}
-                </Badge>
+                <Badge variant="secondary">{selectedTenureLabel}</Badge>
                 {yearIsForecast && (
-                  <Badge variant="warning">Forecast</Badge>
+                  <Badge variant="warning">Research forecast</Badge>
                 )}
-                {metroYearIsForecast && (
-                  <Badge variant="warning">
-                    {latestMetroYear} metro rent index
+                {selectedAreaStatus && (
+                  <Badge variant={geographyPublished ? "secondary" : "warning"}>
+                    {geographyPublished
+                      ? `${year} published geography anchor`
+                      : "Modeled geography"}
+                  </Badge>
+                )}
+                {selectedEntry && (
+                  <Badge variant={sharesPublished ? "secondary" : "warning"}>
+                    {sharesPublished
+                      ? "Housing shares published by BLS"
+                      : "Modeled housing shares"}
                   </Badge>
                 )}
               </div>
@@ -718,14 +557,14 @@ print(f"SPM threshold: \${threshold:,.0f}")`;
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <MetricCard
                   label="SPM threshold"
-                  value={threshold === null ? "..." : fmtCurrency(threshold)}
+                  value={fmtCurrency(threshold)}
                   format="string"
                 />
                 <MetricCard
                   label="Monthly"
                   value={
                     monthlyThreshold === null
-                      ? "..."
+                      ? "Unavailable"
                       : fmtCurrency(monthlyThreshold)
                   }
                   format="string"
@@ -734,7 +573,7 @@ print(f"SPM threshold: \${threshold:,.0f}")`;
                   label="vs. national ref."
                   value={
                     thresholdVsReference === null
-                      ? "..."
+                      ? "Unavailable"
                       : fmtPercent(thresholdVsReference)
                   }
                   format="string"
@@ -748,11 +587,51 @@ print(f"SPM threshold: \${threshold:,.0f}")`;
                 />
                 <MetricCard
                   label="Location factor"
-                  value={geoadj === null ? "..." : geoadj.toFixed(3)}
+                  value={fmtInput(geoadj)}
                   format="string"
                 />
               </div>
+              {
+                <ForecastWarnings
+                  forecast={forecast}
+                  scenarioId={scenarioId}
+                  year={year}
+                  entry={selectedEntry}
+                  areaId={selectedGeographyId}
+                />
+              }
             </div>
+
+            {
+              <Card data-testid="year-by-year-card" className="min-w-0">
+                <CardHeader>
+                  <CardTitle>Year by year</CardTitle>
+                  <CardDescription>
+                    {currentLocation?.label} · {selectedTenureLabel} ·{" "}
+                    {numAdults} adults, {numChildren} children ·{" "}
+                    {selectedScenario?.label}. National bases are for two adults
+                    and two children; local thresholds use your household.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <DataTable
+                    className="overflow-x-auto"
+                    role="region"
+                    aria-label="Year-by-year thresholds"
+                    tabIndex={0}
+                    columns={yearTableColumns}
+                    data={yearComparisonData}
+                    styles={{ table: { minWidth: "520px" } }}
+                  />
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    National thresholds and housing shares are published for
+                    2022–2025. Geography status is specific to each area and
+                    year. From 2026, values are conditional rolling CE and ACS
+                    research forecasts.
+                  </p>
+                </CardContent>
+              </Card>
+            }
 
             <Separator />
 
@@ -762,7 +641,9 @@ print(f"SPM threshold: \${threshold:,.0f}")`;
                 <CardHeader>
                   <CardTitle>Base threshold</CardTitle>
                   <CardDescription>
-                    National BLS reference-family threshold before adjustments
+                    {yearIsForecast
+                      ? "Projected national reference-family threshold before adjustments"
+                      : "National BLS reference-family threshold before adjustments"}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -772,13 +653,18 @@ print(f"SPM threshold: \${threshold:,.0f}")`;
                       <Text className="font-medium">{selectedTenureLabel}</Text>
                     </div>
                     <div className="flex justify-between">
-                      <Text className="text-muted-foreground">Base threshold</Text>
+                      <Text className="text-muted-foreground">
+                        Base threshold
+                      </Text>
                       <Text className="font-medium">{fmtCurrency(base)}</Text>
                     </div>
                     <div className="flex justify-between">
                       <Text className="text-muted-foreground">Status</Text>
-                      <Badge variant={yearIsForecast ? "warning" : "secondary"} className="text-xs">
-                        {yearIsForecast ? "Forecast" : "Published"}
+                      <Badge
+                        variant={yearIsForecast ? "warning" : "secondary"}
+                        className="text-xs"
+                      >
+                        {yearIsForecast ? "Forecast" : "Published by BLS"}
                       </Badge>
                     </div>
                   </div>
@@ -797,12 +683,20 @@ print(f"SPM threshold: \${threshold:,.0f}")`;
                     <div className="flex justify-between">
                       <Text className="text-muted-foreground">Formula</Text>
                       <Text className="font-mono text-xs font-medium">
-                        {describeEquivalenceFormula(numAdults, numChildren, methodology)}
+                        {describeEquivalenceFormula(
+                          numAdults,
+                          numChildren,
+                          methodology,
+                        )}
                       </Text>
                     </div>
                     <div className="flex justify-between">
-                      <Text className="text-muted-foreground">Normalized scale</Text>
-                      <Text className="font-medium">{equivalenceScale.toFixed(3)}</Text>
+                      <Text className="text-muted-foreground">
+                        Normalized scale
+                      </Text>
+                      <Text className="font-medium">
+                        {equivalenceScale.toFixed(3)}
+                      </Text>
                     </div>
                     <div className="flex justify-between">
                       <Text className="text-muted-foreground">Household</Text>
@@ -819,11 +713,7 @@ print(f"SPM threshold: \${threshold:,.0f}")`;
                 <CardHeader>
                   <CardTitle>Location adjustment</CardTitle>
                   <CardDescription>
-                    {geographyType === "metro_area"
-                      ? "Published metro adjustment factor"
-                      : geographyType === "nation"
-                        ? "No additional geography factor"
-                        : `ACS ${acsYear} rent-based adjustment`}
+                    Selected area rent index with tenure-specific housing share
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -831,20 +721,24 @@ print(f"SPM threshold: \${threshold:,.0f}")`;
                     <div className="flex justify-between">
                       <Text className="text-muted-foreground">Location</Text>
                       <Text className="font-medium">
-                        {currentLocation?.label ?? "Loading"}
+                        {currentLocation?.label ?? "Unavailable"}
                       </Text>
                     </div>
                     <div className="flex justify-between">
-                      <Text className="text-muted-foreground">Location factor</Text>
+                      <Text className="text-muted-foreground">
+                        Location factor
+                      </Text>
                       <Text className="font-medium">
-                        {geoadj === null ? "..." : geoadj.toFixed(3)}
+                        {geoadj === null ? "Unavailable" : geoadj.toFixed(3)}
                       </Text>
                     </div>
                     <div className="flex justify-between">
-                      <Text className="text-muted-foreground">Ref. 2A2C threshold</Text>
+                      <Text className="text-muted-foreground">
+                        Ref. 2A2C threshold
+                      </Text>
                       <Text className="font-medium">
                         {officialReferenceThreshold === null
-                          ? "..."
+                          ? "Unavailable"
                           : fmtCurrency(officialReferenceThreshold)}
                       </Text>
                     </div>
@@ -862,142 +756,249 @@ print(f"SPM threshold: \${threshold:,.0f}")`;
                   Tenure comparison
                 </Title>
                 <Text className="text-sm text-muted-foreground">
-                  {currentLocation?.label ?? "Loading geography"}
+                  {currentLocation?.label ?? "Area unavailable"} · Two adults,
+                  two children
                 </Text>
               </div>
               <DataTable
+                className="overflow-x-auto"
+                role="region"
+                aria-label="Tenure thresholds"
+                tabIndex={0}
                 columns={tenureTableColumns}
                 data={tenureComparisonData}
+                styles={{ table: { minWidth: "440px" } }}
               />
             </div>
 
             <Separator />
 
-            {/* Methodology explainer */}
-            <Card data-testid="methodology-card">
-              <CardHeader>
-                <CardTitle>How this is calculated</CardTitle>
-                <CardDescription>
-                  Official Census SPM methodology
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3 text-sm leading-6">
-                <p>
-                  Threshold = <code className="font-mono">base[tenure]</code>{" "}
-                  × <code className="font-mono">equivalence_scale</code> ×{" "}
-                  <code className="font-mono">geoadj[tenure]</code>
-                </p>
-                <ul className="list-disc space-y-1 pl-6 text-muted-foreground">
-                  <li>
-                    <strong>Base</strong>: BLS-published FCSUti thresholds
-                    for the reference family (2 adults, 2 children), by
-                    tenure. National 2024 renter base ={" "}
-                    <span className="font-mono">$39,430</span>.
-                  </li>
-                  <li>
-                    <strong>Equivalence scale</strong>: Betson
-                    three-parameter. Single-adult with K children:{" "}
-                    <code className="font-mono">
-                      (1 + 0.8 + 0.5·(K−1))^0.7
-                    </code>
-                    . Multi-adult with children:{" "}
-                    <code className="font-mono">(A + 0.5·K)^0.7</code>.
-                    Reference 2A2C = <code className="font-mono">3^0.7</code>.
-                  </li>
-                  <li>
-                    <strong>GEOADJ</strong>: for metros, the Census 2024
-                    SPM workbook's per-tenure reference thresholds. For
-                    other geographies, a rent-based adjustment using
-                    tenure-specific housing shares (renter 0.443,
-                    owner-with-mortgage 0.434, owner-without-mortgage
-                    0.323).
-                  </li>
-                </ul>
-                <p className="text-xs text-muted-foreground">
-                  Census methodology:{" "}
-                  <a
-                    className="underline"
-                    href="https://www.bls.gov/pir/spm/garner_spm_choices_03_15_21.pdf"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    Garner (2021)
-                  </a>
-                  . Metro workbook:{" "}
-                  <a
-                    className="underline"
-                    href="https://www.census.gov/library/publications/2025/demo/p60-287.html"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    P60-287
-                  </a>
-                  .
-                </p>
-              </CardContent>
-            </Card>
-
-            {/* Python package */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Reproduce with Python</CardTitle>
-                <CardDescription>
-                  Use the spm-calculator package for PUMAs, tracts, and batch workflows
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <pre className="overflow-x-auto rounded-lg bg-gray-900 p-4 text-sm leading-6 text-white">
-                  <code>{packageSnippet}</code>
-                </pre>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={() => window.open(PYPI_URL, "_blank")}
-                  >
-                    PyPI
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => window.open(GITHUB_URL, "_blank")}
-                  >
-                    GitHub
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Version + data vintage footer */}
-            <footer
-              data-testid="version-footer"
-              className="pt-2 text-xs text-muted-foreground"
+            <section
+              data-testid="results-footnote"
+              aria-label="Methodology and provenance"
+              className="space-y-6"
             >
-              <p>
-                Based on{" "}
-                <a
-                  className="underline"
-                  href={metroSourceUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {metroSource}
-                </a>
-                {packageVersion ? (
-                  <>
-                    {" · "}
+              {/* Methodology explainer */}
+              <Card data-testid="methodology-card">
+                <CardHeader>
+                  <CardTitle>How this is calculated</CardTitle>
+                  <CardDescription>
+                    National bases, rolling CE spending and ACS rent windows
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3 text-sm leading-6">
+                  <p>
+                    Threshold = <code className="font-mono">base[tenure]</code>{" "}
+                    × <code className="font-mono">equivalence_scale</code> ×{" "}
+                    <code className="font-mono">geoadj[tenure]</code>
+                  </p>
+                  {
+                    <div className="space-y-3">
+                      <p data-testid="source-windows">
+                        <strong>{year} source windows</strong>: CE{" "}
+                        {ceSurveyWindow}
+                        {selectedEntry?.ce_window &&
+                          ` · ${selectedEntry.ce_window.observed_quarters} observed / ${selectedEntry.ce_window.projected_quarters} projected quarters`}
+                        . ACS{" "}
+                        {selectedEntry?.acs_window
+                          ? `${selectedEntry.acs_window.start}\u2013${selectedEntry.acs_window.end} · ${selectedEntry.acs_window.observed_years} observed / ${selectedEntry.acs_window.projected_years} projected years`
+                          : "Unavailable"}
+                        .
+                      </p>
+                      <p>
+                        <strong>Common price assumptions</strong>:{" "}
+                        {annualForecastAssumptions ||
+                          "No price projections supplied"}
+                        . <strong>Selected real spending growth</strong>:{" "}
+                        {Number.isFinite(selectedScenario?.realGrowthRate)
+                          ? `${(selectedScenario.realGrowthRate * 100).toFixed(2)}% per year`
+                          : "Unavailable"}
+                        . New observations are projected; rolling history is
+                        retained. CE real spending and ACS rent assumptions are
+                        separate.
+                      </p>
+                      <p
+                        data-testid="forecast-disclaimer"
+                        className="text-muted-foreground"
+                      >
+                        Both spending scenarios are conditional research
+                        forecasts, not BLS or CBO forecasts. National thresholds
+                        and housing shares for 2022–2025 are published by BLS.
+                        The 2025 geography is modeled; 2026 onward uses future
+                        conditional rolling CE and ACS inputs. Census publishes
+                        indices for most historical areas; residual groups
+                        without a published anchor are modeled.
+                      </p>
+                      {selectedAreaStatus && (
+                        <p data-testid="area-provenance">
+                          <strong>Selected geography</strong>:{" "}
+                          {selectedAreaStatus.interpretation}.
+                          {selectedAreaStatus.official_published_area
+                            ? " This area has a published Census geography anchor."
+                            : " This residual group has no published Census geography anchor."}
+                        </p>
+                      )}
+                    </div>
+                  }
+                  <ul className="list-disc space-y-1 pl-6 text-muted-foreground">
+                    <li>
+                      <strong>Base</strong>: BLS reference-family thresholds for
+                      two adults and two children. Future thresholds use each
+                      year's rolling CE window. Public CE replication is
+                      approximate; forecast uncertainty is not estimated.
+                    </li>
+                    <li>
+                      <strong>Equivalence scale</strong>: Betson
+                      three-parameter. Single-adult with K children:{" "}
+                      <code className="font-mono">
+                        (1 + 0.8 + 0.5·(K−1))^0.7
+                      </code>
+                      . Multi-adult with children:{" "}
+                      <code className="font-mono">(A + 0.5·K)^0.7</code>.
+                      Reference 2A2C = <code className="font-mono">3^0.7</code>.
+                    </li>
+                    <li>
+                      <strong>GEOADJ</strong>:{" "}
+                      <code className="font-mono">
+                        1 + housing_share * (rent_index - 1)
+                      </code>
+                      , using the selected scenario and year's inputs for SPM
+                      metro/nonmetro estimation areas. Housing shares: renter{" "}
+                      {fmtInput(methodology.housingShares.renter)}, owner with
+                      mortgage{" "}
+                      {fmtInput(methodology.housingShares.owner_with_mortgage)},
+                      owner without mortgage{" "}
+                      {fmtInput(
+                        methodology.housingShares.owner_without_mortgage,
+                      )}
+                      . County names inside MSA labels identify metropolitan
+                      areas; this app does not estimate independent county or
+                      congressional district thresholds.
+                    </li>
+                  </ul>
+                  {
+                    <ForecastMethodology
+                      forecast={forecast}
+                      scenarioId={scenarioId}
+                      year={year}
+                      entry={selectedEntry}
+                      areaId={selectedGeographyId}
+                    />
+                  }
+                  <p className="text-xs text-muted-foreground">
+                    Census methodology:{" "}
                     <a
                       className="underline"
-                      href={PYPI_URL}
+                      href="https://www.bls.gov/pir/spm/garner_spm_choices_03_15_21.pdf"
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      spm-calculator {packageVersion}
+                      Garner (2021)
                     </a>
-                  </>
-                ) : null}
-              </p>
-            </footer>
+                    . 2024 anchor workbook:{" "}
+                    <a
+                      className="underline"
+                      href="https://www.census.gov/library/publications/2025/demo/p60-287.html"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      P60-287
+                    </a>
+                    .
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* Python package */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Reproduce with Python</CardTitle>
+                  <CardDescription>
+                    {publishedPackage
+                      ? `Reproduce with published spm-calculator ${packageVersion}`
+                      : `Reproduce with local build / development preview ${packageVersion}. This build is not confirmed published on PyPI.`}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <pre className="overflow-x-auto rounded-lg bg-muted p-4 text-sm leading-6 text-foreground">
+                    <code>{packageSnippet}</code>
+                  </pre>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <a
+                      className="text-primary underline"
+                      href={packageUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {packageLabel}
+                    </a>
+                    <a
+                      className="text-primary underline"
+                      href={GITHUB_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      GitHub
+                    </a>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Version + data vintage footer */}
+              <footer
+                data-testid="version-footer"
+                className="pt-2 text-xs text-muted-foreground"
+              >
+                <p data-testid="forecast-provenance">
+                  Rolling CE + ACS research forecast · information date{" "}
+                  {forecast.informationDate}. Forecast SHA-256:{" "}
+                  <code className="break-all">{forecast.contentSha256}</code>.
+                  Base release SHA-256:{" "}
+                  <code className="break-all">
+                    {forecast.baseReleaseSha256}
+                  </code>
+                  . Assumption SHA-256:{" "}
+                  <code className="break-all">{forecast.assumptionSha256}</code>
+                  .
+                </p>
+                {forecast.auditArtifact?.url && (
+                  <p className="mt-2">
+                    <a
+                      className="underline"
+                      href={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}${forecast.auditArtifact.url}`}
+                      download={forecast.auditArtifact.name || true}
+                    >
+                      Download full canonical audit data (JSON)
+                    </a>
+                    . Includes the scientific inputs and diagnostics for the
+                    forecast hash above.
+                  </p>
+                )}
+                <p className="mt-2">
+                  {publishedPackage
+                    ? `Published package: spm-calculator ${packageVersion}.`
+                    : `Local build / development preview: spm-calculator ${packageVersion}. Publication on PyPI is not confirmed for this build.`}
+                </p>
+                <p className="mt-2">
+                  Sources:{" "}
+                  {(forecast.sources ?? [])
+                    .filter((source) => source.url)
+                    .map((source, index) => (
+                      <span key={source.id}>
+                        {index > 0 ? " · " : ""}
+                        <a
+                          className="underline"
+                          href={source.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {source.title ?? source.label ?? source.id}
+                        </a>
+                      </span>
+                    ))}
+                </p>
+              </footer>
+            </section>
           </div>
         </ResultsPanel>
       </SidebarLayout>

@@ -1,0 +1,21 @@
+{
+  "information_date": "2026-09-09",
+  "bls_cpi": {
+    "id": "bls-cpi-u-2024-2025-receipt",
+    "path": "spm_calculator/data/current/bls_cpi_u_2024_2025_receipt.json",
+    "url": "https://api.bls.gov/publicAPI/v2/timeseries/data/CUUR0000SA0?startyear=2024&endyear=2025&annualaverage=true",
+    "sha256": "482678b4dc2070b434ff44b2d09417992b63546dea0ac3a30ec300244e14415e",
+    "acquired_at_utc": "2026-09-09T02:48:18.424733+00:00",
+    "available_on": "2026-09-09",
+    "note": "BLS M13 annual average; 2025 omits uncollected October."
+  },
+  "census_publication_check": {
+    "url": "https://www.census.gov/newsroom/press-releases/2026/2025-iphi-webinar-advisory.html",
+    "sha256": "f041883ae8ace02b6173f2f2757718031ce1c6f1a5cfea1c05618b6b4f998e28",
+    "retrieved_at": "2026-09-09T02:51:25.096392+00:00",
+    "national_threshold_status": "published_2025",
+    "local_geography_status": "2025_not_yet_published",
+    "scheduled_local_publication_date": "2026-09-15",
+    "note": "Census advisory says reports and data tables will be posted after the September 15 news conference begins. Last checked during generation; BLS national thresholds are published separately."
+  }
+}

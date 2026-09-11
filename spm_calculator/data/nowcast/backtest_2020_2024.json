@@ -1,0 +1,309 @@
+{
+  "generated_by": "scripts/backtest_threshold_projection.py",
+  "description": "Projection errors against corrected BLS SPM thresholds, standing at each prior-year corrected base.",
+  "target_years": [
+    2020,
+    2021,
+    2022,
+    2023,
+    2024
+  ],
+  "tenures": [
+    "owner_with_mortgage",
+    "owner_without_mortgage",
+    "renter"
+  ],
+  "score": "Mean absolute percentage error across three tenures, then equally across target years 2020-2024.",
+  "rules": {
+    "cpi_u": "Prior-year base aged by realized All-Items CPI-U.",
+    "fcsuti_cpi": "Prior-year base aged by the realized static-weight FCSUti CPI composite.",
+    "replication_ratio": "Prior-year base aged by the tenure-specific CE replicated-threshold growth ratio.",
+    "blend": "Prior-year base aged by a 50/50 arithmetic blend of the FCSUti CPI and tenure-specific replication factors."
+  },
+  "provenance": {
+    "thresholds": {
+      "accessor": "spm_calculator.forecast.get_thresholds(year, allow_forecast=False)",
+      "series": "bls-corrected-2026-07-17",
+      "years": [
+        2019,
+        2024
+      ]
+    },
+    "cpi": {
+      "path": "spm_calculator/data/bls/cpi_annual.json",
+      "rebase_year": 2019,
+      "component_series": {
+        "food": "CUUR0000SAF",
+        "apparel": "CUUR0000SAA",
+        "shelter": "CUUR0000SAH1",
+        "utilities": "CUUR0000SAH2",
+        "telephone": "CUUR0000SEED",
+        "all_items": "CUUR0000SA0"
+      },
+      "generated_by": "scripts/build_cpi_store.py",
+      "retrieved": "2026-07-18",
+      "note": "Annual averages (BLS period M13 where API-sourced; means of NSA monthlies where FRED-sourced). 2025 values are computed over eleven months \u2014 the October 2025 CPI release was not published during the federal shutdown \u2014 matching BLS's official 2025 annual averages."
+    },
+    "replication": {
+      "source": "scripts/benchmark_bls_replication.py",
+      "path": "benchmark_output/replication_results.json",
+      "selection": {
+        "mortgage_principal": "include",
+        "annualization": "quarter4",
+        "anchor_percent": 82
+      },
+      "selected_thresholds": {
+        "2019": {
+          "renter": 28358.020028378145,
+          "owner_with_mortgage": 28383.465560922737,
+          "owner_without_mortgage": 24009.460182929015
+        },
+        "2020": {
+          "renter": 29272.924744394822,
+          "owner_with_mortgage": 29148.512145232922,
+          "owner_without_mortgage": 25063.032372666927
+        },
+        "2021": {
+          "renter": 30621.498793160543,
+          "owner_with_mortgage": 30294.35000470746,
+          "owner_without_mortgage": 25790.146781649022
+        },
+        "2022": {
+          "renter": 33459.36121088154,
+          "owner_with_mortgage": 33265.7198742967,
+          "owner_without_mortgage": 28582.17391376461
+        },
+        "2023": {
+          "renter": 36450.93362500298,
+          "owner_with_mortgage": 36067.79594250496,
+          "owner_without_mortgage": 30618.417127471414
+        },
+        "2024": {
+          "renter": 38502.20869928683,
+          "owner_with_mortgage": 38062.370366534655,
+          "owner_without_mortgage": 32959.38065659103
+        }
+      }
+    }
+  },
+  "annual_results": [
+    {
+      "target": 2020,
+      "rule": "cpi_u",
+      "errors": {
+        "owner_with_mortgage": -0.012734302518517815,
+        "owner_without_mortgage": -0.017099426247275007,
+        "renter": -0.023655114297687185
+      },
+      "mean_absolute_error": 0.017829614354493335
+    },
+    {
+      "target": 2020,
+      "rule": "fcsuti_cpi",
+      "errors": {
+        "owner_with_mortgage": -0.0038114938041295954,
+        "owner_without_mortgage": -0.008216069084931776,
+        "renter": -0.014831006788820433
+      },
+      "mean_absolute_error": 0.008952856559293934
+    },
+    {
+      "target": 2020,
+      "rule": "replication_ratio",
+      "errors": {
+        "owner_with_mortgage": 0.001520806370354899,
+        "owner_without_mortgage": 0.013528033632315584,
+        "renter": -0.004437740675414692
+      },
+      "mean_absolute_error": 0.006495526892695058
+    },
+    {
+      "target": 2020,
+      "rule": "blend",
+      "errors": {
+        "owner_with_mortgage": -0.0011453437168873482,
+        "owner_without_mortgage": 0.0026559822736917926,
+        "renter": -0.00963437373211773
+      },
+      "mean_absolute_error": 0.00447856657423229
+    },
+    {
+      "target": 2021,
+      "rule": "cpi_u",
+      "errors": {
+        "owner_with_mortgage": 0.007488020917878924,
+        "owner_without_mortgage": 0.014582160196448646,
+        "renter": 0.0054657338349393125
+      },
+      "mean_absolute_error": 0.009178638316422294
+    },
+    {
+      "target": 2021,
+      "rule": "fcsuti_cpi",
+      "errors": {
+        "owner_with_mortgage": -0.0038440166970248324,
+        "owner_without_mortgage": 0.003170329024221097,
+        "renter": -0.005843557471506
+      },
+      "mean_absolute_error": 0.00428596773091731
+    },
+    {
+      "target": 2021,
+      "rule": "replication_ratio",
+      "errors": {
+        "owner_with_mortgage": 0.00010743904644150426,
+        "owner_without_mortgage": -0.002830606757766585,
+        "renter": 0.004590626206329551
+      },
+      "mean_absolute_error": 0.00250955733684588
+    },
+    {
+      "target": 2021,
+      "rule": "blend",
+      "errors": {
+        "owner_with_mortgage": -0.001868288825291775,
+        "owner_without_mortgage": 0.0001698611332270339,
+        "renter": -0.00062646563258828
+      },
+      "mean_absolute_error": 0.0008882051970356963
+    },
+    {
+      "target": 2022,
+      "rule": "cpi_u",
+      "errors": {
+        "owner_with_mortgage": -0.015178599268897308,
+        "owner_without_mortgage": -0.011048025828989005,
+        "renter": -0.012454033512007912
+      },
+      "mean_absolute_error": 0.012893552869964742
+    },
+    {
+      "target": 2022,
+      "rule": "fcsuti_cpi",
+      "errors": {
+        "owner_with_mortgage": -0.01640004326819422,
+        "owner_without_mortgage": -0.012274592852763333,
+        "renter": -0.013678856707260767
+      },
+      "mean_absolute_error": 0.01411783094273944
+    },
+    {
+      "target": 2022,
+      "rule": "replication_ratio",
+      "errors": {
+        "owner_with_mortgage": 0.0012857322544284067,
+        "owner_without_mortgage": 0.01480338741320697,
+        "renter": -0.0008888998028757644
+      },
+      "mean_absolute_error": 0.005659339823503713
+    },
+    {
+      "target": 2022,
+      "rule": "blend",
+      "errors": {
+        "owner_with_mortgage": -0.007557155506882851,
+        "owner_without_mortgage": 0.001264397280221985,
+        "renter": -0.007283878255068266
+      },
+      "mean_absolute_error": 0.0053684770140577
+    },
+    {
+      "target": 2023,
+      "rule": "cpi_u",
+      "errors": {
+        "owner_with_mortgage": -0.04298615485176649,
+        "owner_without_mortgage": -0.031433427658090984,
+        "renter": -0.045267171067489675
+      },
+      "mean_absolute_error": 0.03989558452578238
+    },
+    {
+      "target": 2023,
+      "rule": "fcsuti_cpi",
+      "errors": {
+        "owner_with_mortgage": -0.028295256842237326,
+        "owner_without_mortgage": -0.016565186407610066,
+        "renter": -0.030611288409883697
+      },
+      "mean_absolute_error": 0.02515724388657703
+    },
+    {
+      "target": 2023,
+      "rule": "replication_ratio",
+      "errors": {
+        "owner_with_mortgage": -0.00339848688452582,
+        "owner_without_mortgage": -0.0034534319695426197,
+        "renter": -0.0010275508539518974
+      },
+      "mean_absolute_error": 0.0026264899026734456
+    },
+    {
+      "target": 2023,
+      "rule": "blend",
+      "errors": {
+        "owner_with_mortgage": -0.015846871863381407,
+        "owner_without_mortgage": -0.010009309188576454,
+        "renter": -0.015819419631917908
+      },
+      "mean_absolute_error": 0.013891866894625257
+    },
+    {
+      "target": 2024,
+      "rule": "cpi_u",
+      "errors": {
+        "owner_with_mortgage": -0.029937047418338136,
+        "owner_without_mortgage": -0.042237306097470784,
+        "renter": -0.022719150090353968
+      },
+      "mean_absolute_error": 0.031631167868720965
+    },
+    {
+      "target": 2024,
+      "rule": "fcsuti_cpi",
+      "errors": {
+        "owner_with_mortgage": -0.024221963540122737,
+        "owner_without_mortgage": -0.03659468866062188,
+        "renter": -0.016961542282589392
+      },
+      "mean_absolute_error": 0.025926064827778
+    },
+    {
+      "target": 2024,
+      "rule": "replication_ratio",
+      "errors": {
+        "owner_with_mortgage": -0.005620503372990582,
+        "owner_without_mortgage": 0.0014522317150509334,
+        "renter": 0.0027031773393781933
+      },
+      "mean_absolute_error": 0.0032586374758065695
+    },
+    {
+      "target": 2024,
+      "rule": "blend",
+      "errors": {
+        "owner_with_mortgage": -0.014921233456556715,
+        "owner_without_mortgage": -0.017571228472785583,
+        "renter": -0.007129182471605544
+      },
+      "mean_absolute_error": 0.013207214800315947
+    }
+  ],
+  "summary": {
+    "cpi_u": {
+      "mean_absolute_error": 0.02228571158707674,
+      "mean_absolute_error_percent": 2.228571158707674
+    },
+    "fcsuti_cpi": {
+      "mean_absolute_error": 0.015687992789461144,
+      "mean_absolute_error_percent": 1.5687992789461145
+    },
+    "replication_ratio": {
+      "mean_absolute_error": 0.004109910286304933,
+      "mean_absolute_error_percent": 0.4109910286304933
+    },
+    "blend": {
+      "mean_absolute_error": 0.007566866096053377,
+      "mean_absolute_error_percent": 0.7566866096053377
+    }
+  }
+}

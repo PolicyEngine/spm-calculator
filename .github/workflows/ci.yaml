@@ -28,7 +28,7 @@ jobs:
 
       - name: Run linting
         run: |
-          black --check .
+          ruff format --check .
           ruff check .
 
       - name: Run tests

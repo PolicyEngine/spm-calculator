@@ -1,0 +1,129 @@
+{
+  "all_comparisons_passed": true,
+  "artifact_sha256": "07cb8d0f6d7d49f031ba3c59585f04889c92e0a0cdaf51112f203250724abdf9",
+  "binary_sha256": "a7b48c9aef987018776d1ee921aad985a458b2c5798d32b8369a30ea69eb73ac",
+  "capabilities": {
+    "assurance": "development_unsigned",
+    "engine": {
+      "artifact_format_version": 2,
+      "dependency_lock_sha256": "e556fd5ef7f298f7be1ca68c20f765af6f667682329766a556300a0417797628",
+      "execution_host_sha256": "a7b48c9aef987018776d1ee921aad985a458b2c5798d32b8369a30ea69eb73ac",
+      "repository": "https://github.com/TheAxiomFoundation/axiom-rules-engine",
+      "revision": "d142c645917817cf590e036fb99f99b2d4780e1a",
+      "version": "0.2.2"
+    },
+    "format": "axiom/capabilities/v0",
+    "supported": [
+      "explicit_module_closure",
+      "expected_bundle_digest",
+      "offline_rebuild_verification",
+      "native_rule_pins",
+      "complete_native_traces",
+      "strict_request_fields",
+      "valid_intervals"
+    ],
+    "unsupported": [
+      "knowledge_time_selection",
+      "signed_admission",
+      "legal_validation",
+      "static_scalar_type_soundness",
+      "checked_arithmetic_guarantee",
+      "hostile_program_sandbox",
+      "durable_jobs",
+      "publication"
+    ]
+  },
+  "comparisons": [
+    {
+      "native_poverty_outcome": null,
+      "native_threshold_decimal": "43154.0939027",
+      "standalone_threshold": 43154.093902700006,
+      "unit_id": "synthetic:2024:owner_with_mortgage",
+      "year": 2024
+    },
+    {
+      "native_poverty_outcome": null,
+      "native_threshold_decimal": "13714.2126635590945198456632",
+      "standalone_threshold": 13714.212663559096,
+      "unit_id": "synthetic:2024:owner_without_mortgage",
+      "year": 2024
+    },
+    {
+      "native_poverty_outcome": null,
+      "native_threshold_decimal": "32563.4957776614205369483988",
+      "standalone_threshold": 32563.495777661425,
+      "unit_id": "synthetic:2024:renter",
+      "year": 2024
+    },
+    {
+      "native_poverty_outcome": null,
+      "native_threshold_decimal": "45454.9781334",
+      "standalone_threshold": 45454.9781334,
+      "unit_id": "synthetic:2025:owner_with_mortgage",
+      "year": 2025
+    },
+    {
+      "native_poverty_outcome": null,
+      "native_threshold_decimal": "14317.948647052977778568073",
+      "standalone_threshold": 14317.948647052977,
+      "unit_id": "synthetic:2025:owner_without_mortgage",
+      "year": 2025
+    },
+    {
+      "native_poverty_outcome": null,
+      "native_threshold_decimal": "34623.1398095945396816218822",
+      "standalone_threshold": 34623.13980959454,
+      "unit_id": "synthetic:2025:renter",
+      "year": 2025
+    },
+    {
+      "native_poverty_outcome": "holds",
+      "native_threshold_decimal": "41700.555713",
+      "standalone_threshold": 41700.555713,
+      "unit_id": "synthetic:boundary:below",
+      "year": 2025
+    },
+    {
+      "native_poverty_outcome": "not_holds",
+      "native_threshold_decimal": "41700.555713",
+      "standalone_threshold": 41700.555713,
+      "unit_id": "synthetic:boundary:equal",
+      "year": 2025
+    },
+    {
+      "native_poverty_outcome": "not_holds",
+      "native_threshold_decimal": "41700.555713",
+      "standalone_threshold": 41700.555713,
+      "unit_id": "synthetic:boundary:above",
+      "year": 2025
+    }
+  ],
+  "created_at": "2026-09-08T19:20:23.739821+00:00",
+  "date_policy": "inclusive January 1 through December 31; no assessment_date; release validates information cutoff",
+  "declared_core_source_checkout": {
+    "cargo": "cargo 1.94.1 (29ea6fb6a 2026-03-24)",
+    "cargo_lock_sha256": "e556fd5ef7f298f7be1ca68c20f765af6f667682329766a556300a0417797628",
+    "dirty": false,
+    "git_head": "8ac3a54f60fa3737166ff0c986d9660f34a25435",
+    "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)"
+  },
+  "expected_bundle_sha256": "ebce48e91bf7335924ce07566e9b6fcefc0ea668c5a75fac7d099518785f8942",
+  "fixture_kind": "synthetic SPM units; actual published threshold release",
+  "limits": [
+    "Not full Axiom SPM classification, equivalence, taxes, benefits or resource construction",
+    "Unsigned development evidence; not source authentication or legal validation",
+    "Bundle requires original executable bytes; distribute build-spec source for portability"
+  ],
+  "package_version": "0.5.0",
+  "release_id": "spm-2026-09-08",
+  "release_sha256": "762ad5347fe4b6b1eabbc3189f83ddae296329e7c3f6630f0db22204dfaffaf6",
+  "scope": "Partial Axiom bridge with declared external equivalence/geography and supplied resources",
+  "source_checkout_dirty": true,
+  "source_checkout_head": "9e6ae4798458771231613b994df2345dd1685214",
+  "source_file_sha256": {
+    "scripts/validate_axiom_integration.py": "8e1331e2722186ffe086b4a694f91212127f86b45aa850f67ddfea3c887b7e59",
+    "spm_calculator/axiom_adapter.py": "0f3ecefaf703f05714dbcd1bec273915f05f9c1d4d9378eabcb1e08fc6e36c6c",
+    "spm_calculator/equivalence_scale.py": "95c797adca4811b0a2c4202e8471f6cd46fcd259bf46b34da74588ab08b41326",
+    "spm_calculator/release.py": "ee6a78facc133b7e377fe2e5aceb2dbd5137c51ee5834e7d2790b1826fc2c48f"
+  }
+}

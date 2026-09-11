@@ -1,0 +1,193 @@
+{
+  "information_date": "2026-09-09",
+  "original_bundle_content_sha256": "c328e4a8c75ef00d345f9bb84a98be5659bd102f606e6fb14b4623a85106454d",
+  "original_bundle_file_sha256": "01c9900c537b32c8b4f1b7dcac9b8e0b0261076ed45a1b665b2f12b35ea72b56",
+  "schema_version": 1,
+  "sources": [
+    {
+      "acquired_at_utc": "2026-09-09T02:42:43.200836+00:00",
+      "cache_path": "methodology/topcodes/2018_pums_top_and_bottom_coded_values.csv",
+      "id": "methodology/topcodes/2018_pums_top_and_bottom_coded_values.csv",
+      "sha256": "bed59c470ca20105ad687d7d113ef583c399d4416910bffe6635313ab3e290d7",
+      "size_bytes": 14577,
+      "url": "https://www2.census.gov/programs-surveys/acs/tech_docs/pums/top_coded_values/2018_pums_top_and_bottom_coded_values.csv"
+    },
+    {
+      "acquired_at_utc": "2026-09-09T02:28:33.130760+00:00",
+      "cache_path": "methodology/topcodes/2019_pums_top_and_bottom_coded_values.csv",
+      "id": "methodology/topcodes/2019_pums_top_and_bottom_coded_values.csv",
+      "sha256": "558de914c890f3e364cf178d9bb1c649d158aa09ccbfcb3f73e301da3cfacb3d",
+      "size_bytes": 14619,
+      "url": "https://www2.census.gov/programs-surveys/acs/tech_docs/pums/top_coded_values/2019_pums_top_and_bottom_coded_values.csv"
+    },
+    {
+      "acquired_at_utc": "2026-09-09T02:28:32.987441+00:00",
+      "cache_path": "methodology/topcodes/2020_pums_top_and_bottom_coded_values.csv",
+      "id": "methodology/topcodes/2020_pums_top_and_bottom_coded_values.csv",
+      "sha256": "93f4914beee8b2856f5ca34db11414959b06cb74395430c305e6d74f2da6c5f9",
+      "size_bytes": 14628,
+      "url": "https://www2.census.gov/programs-surveys/acs/tech_docs/pums/top_coded_values/2020_pums_top_and_bottom_coded_values.csv"
+    },
+    {
+      "acquired_at_utc": "2026-09-09T02:28:32.901403+00:00",
+      "cache_path": "methodology/topcodes/2021_pums_top_and_bottom_coded_values.csv",
+      "id": "methodology/topcodes/2021_pums_top_and_bottom_coded_values.csv",
+      "sha256": "161a29cf7555360ea7d952c84e5a051d38b46249fcad69fdfcd867912fe8ff97",
+      "size_bytes": 14722,
+      "url": "https://www2.census.gov/programs-surveys/acs/tech_docs/pums/top_coded_values/2021_pums_top_and_bottom_coded_values.csv"
+    },
+    {
+      "acquired_at_utc": "2026-09-09T02:28:33.189386+00:00",
+      "cache_path": "methodology/topcodes/2022_pums_top_and_bottom_coded_values.csv",
+      "id": "methodology/topcodes/2022_pums_top_and_bottom_coded_values.csv",
+      "sha256": "e467f12399e061619cd2cb960df454fa2b50b22d1d52ab843756052dcf8aa966",
+      "size_bytes": 14862,
+      "url": "https://www2.census.gov/programs-surveys/acs/tech_docs/pums/top_coded_values/2022_pums_top_and_bottom_coded_values.csv"
+    },
+    {
+      "acquired_at_utc": "2026-09-09T02:28:33.255993+00:00",
+      "cache_path": "methodology/topcodes/2023_pums_top_and_bottom_coded_values.csv",
+      "id": "methodology/topcodes/2023_pums_top_and_bottom_coded_values.csv",
+      "sha256": "620cafc5b102bc7ce5cd1d4fa7f8223dc03d9db07de9e705dbeefdc04ab538fb",
+      "size_bytes": 14928,
+      "url": "https://www2.census.gov/programs-surveys/acs/tech_docs/pums/top_coded_values/2023_pums_top_and_bottom_coded_values.csv"
+    },
+    {
+      "acquired_at_utc": "2026-09-09T02:28:33.192283+00:00",
+      "cache_path": "methodology/topcodes/2024_pums_top_and_bottom_coded_values.csv",
+      "id": "methodology/topcodes/2024_pums_top_and_bottom_coded_values.csv",
+      "sha256": "d8defa2e318abe924dfd208beb52920426c60a3ba063ee8057cbc6f2a8fc35db",
+      "size_bytes": 14935,
+      "url": "https://www2.census.gov/programs-surveys/acs/tech_docs/pums/top_coded_values/2024_pums_top_and_bottom_coded_values.csv"
+    },
+    {
+      "cache_path": "2021/csv_hus.zip",
+      "id": "2021/csv_hus.zip",
+      "puma_vintage": 2010,
+      "retrieved_at_utc": "2026-09-09T14:13:04.937708+00:00",
+      "series": "ACS five-year housing PUMS",
+      "sha256": "7a0f6d2d86990343bce760a2b679d26f19272a7518399a03ca7e19bf74e92b19",
+      "size_bytes": 918696258,
+      "url": "https://www2.census.gov/programs-surveys/acs/data/pums/2021/5-Year/csv_hus.zip",
+      "window_end": 2021,
+      "window_start": 2017
+    },
+    {
+      "cache_path": "methodology/topcodes/2017_pums_top_and_bottom_coded_values.csv",
+      "id": "methodology/topcodes/2017_pums_top_and_bottom_coded_values.csv",
+      "retrieved_at_utc": "2026-09-09T13:58:19.017191+00:00",
+      "sha256": "4d446ce9f49b9d1b4de735bb0bc24fa08a091d88f6c6855cb34891fd6e75dcdc",
+      "size_bytes": 12681,
+      "url": "https://www2.census.gov/programs-surveys/acs/tech_docs/pums/top_coded_values/2017_pums_top_and_bottom_coded_values.csv",
+      "year": 2017
+    },
+    {
+      "cache_path": "methodology/PUMS_Data_Dictionary_2017-2021.txt",
+      "id": "methodology/PUMS_Data_Dictionary_2017-2021.txt",
+      "retrieved_at_utc": "2026-09-09T13:58:19.696660+00:00",
+      "sha256": "bcec6a986c2c2a6b8ab9d5ccd6bbf81ff8bcf8a9e3cb6a9ee1bf2ff11aa3ad47",
+      "size_bytes": 303536,
+      "url": "https://www2.census.gov/programs-surveys/acs/tech_docs/pums/data_dict/PUMS_Data_Dictionary_2017-2021.txt"
+    },
+    {
+      "cache_path": "methodology/2017_2021ACS_PUMS_User_Guide.pdf",
+      "id": "methodology/2017_2021ACS_PUMS_User_Guide.pdf",
+      "retrieved_at_utc": "2026-09-09T13:58:21.141242+00:00",
+      "sha256": "20051a34517f385e6ed5c0a12f8284a074a79a0df9e0883d71925dc1e841a5c1",
+      "size_bytes": 446006,
+      "url": "https://www2.census.gov/programs-surveys/acs/tech_docs/pums/2017_2021ACS_PUMS_User_Guide.pdf"
+    },
+    {
+      "cache_path": "methodology/2017_2021AccuracyPUMS.pdf",
+      "id": "methodology/2017_2021AccuracyPUMS.pdf",
+      "retrieved_at_utc": "2026-09-09T13:58:23.177741+00:00",
+      "sha256": "d1fe97ec7a07d26e27eeb39d1bfe19c1888b49a94e898735e0dcb0dfa08dd005",
+      "size_bytes": 380636,
+      "url": "https://www2.census.gov/programs-surveys/acs/tech_docs/pums/accuracy/2017_2021AccuracyPUMS.pdf"
+    },
+    {
+      "cache_path": "geography/2010_Census_Tract_to_2010_PUMA.txt",
+      "id": "geography/2010_Census_Tract_to_2010_PUMA.txt",
+      "puma_vintage": 2010,
+      "retrieved_at_utc": "2026-09-09T13:58:23.518294+00:00",
+      "sha256": "3874b04b00b38d4b31d41de6fa799a9587778e9ade1a6ab10b02bb03a7f5a5ec",
+      "size_bytes": 1481853,
+      "tract_vintage": 2010,
+      "url": "https://www2.census.gov/geo/docs/maps-data/data/rel/2010_Census_Tract_to_2010_PUMA.txt"
+    },
+    {
+      "cache_path": "geography/Gaz_tracts_national.zip",
+      "geography_vintage": 2010,
+      "id": "geography/Gaz_tracts_national.zip",
+      "population_year": 2010,
+      "retrieved_at_utc": "2026-09-09T13:58:29.872598+00:00",
+      "sha256": "d1f4f1037e7d96d073a5b7c155289b7a974483b638f045d568848bde5219ad3b",
+      "size_bytes": 2475122,
+      "url": "https://www2.census.gov/geo/docs/maps-data/data/gazetteer/Gaz_tracts_national.zip"
+    },
+    {
+      "cache_path": "geography/2010_Gaz_PUMAs_national.zip",
+      "geography_vintage": 2010,
+      "id": "geography/2010_Gaz_PUMAs_national.zip",
+      "population_year": 2010,
+      "retrieved_at_utc": "2026-09-09T13:58:31.019200+00:00",
+      "sha256": "4b2f9527b282b7ff2598ac2e37ea5cb9cd53b2b4fa80a34d6116e4440e45306e",
+      "size_bytes": 144698,
+      "url": "https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2010_Gaz_PUMAs_national.zip"
+    },
+    {
+      "cache_path": "geography/national_gcn_2011_2013.txt",
+      "id": "geography/national_gcn_2011_2013.txt",
+      "purpose": "2010-to-2020 county boundary audit",
+      "retrieved_at_utc": "2026-09-09T13:59:22.381754+00:00",
+      "sha256": "b8f2d88bff775a58bbf294b82ac6deda112fa605b55911dfa14c1579f30ee6fd",
+      "size_bytes": 338930,
+      "url": "https://www2.census.gov/geo/docs/reference/bndrychange/national_gcn_2011_2013.txt"
+    },
+    {
+      "cache_path": "geography/national_gcn_2014_2020.txt",
+      "id": "geography/national_gcn_2014_2020.txt",
+      "purpose": "2010-to-2020 county boundary audit",
+      "retrieved_at_utc": "2026-09-09T13:59:23.553316+00:00",
+      "sha256": "34d62f49a80b00a417a7e0ef169befd4445696d84e0ad67c05de2921e3e3efe7",
+      "size_bytes": 807712,
+      "url": "https://www2.census.gov/geo/docs/reference/bndrychange/national_gcn_2014_2020.txt"
+    },
+    {
+      "cache_path": "geography/tab20_tract20_tract10_st06.txt",
+      "id": "geography/tab20_tract20_tract10_st06.txt",
+      "purpose": "California 2010-to-2020 county geometry check, not population allocation",
+      "retrieved_at_utc": "2026-09-09T14:04:45.702962+00:00",
+      "sha256": "f25c2659c4ed6c501b3e518a18c189a0a4141e883174a461db6b437b0af69730",
+      "size_bytes": 1857165,
+      "url": "https://www2.census.gov/geo/docs/maps-data/data/rel2020/tract/tab20_tract20_tract10_st06.txt"
+    },
+    {
+      "cache_path": "geography/TAB2010_TAB2020_ST06.zip",
+      "id": "geography/TAB2010_TAB2020_ST06.zip",
+      "purpose": "Identify whole-block 2010-to-2020 county transfers; no population imputation",
+      "retrieved_at_utc": "2026-09-09T14:07:05.311165+00:00",
+      "sha256": "264ab3441367e259c5f8a101bf7ad602396bb931116d7b76f3399669a6c112c7",
+      "size_bytes": 10087200,
+      "url": "https://www2.census.gov/geo/docs/maps-data/data/rel2020/t10t20/TAB2010_TAB2020_ST06.zip"
+    },
+    {
+      "cache_path": "geography/2010-sf1-06061-021304-block-populations.json",
+      "id": "geography/2010-sf1-06061-021304-block-populations.json",
+      "population": 5307,
+      "record_count": 215,
+      "sha256": "108bca25b210bc9ee67abc35a18b61366ebcc9ad8d33b38febb190d3a1246073",
+      "size_bytes": 7466,
+      "url": "https://api.census.gov/data/2010/dec/sf1?get=P001001&for=block%3A%2A&in=state%3A06+county%3A061+tract%3A021304"
+    },
+    {
+      "cache_path": "geography/2010-sf1-06061-021322-block-populations.json",
+      "id": "geography/2010-sf1-06061-021322-block-populations.json",
+      "population": 8762,
+      "record_count": 321,
+      "sha256": "044f73366a8f58faf71888cdf9f7b1b9ac55a2668a53995bb76ec4780191a2f2",
+      "size_bytes": 11109,
+      "url": "https://api.census.gov/data/2010/dec/sf1?get=P001001&for=block%3A%2A&in=state%3A06+county%3A061+tract%3A021322"
+    }
+  ]
+}

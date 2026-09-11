@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
+import spm_calculator.ce_threshold as ce_threshold
 from spm_calculator.ce_threshold import (
     _sum_pair,
     _weighted_percentile,
@@ -25,10 +26,10 @@ class TestSumPair:
         result = _sum_pair(df, "FOODPQ", "FOODCQ")
         assert list(result) == [150, 275]
 
-    def test_returns_zero_when_either_column_missing(self):
+    def test_raises_when_either_column_missing(self):
         df = pd.DataFrame({"FOODPQ": [100, 200]})
-        result = _sum_pair(df, "FOODPQ", "FOODCQ")
-        assert list(result) == [0, 0]
+        with pytest.raises(ValueError, match="FOODCQ"):
+            _sum_pair(df, "FOODPQ", "FOODCQ")
 
     def test_treats_nan_as_zero(self):
         df = pd.DataFrame({"FOODPQ": [100, np.nan], "FOODCQ": [np.nan, 50]})
@@ -36,75 +37,146 @@ class TestSumPair:
         assert list(result) == [100, 50]
 
 
-class TestCalculateFCSUti:
-    def test_annualizes_by_factor_two_not_four(self):
-        """PQ+CQ covers 2 of 4 quarters, so annual = sum * 2."""
-        df = pd.DataFrame(
-            {
-                "FOODPQ": [1000],
-                "FOODCQ": [1000],
-                "APPARPQ": [0],
-                "APPARCQ": [0],
-                "SHELTPQ": [0],
-                "SHELTCQ": [0],
-                "UTILPQ": [0],
-                "UTILCQ": [0],
-                "TELEPHPQ": [0],
-                "TELEPHCQ": [0],
-            }
-        )
-        # (1000 + 1000) * 2 = 4000 (the old buggy code returned 8000).
-        assert calculate_fcsuti(df).iloc[0] == 4000
+class TestLoadCeQuarters:
+    def test_failed_quarter_raises_by_default(self, monkeypatch):
+        """A threshold window must never silently lose a quarter."""
 
-    def test_subtracts_mortgage_principal_from_shelter(self):
-        df = pd.DataFrame(
-            {
-                "FOODPQ": [0],
-                "FOODCQ": [0],
-                "APPARPQ": [0],
-                "APPARCQ": [0],
-                "SHELTPQ": [2000],
-                "SHELTCQ": [2000],
-                "UTILPQ": [0],
-                "UTILCQ": [0],
-                "TELEPHPQ": [0],
-                "TELEPHCQ": [0],
-                "MRTPRINPQ": [500],
-                "MRTPRINCQ": [500],
-            }
-        )
-        # shelter = (2000+2000) - (500+500) = 3000; annualized = 6000.
+        def load(year, quarter, cache_dir=None):
+            if quarter == 2:
+                raise OSError("corrupt bundle")
+            return pd.DataFrame({"value": [quarter]})
+
+        monkeypatch.setattr(ce_threshold, "load_ce_quarter", load)
+        with pytest.raises(RuntimeError, match="2024Q2"):
+            ce_threshold.load_ce_quarters([(2024, 1), (2024, 2)])
+
+    def test_diagnostic_partial_load_requires_explicit_opt_in(
+        self, monkeypatch
+    ):
+        def load(year, quarter, cache_dir=None):
+            if quarter == 2:
+                raise OSError("corrupt bundle")
+            return pd.DataFrame({"value": [quarter]})
+
+        monkeypatch.setattr(ce_threshold, "load_ce_quarter", load)
+        with pytest.warns(RuntimeWarning, match="Diagnostic partial load"):
+            result = ce_threshold.load_ce_quarters(
+                [(2024, 1), (2024, 2)], allow_partial=True
+            )
+        assert result["value"].tolist() == [1]
+
+    def test_diagnostic_partial_load_still_rejects_empty_result(
+        self, monkeypatch
+    ):
+        def fail(*args, **kwargs):
+            raise OSError("no data")
+
+        monkeypatch.setattr(ce_threshold, "load_ce_quarter", fail)
+        with pytest.warns(RuntimeWarning, match="Diagnostic partial load"):
+            with pytest.raises(ValueError, match="No CE data"):
+                ce_threshold.load_ce_quarters([(2024, 1)], allow_partial=True)
+
+
+def _fcsuti_frame(**overrides):
+    base = {
+        "FOODPQ": [0.0],
+        "FOODCQ": [0.0],
+        "APPARPQ": [0.0],
+        "APPARCQ": [0.0],
+        "SHELTPQ": [0.0],
+        "SHELTCQ": [0.0],
+        "UTILPQ": [0.0],
+        "UTILCQ": [0.0],
+        "TELEPHPQ": [0.0],
+        "TELEPHCQ": [0.0],
+    }
+    base.update({k: [float(x) for x in v] for k, v in overrides.items()})
+    return pd.DataFrame(base)
+
+
+class TestCalculateFCSUti:
+    def test_annualizes_recall_window_by_four(self):
+        """PQ+CQ is one 3-month recall window split across calendar
+        quarters, so annual = (PQ+CQ) * 4. The pre-0.4 code multiplied
+        by 2, understating annual FCSUti by half."""
+        df = _fcsuti_frame(FOODPQ=[1000], FOODCQ=[500])
         assert calculate_fcsuti(df).iloc[0] == 6000
 
-    def test_includes_internet_services_when_present(self):
-        df_without_internet = pd.DataFrame(
-            {
-                "FOODPQ": [0],
-                "FOODCQ": [0],
-                "APPARPQ": [0],
-                "APPARCQ": [0],
-                "SHELTPQ": [0],
-                "SHELTCQ": [0],
-                "UTILPQ": [0],
-                "UTILCQ": [0],
-                "TELEPHPQ": [0],
-                "TELEPHCQ": [0],
-            }
+    def test_legacy_pqcq2_mode_reproduces_old_behavior(self):
+        df = _fcsuti_frame(FOODPQ=[1000], FOODCQ=[500])
+        assert calculate_fcsuti(df, annualization="pqcq2").iloc[0] == 3000
+
+    def test_telephone_not_double_counted(self):
+        """UTIL already contains TELEPH (UTIL = NTLGAS + ELCTRC +
+        ALLFUL + TELEPH + WATRPS), so FCSUti must not add the TELEPH
+        summary on top of UTIL."""
+        df = _fcsuti_frame(
+            UTILPQ=[800], UTILCQ=[400], TELEPHPQ=[300], TELEPHCQ=[150]
         )
-        df_with_internet = df_without_internet.assign(
-            INFOTECHPQ=[200], INFOTECHCQ=[200]
+        # utilities-only total: (800+400)*4; telephone columns add
+        # nothing because they are already inside UTIL.
+        assert calculate_fcsuti(df).iloc[0] == 4800
+
+    def test_includes_mortgage_principal_by_default(self):
+        """SPM shelter is the outlays concept: CE's SHELT excludes
+        owner mortgage principal, so the EMRTPNO*/MRTPRNO* outlay
+        columns are added back."""
+        df = _fcsuti_frame(
+            SHELTPQ=[2000],
+            SHELTCQ=[1000],
+            EMRTPNOP=[500],
+            EMRTPNOC=[250],
+            MRTPRNOP=[100],
+            MRTPRNOC=[50],
         )
-        assert calculate_fcsuti(df_without_internet).iloc[0] == 0
-        assert calculate_fcsuti(df_with_internet).iloc[0] == 800
+        # (3000 shelter + 750 home principal + 150 vacation) * 4
+        assert calculate_fcsuti(df).iloc[0] == pytest.approx(15600)
+        assert calculate_fcsuti(df, mortgage_principal="exclude").iloc[
+            0
+        ] == pytest.approx(12000)
+
+    def test_food_redesign_fallback_uses_fdhome_fdaway(self):
+        """Vintages after the 2023 CE food redesign drop the FOOD
+        summary; food is rebuilt from FDHOME + FDAWAY."""
+        df = _fcsuti_frame().drop(columns=["FOODPQ", "FOODCQ"])
+        df["FDHOMEPQ"] = [600.0]
+        df["FDHOMECQ"] = [300.0]
+        df["FDAWAYPQ"] = [200.0]
+        df["FDAWAYCQ"] = [100.0]
+        assert calculate_fcsuti(df).iloc[0] == 4800
+
+    def test_rejects_unknown_modes(self):
+        df = _fcsuti_frame()
+        with pytest.raises(ValueError, match="mortgage_principal"):
+            calculate_fcsuti(df, mortgage_principal="subtract")
+        with pytest.raises(ValueError, match="annualization"):
+            calculate_fcsuti(df, annualization="cq4")
 
 
 class TestGetTenureType:
-    def test_modern_cutenure_codes_split_owners(self):
-        """Post-2013 FMLI: 1=owner w/mortgage, 2=owner w/o, 3=renter."""
+    def test_six_code_schema(self):
+        """The CE dictionary has one six-code tenure schema."""
         df = pd.DataFrame(
             {
-                "CUTENURE": [1, 2, 3, 4],
-                "ce_year": [2020, 2020, 2020, 2020],
+                "CUTENURE": [1, 2, 3, 4, 5, 6],
+                "ce_year": [1999, 2005, 2010, 2013, 2020, 2024],
+            }
+        )
+        tenure = get_tenure_type(df)
+        assert tenure.iloc[:4].tolist() == [
+            "owner_with_mortgage",
+            "owner_without_mortgage",
+            "owner_with_mortgage",  # Owner, mortgage status unreported.
+            "renter",
+        ]
+        assert tenure.iloc[4:].isna().all()
+
+    def test_schema_does_not_depend_on_year_or_observed_codes(self):
+        """There is no 2013 schema break or observed-code heuristic."""
+        df = pd.DataFrame(
+            {
+                "CUTENURE": [1, 2, 4, 1, 2, 4],
+                "ce_year": [1999, 1999, 1999, 2024, 2024, 2024],
             }
         )
         tenure = get_tenure_type(df)
@@ -112,65 +184,19 @@ class TestGetTenureType:
             "owner_with_mortgage",
             "owner_without_mortgage",
             "renter",
-            "renter",  # Occupied without payment defaults to renter.
-        ]
-
-    def test_legacy_cutenure_uses_mortgage_expenditure(self):
-        """Pre-2013 vintages only split owners (1) vs renters (2)."""
-        df = pd.DataFrame(
-            {
-                # No row uses the modern code 2 for owner-without; the
-                # branch falls back to mortgage-expenditure detection.
-                "CUTENURE": [1, 1, 2],
-                "ce_year": [2010, 2010, 2010],
-                "MRTPRINPQ": [500, 0, 0],
-                "MRTPRINCQ": [500, 0, 0],
-                "MRTINTPQ": [0, 0, 0],
-                "MRTINTCQ": [0, 0, 0],
-            }
-        )
-        tenure = get_tenure_type(df)
-        assert tenure.tolist() == [
             "owner_with_mortgage",
             "owner_without_mortgage",
             "renter",
         ]
 
-    def test_owners_only_modern_subset_labels_by_schema_not_observed_codes(
-        self,
-    ):
-        """Regression: filtering a modern CE vintage down to owners-only
-        (CUTENURE ∈ {1, 2}) used to trip the observed-code heuristic
-        (`(cutenure >= 3).any() == False`) and misclassify rows as
-        legacy-schema, relabelling `CUTENURE == 2` as renter. With
-        schema derived from `ce_year`, owners-only subsets on the modern
-        schema classify correctly."""
-        df = pd.DataFrame(
-            {
-                "CUTENURE": [1, 2, 1, 2],
-                "ce_year": [2020, 2020, 2020, 2020],
-            }
-        )
-        tenure = get_tenure_type(df)
-        assert tenure.tolist() == [
-            "owner_with_mortgage",
-            "owner_without_mortgage",
-            "owner_with_mortgage",
-            "owner_without_mortgage",
-        ]
+    @pytest.mark.parametrize("value", [0, 7, np.nan, "unknown"])
+    def test_undocumented_code_raises(self, value):
+        with pytest.raises(ValueError, match="CUTENURE"):
+            get_tenure_type(pd.DataFrame({"CUTENURE": [value]}))
 
-    def test_mixed_vintage_raises_on_schema_ambiguity(self):
-        """Mixing pre-2013 and post-2013 rows in a single frame would
-        apply the wrong CUTENURE interpretation to at least one side;
-        we refuse rather than silently coerce."""
-        df = pd.DataFrame(
-            {
-                "CUTENURE": [1, 2],
-                "ce_year": [2010, 2020],
-            }
-        )
-        with pytest.raises(ValueError, match="mixes pre-2013 and post-2013"):
-            get_tenure_type(df)
+    def test_missing_cutenure_raises(self):
+        with pytest.raises(ValueError, match="CUTENURE"):
+            get_tenure_type(pd.DataFrame(index=[0]))
 
 
 class TestWeightedPercentile:
@@ -243,3 +269,43 @@ class TestWeightedPercentile:
         p50 = _weighted_percentile(values, weights, 50.0)
         p53 = _weighted_percentile(values, weights, 53.0)
         assert p47 <= p50 <= p53
+
+
+class TestFoodRedesign:
+    """The April 2023 CE food redesign (GROCER-based vintages)."""
+
+    def test_grocer_rows_use_eighty_percent_allocation(self):
+        """Redesign rows: food = 0.8 x GROCER + FDAWAY (BLS errata)."""
+        df = _fcsuti_frame(GROCERPQ=[1000], GROCERCQ=[500])
+        df = df.drop(columns=["FOODPQ", "FOODCQ"])
+        df["FDAWAYPQ"] = [200.0]
+        df["FDAWAYCQ"] = [100.0]
+        # (0.8 * 1500 + 300) * 4 = 6000
+        assert calculate_fcsuti(df).iloc[0] == pytest.approx(6000)
+
+    def test_mixed_vintage_window_is_rowwise(self):
+        """Pooled windows mix legacy-FOOD and GROCER schemas; food must
+        resolve per row. A frame-wide column check zeroes food for one
+        vintage — the artifact that made replicated 2025 thresholds
+        fall 4-5% nominal before this construction existed."""
+        import numpy as np
+
+        df = pd.DataFrame(
+            {
+                "FOODPQ": [1000.0, np.nan],
+                "FOODCQ": [500.0, np.nan],
+                "GROCERPQ": [np.nan, 1000.0],
+                "GROCERCQ": [np.nan, 500.0],
+                "FDAWAYPQ": [np.nan, 200.0],
+                "FDAWAYCQ": [np.nan, 100.0],
+                "APPARPQ": [0.0, 0.0],
+                "APPARCQ": [0.0, 0.0],
+                "SHELTPQ": [0.0, 0.0],
+                "SHELTCQ": [0.0, 0.0],
+                "UTILPQ": [0.0, 0.0],
+                "UTILCQ": [0.0, 0.0],
+            }
+        )
+        result = calculate_fcsuti(df)
+        assert result.iloc[0] == pytest.approx(6000)  # legacy: 1500*4
+        assert result.iloc[1] == pytest.approx(6000)  # 0.8*1500+300, *4

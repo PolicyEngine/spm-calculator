@@ -1,0 +1,22 @@
+{
+  "description": "Frozen CE-replication levels underlying the committed 2025 nowcast.",
+  "provenance": {
+    "source": "Historical output committed before the 2025 BLS publication",
+    "commit": "b32d525",
+    "calculation": "scripts/compute_nowcast_2025.py using BLS CE windows, mortgage principal included, quarter-times-four annualization, and the 82 percent anchor",
+    "reason_frozen": "The 2025 nowcast is an immutable forecasting commitment. Later corrections to the general CE replication code must not rewrite the estimate being evaluated.",
+    "known_legacy_behavior": "These levels predate the CUTENURE six-code correction and strict family-composition validation. They are retained only to reproduce the historical nowcast, not as current CE-method estimates."
+  },
+  "thresholds": {
+    "2024": {
+      "owner_with_mortgage": 38062.370366534655,
+      "owner_without_mortgage": 32959.38065659103,
+      "renter": 38502.20869928683
+    },
+    "2025": {
+      "owner_with_mortgage": 40341.961587208105,
+      "owner_without_mortgage": 34420.841534273895,
+      "renter": 40280.4784303999
+    }
+  }
+}

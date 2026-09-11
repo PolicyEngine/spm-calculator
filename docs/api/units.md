@@ -1,14 +1,24 @@
-# SPM Unit IDs
+# SPM unit IDs
 
 Helpers for reconstructing SPM resource-unit membership from person records.
 
 ## spm_unit_id
 
 ```python
+import pandas as pd
 from spm_calculator import spm_unit_id
 
-ids = spm_unit_id(persons)
+# Synthetic source data: one household contains two native SPM units.
+persons = pd.DataFrame({
+    "person_id": [1, 2, 3],
+    "household_id": [1, 1, 1],
+    "age": [40, 8, 30],
+    "SPM_ID": [10, 10, 20],
+})
 ids, diagnostics = spm_unit_id(persons, diagnostics=True)
+assert ids.tolist() == [10, 10, 20]
+assert diagnostics["method"] == "native_spm_id"
+print(diagnostics)
 ```
 
 `spm_unit_id` returns a person-level `pandas.Series` aligned to `persons`.
@@ -17,7 +27,10 @@ If native IDs are present, it preserves `person_spm_unit_id`, `spm_unit_id`, or
 
 ### Inputs
 
-Only a household ID is required. More inputs improve fidelity.
+Reconstruction requires a household ID; native-ID preservation does not.
+More source inputs improve reconstruction fidelity. The Frame and country
+adapters consume native membership and do not invoke this reconstruction helper
+or infer primitive independence roles from its output.
 
 | Input class | Columns recognized by default |
 |-------------|-------------------------------|
@@ -35,23 +48,22 @@ are matched to `person_id`.
 
 ### Diagnostics
 
-With `diagnostics=True`, the function returns:
+With `diagnostics=True`, the function returns `(ids, diagnostics)`. The
+`diagnostics` dictionary has these fields:
 
-```python
-{
-    "method": "native_spm_id" | "census_relationship_rules" | "fallback_household_rules",
-    "native_id_column": "SPM_ID" | None,
-    "used_columns": [...],
-    "missing_recommended_columns": [...],
-    "fallback_rules_used": [...],
-    "confidence": "native" | "rule_based" | "approximate",
-}
-```
+| Field | Type / allowed interpretation |
+| --- | --- |
+| `method` | `native_spm_id`, `census_relationship_rules` or `fallback_household_rules`. |
+| `native_id_column` | Source column name, or `None` for reconstructed IDs. |
+| `used_columns` | List of source column names. |
+| `missing_recommended_columns` | List of missing source-field names. |
+| `fallback_rules_used` | List of reconstruction rules used. |
+| `confidence` | `native`, `rule_based` or `approximate`. |
 
 Diagnostics describe assignment provenance only. They intentionally do not
 report unit counts, sizes, child-only units, or other unit profile summaries.
 
-### Unsupported Cases
+### Unsupported cases
 
 When the input lacks a direct partner pointer, multiple unrelated cohabiting
 SPM units in the same household can be ambiguous. `SPM_WCOHABIT` identifies
@@ -62,9 +74,15 @@ units inside the same household. Exact reconstruction of those cases requires
 ## spm_unit_id_match
 
 ```python
+import pandas as pd
 from spm_calculator import spm_unit_id_match
 
-report = spm_unit_id_match(persons, reference_spm_unit_id="SPM_ID")
+persons = pd.DataFrame({"household_id": [1, 1, 1], "SPM_ID": [10, 10, 20]})
+# The labels differ but the within-household partition is the same.
+report = spm_unit_id_match(
+    persons, reference_spm_unit_id="SPM_ID", predicted_spm_unit_id=[1, 1, 2]
+)
+assert report["match"] is True
 ```
 
 `spm_unit_id_match` compares assignments within household up to arbitrary
@@ -72,6 +90,20 @@ relabeling of unit IDs. If `predicted_spm_unit_id` is omitted, it infers IDs
 with `spm_unit_id` while disabling native-ID preservation.
 
 The optional ASEC parity test runs when `SPM_CALCULATOR_ASEC_H5` points to a
-Census CPS ASEC HDFStore. With the full raw 2025 CPS ASEC person columns for
-the 2024 data year, including `PECOHAB`, the default reconstruction matched
+Census CPS ASEC HDFStore. The previously recorded source-parity run used the full raw 2025 CPS ASEC person columns for
+the 2024 data year, including `PECOHAB`; the default reconstruction matched
 all 55,762 household partitions.
+
+
+## Threshold comparison
+
+```python
+from spm_calculator import get_published_thresholds, spm_threshold_match
+
+published = get_published_thresholds(2025)["renter"]
+report = spm_threshold_match([published], [41_701], rtol=0, atol=0.5)
+assert report["match"] is True
+```
+
+This example compares a full-precision value with its rounded source display.
+A tolerance check does not establish source identity or forecast accuracy.

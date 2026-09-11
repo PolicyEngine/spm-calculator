@@ -7,19 +7,19 @@ import "./globals.css";
 const GA_ID = "G-2YHG89FY0N";
 const TOOL_NAME = "spm-calculator";
 const SITE_URL = "https://policyengine.org/us/spm-calculator";
+const DESCRIPTION =
+  "Calculate Supplemental Poverty Measure (SPM) thresholds by family composition and housing tenure for SPM estimation areas: MSAs, residual metro groups and state nonmetro groups, using published and modeled inputs through 2035.";
 
 export const metadata = {
   title: "SPM Threshold Calculator | PolicyEngine",
-  description:
-    "Calculate Supplemental Poverty Measure (SPM) thresholds for any household size, housing tenure, and geography — including metros, states, counties, and congressional districts.",
+  description: DESCRIPTION,
   icons: { icon: "/favicon.svg" },
   alternates: {
     canonical: SITE_URL,
   },
   openGraph: {
     title: "SPM Threshold Calculator | PolicyEngine",
-    description:
-      "Calculate Supplemental Poverty Measure (SPM) thresholds for any household size, housing tenure, and geography — including metros, states, counties, and congressional districts.",
+    description: DESCRIPTION,
     url: SITE_URL,
     siteName: "PolicyEngine",
     type: "website",
@@ -28,8 +28,7 @@ export const metadata = {
   twitter: {
     card: "summary",
     title: "SPM Threshold Calculator | PolicyEngine",
-    description:
-      "Calculate Supplemental Poverty Measure (SPM) thresholds for any household size, housing tenure, and geography.",
+    description: DESCRIPTION,
     site: "@ThePolicyEngine",
   },
   robots: {
@@ -60,8 +59,7 @@ export default function RootLayout({ children }) {
               "@type": "WebApplication",
               name: "SPM Threshold Calculator",
               url: SITE_URL,
-              description:
-                "Calculate Supplemental Poverty Measure (SPM) thresholds for any household size, housing tenure, and geography — including metros, states, counties, and congressional districts.",
+              description: DESCRIPTION,
               applicationCategory: "FinanceApplication",
               operatingSystem: "All",
               offers: {
@@ -135,7 +133,7 @@ export default function RootLayout({ children }) {
         </Script>
       </head>
       <body>
-        <PolicyEngineShell country="us">{children}        </PolicyEngineShell>
+        <PolicyEngineShell country="us">{children}</PolicyEngineShell>
       </body>
     </html>
   );

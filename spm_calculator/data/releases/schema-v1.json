@@ -1,0 +1,472 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/PolicyEngine/spm-calculator/schema/spm-release-v1",
+  "title": "SPM release v1",
+  "description": "Structural schema. Reader also verifies content digest, date ordering, source references and provenance consistency.",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "release_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "content_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "created_on": {
+      "type": "string",
+      "format": "date",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "information_date": {
+      "type": "string",
+      "format": "date",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "units": {
+      "const": "USD/year"
+    },
+    "reference_family": {
+      "const": {
+        "adults": 2,
+        "children": 2
+      }
+    },
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "url": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "publication_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "available_on": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          }
+        },
+        "required": [
+          "id",
+          "url",
+          "sha256",
+          "publication_date",
+          "available_on"
+        ],
+        "additionalProperties": true
+      }
+    },
+    "years": {
+      "type": "object",
+      "minProperties": 1,
+      "patternProperties": {
+        "^[0-9]{4}$": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "enum": [
+                "published",
+                "nowcast",
+                "forecast"
+              ]
+            },
+            "methodology_id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "available_on": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "source_ids": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "thresholds": {
+              "type": "object",
+              "properties": {
+                "owner_with_mortgage": {
+                  "type": "number",
+                  "exclusiveMinimum": 0
+                },
+                "owner_without_mortgage": {
+                  "type": "number",
+                  "exclusiveMinimum": 0
+                },
+                "renter": {
+                  "type": "number",
+                  "exclusiveMinimum": 0
+                }
+              },
+              "required": [
+                "owner_with_mortgage",
+                "owner_without_mortgage",
+                "renter"
+              ],
+              "additionalProperties": false
+            },
+            "housing_shares": {
+              "type": "object",
+              "properties": {
+                "owner_with_mortgage": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "exclusiveMaximum": 1
+                },
+                "owner_without_mortgage": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "exclusiveMaximum": 1
+                },
+                "renter": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "exclusiveMaximum": 1
+                }
+              },
+              "required": [
+                "owner_with_mortgage",
+                "owner_without_mortgage",
+                "renter"
+              ],
+              "additionalProperties": false
+            },
+            "housing_share_provenance": {
+              "type": "object",
+              "properties": {
+                "source_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "reference_year": {
+                  "type": "integer",
+                  "minimum": 1900,
+                  "maximum": 9999
+                },
+                "status": {
+                  "enum": [
+                    "published",
+                    "carried",
+                    "assumed"
+                  ]
+                },
+                "note": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "source_id",
+                "reference_year",
+                "status",
+                "note"
+              ],
+              "additionalProperties": true
+            },
+            "uncertainty": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "const": "unavailable"
+                    }
+                  },
+                  "required": [
+                    "kind"
+                  ],
+                  "additionalProperties": true
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "const": "published_standard_error"
+                    },
+                    "standard_errors": {
+                      "type": "object",
+                      "properties": {
+                        "owner_with_mortgage": {
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        "owner_without_mortgage": {
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        "renter": {
+                          "type": "number",
+                          "minimum": 0
+                        }
+                      },
+                      "required": [
+                        "owner_with_mortgage",
+                        "owner_without_mortgage",
+                        "renter"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "standard_errors"
+                  ],
+                  "additionalProperties": true
+                }
+              ]
+            }
+          },
+          "required": [
+            "status",
+            "methodology_id",
+            "available_on",
+            "source_ids",
+            "thresholds",
+            "housing_shares",
+            "housing_share_provenance",
+            "uncertainty"
+          ],
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "geographies": {
+      "type": "object",
+      "properties": {
+        "metro": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "year": {
+              "type": "integer",
+              "minimum": 1900,
+              "maximum": 9999
+            },
+            "source_id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "areas": {
+              "type": "object",
+              "minProperties": 1,
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "rent_index": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  }
+                },
+                "required": [
+                  "name",
+                  "rent_index"
+                ],
+                "additionalProperties": true
+              }
+            }
+          },
+          "required": [
+            "id",
+            "year",
+            "source_id",
+            "areas"
+          ],
+          "additionalProperties": true
+        },
+        "congressional_district": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "year": {
+              "type": "integer",
+              "minimum": 1900,
+              "maximum": 9999
+            },
+            "source_id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "areas": {
+              "type": "object",
+              "minProperties": 1,
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "rent_index": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  }
+                },
+                "required": [
+                  "name",
+                  "rent_index"
+                ],
+                "additionalProperties": true
+              }
+            }
+          },
+          "required": [
+            "id",
+            "year",
+            "source_id",
+            "areas"
+          ],
+          "additionalProperties": true
+        },
+        "state": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "year": {
+              "type": "integer",
+              "minimum": 1900,
+              "maximum": 9999
+            },
+            "source_id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "areas": {
+              "type": "object",
+              "minProperties": 1,
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "rent_index": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  }
+                },
+                "required": [
+                  "name",
+                  "rent_index"
+                ],
+                "additionalProperties": true
+              }
+            }
+          },
+          "required": [
+            "id",
+            "year",
+            "source_id",
+            "areas"
+          ],
+          "additionalProperties": true
+        },
+        "county": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "year": {
+              "type": "integer",
+              "minimum": 1900,
+              "maximum": 9999
+            },
+            "source_id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "areas": {
+              "type": "object",
+              "minProperties": 1,
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "rent_index": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  }
+                },
+                "required": [
+                  "name",
+                  "rent_index"
+                ],
+                "additionalProperties": true
+              }
+            }
+          },
+          "required": [
+            "id",
+            "year",
+            "source_id",
+            "areas"
+          ],
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "schema_version",
+    "release_id",
+    "content_sha256",
+    "created_on",
+    "information_date",
+    "units",
+    "reference_family",
+    "sources",
+    "years",
+    "geographies"
+  ],
+  "additionalProperties": true
+}

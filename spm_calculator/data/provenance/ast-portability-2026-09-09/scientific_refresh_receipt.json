@@ -1,0 +1,153 @@
+{
+  "amount_comparison": {
+    "area_count": 349,
+    "calculations": 452304,
+    "composition_grid": {
+      "adults": [
+        1,
+        8
+      ],
+      "children": [
+        0,
+        8
+      ]
+    },
+    "exact_field_comparisons": 2261520,
+    "fields": [
+      "threshold",
+      "housing_portion",
+      "reference_threshold",
+      "unadjusted_threshold",
+      "geographic_factor"
+    ],
+    "max_absolute_difference": 0,
+    "ordering": "scenario, year, area, tenure, adults, children ascending; fields in recorded order",
+    "scenario_count": 2,
+    "sha256_big_endian_float64": "5064c6752b6b7bd56111aafe3998141413094606e06a91cd9445c5dcecd5ab80"
+  },
+  "artifact_sha256": {
+    "spm_calculator/data/current/acs_normalized_products.json": "7f9dd53454eeac90a83437643944e47d60d27d35cf3a99d2a988c39be25b99a8",
+    "spm_calculator/data/current/acs_rolling_forecast.json": "8ad5edcd82c9535e9a8170539f55ce21474245d69f09775d9c0cd9a49f0cda20",
+    "spm_calculator/data/current/ce_replication_2019_2025.json": "d04e2a61552795f9d90e282045610774a4ff68f67b97067677358741f58a289c",
+    "spm_calculator/data/current/ce_rolling_forecast.json": "26b863a3e5ea3e23fb4fcd547ccd497e25625d55542b8711a4825239aebb4e21",
+    "spm_calculator/data/current/rolling_forecast_2026_09_09.json": "76ab8435f087f167ad01b8495ebd016415ba8086f32bfbd3dab961dcc8976c0a"
+  },
+  "audit_script_sha256": "182ad0d8fd52432305a1f04fdd048632f0df2b6c5ef25b69bdbb131e3de960eb",
+  "baseline_content_sha256": "2fbe0ec23344719c705d378e25242813a51f6bf05ba2af9a14f5a4945432565d",
+  "component_comparison": "All CE fields except code identity equal; all ACS fields except generator identity, new disclosures, and normalized-manifest source SHA equal.",
+  "final_content_sha256": "b9dbf5ae49697e3bf3abee2fa22b7429703412cb1e58478938a682a0dfddc821",
+  "frozen_2024_2026_thresholds_shares_rents_equal": true,
+  "frozen_analysis_content_sha256": "3b93d396a1759c55a68949abf257cda4e8ed4c4b55a08b00976e59ceb33eb255",
+  "full_scenarios_final_sha256": "d5e542944d26a51418b2246b77b00d4e0814574b0f676a693e1475703eb041be",
+  "full_scenarios_original_sha256": "72f859ebac3b3c64ad1a7aced670bcc2b6c886873161e1e6c5b7978c242c5555",
+  "full_scenarios_without_new_disclosures_sha256": "72f859ebac3b3c64ad1a7aced670bcc2b6c886873161e1e6c5b7978c242c5555",
+  "geographic_factor_changes_from_previous_year": {
+    "ce_trend": {
+      "2030": {
+        "changed_area_tenure_pairs": 1047,
+        "max_absolute_change": 1.0243046077995643e-07
+      },
+      "2031": {
+        "changed_area_tenure_pairs": 199,
+        "max_absolute_change": 2.220446049250313e-16
+      },
+      "2032": {
+        "changed_area_tenure_pairs": 72,
+        "max_absolute_change": 2.220446049250313e-16
+      },
+      "2033": {
+        "changed_area_tenure_pairs": 116,
+        "max_absolute_change": 2.220446049250313e-16
+      },
+      "2034": {
+        "changed_area_tenure_pairs": 327,
+        "max_absolute_change": 2.220446049250313e-16
+      },
+      "2035": {
+        "changed_area_tenure_pairs": 302,
+        "max_absolute_change": 2.220446049250313e-16
+      }
+    },
+    "zero_real": {
+      "2030": {
+        "changed_area_tenure_pairs": 1047,
+        "max_absolute_change": 7.276058089367154e-08
+      },
+      "2031": {
+        "changed_area_tenure_pairs": 48,
+        "max_absolute_change": 2.220446049250313e-16
+      },
+      "2032": {
+        "changed_area_tenure_pairs": 190,
+        "max_absolute_change": 2.220446049250313e-16
+      },
+      "2033": {
+        "changed_area_tenure_pairs": 103,
+        "max_absolute_change": 2.220446049250313e-16
+      },
+      "2034": {
+        "changed_area_tenure_pairs": 123,
+        "max_absolute_change": 2.220446049250313e-16
+      },
+      "2035": {
+        "changed_area_tenure_pairs": 126,
+        "max_absolute_change": 2.220446049250313e-16
+      }
+    }
+  },
+  "horizon_disclosure": {
+    "comparison": "Exact equality of every baseline area rent index",
+    "first_all_projected_window_year": 2030,
+    "first_constant_index_year": 2029,
+    "first_unchanged_transition_year": 2030,
+    "geographic_factor_caveat": "A constant relative rent index does not force a constant geographic factor: the selected year's CE housing share can still move. Floating-point noise is not substantive movement.",
+    "geographic_factor_formula": "1 + housing_share * (rent_index - 1)",
+    "interpretation": "Each future annual cohort projects the same 2024 donors. Under the baseline uniform nominal growth and deflation, relative indices stabilize once the window contains only that donor distribution, including its original observed cohort. These are not independent future survey observations.",
+    "latest_observed_donor_year": 2024,
+    "through_year": 2035
+  },
+  "index_changes_from_previous_year": {
+    "2026": {
+      "changed_areas": 349,
+      "max_absolute_change": 0.08409720805550891
+    },
+    "2027": {
+      "changed_areas": 349,
+      "max_absolute_change": 0.12592827884106894
+    },
+    "2028": {
+      "changed_areas": 349,
+      "max_absolute_change": 0.11055782220440946
+    },
+    "2029": {
+      "changed_areas": 348,
+      "max_absolute_change": 0.0857938038539966
+    },
+    "2030": {
+      "changed_areas": 0,
+      "max_absolute_change": 0.0
+    },
+    "2031": {
+      "changed_areas": 0,
+      "max_absolute_change": 0.0
+    },
+    "2032": {
+      "changed_areas": 0,
+      "max_absolute_change": 0.0
+    },
+    "2033": {
+      "changed_areas": 0,
+      "max_absolute_change": 0.0
+    },
+    "2034": {
+      "changed_areas": 0,
+      "max_absolute_change": 0.0
+    },
+    "2035": {
+      "changed_areas": 0,
+      "max_absolute_change": 0.0
+    }
+  },
+  "new_area_year_disclosures_across_scenarios": 8,
+  "status": "all_exact_equality_checks_passed"
+}
