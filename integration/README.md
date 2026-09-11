@@ -20,9 +20,9 @@ Independent reviews found and repaired configuration mixing, incomplete source h
 
 ## Drafts and promotion boundaries
 
-The country draft uses an exact Git dependency for review while 0.5.0 is unpublished. PyPI rejects that direct dependency in distribution metadata; the country repository auto-publishes on main. Do not merge it as-is. A separate promotion must protect old unbounded consumers, coordinate package publication, and replace the development pin with exactly `spm-calculator==0.5.0`.
+The country draft recorded here used an exact Git dependency for review while 0.5.0 was unpublished. PyPI rejects that direct dependency in distribution metadata, and the country repository auto-publishes on main, so that draft was not mergeable as written. That sequence was superseded: `spm-calculator` 1.0.0 was published on September 11, 2026, and the coordinated country and wrapper integrations ship in their own packages, `policyengine-us` 2.0 and the `policyengine` wrapper 6.0, both in progress. The [1.0 migration guide](../docs/migration.md) carries the constraint that protects old unbounded consumers.
 
-The live public calculator still has stale national data until a separate production deployment. Successful local builds and preview deployment do not resolve that public-delivery risk. GitHub CI status is reported on the draft PRs; local checks are not a claim that all hosted jobs have completed.
+The rebuilt calculator is deployed at [policyengine.org/us/spm-calculator](https://policyengine.org/us/spm-calculator). Its served `release_config.json` still reports `packageDistribution.status` `local_preview` with a null `publishedVersion`, so the deployed page still states that publication on PyPI is not confirmed; regenerating and redeploying that export remains outstanding. GitHub CI status is reported on the draft PRs; local checks are not a claim that all hosted jobs have completed.
 
 ## Geography scope correction — 2026-09-08
 
