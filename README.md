@@ -44,11 +44,9 @@ Python 3.9 or newer:
 pip install spm-calculator==1.0.0
 ```
 
-```sh
-uv add spm-calculator==1.0.0
-```
-
-To work on the package itself, install this checkout instead with
+With uv, `uv pip install spm-calculator==1.0.0`, or
+`uv add spm-calculator==1.0.0` inside a uv project. To work on the
+package itself, install this checkout instead with
 `python -m pip install -e .`.
 
 A calculation needs no Census API key or source download. Optional integrations

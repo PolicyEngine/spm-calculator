@@ -6,7 +6,7 @@ CE/ACS rolling forecasts through 2035. Standalone calculations read bundled,
 verified inputs offline.
 
 Install with `pip install spm-calculator==1.0.0` or
-`uv add spm-calculator==1.0.0` from
+`uv pip install spm-calculator==1.0.0` from
 [PyPI](https://pypi.org/project/spm-calculator/1.0.0/). The calculator also
 runs in the browser at
 [policyengine.org/us/spm-calculator](https://policyengine.org/us/spm-calculator),
