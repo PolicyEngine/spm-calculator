@@ -13,8 +13,8 @@ uv add spm-calculator==1.0.0
 To run them against this checkout instead, use `python -m pip install -e .`.
 
 The bundled artifact supports offline calculations without a Census API key.
-Optional PolicyEngine, Microcosm and Axiom integrations need their own runtimes
-and ship in their own packages.
+The optional PolicyEngine, Microcosm and Axiom adapters ship inside this
+package; each needs its own runtime installed separately.
 
 ## Published national values and shares
 

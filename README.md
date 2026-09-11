@@ -149,11 +149,12 @@ reader does not obtain a newer artifact over the network. See the
 
 ## Integrations and app
 
-- [PolicyEngine](docs/policyengine-release-integration.md): the country model
-  reads forecast configuration by default and retains its tax, benefit and
-  resource formulas. This integration ships in its own packages;
-  `policyengine-us` 2.0 and the `policyengine` wrapper 6.0 are in progress.
-  Read the [1.0 migration guide](docs/migration.md) before pinning them.
+- [PolicyEngine](docs/policyengine-release-integration.md): in this
+  integration the country model reads forecast configuration by default and
+  retains its tax, benefit and resource formulas. The country and wrapper
+  sides ship in their own packages: `policyengine-us` 2.0 and the
+  `policyengine` wrapper 6.0 are in progress. Read the
+  [1.0 migration guide](docs/migration.md) before pinning them.
 - [Microcosm Frame](docs/microcosm-integration.md): preserve native membership
   and typed weights, attach canonical results and summarize with Frame operations.
 - [Axiom core](docs/axiom-integration.md): execute person classification,

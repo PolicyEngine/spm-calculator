@@ -313,9 +313,10 @@ Pass `expected_sha256` when loading a retained artifact to verify its content
 identity; retrieve the current identity from `forecast.content_sha256`.
 The [provider](policyengine-release-integration.md),
 [Frame](microcosm-integration.md) and [real Axiom](axiom-integration.md)
-examples use this same artifact. Those integrations ship in their own
-packages; `policyengine-us` 2.0 and the `policyengine` wrapper 6.0 are in
-progress. See the [1.0 migration guide](migration.md).
+examples use this same artifact. Their adapters ship inside this package;
+the PolicyEngine country and wrapper integration ships in `policyengine-us`
+2.0 and the `policyengine` wrapper 6.0, both in progress. See the
+[1.0 migration guide](migration.md).
 
 ## Rebuild and verify
 

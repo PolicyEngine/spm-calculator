@@ -1,16 +1,18 @@
 # PolicyEngine integration
 
-PolicyEngine US uses the canonical `SPMForecast` for SPM thresholds and
-housing portions by default. It keeps taxes, benefits and SPM resources in the
-country model. The housing portion affects the cap on counted housing
-assistance, so this measurement change can also change resources.
+In the integration described here, PolicyEngine US uses the canonical
+`SPMForecast` for SPM thresholds and housing portions by default. It keeps
+taxes, benefits and SPM resources in the country model. The housing portion
+affects the cap on counted housing assistance, so this measurement change can
+also change resources.
 
 These examples use `spm-calculator` **1.0.0**, published on
 [PyPI](https://pypi.org/project/spm-calculator/1.0.0/). The country and
 wrapper sides ship in their own packages: `policyengine-us` 2.0 and the
 `policyengine` wrapper 6.0 are in progress, and the
-[1.0 migration guide](migration.md) describes the coordinated pins. These
-examples do not certify a population dataset.
+[1.0 migration guide](migration.md) describes the coordinated pins. A released
+country or wrapper version that predates them does not read this forecast.
+These examples do not certify a population dataset.
 
 ## Use the provider directly
 
@@ -190,11 +192,11 @@ The wrapper contract is `pe.us.calculate_household(spm=...)` with an
 resolves those settings against an independently selected bundle artifact and
 returns detached `provenance.spm_config` and `provenance.spm` receipts. It
 requires a matching bundle configuration and country installation. That
-contract ships in the `policyengine` wrapper 6.0 release, which is in
+contract belongs to the `policyengine` wrapper, whose 6.0 release is in
 progress; see the [1.0 migration guide](migration.md). This guide does not
 claim a live endpoint.
 
-The executed country examples used country model version 1.824.7,
+The executed country examples used a country build at version 1.824.7,
 PolicyEngine Core 3.30.1 and Python 3.13.9. These synthetic household examples
 establish an API contract, not population-data certification. A production
 population release must independently preserve native membership and weights,

@@ -6,12 +6,13 @@ with `ce_trend` and `zero_real` scenarios. Published 2025 national thresholds
 and BLS shelter/utilities shares remain exact inputs; modeled local rent
 indices and future values carry their own statuses.
 
-The PolicyEngine, Microcosm and Axiom integrations ship in their own
-packages; `policyengine-us` 2.0 and the `policyengine` wrapper 6.0 are in
-progress, and the [1.0 migration guide](migration.md) describes the
-coordinated pins. The country model reads forecast configuration by default.
-It does not require an opt-in historical release path or support
-year/geography fallback flags.
+The PolicyEngine, Microcosm and Axiom adapters ship inside this package; the
+PolicyEngine country and wrapper integration ships in `policyengine-us` 2.0
+and the `policyengine` wrapper 6.0, both in progress, and the
+[1.0 migration guide](migration.md) describes the coordinated pins. In that
+integration the country model reads forecast configuration by default. It does
+not require an opt-in historical release path or support year/geography
+fallback flags.
 
 ## Schema-2 forecast contract
 

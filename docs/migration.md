@@ -38,20 +38,21 @@ not installed alongside 1.0.0 in the canonical runtime.
 Canonical integration requires the coordinated country model and wrapper
 release, the certified source-enriched population, and the calculator hash
 declared by that bundle. Do not independently substitute 1.0.0 into an older
-wrapper manifest. `policyengine-us` 2.0 and the `policyengine` wrapper 6.0
-carry that coordinated integration; pin the country and wrapper versions those
-releases publish rather than an intermediate build.
+wrapper manifest. That coordinated integration ships in `policyengine-us` 2.0
+and the `policyengine` wrapper 6.0, both in progress; pin the country and
+wrapper versions those releases publish rather than an intermediate build.
 
 ## Release sequencing
 
-1.0.0 is published, so active old service image builders must enforce 0.3.1.
-Publish and verify the source-enriched dataset before releasing a country model
-whose default population requires its native SPM role input. Qualify the final
-country and wrapper artifacts, their default dataset and their exact calculator
-pins before promoting service routes.
+1.0.0 is published, so the exposure this sequencing guards against is live
+rather than prospective. Verify that active old service image builders enforce
+0.3.1 and deploy those changes. Publish and verify the source-enriched dataset
+before releasing a country model whose default population requires its native
+SPM role input. Qualify the final country and wrapper artifacts, their default
+dataset and their exact calculator pins before promoting service routes.
 
-The legacy-installation constraint above applies to 1.0.0 and to the
-coordinated release versions. This is a declared breaking dependency change for
-older unbounded installations, not a guarantee that every historical PyPI
-requirement can resolve to the new runtime. Existing published metadata and
-scientific artifacts remain immutable.
+The 1.0.0 release notes must carry the legacy-installation constraint above and
+link the coordinated release versions. This is a declared breaking dependency
+change for older unbounded installations, not a guarantee that every historical
+PyPI requirement can resolve to the new runtime. Existing published metadata
+and scientific artifacts remain immutable.
