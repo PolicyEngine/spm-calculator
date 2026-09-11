@@ -12,7 +12,7 @@ The canonical 2022–2025 national inputs match numeric cells in the bundled
 BLS workbooks. The [cell receipt](../spm_calculator/data/current/bls_published_cell_receipt.json)
 records original workbook bytes, worksheet coordinates and numeric text.
 BLS directs users to keep the spreadsheet's significant digits in
-calculations on its [SPM methodology page](https://www.bls.gov/pir/spm/spmhome.htm).
+calculations on its [SPM methodology page](https://www.bls.gov/pir/spmhome.htm).
 
 | Year | Tenure | Worksheet cell | Canonical dollars | BLS page dollars |
 | --- | --- | --- | ---: | ---: |
