@@ -1,10 +1,10 @@
 # Validation
 
 Validation checks source fidelity, deterministic calculation and research
-forecast performance separately. The local version 1.0 candidate uses
+forecast performance separately. Version 1.0 uses
 published BLS national inputs through 2025 and conditional forecasts through
 2035. Passing source checks does not establish exact replication of BLS
-code, prospective forecast accuracy or publication of a production service.
+code or prospective forecast accuracy.
 
 ## Published BLS cells and source vintages
 

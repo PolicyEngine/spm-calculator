@@ -1,15 +1,17 @@
 # Forecast artifacts and archived releases
 
-The local 1.0.0 candidate uses the canonical schema-2 forecast artifact for
+Version 1.0.0 uses the canonical schema-2 forecast artifact for
 standalone calculations and current model adapters. Its default coverage is
 2022–2035, with `ce_trend` and `zero_real` scenarios. Published 2025 national
 thresholds and BLS shelter/utilities shares remain exact inputs; modeled local
 rent indices and future values carry their own statuses.
 
-This checkout does not establish a PyPI release, website promotion or
-PolicyEngine wrapper/API production adoption. The accompanying country
-candidate reads forecast configuration by default. It does not require an
-opt-in historical release path or support year/geography fallback flags.
+The PolicyEngine, Microcosm and Axiom integrations ship in their own
+packages; `policyengine-us` 2.0 and the `policyengine` wrapper 6.0 are in
+progress, and the [1.0 migration guide](migration.md) describes the
+coordinated pins. The country model reads forecast configuration by default.
+It does not require an opt-in historical release path or support
+year/geography fallback flags.
 
 ## Schema-2 forecast contract
 
@@ -87,7 +89,7 @@ identities even if all amounts remain equal.
 
 ## Current artifact identity
 
-The current local candidate uses these pins:
+Version 1.0.0 uses these pins:
 
 | Identity | SHA-256 |
 | --- | --- |
@@ -96,8 +98,9 @@ The current local candidate uses these pins:
 | Assumptions | `d81cf3b1a131fb386941e2e5c30792545f7dc965f6ba4c4dfb13e8ca95a3992d` |
 
 The [current canonical download](../web/public/data/canonical/rolling-forecast-cc06784feb81f8c7935d4494cea0a9821a79af868ac50383da8be37c6dc14b99.json)
-has the file-byte digest above. These pins describe this source checkout;
-they do not establish package publication or production bundle promotion.
+has the file-byte digest above. These pins describe the published 1.0.0
+distribution and this source checkout; each downstream bundle declares its own
+coordinated pins.
 
 The September 9, 2026 Python AST portability adaptation changes source and
 artifact identities while preserving all scientific values. The

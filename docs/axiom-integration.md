@@ -6,7 +6,7 @@ native SPM unit, looks up dated parameters, and computes the adjusted threshold,
 housing portion and poverty judgment. The bridge uses the same verified
 schema-2 `SPMForecast` as the [standalone calculator](quickstart.md).
 
-This is integration evidence for the **local 1.0 candidate**. It is a
+This is integration evidence for calculator **1.0**. It is a
 Frame-to-core bridge, not a
 complete PolicyEngine-to-Axiom migration. The dense Microcosm `AxiomEngine`
 does not support this combination of cross-entity relations and dated derived

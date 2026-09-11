@@ -1,10 +1,12 @@
 # Methodology
 
-The local version 1.0 candidate combines published national SPM thresholds
+Version 1.0 combines published national SPM thresholds
 and housing shares for 2022–2025 with conditional CE/ACS rolling forecasts
 for 2026–2035. `load_forecast()` reads the bundled schema 2 artifact offline.
 It does not require an estimated-year opt-in or retrieve missing inputs.
-Publication of this candidate and its production integrations remains pending.
+The PolicyEngine, Microcosm and Axiom integrations ship in their own packages;
+`policyengine-us` 2.0 and the `policyengine` wrapper 6.0 are in progress. See
+the [1.0 migration guide](migration.md).
 
 The [BLS 2025 publication](https://www.bls.gov/pir/spm/spm_thresholds_2025.htm)
 provides national thresholds for a two-adult, two-child reference unit.

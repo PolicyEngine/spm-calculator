@@ -1,14 +1,15 @@
 # PolicyEngine integration
 
-The local PolicyEngine US candidate uses the canonical `SPMForecast` for SPM
+PolicyEngine US uses the canonical `SPMForecast` for SPM
 thresholds and housing portions by default. It keeps taxes, benefits and SPM
 resources in the country model. The housing portion affects the cap on counted
 housing assistance, so this measurement change can also change resources.
 
-These examples describe the accompanying development country model and
-`spm-calculator` **1.0.0 local candidate**. They do not establish publication,
-API deployment or certification of a population dataset. The wrapper and API
-production integration remain pending.
+These examples use `spm-calculator` **1.0.0**, published on
+[PyPI](https://pypi.org/project/spm-calculator/1.0.0/). The country and wrapper sides ship in their own
+packages: `policyengine-us` 2.0 and the `policyengine` wrapper 6.0 are in
+progress, and the [1.0 migration guide](migration.md) describes the
+coordinated pins. These examples do not certify a population dataset.
 
 ## Use the provider directly
 
@@ -182,15 +183,16 @@ nor forecast selection reconstructs native SPM membership or changes weights.
 
 ## Wrapper and API status
 
-The development wrapper contract is `pe.us.calculate_household(spm=...)` with
+The wrapper contract is `pe.us.calculate_household(spm=...)` with
 an `SPMSelection` object or mapping containing the settings above. The wrapper
 resolves those settings against an independently selected bundle artifact
 and returns detached `provenance.spm_config` and `provenance.spm` receipts.
-Its development path requires a matching bundle configuration and country
-installation; the published wrapper/API production path has not been promoted.
-This guide does not prescribe a registry installation or claim a live endpoint.
+It requires a matching bundle configuration and country installation. That
+contract ships in the `policyengine` wrapper 6.0 release, which is in progress;
+see the [1.0 migration guide](migration.md). This guide does not claim a live
+endpoint.
 
-The executed country examples used the local country 1.824.7 candidate,
+The executed country examples used country model version 1.824.7,
 PolicyEngine Core 3.30.1 and Python 3.13.9. These synthetic household examples
 establish an API contract, not population-data certification. A production
 population release must independently preserve native membership and weights,

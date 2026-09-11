@@ -106,12 +106,14 @@ root's coordinated identity adaptation.
 # Canonical SPM rollout — September 9, 2026
 
 The canonical scientific artifact and adapters are committed at c89d20f.
-Documentation and executable examples now use the same 1.0.0 candidate.
+Documentation and executable examples now use the same 1.0.0 source.
 Real Frame/native Axiom checks, canonical scientific comparisons and the
 standalone web suite pass. Mobile tables were checked in a 390-pixel preview
 and now scroll through all columns without clipping. Runtime source publication,
 exact Fable agreement and coordinated consumer/data releases remain separate.
-No PyPI release, dataset publication or production deployment has occurred.
+As of this September 9 entry no PyPI release, dataset publication or production
+deployment had occurred. Version 1.0.0 was published on September 11, 2026; the
+entry at the top of this file records that release.
 
 The earlier work journals below record development stages. Their no-commit,
 remaining-work and artifact-current claims are historical; check Git/PRs and
