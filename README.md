@@ -5,10 +5,13 @@ inputs and conditional CE/ACS rolling forecasts. The package works offline for
 standalone calculations and supplies the same forecast artifact to optional
 PolicyEngine, Microcosm Frame and actual Axiom core integrations.
 
-Version 1.0.0 is published on [PyPI](https://pypi.org/project/spm-calculator/1.0.0/).
-The calculator runs at [policyengine.org/us/spm-calculator](https://policyengine.org/us/spm-calculator),
-the documentation is at [policyengine-docs.vercel.app/spm-calculator](https://policyengine-docs.vercel.app/spm-calculator/),
-and the companion paper is at [spm-threshold-paper.vercel.app](https://spm-threshold-paper.vercel.app/).
+Version 1.0.0 is published on
+[PyPI](https://pypi.org/project/spm-calculator/1.0.0/). The calculator runs at
+[policyengine.org/us/spm-calculator](https://policyengine.org/us/spm-calculator),
+the documentation is at
+[policyengine-docs.vercel.app/spm-calculator](https://policyengine-docs.vercel.app/spm-calculator/),
+and the companion paper is at
+[spm-threshold-paper.vercel.app](https://spm-threshold-paper.vercel.app/).
 
 Version 1.0 changes the public calculation API and removes the legacy modules.
 Existing PolicyEngine environments require coordinated dependency pins; read

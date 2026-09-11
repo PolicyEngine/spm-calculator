@@ -14,7 +14,7 @@ standalone calculator does not import them. Validation used Microcosm revision
 ```sh
 uv pip install /path/to/microcosm/packages/microcosm-graph \
   /path/to/microcosm/packages/microcosm-frame
-uv pip install -e /path/to/spm-calculator
+uv pip install spm-calculator==1.0.0
 ```
 
 ## Build and measure a real Frame

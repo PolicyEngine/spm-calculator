@@ -1,15 +1,16 @@
 # PolicyEngine integration
 
-PolicyEngine US uses the canonical `SPMForecast` for SPM
-thresholds and housing portions by default. It keeps taxes, benefits and SPM
-resources in the country model. The housing portion affects the cap on counted
-housing assistance, so this measurement change can also change resources.
+PolicyEngine US uses the canonical `SPMForecast` for SPM thresholds and
+housing portions by default. It keeps taxes, benefits and SPM resources in the
+country model. The housing portion affects the cap on counted housing
+assistance, so this measurement change can also change resources.
 
 These examples use `spm-calculator` **1.0.0**, published on
-[PyPI](https://pypi.org/project/spm-calculator/1.0.0/). The country and wrapper sides ship in their own
-packages: `policyengine-us` 2.0 and the `policyengine` wrapper 6.0 are in
-progress, and the [1.0 migration guide](migration.md) describes the
-coordinated pins. These examples do not certify a population dataset.
+[PyPI](https://pypi.org/project/spm-calculator/1.0.0/). The country and
+wrapper sides ship in their own packages: `policyengine-us` 2.0 and the
+`policyengine` wrapper 6.0 are in progress, and the
+[1.0 migration guide](migration.md) describes the coordinated pins. These
+examples do not certify a population dataset.
 
 ## Use the provider directly
 
@@ -62,12 +63,13 @@ geography. Read [rolling forecasts](rolling-forecasts.md) and
 is no CPI extrapolation, estimated-year opt-in or missing-location fallback.
 Unknown years and locations fail.
 
-## Run the development country model
+## Run the country model
 
-Install the accompanying local country and calculator sources in an isolated
-environment. The following example uses `policyengine_us.Simulation`, which
-registers the calculator's variables before reading input records. Omitting
-`spm` selects the installed forecast's default scenario and county assignment.
+Install `spm-calculator==1.0.0` and the accompanying country source in an
+isolated environment. The following example uses `policyengine_us.Simulation`,
+which registers the calculator's variables before reading input records.
+Omitting `spm` selects the installed forecast's default scenario and county
+assignment.
 
 ```python
 from policyengine_us import Simulation
@@ -183,14 +185,14 @@ nor forecast selection reconstructs native SPM membership or changes weights.
 
 ## Wrapper and API status
 
-The wrapper contract is `pe.us.calculate_household(spm=...)` with
-an `SPMSelection` object or mapping containing the settings above. The wrapper
-resolves those settings against an independently selected bundle artifact
-and returns detached `provenance.spm_config` and `provenance.spm` receipts.
-It requires a matching bundle configuration and country installation. That
-contract ships in the `policyengine` wrapper 6.0 release, which is in progress;
-see the [1.0 migration guide](migration.md). This guide does not claim a live
-endpoint.
+The wrapper contract is `pe.us.calculate_household(spm=...)` with an
+`SPMSelection` object or mapping containing the settings above. The wrapper
+resolves those settings against an independently selected bundle artifact and
+returns detached `provenance.spm_config` and `provenance.spm` receipts. It
+requires a matching bundle configuration and country installation. That
+contract ships in the `policyengine` wrapper 6.0 release, which is in
+progress; see the [1.0 migration guide](migration.md). This guide does not
+claim a live endpoint.
 
 The executed country examples used country model version 1.824.7,
 PolicyEngine Core 3.30.1 and Python 3.13.9. These synthetic household examples

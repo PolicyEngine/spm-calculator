@@ -1,7 +1,7 @@
 # API reference
 
-Version 1.0.0 exposes one current forecast calculation path.
-Examples use public interfaces of the published package.
+Version 1.0.0 exposes one current forecast calculation path. Examples use
+public interfaces of the published package.
 
 | Task | Interface |
 | --- | --- |

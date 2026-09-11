@@ -6,13 +6,12 @@ growth are separate assumptions. An inflation-only projection holds the real
 spending of new observations constant; it does not imply that actual real
 spending will remain constant.
 
-Version 1.0 loads one canonical schema 2 artifact for
-2022–2035, with published national inputs through 2025 and conditional
-research forecasts thereafter. [Archived source snapshots](spm-releases.md)
-and forecast commitments retain their original bytes. The artifact records
-an information date of September 9, 2026, source receipts and a content
-digest. Its Python consumer works without PolicyEngine, Microcosm, Axiom or
-a network connection.
+Version 1.0 loads one canonical schema 2 artifact for 2022–2035, with
+published national inputs through 2025 and conditional research forecasts
+thereafter. [Archived source snapshots](spm-releases.md) and forecast
+commitments retain their original bytes. The artifact records an information
+date of September 9, 2026, source receipts and a content digest. Its Python
+consumer works without PolicyEngine, Microcosm, Axiom or a network connection.
 
 ## Reference years and moving windows
 

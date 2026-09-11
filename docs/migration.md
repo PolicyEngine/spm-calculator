@@ -1,6 +1,7 @@
 # Migrating to the canonical SPM calculator
 
-Version 1.0.0 is published on [PyPI](https://pypi.org/project/spm-calculator/1.0.0/). The downstream
+Version 1.0.0 is published on
+[PyPI](https://pypi.org/project/spm-calculator/1.0.0/). The downstream
 integrations ship in their own packages: `policyengine-us` 2.0 and the
 `policyengine` wrapper 6.0 are in progress.
 

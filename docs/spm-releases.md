@@ -1,10 +1,10 @@
 # Forecast artifacts and archived releases
 
-Version 1.0.0 uses the canonical schema-2 forecast artifact for
-standalone calculations and current model adapters. Its default coverage is
-2022–2035, with `ce_trend` and `zero_real` scenarios. Published 2025 national
-thresholds and BLS shelter/utilities shares remain exact inputs; modeled local
-rent indices and future values carry their own statuses.
+Version 1.0.0 uses the canonical schema-2 forecast artifact for standalone
+calculations and current model adapters. Its default coverage is 2022–2035,
+with `ce_trend` and `zero_real` scenarios. Published 2025 national thresholds
+and BLS shelter/utilities shares remain exact inputs; modeled local rent
+indices and future values carry their own statuses.
 
 The PolicyEngine, Microcosm and Axiom integrations ship in their own
 packages; `policyengine-us` 2.0 and the `policyengine` wrapper 6.0 are in
@@ -99,8 +99,8 @@ Version 1.0.0 uses these pins:
 
 The [current canonical download](../web/public/data/canonical/rolling-forecast-cc06784feb81f8c7935d4494cea0a9821a79af868ac50383da8be37c6dc14b99.json)
 has the file-byte digest above. These pins describe the published 1.0.0
-distribution and this source checkout; each downstream bundle declares its own
-coordinated pins.
+distribution and this source checkout; each downstream bundle declares its
+own coordinated pins.
 
 The September 9, 2026 Python AST portability adaptation changes source and
 artifact identities while preserving all scientific values. The

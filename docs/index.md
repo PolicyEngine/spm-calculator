@@ -7,9 +7,11 @@ verified inputs offline.
 
 Install with `pip install spm-calculator==1.0.0` or
 `uv add spm-calculator==1.0.0` from
-[PyPI](https://pypi.org/project/spm-calculator/1.0.0/). The calculator also runs in the browser at
-[policyengine.org/us/spm-calculator](https://policyengine.org/us/spm-calculator), and the companion paper
-is at [spm-threshold-paper.vercel.app](https://spm-threshold-paper.vercel.app/).
+[PyPI](https://pypi.org/project/spm-calculator/1.0.0/). The calculator also
+runs in the browser at
+[policyengine.org/us/spm-calculator](https://policyengine.org/us/spm-calculator),
+and the companion paper is at
+[spm-threshold-paper.vercel.app](https://spm-threshold-paper.vercel.app/).
 
 Start with the [quickstart](quickstart.md) for Python and CLI examples. The
 [API reference](api.md) describes `SPMForecast`, `SPMUnit`, year-specific area
