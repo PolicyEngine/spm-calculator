@@ -28,7 +28,7 @@ Canonical content hash: `2fbe0ec23344719c705d378e25242813a51f6bf05ba2af9a14f5a49
 Parent integration / remaining verification:
 
 - Verify real desktop/mobile rendering, hydration, search keyboard/click selection, changed-year unavailable selections, table scrolling, and deployed asset paths. The complete export is approximately 30 MB JSON / 2.08 MB gzip; generated HTML is approximately 19 MB uncompressed, so verify loading responsiveness.
-- Package version `1.0.0` is honestly labeled local build/development preview. After that exact version is actually published, regenerate with `SPM_PUBLISHED_PACKAGE_VERSION=1.0.0 python3 -m scripts.export_web_release` (or `--published-package-version 1.0.0`). Mismatching versions fail; only matching publication removes preview links and enables the versioned PyPI link.
+- Package version `1.0.0` was published to PyPI on September 11, 2026, so the export's local build/development preview label is now stale. Regenerate with `SPM_PUBLISHED_PACKAGE_VERSION=1.0.0 python3 -m scripts.export_web_release` (or `--published-package-version 1.0.0`). Mismatching versions fail; only matching publication removes preview links and enables the versioned PyPI link.
 - Regenerate/check the export if the scientific agent changes the canonical artifact hash or package version. Parent owns publication and deployment.
 - Copying to the requested `/Users/maxghenis/spm-rebuild-20260908/rollout/web-canonical-report.md` failed with `Operation not permitted`: that directory is outside this session's writable roots. This report is saved under `web/` for parent transfer.
 

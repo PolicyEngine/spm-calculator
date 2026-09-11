@@ -3,8 +3,8 @@
 `apply_forecast_to_frame` applies the verified canonical `SPMForecast` to an
 actual `microcosm.frame.Frame`. Native person-to-SPM-unit links determine
 membership, primitive ages and roles determine composition, and Microcosm owns
-typed weights and weighted summaries. This is the local 1.0.0 calculator
-candidate, not certification of a population release.
+typed weights and weighted summaries. This uses calculator 1.0.0; it is not
+certification of a population release.
 
 The optional adapter needs the Microcosm frame and graph packages; the
 standalone calculator does not import them. Validation used Microcosm revision
@@ -14,7 +14,7 @@ standalone calculator does not import them. Validation used Microcosm revision
 ```sh
 uv pip install /path/to/microcosm/packages/microcosm-graph \
   /path/to/microcosm/packages/microcosm-frame
-uv pip install -e /path/to/spm-calculator
+uv pip install spm-calculator==1.0.0
 ```
 
 ## Build and measure a real Frame

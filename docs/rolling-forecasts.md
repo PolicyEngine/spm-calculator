@@ -6,14 +6,12 @@ growth are separate assumptions. An inflation-only projection holds the real
 spending of new observations constant; it does not imply that actual real
 spending will remain constant.
 
-The local version 1.0 candidate loads one canonical schema 2 artifact for
-2022–2035, with published national inputs through 2025 and conditional
-research forecasts thereafter. [Archived source snapshots](spm-releases.md)
-and forecast commitments retain their original bytes. The artifact records
-an information date of September 9, 2026, source receipts and a content
-digest. Its Python consumer works without PolicyEngine, Microcosm, Axiom or
-a network connection. Candidate publication and production deployment remain
-pending.
+Version 1.0 loads one canonical schema 2 artifact for 2022–2035, with
+published national inputs through 2025 and conditional research forecasts
+thereafter. [Archived source snapshots](spm-releases.md) and forecast
+commitments retain their original bytes. The artifact records an information
+date of September 9, 2026, source receipts and a content digest. Its Python
+consumer works without PolicyEngine, Microcosm, Axiom or a network connection.
 
 ## Reference years and moving windows
 
@@ -276,7 +274,7 @@ Neither these tests nor the fitted trend provide forecast uncertainty bounds.
 
 ## Standalone calculation
 
-Run this example from the local candidate checkout:
+Run this example after installing the package:
 
 ```python
 from spm_calculator import SPMUnit, load_forecast
@@ -313,10 +311,12 @@ An `as_of` date before the information cutoff also raises. No alternate
 runtime release path or geographic substitution supplies missing inputs.
 Pass `expected_sha256` when loading a retained artifact to verify its content
 identity; retrieve the current identity from `forecast.content_sha256`.
-Local [provider](policyengine-release-integration.md),
+The [provider](policyengine-release-integration.md),
 [Frame](microcosm-integration.md) and [real Axiom](axiom-integration.md)
-examples use this same artifact. They do not establish publication or
-production deployment of the candidate integrations.
+examples use this same artifact. Their adapters ship inside this package;
+the PolicyEngine country and wrapper integration ships in `policyengine-us`
+2.0 and the `policyengine` wrapper 6.0, both in progress. See the
+[1.0 migration guide](migration.md).
 
 ## Rebuild and verify
 

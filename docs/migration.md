@@ -1,7 +1,9 @@
 # Migrating to the canonical SPM calculator
 
-This document accompanies the 1.0.0 release candidate. Publication and downstream
-bundle promotion remain pending until their release gates pass.
+Version 1.0.0 is published on
+[PyPI](https://pypi.org/project/spm-calculator/1.0.0/). The downstream
+integrations ship in their own packages: `policyengine-us` 2.0 and the
+`policyengine` wrapper 6.0 are in progress.
 
 ## Public API replacement
 
@@ -36,13 +38,14 @@ not installed alongside 1.0.0 in the canonical runtime.
 Canonical integration requires the coordinated country model and wrapper
 release, the certified source-enriched population, and the calculator hash
 declared by that bundle. Do not independently substitute 1.0.0 into an older
-wrapper manifest. The release announcement will identify the verified published
-country and wrapper versions once available; candidate versions are not proof
-of publication.
+wrapper manifest. That coordinated integration ships in `policyengine-us` 2.0
+and the `policyengine` wrapper 6.0, both in progress; pin the country and
+wrapper versions those releases publish rather than an intermediate build.
 
 ## Release sequencing
 
-Before publishing 1.0.0, verify that active old service image builders enforce
+1.0.0 is published, so the exposure this sequencing guards against is live
+rather than prospective. Verify that active old service image builders enforce
 0.3.1 and deploy those changes. Publish and verify the source-enriched dataset
 before releasing a country model whose default population requires its native
 SPM role input. Qualify the final country and wrapper artifacts, their default

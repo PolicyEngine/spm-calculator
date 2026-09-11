@@ -5,9 +5,13 @@ inputs and conditional CE/ACS rolling forecasts. The package works offline for
 standalone calculations and supplies the same forecast artifact to optional
 PolicyEngine, Microcosm Frame and actual Axiom core integrations.
 
-This checkout is the **local 1.0.0 candidate**. These instructions describe this
-source, not an announced PyPI release or production website, wrapper or API
-promotion.
+Version 1.0.0 is published on
+[PyPI](https://pypi.org/project/spm-calculator/1.0.0/). The calculator runs at
+[policyengine.org/us/spm-calculator](https://policyengine.org/us/spm-calculator),
+the documentation is at
+[policyengine-docs.vercel.app/spm-calculator](https://policyengine-docs.vercel.app/spm-calculator/),
+and the companion paper is at
+[spm-threshold-paper.vercel.app](https://spm-threshold-paper.vercel.app/).
 
 Version 1.0 changes the public calculation API and removes the legacy modules.
 Existing PolicyEngine environments require coordinated dependency pins; read
@@ -32,13 +36,18 @@ published values from replicated or projected amounts. A published national
 base does not make a local 2025 estimate an official Census threshold: the
 selected area's rent input can be modeled.
 
-## Install this candidate locally
+## Install
 
-From this checkout, using Python 3.9 or newer:
+Python 3.9 or newer:
 
 ```sh
-python -m pip install -e .
+pip install spm-calculator==1.0.0
 ```
+
+With uv, `uv pip install spm-calculator==1.0.0`, or
+`uv add spm-calculator==1.0.0` inside a uv project. To work on the
+package itself, install this checkout instead with
+`python -m pip install -e .`.
 
 A calculation needs no Census API key or source download. Optional integrations
 require their own runtime installations; see the linked guides below.
@@ -120,7 +129,7 @@ before comparing scenarios or historical geography series breaks.
 
 ## Command line
 
-After local installation:
+After installation:
 
 ```sh
 spm-calculator info
@@ -136,12 +145,14 @@ the subcommand. Retain a reviewed content digest and supply it on replay; the
 reader does not obtain a newer artifact over the network. See the
 [quickstart](docs/quickstart.md) and [artifact contract](docs/spm-releases.md).
 
-## Integrations and local app
+## Integrations and app
 
-- [PolicyEngine](docs/policyengine-release-integration.md): the accompanying
-  country candidate reads forecast configuration by default and retains its
-  tax, benefit and resource formulas. Wrapper/API production adoption is not
-  published by this documentation.
+- [PolicyEngine](docs/policyengine-release-integration.md): in this
+  integration the country model reads forecast configuration by default and
+  retains its tax, benefit and resource formulas. The country and wrapper
+  sides ship in their own packages: `policyengine-us` 2.0 and the
+  `policyengine` wrapper 6.0 are in progress. Read the
+  [1.0 migration guide](docs/migration.md) before pinning them.
 - [Microcosm Frame](docs/microcosm-integration.md): preserve native membership
   and typed weights, attach canonical results and summarize with Frame operations.
 - [Axiom core](docs/axiom-integration.md): execute person classification,
@@ -149,9 +160,10 @@ reader does not obtain a newer artifact over the network. See the
   arithmetic in real core. The dense Microcosm AxiomEngine does not support this
   bridge; exact decimal poverty boundaries can differ from Python float results.
 
-Run the browser candidate locally from `web` with `bun install --frozen-lockfile`
-and `bun run dev`. Its export consumes the canonical artifact. A local build
-or this README does not establish production deployment.
+The browser app is live at
+[policyengine.org/us/spm-calculator](https://policyengine.org/us/spm-calculator).
+Run it locally from `web` with `bun install --frozen-lockfile` and
+`bun run dev`; its export consumes the canonical artifact.
 
 ## Sources and research history
 
@@ -163,5 +175,7 @@ or this README does not establish production deployment.
 - [2026 BLS correction and frozen experiments](docs/bls-2026-correction.md):
   historical publication vintages and the immutable 2025 forecast commitment.
 - [API reference](docs/api.md): current calculation and membership interfaces.
+- [Companion paper](https://spm-threshold-paper.vercel.app/): calculating and
+  projecting Supplemental Poverty Measure thresholds.
 
 [MIT license](LICENSE).

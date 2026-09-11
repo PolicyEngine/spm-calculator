@@ -1,15 +1,18 @@
 # Quickstart
 
-These examples target the local 1.0.0 candidate. Install this checkout with
-Python 3.9 or newer:
+These examples target version 1.0.0. Install it with Python 3.9 or newer:
 
 ```sh
-python -m pip install -e .
+pip install spm-calculator==1.0.0
 ```
 
+With uv, `uv pip install spm-calculator==1.0.0`, or
+`uv add spm-calculator==1.0.0` inside a uv project. To run the
+examples against this checkout instead, use `python -m pip install -e .`.
+
 The bundled artifact supports offline calculations without a Census API key.
-Optional PolicyEngine, Microcosm and Axiom integrations need their own runtimes.
-This page does not describe an already published package or service upgrade.
+The optional PolicyEngine, Microcosm and Axiom adapters ship inside this
+package; each needs its own runtime installed separately.
 
 ## Published national values and shares
 

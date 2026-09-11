@@ -1,7 +1,7 @@
 # API reference
 
-The local 1.0.0 candidate exposes one current forecast calculation path.
-Examples use public interfaces implemented in this checkout.
+Version 1.0.0 exposes one current forecast calculation path. Examples use
+public interfaces of the published package.
 
 | Task | Interface |
 | --- | --- |

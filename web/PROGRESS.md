@@ -2,7 +2,7 @@
 
 ## State
 
-Authorized web performance work complete and committed. Root-owned CUA/live checks, publication and deployment remain. This lane owns only `web/**`, `scripts/export_web_release.py`, and `tests/test_web_config.py`. Scoped commits are authorized by the standing orders; no push, deployment, or edits to other lanes. Prior canonical handoff: `web/web-canonical-report.md`.
+Authorized web performance work complete and committed. The package is published and the app is deployed; regenerating the export's published-package metadata and the root-owned CUA/live checks remain. This lane owns only `web/**`, `scripts/export_web_release.py`, and `tests/test_web_config.py`. Scoped commits are authorized by the standing orders; no push, deployment, or edits to other lanes. Prior canonical handoff: `web/web-canonical-report.md`.
 
 ## Done
 
@@ -25,5 +25,5 @@ Authorized web performance work complete and committed. Root-owned CUA/live chec
 
 - Root: perform CUA desktop/mobile/live loading, interaction and download QA; this lane did not verify browser UX and used no Chrome CDP.
 - Root: after any further scientific hash change, regenerate/check the compact export and audit pin together, rerun checks, and rebuild.
-- Root: publish the exact package before setting its published-version flag; package 1.0.0 remains a local preview. Deployment and live checks belong to root.
+- Root: 1.0.0 is published on PyPI, but `web/public/data/release_config.json` still carries `packageDistribution.status` `local_preview` with a null `publishedVersion`, so the deployed app still tells readers that publication on PyPI is not confirmed. Regenerate with `SPM_PUBLISHED_PACKAGE_VERSION=1.0.0 python3 -m scripts.export_web_release`, run `--check`, rebuild and redeploy. Live checks belong to root.
 - Final handoff, exact size measurements, pinned hashes, commands and remaining work: `web/WEB-PERFORMANCE-HANDOFF.md`.

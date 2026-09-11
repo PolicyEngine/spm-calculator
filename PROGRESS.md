@@ -1,3 +1,59 @@
+# Documentation refresh for the published 1.0.0 release — September 11, 2026
+
+## State
+
+Complete. The README and documentation state the published release facts
+instead of describing an unpublished local candidate. No scientific statement
+changed, and no data file, source module, test or workflow was touched.
+
+## Done
+
+- Verified spm-calculator 1.0.0 on PyPI, uploaded 2026-09-11T15:45:10Z from
+  main commit 22bab36e; both the wheel and the sdist are present.
+- Installed the published wheel in an isolated environment: it calculates
+  offline and its bundled artifact content digest matches the pin recorded in
+  [the artifact contract](docs/spm-releases.md),
+  `3d86d5c4c0423480e6b69b75d222ffa4a7a2639e4094df5ba2504af01be17173`.
+- Verified the live app, documentation hub and paper all serve HTTP 200.
+- Replaced every pre-publication statement about the package, website, wrapper
+  or API with the published facts, and gave the PyPI install commands beside
+  the editable checkout.
+- Attributed the PolicyEngine country and wrapper behaviour to this
+  integration rather than to a released version, since the published country
+  model and wrapper do not read this forecast yet; recorded that the country
+  and wrapper sides ship in `policyengine-us` 2.0 and the `policyengine`
+  wrapper 6.0, both in progress, and linked the
+  [1.0 migration guide](docs/migration.md).
+- Confirmed against the published wheel that the PolicyEngine, Microcosm and
+  Axiom adapters ship inside this package, and corrected the prose that had
+  placed them elsewhere.
+- Added `migration` to `docs/_toc.yml`. Five pages the documentation hub
+  publishes now link to the guide, and the hub returned 404 for it.
+- Preserved every scientific hedge that is about official data rather than
+  software, including the frozen 2025 geographic forward comparison and the
+  pending official workbook for the forward test.
+- Docs build `myst build --html`: exit 0. `ruff format --check .` and
+  `ruff check .`: exit 0. `pytest tests/ -q`: exit 0, 507 passed, 81 skipped.
+- Reran the 28 documentation Python examples: 22 pass, 6 fail exactly as they
+  did before the change, with byte-identical output. The six need optional
+  runtimes or a preceding block's variables.
+
+## Next
+
+- The deployed app still serves `packageDistribution.status` `local_preview`
+  with a null `publishedVersion`, so it tells readers that publication on PyPI
+  is not confirmed. Regenerate `web/public/data/release_config.json` with
+  `SPM_PUBLISHED_PACKAGE_VERSION=1.0.0 python3 -m scripts.export_web_release`,
+  run `--check`, rebuild and redeploy. No documentation edit can fix this.
+- The 1.0.0 project page on PyPI carries the old README as its frozen long
+  description. That text reaches PyPI only with the next release.
+- `pyproject.toml` still declares `Development Status :: 3 - Alpha`, a
+  `Documentation` URL pointing at the GitHub tree rather than the hub, and
+  `spm-calculator.vercel.app` as `Homepage`. Those also apply from the next
+  release onward.
+
+---
+
 # Equivalent-code provenance adaptation — September 9, 2026
 
 ## State
@@ -79,12 +135,14 @@ root's coordinated identity adaptation.
 # Canonical SPM rollout — September 9, 2026
 
 The canonical scientific artifact and adapters are committed at c89d20f.
-Documentation and executable examples now use the same 1.0.0 candidate.
+Documentation and executable examples now use the same 1.0.0 source.
 Real Frame/native Axiom checks, canonical scientific comparisons and the
 standalone web suite pass. Mobile tables were checked in a 390-pixel preview
 and now scroll through all columns without clipping. Runtime source publication,
 exact Fable agreement and coordinated consumer/data releases remain separate.
-No PyPI release, dataset publication or production deployment has occurred.
+As of this September 9 entry no PyPI release, dataset publication or production
+deployment had occurred. Version 1.0.0 was published on September 11, 2026; the
+entry at the top of this file records that release.
 
 The earlier work journals below record development stages. Their no-commit,
 remaining-work and artifact-current claims are historical; check Git/PRs and

@@ -1,10 +1,10 @@
 # Validation
 
 Validation checks source fidelity, deterministic calculation and research
-forecast performance separately. The local version 1.0 candidate uses
-published BLS national inputs through 2025 and conditional forecasts through
-2035. Passing source checks does not establish exact replication of BLS
-code, prospective forecast accuracy or publication of a production service.
+forecast performance separately. Version 1.0 uses published BLS national
+inputs through 2025 and conditional forecasts through 2035. Passing source
+checks does not establish exact replication of BLS code or prospective
+forecast accuracy.
 
 ## Published BLS cells and source vintages
 
@@ -12,7 +12,7 @@ The canonical 2022–2025 national inputs match numeric cells in the bundled
 BLS workbooks. The [cell receipt](../spm_calculator/data/current/bls_published_cell_receipt.json)
 records original workbook bytes, worksheet coordinates and numeric text.
 BLS directs users to keep the spreadsheet's significant digits in
-calculations on its [SPM methodology page](https://www.bls.gov/pir/spm/spmhome.htm).
+calculations on its [SPM methodology page](https://www.bls.gov/pir/spmhome.htm).
 
 | Year | Tenure | Worksheet cell | Canonical dollars | BLS page dollars |
 | --- | --- | --- | ---: | ---: |
