@@ -74,7 +74,24 @@ def test_archived_nowcast_remains_separate_from_canonical_forecast(config):
 
 
 def test_committed_browser_export_matches_canonical_artifact(config):
-    assert CONFIG.read_bytes() == encode_config(config)
+    # 1.0.0 is the explicitly verified PyPI release; future versions need review.
+    published = build_config(published_package_version="1.0.0")
+    assert CONFIG.read_bytes() == encode_config(published)
+    assert published["packageDistribution"] == {
+        "status": "published",
+        "version": "1.0.0",
+        "publishedVersion": "1.0.0",
+        "pypiUrl": "https://pypi.org/project/spm-calculator/1.0.0/",
+    }
+    assert {
+        key: value
+        for key, value in published.items()
+        if key != "packageDistribution"
+    } == {
+        key: value
+        for key, value in config.items()
+        if key != "packageDistribution"
+    }
     assert config["schemaVersion"] == 2
     assert config["forecast"]["schemaVersion"] == 2
     assert config["availableYears"] == list(YEARS)
