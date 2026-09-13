@@ -331,7 +331,7 @@ the scientific artifact, not to run a threshold calculation.
 python scripts/build_ce_forecast.py --output spm_calculator/data/current/ce_rolling_forecast.json
 python scripts/build_acs_forecast.py --output spm_calculator/data/current/acs_rolling_forecast.json
 python scripts/build_rolling_forecast.py
-python scripts/export_web_release.py
+python scripts/export_web_release.py --published-package-version 1.0.0
 ```
 
 Both scientific builders support `--cache-dir` and an offline `--check` that
@@ -342,8 +342,14 @@ coverage, and reproduces the portable artifact without raw microdata:
 
 ```sh
 python scripts/build_rolling_forecast.py --check
-python scripts/export_web_release.py --check
+python scripts/export_web_release.py --published-package-version 1.0.0 --check
 ```
+
+The export commands above preserve the committed browser metadata for the
+verified published package 1.0.0. For an unpublished development preview,
+omit `--published-package-version` when generating and checking that preview's
+export. The default remains `local_preview`; an explicit published version
+must match `pyproject.toml` and be verified before use.
 
 Changing scientific logic or pinned scientific inputs requires rebuilding the
 affected component before assembly. A change confined to code-identity
