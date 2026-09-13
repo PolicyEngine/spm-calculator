@@ -135,8 +135,12 @@ Verify the adaptation, lightweight assembly and export without raw microdata:
 python scripts/adapt_acs_code_identity.py --check
 python scripts/build_rolling_forecast.py --check
 python scripts/adapt_acs_code_identity.py --finalize --check
-python scripts/export_web_release.py --check
+python scripts/export_web_release.py --published-package-version 1.0.0 --check
 ```
+
+The publication flag matches the committed browser export and verified PyPI
+package 1.0.0. Omit it only when generating and checking an unpublished preview
+export, whose default status is `local_preview`.
 
 ## Responsibilities
 

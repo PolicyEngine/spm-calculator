@@ -158,10 +158,15 @@ def test_new_download_cannot_be_backdated_into_existing_release(tmp_path):
         ValueError, match="after this release information date"
     ):
         build()
+
+
+def test_published_web_export_reproduces_exact_bundled_bytes():
     subprocess.run(
         [
             sys.executable,
             str(ROOT / "scripts/export_web_release.py"),
+            "--published-package-version",
+            "1.0.0",
             "--check",
         ],
         cwd=ROOT,

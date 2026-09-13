@@ -1,10 +1,23 @@
 # Canonical web performance
 
-## State
+## Pre-deployment branch status — 2026-09-13
+
+PR 38 updates the committed browser export to `packageDistribution.status`
+`published` and `publishedVersion` `1.0.0`, matching the verified PyPI package.
+Scientific inputs and the pinned canonical download are unchanged. Verify this
+export with `python scripts/export_web_release.py --published-package-version 1.0.0 --check`;
+use the same publication flag when regenerating it. Unpublished previews retain
+the exporter's `local_preview` default when the flag is omitted.
+
+Deployment and live readback of this metadata correction remain root-owned
+follow-up work; this branch status does not claim they have completed. The
+following sections preserve the earlier web performance handoff before PR 38.
+
+## Historical state before PR 38
 
 Authorized web performance work complete and committed. The package is published and the app is deployed; regenerating the export's published-package metadata and the root-owned CUA/live checks remain. This lane owns only `web/**`, `scripts/export_web_release.py`, and `tests/test_web_config.py`. Scoped commits are authorized by the standing orders; no push, deployment, or edits to other lanes. Prior canonical handoff: `web/web-canonical-report.md`.
 
-## Done
+## Historical completed work
 
 - Read prior handoff and current controls, warnings, methodology, exporter, and tests.
 - Measured baseline release JSON: 30,028,969 bytes (2,081,567 gzip); generated HTML: 19,155,589 bytes (1,971,729 gzip). gzip uses Python default compression level 9 and mtime 0.
@@ -21,7 +34,7 @@ Authorized web performance work complete and committed. The package is published
 - Wrote final report to `web/WEB-PERFORMANCE-HANDOFF.md`.
 - Compact JSON: 1,225,568 bytes / 109,965 gzip (95.92% / 94.72% smaller than baseline).
 
-## Next
+## Historical remaining work
 
 - Root: perform CUA desktop/mobile/live loading, interaction and download QA; this lane did not verify browser UX and used no Chrome CDP.
 - Root: after any further scientific hash change, regenerate/check the compact export and audit pin together, rerun checks, and rebuild.
