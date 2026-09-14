@@ -540,6 +540,14 @@ test("area search selects by click and Enter and preserves selection on no match
   await expect(
     page.getByTestId("primary-result").getByRole("heading"),
   ).toHaveText(menu(2025)["1002"].name);
+  // Real keystrokes after committing a selection must replace its displayed
+  // name with a fresh search, even though the input never lost focus.
+  await search.pressSequentially("san jose");
+  await expect(search).toHaveValue("san jose");
+  await expect(matches.getByRole("option")).toHaveCount(1);
+  await expect(matches.getByRole("option")).toHaveText(menu(2025)["41940"].name);
+  await search.press("Escape");
+  await expect(search).toHaveValue(menu(2025)["1002"].name);
   const selectedThreshold = await threshold(page).textContent();
   await search.fill("no matching place xyz");
   await expect(page.getByText("No SPM areas match your search.")).toBeVisible();

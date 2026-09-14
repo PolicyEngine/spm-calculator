@@ -560,6 +560,19 @@ print(result["threshold"])`;
                 setLocationQuery(value);
                 setLocationEditing(true);
               }}
+              onPaste={(event) => {
+                if (!locationEditing) {
+                  event.preventDefault();
+                  setLocationQuery(event.clipboardData.getData("text"));
+                  setLocationEditing(true);
+                }
+              }}
+              onCompositionStart={() => {
+                if (!locationEditing) {
+                  setLocationQuery("");
+                  setLocationEditing(true);
+                }
+              }}
               onKeyDown={(event) => {
                 if (event.key === "Escape") {
                   event.preventDefault();
@@ -568,6 +581,22 @@ print(result["threshold"])`;
                   setLocationQuery("");
                 } else if (event.key === "ArrowDown" && !locationEditing) {
                   event.preventDefault();
+                  setLocationEditing(true);
+                } else if (
+                  !locationEditing &&
+                  !event.ctrlKey &&
+                  !event.metaKey &&
+                  !event.altKey &&
+                  !event.nativeEvent.isComposing &&
+                  (event.key.length === 1 ||
+                    event.key === "Backspace" ||
+                    event.key === "Delete")
+                ) {
+                  // Selection leaves the input focused with the committed name
+                  // visible. The first edit must begin a new query, not append
+                  // to that name; subsequent edits use the normal input event.
+                  event.preventDefault();
+                  setLocationQuery(event.key.length === 1 ? event.key : "");
                   setLocationEditing(true);
                 }
               }}

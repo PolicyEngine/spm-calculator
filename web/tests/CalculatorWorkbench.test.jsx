@@ -3,6 +3,7 @@ import {
   selectArea as chooseArea,
 } from "./helpers/renderCalculator";
 import {
+  act,
   fireEvent,
   render as renderSetup,
   screen,
@@ -399,6 +400,63 @@ describe("canonical calculator controls and shared layout", () => {
     expect(search).toHaveValue("Alabama Nonmetro");
     expect(screen.queryByRole("listbox", { name: "Matching SPM areas" })).toBeNull();
   });
+
+  it.each(["Enter", "click"])(
+    "starts a fresh query when typing or pasting after selecting with %s",
+    (selection) => {
+      render(<CalculatorWorkbench data={makeRollingCalculatorData()} />);
+      const search = screen.getByLabelText("Search SPM areas");
+      act(() => search.focus());
+      fireEvent.change(search, { target: { value: "1002" } });
+      if (selection === "Enter") {
+        fireEvent.keyDown(search, { key: "Enter", code: "Enter" });
+      } else {
+        const option = screen.getByRole("option", {
+          name: "Alabama Nonmetro",
+          exact: true,
+        });
+        expect(option).toHaveAttribute("data-value", "1002");
+        fireEvent.mouseDown(option);
+        fireEvent.click(option);
+      }
+      expect(search).toHaveFocus();
+      expect(search).toHaveValue("Alabama Nonmetro");
+      expect(search).toHaveAttribute("aria-expanded", "false");
+      const result = screen.getByTestId("primary-result").textContent;
+
+      // Exercise the first actual keystroke while the committed name is shown.
+      // Its default insertion must be canceled so the name cannot be appended to.
+      expect(fireEvent.keyDown(search, { key: "s", code: "KeyS" })).toBe(false);
+      expect(search).toHaveValue("s");
+      expect(search).toHaveAttribute("aria-expanded", "true");
+      expect(
+        screen.getByRole("option", {
+          name: "San Jose-Sunnyvale-Santa Clara, CA MSA",
+          exact: true,
+        }),
+      ).toHaveAttribute("data-value", "41940");
+      expect(screen.getByTestId("primary-result").textContent).toBe(result);
+      fireEvent.keyDown(search, { key: "Escape", code: "Escape" });
+      expect(search).toHaveValue("Alabama Nonmetro");
+      expect(search).toHaveFocus();
+
+      expect(
+        fireEvent.paste(search, {
+          clipboardData: { getData: () => "san jose" },
+        }),
+      ).toBe(false);
+      expect(search).toHaveValue("san jose");
+      expect(
+        within(
+          screen.getByRole("listbox", { name: "Matching SPM areas" }),
+        ).getAllByRole("option"),
+      ).toHaveLength(1);
+      fireEvent.keyDown(search, { key: "Escape", code: "Escape" });
+      expect(search).toHaveValue("Alabama Nonmetro");
+      expect(search).toHaveAttribute("aria-expanded", "false");
+      expect(screen.getByTestId("primary-result").textContent).toBe(result);
+    },
+  );
 
   it("uses one area selector and opens all yearly options without changing the current result", () => {
     const data = makeRollingCalculatorData();
