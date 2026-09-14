@@ -1,17 +1,21 @@
 # Canonical web performance
 
-## Pre-deployment branch status — 2026-09-13
+## Package publication promotion — 2026-09-13
 
-PR 38 updates the committed browser export to `packageDistribution.status`
-`published` and `publishedVersion` `1.0.0`, matching the verified PyPI package.
-Scientific inputs and the pinned canonical download are unchanged. Verify this
-export with `python scripts/export_web_release.py --published-package-version 1.0.0 --check`;
-use the same publication flag when regenerating it. Unpublished previews retain
-the exporter's `local_preview` default when the flag is omitted.
+The committed browser export identifies `packageDistribution.status`
+`published` and `publishedVersion` `1.0.0.post1`, matching the verified PyPI
+package. Scientific inputs and the pinned canonical download are unchanged.
+Verify the export with:
 
-Deployment and live readback of this metadata correction remain root-owned
-follow-up work; this branch status does not claim they have completed. The
-following sections preserve the earlier web performance handoff before PR 38.
+```sh
+python scripts/export_web_release.py --published-package-version 1.0.0.post1 --check
+```
+
+Use the same publication flag when regenerating the export. Unpublished
+previews retain the exporter's `local_preview` default when the flag is omitted.
+The publication promotion requires deployment and live readback on both
+calculator sites. The following sections preserve the earlier web performance
+handoff before PR 38.
 
 ## Historical state before PR 38
 
