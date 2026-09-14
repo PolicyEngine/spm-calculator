@@ -59,16 +59,17 @@ export default function PaperPage() {
         </h1>
         <p className="max-w-3xl text-base leading-7 text-muted-foreground">
           The paper reconstructs national Supplemental Poverty Measure
-          thresholds from public Consumer Expenditure microdata — every tenure
+          thresholds from public Consumer Expenditure microdata. Every tenure
           and year from 2019 through 2025 lands within 2.8 percent of the
-          published value — and compares four rules for projecting them.
-          Over 2020–2025, adjusting the last published threshold by the CPI-U
-          gives a mean absolute error of 2.29 percent, against 0.51 percent for
-          replicated consumption growth. The pre-committed 2025 nowcast, an
-          equal blend of replicated growth and a composite price index, missed
-          the thresholds BLS went on to publish by 1.17 percent, where CPI-U
-          adjustment missed by 2.58 percent. Embedded below is the manuscript
-          rendered from commit {PAPER_REVISION}.
+          published value, and most within 2 percent. It then compares four
+          rules for projecting thresholds: over 2020 to 2025, adjusting the
+          last published threshold by CPI-U gives a mean absolute error of
+          2.29 percent, against 0.51 percent for replicated consumption growth.
+          A 2025 nowcast committed to before BLS published, an equal blend of
+          replicated growth and a composite price index, landed within 1.17
+          percent of the published thresholds, where CPI-U adjustment was off
+          by 2.58 percent. Embedded below is the manuscript rendered from
+          commit {PAPER_REVISION}.
         </p>
         <p
           data-testid="paper-revision-pill"
