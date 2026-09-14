@@ -181,6 +181,15 @@ test("guided setup retains answers and allows direct editing after results", asy
     page.getByRole("heading", { name: "Where do you live?" }),
   ).toBeVisible();
   await expect(page.getByTestId("primary-result")).toHaveCount(0);
+  await search.click();
+  const locationList = page.getByRole("listbox", { name: "Matching SPM areas" });
+  await locationList.focus();
+  await locationList.press("Enter");
+  await expect(
+    page.getByRole("heading", { name: "Where do you live?" }),
+  ).toBeVisible();
+  await expect(locationList).toHaveCount(0);
+  await expect(search).toBeFocused();
   await expectCompactLocationSearch(page);
   await page.screenshot({ path: testInfo.outputPath("guided-location.png") });
   await search.fill("san jose");
@@ -519,6 +528,52 @@ test("area search selects by click and Enter and preserves selection on no match
   await expect(matches.getByRole("option").last()).toHaveAttribute(
     "aria-selected", "true",
   );
+  await search.press("Enter");
+  await expect(search).toHaveValue(lastArea);
+  for (const [key, index] of [
+    ["ArrowDown", 1],
+    ["Control+n", 1],
+    ["Control+j", 1],
+    ["Meta+ArrowDown", -1],
+  ]) {
+    await search.click();
+    const options = matches.getByRole("option");
+    const target = index === -1 ? options.last() : options.nth(index);
+    const name = await target.textContent();
+    await search.press(key);
+    await expect(target).toHaveAttribute("aria-selected", "true");
+    await search.press("Enter");
+    await expect(search).toHaveValue(name);
+  }
+  await search.click();
+  // Click the list's padding, outside an option: focus must stay in the input
+  // and Enter must not turn the automatic highlight into a committed choice.
+  await matches.click({ position: { x: 1, y: 1 } });
+  await expect(search).toBeFocused();
+  await matches.hover({ position: { x: 1, y: 1 } });
+  await page.mouse.wheel(0, 500);
+  await expect.poll(() => matches.evaluate((list) => list.scrollTop))
+    .toBeGreaterThan(0);
+  const scrollbar = await matches.evaluate((list) => {
+    const bounds = list.getBoundingClientRect();
+    return {
+      x: bounds.right - 8,
+      y: bounds.top,
+      width: list.offsetWidth - list.clientWidth,
+    };
+  });
+  if (scrollbar.width > 4) {
+    await matches.evaluate((list) => { list.scrollTop = 0; });
+    await page.mouse.move(scrollbar.x, scrollbar.y + 10);
+    await page.mouse.down();
+    try {
+      await page.mouse.move(scrollbar.x, scrollbar.y + 180, { steps: 5 });
+    } finally {
+      await page.mouse.up();
+    }
+    await expect.poll(() => matches.evaluate((list) => list.scrollTop))
+      .toBeGreaterThan(0);
+  }
   await search.press("Enter");
   await expect(search).toHaveValue(lastArea);
   await search.fill("san jose");
@@ -1006,4 +1061,42 @@ test("rental support and topcoding diagnostics follow the actual area and year",
   await year.selectOption("2024");
   await expect(warning).toHaveCount(0);
   await expect(threshold(page)).toHaveText(/^\$[\d,]+$/);
+});
+
+test.describe("touch area selection", () => {
+  test.use({
+    hasTouch: true,
+    isMobile: true,
+    viewport: { width: 390, height: 844 },
+  });
+
+  test("guided setup accepts touch selection and lets results change area", async ({ page }, testInfo) => {
+    const search = page.getByRole("combobox", { name: "Search SPM areas" });
+    await search.tap();
+    await search.fill("san jose");
+    await page.getByRole("option", {
+      name: menu(2025)["41940"].name, exact: true,
+    }).tap();
+    await expect(page.getByRole("heading", {
+      name: "Who is in your household?",
+    })).toBeVisible();
+    await page.getByLabel("Adults", { exact: true }).fill("2");
+    await page.getByLabel("Children", { exact: true }).fill("0");
+    await page.getByRole("tab", { name: "Renter", exact: true }).tap();
+    await page.getByRole("button", { name: "Continue", exact: true }).tap();
+    await page.getByRole("button", { name: "2025", exact: true }).tap();
+    await expect(page.getByTestId("primary-result")).toContainText("San Jose");
+    await search.tap();
+    await search.fill("35620");
+    await page.getByRole("option", {
+      name: menu(2025)["35620"].name, exact: true,
+    }).tap();
+    await expect(search).toHaveValue(menu(2025)["35620"].name);
+    await expect(page.getByTestId("primary-result").getByRole("heading"))
+      .toHaveText(menu(2025)["35620"].name);
+    await expect(threshold(page)).toHaveText(/^\$[\d,]+$/);
+    await page.locator("[cmdk-root]").screenshot({
+      path: testInfo.outputPath("touch-results-area-selected.png"),
+    });
+  });
 });

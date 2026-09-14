@@ -208,6 +208,7 @@ export default function CalculatorWorkbench({ data }) {
   const [locationQuery, setLocationQuery] = useState("");
   const [locationEditing, setLocationEditing] = useState(false);
   const locationNavigated = useRef(false);
+  const locationInputRef = useRef(null);
   const selectedAreaStatus =
     selectedEntry?.geography_by_area?.[selectedGeographyId];
   const selectedArea =
@@ -542,6 +543,49 @@ print(result["threshold"])`;
           <Command
             label="Search SPM areas"
             shouldFilter={false}
+            onKeyDown={(event) => {
+              if (
+                event.defaultPrevented ||
+                event.nativeEvent.isComposing ||
+                event.nativeEvent.keyCode === 229
+              ) {
+                return;
+              }
+              if (event.key === "Escape") {
+                event.preventDefault();
+                event.stopPropagation();
+                locationInputRef.current?.focus();
+                closeLocationSearch();
+              } else if (
+                event.key === "Enter" &&
+                !locationQuery.trim() &&
+                !locationNavigated.current
+              ) {
+                // cmdk highlights the first option on mount. An untouched
+                // search is not an explicit choice, including from the listbox.
+                event.preventDefault();
+                locationInputRef.current?.focus();
+                closeLocationSearch();
+              } else if (
+                event.key === "ArrowDown" ||
+                event.key === "ArrowUp"
+              ) {
+                if (!locationEditing) {
+                  event.preventDefault();
+                  openLocationSearch();
+                }
+                locationNavigated.current = true;
+              } else if (
+                locationEditing &&
+                (event.key === "Home" ||
+                  event.key === "End" ||
+                  (event.ctrlKey && ["n", "j", "p", "k"].includes(event.key)))
+              ) {
+                // Preserve cmdk's navigation behavior for all input and list
+                // targets, accepting the highlighted choice on a later Enter.
+                locationNavigated.current = true;
+              }
+            }}
             onBlur={(event) => {
               if (!event.currentTarget.contains(event.relatedTarget)) {
                 closeLocationSearch();
@@ -551,6 +595,7 @@ print(result["threshold"])`;
           >
             <CommandInput
               asChild
+              ref={locationInputRef}
               placeholder={
                 setupComplete && !selectedArea && !locationEditing
                   ? `Selected area unavailable in ${year}`
@@ -582,42 +627,7 @@ print(result["threshold"])`;
                 ) {
                   return;
                 }
-                if (event.key === "Escape") {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  closeLocationSearch();
-                } else if (
-                  event.key === "Enter" &&
-                  !locationQuery.trim() &&
-                  !locationNavigated.current
-                ) {
-                  // cmdk highlights the first option on mount. An untouched
-                  // search is not an explicit choice of that area.
-                  event.preventDefault();
-                  closeLocationSearch();
-                } else if (
-                  event.key === "ArrowDown" ||
-                  event.key === "ArrowUp"
-                ) {
-                  if (!locationEditing) {
-                    event.preventDefault();
-                    openLocationSearch();
-                  } else if (
-                    !locationQuery.trim() && !locationNavigated.current
-                  ) {
-                    event.preventDefault();
-                  }
-                  locationNavigated.current = true;
-                } else if (
-                  locationEditing &&
-                  (event.key === "Home" ||
-                    event.key === "End" ||
-                    (event.ctrlKey && ["n", "j", "p", "k"].includes(event.key)))
-                ) {
-                  // These keys also move cmdk's highlight. Let cmdk handle the
-                  // movement, and accept that deliberate choice on Enter.
-                  locationNavigated.current = true;
-                } else if (
+                if (
                   !locationEditing &&
                   !event.ctrlKey &&
                   !event.metaKey &&
@@ -647,6 +657,7 @@ print(result["threshold"])`;
             {locationEditing && (
               <CommandList
                 label="Matching SPM areas"
+                onMouseDown={(event) => event.preventDefault()}
                 className="max-h-60 border-t border-border p-1"
               >
                 <CommandEmpty>No SPM areas match your search.</CommandEmpty>
