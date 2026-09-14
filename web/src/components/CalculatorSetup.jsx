@@ -89,6 +89,8 @@ export default function CalculatorSetup({ steps, onComplete, advanceRequest }) {
         if (
           current.autoAdvance &&
           event.key === "Enter" &&
+          !event.nativeEvent.isComposing &&
+          event.nativeEvent.keyCode !== 229 &&
           event.target.tagName === "INPUT"
         ) {
           event.preventDefault();

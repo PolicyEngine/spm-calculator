@@ -50,6 +50,54 @@ const continueHousehold = () =>
   );
 
 describe("explicit personal setup", () => {
+  it("does not select or advance when Enter follows focus without a query or navigation", () => {
+    renderSetup(<CalculatorWorkbench data={makeRollingCalculatorData()} />);
+    const search = screen.getByLabelText("Search SPM areas");
+    act(() => search.focus());
+    expect(search).toHaveValue("");
+    expect(screen.getByRole("listbox", { name: "Matching SPM areas" })).toBeVisible();
+    expect(fireEvent.keyDown(search, { key: "Enter", code: "Enter" })).toBe(false);
+    expect(search).toHaveValue("");
+    expect(search).toHaveAttribute("aria-expanded", "false");
+    expect(screen.getByRole("heading", { name: "Where do you live?" })).toBeVisible();
+    expect(screen.queryByLabelText("Adults")).toBeNull();
+    expect(screen.queryByTestId("primary-result")).toBeNull();
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+
+  it("allows an explicit arrow choice from the full initial area list", () => {
+    renderSetup(<CalculatorWorkbench data={makeRollingCalculatorData()} />);
+    const search = screen.getByLabelText("Search SPM areas");
+    act(() => search.focus());
+    const list = screen.getByRole("listbox", { name: "Matching SPM areas" });
+    const firstOption = within(list).getAllByRole("option")[0];
+    const firstName = firstOption.textContent;
+    fireEvent.keyDown(search, { key: "ArrowDown", code: "ArrowDown" });
+    expect(firstOption).toHaveAttribute("aria-selected", "true");
+    fireEvent.keyDown(search, { key: "Enter", code: "Enter" });
+    expect(screen.getByRole("heading", { name: "Who is in your household?" })).toBeVisible();
+    expect(screen.getByRole("navigation", { name: "Setup progress" })).toHaveTextContent(firstName);
+    expect(screen.getByLabelText("Adults")).toHaveValue(null);
+  });
+
+  it.each([{ keyCode: 229 }, { isComposing: true }])(
+    "leaves composition Enter to the input method during setup %j",
+    (composition) => {
+      renderSetup(<CalculatorWorkbench data={makeRollingCalculatorData()} />);
+      const search = screen.getByLabelText("Search SPM areas");
+      act(() => search.focus());
+      fireEvent.change(search, { target: { value: "1002" } });
+      expect(
+        fireEvent.keyDown(search, { key: "Enter", code: "Enter", ...composition }),
+      ).toBe(true);
+      expect(search).toHaveValue("1002");
+      expect(screen.getByRole("heading", { name: "Where do you live?" })).toBeVisible();
+      expect(screen.queryByLabelText("Adults")).toBeNull();
+      fireEvent.keyDown(search, { key: "Enter", code: "Enter" });
+      expect(screen.getByRole("heading", { name: "Who is in your household?" })).toBeVisible();
+    },
+  );
+
   it("starts with no selected area or result and waits for an explicit search selection", () => {
     renderSetup(<CalculatorWorkbench data={makeRollingCalculatorData()} />);
     expect(
@@ -281,6 +329,60 @@ describe("explicit personal setup", () => {
 });
 
 describe("canonical calculator controls and shared layout", () => {
+  it("preserves the committed area after focus or click followed by an empty Enter", () => {
+    const data = makeRollingCalculatorData();
+    render(<CalculatorWorkbench data={data} />);
+    const search = screen.getByLabelText("Search SPM areas");
+    const name = data.areasByYear[2025]["35620"].name;
+    const result = screen.getByTestId("primary-result").textContent;
+    for (const open of [() => act(() => search.focus()), () => fireEvent.click(search)]) {
+      open();
+      expect(search).toHaveValue("");
+      expect(search).toHaveAttribute("aria-expanded", "true");
+      expect(fireEvent.keyDown(search, { key: "Enter", code: "Enter" })).toBe(false);
+      expect(search).toHaveValue(name);
+      expect(search).toHaveAttribute("aria-expanded", "false");
+      expect(screen.getByTestId("primary-result").textContent).toBe(result);
+    }
+  });
+
+  it("preserves a draft when focus moves within the open area selector", () => {
+    render(<CalculatorWorkbench data={makeRollingCalculatorData()} />);
+    const search = screen.getByLabelText("Search SPM areas");
+    act(() => search.focus());
+    fireEvent.change(search, { target: { value: "san jose" } });
+    const list = screen.getByRole("listbox", { name: "Matching SPM areas" });
+    fireEvent.blur(search, { relatedTarget: list });
+    fireEvent.focus(list, { relatedTarget: search });
+    fireEvent.blur(list, { relatedTarget: search });
+    fireEvent.focus(search, { relatedTarget: list });
+    expect(search).toHaveValue("san jose");
+    expect(search).toHaveAttribute("aria-expanded", "true");
+    expect(within(list).getAllByRole("option")).toHaveLength(1);
+    expect(within(list).getByRole("option", {
+      name: "San Jose-Sunnyvale-Santa Clara, CA MSA",
+      exact: true,
+    })).toHaveAttribute("data-value", "41940");
+  });
+
+  it.each([
+    { keyCode: 229 },
+    { isComposing: true },
+  ])("does not intercept an idle printable key during composition %j", (composition) => {
+    render(<CalculatorWorkbench data={makeRollingCalculatorData()} />);
+    const search = screen.getByLabelText("Search SPM areas");
+    act(() => search.focus());
+    fireEvent.change(search, { target: { value: "1002" } });
+    fireEvent.keyDown(search, { key: "Enter", code: "Enter" });
+    expect(search).toHaveFocus();
+    expect(search).toHaveValue("Alabama Nonmetro");
+    const result = screen.getByTestId("primary-result").textContent;
+    expect(fireEvent.keyDown(search, { key: "s", code: "KeyS", ...composition })).toBe(true);
+    expect(search).toHaveValue("Alabama Nonmetro");
+    expect(search).toHaveAttribute("aria-expanded", "false");
+    expect(screen.getByTestId("primary-result").textContent).toBe(result);
+  });
+
   it.each([
     ["Adults", 2, "2 adults, 2 children"],
     ["Children", 0, "2 adults, 0 children"],

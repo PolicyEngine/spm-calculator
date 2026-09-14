@@ -175,6 +175,12 @@ test("guided setup retains answers and allows direct editing after results", asy
   );
   const search = page.getByRole("combobox", { name: "Search SPM areas" });
   await expect(search).toHaveValue("");
+  await search.focus();
+  await search.press("Enter");
+  await expect(
+    page.getByRole("heading", { name: "Where do you live?" }),
+  ).toBeVisible();
+  await expect(page.getByTestId("primary-result")).toHaveCount(0);
   await expectCompactLocationSearch(page);
   await page.screenshot({ path: testInfo.outputPath("guided-location.png") });
   await search.fill("san jose");
@@ -497,9 +503,21 @@ test("area search selects by click and Enter and preserves selection on no match
   await expect(
     page.getByLabel("SPM estimation area", { exact: true }),
   ).toHaveCount(0);
-  await search.fill("san jose");
   const matches = page.getByRole("listbox", { name: "Matching SPM areas" });
+  const initialThreshold = await threshold(page).textContent();
+  await search.focus();
+  await search.press("Enter");
+  await expect(search).toHaveValue(menu(2025)["35620"].name);
+  await expect(threshold(page)).toHaveText(initialThreshold);
+  await search.press("ArrowDown");
+  const firstArea = await matches.getByRole("option").first().textContent();
+  await search.press("Enter");
+  await expect(search).toHaveValue(firstArea);
+  await search.fill("san jose");
   await expect(matches.getByRole("option")).toHaveCount(1);
+  await matches.focus();
+  await search.focus();
+  await expect(search).toHaveValue("san jose");
   await matches
     .getByRole("option", { name: menu(2025)["41940"].name, exact: true })
     .click();

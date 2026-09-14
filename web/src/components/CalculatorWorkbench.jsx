@@ -207,6 +207,7 @@ export default function CalculatorWorkbench({ data }) {
   const [selectedGeographyId, setSelectedGeographyId] = useState("");
   const [locationQuery, setLocationQuery] = useState("");
   const [locationEditing, setLocationEditing] = useState(false);
+  const locationNavigated = useRef(false);
   const selectedAreaStatus =
     selectedEntry?.geography_by_area?.[selectedGeographyId];
   const selectedArea =
@@ -350,10 +351,25 @@ print(result["threshold"])`;
 
   // ── Render ──────────────────────────────────────────────────
 
-  function selectLocation(code) {
-    setSelectedGeographyId(code);
+  function editLocationSearch(query) {
+    locationNavigated.current = false;
+    setLocationQuery(query);
+    setLocationEditing(true);
+  }
+
+  function openLocationSearch() {
+    if (!locationEditing) editLocationSearch("");
+  }
+
+  function closeLocationSearch() {
+    locationNavigated.current = false;
     setLocationQuery("");
     setLocationEditing(false);
+  }
+
+  function selectLocation(code) {
+    setSelectedGeographyId(code);
+    closeLocationSearch();
     if (!setupComplete) setAdvanceRequest({ stepId: "location" });
   }
 
@@ -528,8 +544,7 @@ print(result["threshold"])`;
             shouldFilter={false}
             onBlur={(event) => {
               if (!event.currentTarget.contains(event.relatedTarget)) {
-                setLocationEditing(false);
-                setLocationQuery("");
+                closeLocationSearch();
               }
             }}
             className="h-auto rounded-lg border border-border bg-background transition-colors focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/15 motion-reduce:transition-none [&_[data-slot=command-input-wrapper]]:h-12 [&_[data-slot=command-input-wrapper]]:border-0 [&_[data-slot=command-input-wrapper]]:px-4"
@@ -546,48 +561,58 @@ print(result["threshold"])`;
                 locationEditing ? locationQuery : (selectedArea?.name ?? "")
               }
               title={!locationEditing ? selectedArea?.name : undefined}
-              onFocus={() => {
-                setLocationQuery("");
-                setLocationEditing(true);
-              }}
-              onClick={() => {
-                if (!locationEditing) {
-                  setLocationQuery("");
-                  setLocationEditing(true);
-                }
-              }}
-              onValueChange={(value) => {
-                setLocationQuery(value);
-                setLocationEditing(true);
-              }}
+              onFocus={openLocationSearch}
+              onClick={openLocationSearch}
+              onValueChange={editLocationSearch}
               onPaste={(event) => {
                 if (!locationEditing) {
                   event.preventDefault();
-                  setLocationQuery(event.clipboardData.getData("text"));
-                  setLocationEditing(true);
+                  editLocationSearch(event.clipboardData.getData("text"));
                 }
               }}
               onCompositionStart={() => {
                 if (!locationEditing) {
-                  setLocationQuery("");
-                  setLocationEditing(true);
+                  editLocationSearch("");
                 }
               }}
               onKeyDown={(event) => {
+                if (
+                  event.nativeEvent.isComposing ||
+                  event.nativeEvent.keyCode === 229
+                ) {
+                  return;
+                }
                 if (event.key === "Escape") {
                   event.preventDefault();
                   event.stopPropagation();
-                  setLocationEditing(false);
-                  setLocationQuery("");
-                } else if (event.key === "ArrowDown" && !locationEditing) {
+                  closeLocationSearch();
+                } else if (
+                  event.key === "Enter" &&
+                  !locationQuery.trim() &&
+                  !locationNavigated.current
+                ) {
+                  // cmdk highlights the first option on mount. An untouched
+                  // search is not an explicit choice of that area.
                   event.preventDefault();
-                  setLocationEditing(true);
+                  closeLocationSearch();
+                } else if (
+                  event.key === "ArrowDown" ||
+                  event.key === "ArrowUp"
+                ) {
+                  if (!locationEditing) {
+                    event.preventDefault();
+                    openLocationSearch();
+                  } else if (
+                    !locationQuery.trim() && !locationNavigated.current
+                  ) {
+                    event.preventDefault();
+                  }
+                  locationNavigated.current = true;
                 } else if (
                   !locationEditing &&
                   !event.ctrlKey &&
                   !event.metaKey &&
                   !event.altKey &&
-                  !event.nativeEvent.isComposing &&
                   (event.key.length === 1 ||
                     event.key === "Backspace" ||
                     event.key === "Delete")
@@ -596,8 +621,7 @@ print(result["threshold"])`;
                   // visible. The first edit must begin a new query, not append
                   // to that name; subsequent edits use the normal input event.
                   event.preventDefault();
-                  setLocationQuery(event.key.length === 1 ? event.key : "");
-                  setLocationEditing(true);
+                  editLocationSearch(event.key.length === 1 ? event.key : "");
                 }
               }}
             >
