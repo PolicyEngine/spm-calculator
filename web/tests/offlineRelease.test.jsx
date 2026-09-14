@@ -1,4 +1,7 @@
-import { renderCalculator as render } from "./helpers/renderCalculator";
+import {
+  renderCalculator as render,
+  selectArea,
+} from "./helpers/renderCalculator";
 import {
   fireEvent,
   render as renderSetup,
@@ -26,10 +29,6 @@ const readCanonicalArtifact = () =>
 const selectYear = (year) =>
   fireEvent.change(screen.getByLabelText("Threshold year"), {
     target: { value: String(year) },
-  });
-const selectArea = (id) =>
-  fireEvent.change(screen.getByLabelText("SPM estimation area"), {
-    target: { value: id },
   });
 
 afterEach(() => vi.unstubAllGlobals());
@@ -160,49 +159,58 @@ describe("canonical export integration", () => {
     );
   });
 
-  it("offers each year's 349 estimation groups offline with the correct published-area membership", async () => {
+  // Keep each year's full menu audit within its own test budget on slower CI.
+  it.each(YEARS)("offers all 349 estimation groups offline with correct published membership in %i", async (year) => {
     const fetch = vi.fn(() => {
       throw new Error("Network unavailable");
     });
     vi.stubGlobal("fetch", fetch);
     const data = readCalculatorData();
     render(<CalculatorWorkbench data={data} />);
-    for (const year of YEARS) {
-      selectYear(year);
-      const areas = data.areasByYear[year];
-      const entries = Object.values(areas);
-      const geography = Object.values(
-        data.forecast.scenarios[data.forecast.defaultScenario].years[year]
-          .geography_by_area,
+    selectYear(year);
+    const areas = data.areasByYear[year];
+    const entries = Object.values(areas);
+    const geography = Object.values(
+      data.forecast.scenarios[data.forecast.defaultScenario].years[year]
+        .geography_by_area,
+    );
+    expect(
+      geography.filter((area) => area.official_published_area),
+    ).toHaveLength(year === 2022 ? 342 : 341);
+    expect(
+      geography.filter((area) => !area.official_published_area),
+    ).toHaveLength(year === 2022 ? 7 : 8);
+    expect(new Set(entries.map((area) => area.area_type))).toEqual(
+      new Set([
+        "msa",
+        "state_metro_residual",
+        "modeled_residual_metro",
+        "state_nonmetro",
+      ]),
+    );
+    const search = screen.getByLabelText("Search SPM areas");
+    fireEvent.focus(search);
+    const menu = screen.getByRole("listbox", { name: "Matching SPM areas" });
+    expect(menu).toBeVisible();
+    // Check visibility once for the list, avoiding thousands of repeated
+    // jsdom ancestor-style checks while verifying every annual option ID.
+    expect(
+      within(menu)
+        .getAllByRole("option", { hidden: true })
+        .map((option) => option.getAttribute("data-value"))
+        .sort(),
+    ).toEqual(Object.keys(areas).sort());
+    fireEvent.keyDown(search, { key: "Escape", code: "Escape" });
+    expect(
+      screen.queryByRole("listbox", { name: "Matching SPM areas" }),
+    ).toBeNull();
+    for (const scenario of Object.values(data.forecast.scenarios)) {
+      expect(Object.keys(scenario.years[year].rent_indices).sort()).toEqual(
+        Object.keys(areas).sort(),
       );
       expect(
-        geography.filter((area) => area.official_published_area),
-      ).toHaveLength(year === 2022 ? 342 : 341);
-      expect(
-        geography.filter((area) => !area.official_published_area),
-      ).toHaveLength(year === 2022 ? 7 : 8);
-      expect(new Set(entries.map((area) => area.area_type))).toEqual(
-        new Set([
-          "msa",
-          "state_metro_residual",
-          "modeled_residual_metro",
-          "state_nonmetro",
-        ]),
-      );
-      const menu = screen.getByLabelText("SPM estimation area");
-      expect(
-        Array.from(menu.options, (option) => option.value)
-          .filter(Boolean)
-          .sort(),
+        Object.keys(scenario.years[year].geography_by_area).sort(),
       ).toEqual(Object.keys(areas).sort());
-      for (const scenario of Object.values(data.forecast.scenarios)) {
-        expect(Object.keys(scenario.years[year].rent_indices).sort()).toEqual(
-          Object.keys(areas).sort(),
-        );
-        expect(
-          Object.keys(scenario.years[year].geography_by_area).sort(),
-        ).toEqual(Object.keys(areas).sort());
-      }
     }
     selectArea("1002");
     expect(
@@ -228,13 +236,11 @@ describe("canonical export integration", () => {
     ).toBeTruthy();
     expect(screen.getByText("2022 published geography anchor")).toBeTruthy();
     selectYear(2023);
-    const menu = screen.getByLabelText("SPM estimation area");
-    expect(menu).toHaveValue("");
-    expect(
-      within(menu).getByRole("option", {
-        name: "Selected area unavailable in 2023",
-      }),
-    ).toBeDisabled();
+    const search = screen.getByLabelText("Search SPM areas");
+    expect(search).toHaveValue("");
+    expect(search).toHaveAttribute(
+      "placeholder", "Selected area unavailable in 2023",
+    );
     expect(screen.getByTestId("primary-result")).toHaveTextContent(
       "Unavailable",
     );
@@ -390,7 +396,10 @@ describe("canonical export integration", () => {
       selectYear(year);
       const entry =
         data.forecast.scenarios[data.forecast.defaultScenario].years[year];
-      const areaId = screen.getByLabelText("SPM estimation area").value;
+      const areaId = "35620";
+      expect(screen.getByLabelText("Search SPM areas")).toHaveValue(
+        data.areasByYear[year][areaId].name,
+      );
       const threshold =
         entry.thresholds.renter *
         (1 + entry.housing_shares.renter * (entry.rent_indices[areaId] - 1));

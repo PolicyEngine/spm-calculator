@@ -81,7 +81,7 @@ export default function CalculatorSetup({ steps, onComplete, advanceRequest }) {
 
   return (
     <form
-      className="mx-auto w-full max-w-3xl space-y-8 px-4 py-4 sm:px-0 sm:py-8"
+      className="mx-auto w-full max-w-xl space-y-8 px-4 py-6 sm:px-0 sm:py-10"
       onSubmit={handleSubmit}
       onKeyDown={(event) => {
         // Let the input/menu handle selection before suppressing the browser's
@@ -89,6 +89,8 @@ export default function CalculatorSetup({ steps, onComplete, advanceRequest }) {
         if (
           current.autoAdvance &&
           event.key === "Enter" &&
+          !event.nativeEvent.isComposing &&
+          event.nativeEvent.keyCode !== 229 &&
           event.target.tagName === "INPUT"
         ) {
           event.preventDefault();
@@ -97,10 +99,13 @@ export default function CalculatorSetup({ steps, onComplete, advanceRequest }) {
       noValidate
       aria-label="Set up your threshold"
     >
-      <nav aria-label="Setup progress" className="space-y-3">
-        <p className="text-sm text-muted-foreground">
-          Step {activeIndex + 1} of {steps.length}
-        </p>
+      <nav aria-label="Setup progress" className="space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+          <p className="font-medium text-primary">SPM threshold calculator</p>
+          <p className="text-muted-foreground">
+            Step {activeIndex + 1} of {steps.length}
+          </p>
+        </div>
         <ol className="flex gap-3 sm:gap-5">
           {steps.map((step, index) => (
             <li key={step.id} className="min-w-0 flex-1">
@@ -117,12 +122,14 @@ export default function CalculatorSetup({ steps, onComplete, advanceRequest }) {
                       : "border-border text-muted-foreground"
                 }`}
               >
-                <span className="block">{step.title}</span>
-                {index <= furthestIndex && step.summary && (
-                  <span className="mt-1 hidden text-xs font-normal text-muted-foreground sm:block">
-                    {step.summary}
-                  </span>
-                )}
+                <span className="block">{step.shortTitle ?? step.title}</span>
+                {index <= furthestIndex &&
+                  step.valid !== false &&
+                  step.summary && (
+                    <span className="mt-1 hidden text-xs font-normal text-muted-foreground sm:block">
+                      {step.summary}
+                    </span>
+                  )}
               </button>
             </li>
           ))}
@@ -135,7 +142,7 @@ export default function CalculatorSetup({ steps, onComplete, advanceRequest }) {
             ref={headingRef}
             id={headingId}
             tabIndex={-1}
-            className="scroll-mt-24 text-2xl font-semibold tracking-tight text-foreground focus:outline-none"
+            className="scroll-mt-24 text-3xl font-semibold tracking-tight text-foreground focus:outline-none"
           >
             {current.title}
           </h2>

@@ -1,4 +1,7 @@
-import { renderCalculator as render } from "./helpers/renderCalculator";
+import {
+  renderCalculator as render,
+  selectArea,
+} from "./helpers/renderCalculator";
 import { fireEvent, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
@@ -18,11 +21,6 @@ function selectYear(year) {
 function selectScenario(scenario) {
   fireEvent.change(screen.getByLabelText("Real spending"), {
     target: { value: scenario },
-  });
-}
-function selectArea(id) {
-  fireEvent.change(screen.getByLabelText("SPM estimation area"), {
-    target: { value: id },
   });
 }
 function yearRow(year) {

@@ -140,6 +140,20 @@ function rollingAdjustment(entry, areaId, tenure) {
   return calculateGeoadj({ rentIndex, housingShare });
 }
 
+function ControlSection({ title, inSidebar, children }) {
+  if (inSidebar) {
+    return <SidebarSection title={title}>{children}</SidebarSection>;
+  }
+  return (
+    <fieldset className="min-w-0 space-y-3">
+      {title && (
+        <legend className="text-sm font-medium text-foreground">{title}</legend>
+      )}
+      {children}
+    </fieldset>
+  );
+}
+
 export default function CalculatorWorkbench({ data }) {
   const {
     methodology: baseMethodology,
@@ -192,6 +206,10 @@ export default function CalculatorWorkbench({ data }) {
   const [tenure, setTenure] = useState("");
   const [selectedGeographyId, setSelectedGeographyId] = useState("");
   const [locationQuery, setLocationQuery] = useState("");
+  const [locationEditing, setLocationEditing] = useState(false);
+  const locationNavigated = useRef(false);
+  const locationInputRef = useRef(null);
+  const pendingLocationEdit = useRef(null);
   const selectedAreaStatus =
     selectedEntry?.geography_by_area?.[selectedGeographyId];
   const selectedArea =
@@ -328,10 +346,6 @@ result = projection.calculate_unit(SPMUnit(
     geography_id="${currentLocation.id}",
 ), scenario="${scenarioId}")
 print(result["threshold"])`;
-  const locationSelectOptions = metroEntries.map(([value, area]) => ({
-    value,
-    label: area.name,
-  }));
   const yearSelectOptions = availableYears.map((value) => ({
     value,
     label: `${value}${selectedScenario.years[value].national_status === "forecast" ? " (forecast)" : ""}`,
@@ -339,9 +353,28 @@ print(result["threshold"])`;
 
   // ── Render ──────────────────────────────────────────────────
 
+  function editLocationSearch(query) {
+    pendingLocationEdit.current = null;
+    locationNavigated.current = false;
+    setLocationQuery(query);
+    setLocationEditing(true);
+  }
+
+  function openLocationSearch() {
+    if (!locationEditing) editLocationSearch("");
+  }
+
+  function closeLocationSearch() {
+    pendingLocationEdit.current = null;
+    locationNavigated.current = false;
+    setLocationQuery("");
+    setLocationEditing(false);
+  }
+
   function selectLocation(code) {
     setSelectedGeographyId(code);
-    setLocationQuery("");
+    locationInputRef.current?.focus();
+    closeLocationSearch();
     if (!setupComplete) setAdvanceRequest({ stepId: "location" });
   }
 
@@ -432,7 +465,10 @@ print(result["threshold"])`;
             decision.
           </p>
         )}
-      <SidebarSection title="Household composition">
+      <ControlSection
+        inSidebar={setupComplete}
+        title={setupComplete ? "Household composition" : undefined}
+      >
         <div className="flex gap-3">
           {[
             ["Adults", "spm-adults", numAdults, setNumAdults, 1, 12],
@@ -447,6 +483,9 @@ print(result["threshold"])`;
               </label>
               <Input
                 id={id}
+                className={
+                  setupComplete ? undefined : "h-12 bg-background text-base"
+                }
                 type="number"
                 inputMode="numeric"
                 value={value}
@@ -463,43 +502,205 @@ print(result["threshold"])`;
             </div>
           ))}
         </div>
-      </SidebarSection>
+      </ControlSection>
 
-      <SidebarDivider />
+      {setupComplete && <SidebarDivider />}
 
-      <SidebarSection title="Housing tenure">
+      <ControlSection
+        inSidebar={setupComplete}
+        title={setupComplete ? "Housing tenure" : "How do you pay for housing?"}
+      >
         <Tabs value={tenure} onValueChange={setTenure} activationMode="manual">
-          <TabsList aria-label="Housing tenure">
+          <TabsList
+            aria-label="Housing tenure"
+            className={
+              setupComplete
+                ? undefined
+                : "h-auto w-full gap-2 bg-transparent p-0"
+            }
+          >
             {TENURE_OPTIONS.map((option) => (
-              <TabsTrigger key={option.value} value={option.value}>
+              <TabsTrigger
+                key={option.value}
+                value={option.value}
+                className={
+                  setupComplete
+                    ? undefined
+                    : "min-h-12 flex-1 border border-border bg-background data-[state=active]:border-primary data-[state=active]:bg-primary/5 data-[state=active]:text-primary"
+                }
+              >
                 {option.label}
               </TabsTrigger>
             ))}
           </TabsList>
         </Tabs>
-      </SidebarSection>
+      </ControlSection>
     </>
   );
   const locationControls = (
     <>
-      <SidebarSection title="Geography">
+      <ControlSection
+        inSidebar={setupComplete}
+        title={setupComplete ? "Location" : undefined}
+      >
         <div className="space-y-3">
-          <Command label="Search SPM areas" shouldFilter={false}>
-            <p className="mb-1.5 text-sm font-medium text-muted-foreground">
-              Search SPM areas
-            </p>
+          <Command
+            label="Search SPM areas"
+            shouldFilter={false}
+            onMouseDown={(event) => {
+              if (event.target !== locationInputRef.current) {
+                event.preventDefault();
+                locationInputRef.current?.focus();
+                openLocationSearch();
+              }
+            }}
+            onKeyDown={(event) => {
+              if (
+                event.defaultPrevented ||
+                event.nativeEvent.isComposing ||
+                event.nativeEvent.keyCode === 229
+              ) {
+                return;
+              }
+              if (event.key === "Escape") {
+                event.preventDefault();
+                event.stopPropagation();
+                locationInputRef.current?.focus();
+                closeLocationSearch();
+              } else if (
+                event.key === "Enter" &&
+                !locationQuery.trim() &&
+                !locationNavigated.current
+              ) {
+                // cmdk highlights the first option on mount. An untouched
+                // search is not an explicit choice, including from the listbox.
+                event.preventDefault();
+                locationInputRef.current?.focus();
+                closeLocationSearch();
+              } else if (
+                event.key === "ArrowDown" ||
+                event.key === "ArrowUp"
+              ) {
+                if (!locationEditing) {
+                  event.preventDefault();
+                  openLocationSearch();
+                }
+                locationNavigated.current = true;
+              } else if (
+                locationEditing &&
+                (event.key === "Home" ||
+                  event.key === "End" ||
+                  (event.ctrlKey && ["n", "j", "p", "k"].includes(event.key)))
+              ) {
+                // Preserve cmdk's navigation behavior for all input and list
+                // targets, accepting the highlighted choice on a later Enter.
+                locationNavigated.current = true;
+              }
+            }}
+            onBlur={(event) => {
+              if (!event.currentTarget.contains(event.relatedTarget)) {
+                closeLocationSearch();
+              }
+            }}
+            className="h-auto rounded-lg border border-border bg-background transition-colors focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/15 motion-reduce:transition-none [&_[data-slot=command-input-wrapper]]:h-12 [&_[data-slot=command-input-wrapper]]:border-0 [&_[data-slot=command-input-wrapper]]:px-4"
+          >
             <CommandInput
-              placeholder="New York, Alabama Nonmetro, 35620..."
-              value={locationQuery}
-              onValueChange={setLocationQuery}
-            />
-            {locationQuery.trim() && (
-              <CommandList label="Matching SPM areas" className="max-h-60">
+              asChild
+              ref={locationInputRef}
+              placeholder={
+                setupComplete && !selectedArea && !locationEditing
+                  ? `Selected area unavailable in ${year}`
+                  : "Search a metro area or state"
+              }
+              className="h-12 text-ellipsis py-0 text-base"
+              value={
+                locationEditing ? locationQuery : (selectedArea?.name ?? "")
+              }
+              title={!locationEditing ? selectedArea?.name : undefined}
+              onFocus={openLocationSearch}
+              onClick={openLocationSearch}
+              onValueChange={(value) => {
+                // Some soft keyboards append directly to the displayed name
+                // without sending compositionstart or an editable keydown.
+                const name = selectedArea?.name;
+                const query = pendingLocationEdit.current ?? (
+                  !locationEditing && name && value.startsWith(name)
+                    ? value.slice(name.length)
+                    : value
+                );
+                editLocationSearch(query);
+              }}
+              onPaste={(event) => {
+                if (!locationEditing) {
+                  event.preventDefault();
+                  editLocationSearch(event.clipboardData.getData("text"));
+                }
+              }}
+              onCompositionStart={() => {
+                if (!locationEditing) {
+                  editLocationSearch("");
+                }
+              }}
+              onKeyDown={(event) => {
+                if (
+                  event.nativeEvent.isComposing ||
+                  event.nativeEvent.keyCode === 229
+                ) {
+                  return;
+                }
+                if (
+                  !locationEditing &&
+                  !event.ctrlKey &&
+                  !event.metaKey &&
+                  !event.altKey &&
+                  (event.key.length === 1 ||
+                    event.key === "Backspace" ||
+                    event.key === "Delete")
+                ) {
+                  // Selection leaves the input focused with the committed name
+                  // visible. The first edit must begin a new query, not append
+                  // to that name; subsequent edits use the normal input event.
+                  event.preventDefault();
+                  editLocationSearch(event.key.length === 1 ? event.key : "");
+                }
+              }}
+            >
+              {/* cmdk assumes an always-open palette. Its input slot lets this
+                  collapsible selector expose its actual state to screen readers. */}
+              <input
+                aria-expanded={locationEditing}
+                onInputCapture={(event) => {
+                  pendingLocationEdit.current = null;
+                  if (locationEditing) return;
+                  const { inputType, data } = event.nativeEvent;
+                  if (inputType?.startsWith("delete")) {
+                    pendingLocationEdit.current = "";
+                  } else if (
+                    inputType?.startsWith("insert") && typeof data === "string"
+                  ) {
+                    pendingLocationEdit.current = data;
+                  }
+                }}
+                {...(!locationEditing && {
+                  "aria-controls": undefined,
+                  "aria-activedescendant": undefined,
+                })}
+              />
+            </CommandInput>
+            {locationEditing && (
+              <CommandList
+                label="Matching SPM areas"
+                className="max-h-60 border-t border-border p-1"
+              >
                 <CommandEmpty>No SPM areas match your search.</CommandEmpty>
                 {filteredMetroEntries.map(([code, info]) => (
                   <CommandItem
                     key={code}
                     value={code}
+                    className="min-h-11 cursor-pointer px-3 py-2 leading-snug"
+                    onPointerMoveCapture={() => {
+                      locationNavigated.current = true;
+                    }}
                     onSelect={() => selectLocation(code)}
                   >
                     {info.name}
@@ -509,37 +710,17 @@ print(result["threshold"])`;
             )}
           </Command>
           {setupComplete ? (
-            <SelectInput
-              id="spm-census-area"
-              aria-label="SPM estimation area"
-              label="SPM estimation area"
-              options={locationSelectOptions}
-              value={selectedArea ? selectedGeographyId : ""}
-              placeholder={
-                selectedArea
-                  ? undefined
-                  : `Selected area unavailable in ${year}`
-              }
-              onChange={selectLocation}
-            />
+            <p className="text-xs leading-5 text-muted-foreground">
+              SPM estimation areas: MSAs, residual metro groups and state nonmetro
+              groups. Availability and publication status depend on the year.
+            </p>
           ) : (
-            selectedArea && (
-              <Button
-                type="button"
-                variant="outline"
-                className="h-auto min-h-11 w-full justify-start whitespace-normal text-left"
-                onClick={() => selectLocation(selectedGeographyId)}
-              >
-                {selectedArea.name}
-              </Button>
-            )
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              Outside a metro area? Search for your state.
+            </p>
           )}
-          <p className="text-xs leading-5 text-muted-foreground">
-            SPM estimation areas: MSAs, residual metro groups and state nonmetro
-            groups. Availability and publication status depend on the year.
-          </p>
         </div>
-      </SidebarSection>
+      </ControlSection>
 
       {locationError && (
         <div
@@ -624,7 +805,8 @@ print(result["threshold"])`;
             {
               id: "location",
               title: "Where do you live?",
-              description: "Search for an area and select it to continue.",
+              shortTitle: "Location",
+              description: "Choose your area to find the local poverty threshold.",
               autoAdvance: true,
               content: locationControls,
               summary: currentLocation?.label ?? "Choose an area",
@@ -633,6 +815,7 @@ print(result["threshold"])`;
             {
               id: "household",
               title: "Who is in your household?",
+              shortTitle: "Household",
               description:
                 "Enter the number of adults and children, and how you pay for housing.",
               content: householdControls,
@@ -644,6 +827,7 @@ print(result["threshold"])`;
             {
               id: "year",
               title: "Which year?",
+              shortTitle: "Year",
               description:
                 "Select a year to view your threshold. You can change forecast assumptions in the results.",
               autoAdvance: true,
