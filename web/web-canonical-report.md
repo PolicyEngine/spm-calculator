@@ -1,3 +1,7 @@
+# Historical canonical UI handoff
+
+This retained report predates the compact browser export and package publication promotion. Its hashes, commands and remaining-work notes describe that earlier checkout. Use [the current web status](PROGRESS.md) for the current package version and export verification command.
+
 The standalone app now uses one canonical schema-2 forecast path for 2022–2035. Search and selection use each year's SPM estimation areas, retain unavailable selections across year changes, and distinguish published national thresholds/housing shares from modeled geography and forecasts. Methodology and provenance live in the results footnote under one shared ui-kit header.
 
 Changed files:
