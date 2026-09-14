@@ -37,8 +37,9 @@ def spm_unit_id(
     Otherwise, this applies a best-effort implementation of Census-style SPM
     resource-unit membership: family members share a unit, cohabiting partners
     share a unit when partner links are present, foster children under 22 and
-    unrelated children under 15 are attached to the household reference unit,
-    and other people remain in separate units.
+    unrelated children under 15 without a linked parent in the household are
+    attached to the household reference unit, and other people remain in
+    separate units.
 
     The function returns a Series aligned to ``persons`` and does not mutate the
     input DataFrame.
@@ -260,12 +261,43 @@ def _infer_spm_unit_id(
         work["_relationship"] = _normalize_relationship(
             persons[relationship_column]
         )
+        work["_foster_child"] = work["_relationship"].eq("foster_child")
     if foster_column is not None:
-        work["_foster_child"] = _coerce_bool(persons[foster_column])
+        work["_foster_child"] = _coerce_bool(
+            persons[foster_column]
+        ) | work.get("_foster_child", False)
     for rule_name, column in spm_unit_flag_columns.items():
         work[f"_{rule_name}"] = _coerce_bool(persons[column])
 
     fallback_rules_used: set[str] = set()
+
+    # Resolve parent pointers before the unrelated-child fallback. Census
+    # WP2011-22, printed p.7 (PDF p.8), attaches an under-15 child to the
+    # householder only when the child has no parent elsewhere in the household.
+    parent_links: list[tuple[int, int]] = []
+    if pointer_column is not None and parent_columns:
+        parent_lookup = {
+            (row["_household"], row[pointer_work_column]): int(
+                row["_position"]
+            )
+            for _, row in work.iterrows()
+        }
+        for parent_column_name in parent_columns:
+            for row_position, parent_value in enumerate(
+                persons[parent_column_name]
+            ):
+                if pd.isna(parent_value):
+                    continue
+                household_value = work["_household"].iloc[row_position]
+                parent_position = parent_lookup.get(
+                    (household_value, parent_value)
+                )
+                if (
+                    parent_position is not None
+                    and parent_position != row_position
+                ):
+                    parent_links.append((row_position, parent_position))
+    children_with_parent = {child for child, _ in parent_links}
 
     for _, household_rows in work.groupby("_household", sort=False):
         positions = household_rows["_position"].to_numpy(dtype=int)
@@ -315,6 +347,7 @@ def _infer_spm_unit_id(
             unrelated_children = household_rows[
                 household_rows["_relationship"].eq("other")
                 & household_rows["_age"].lt(15)
+                & ~household_rows["_position"].isin(children_with_parent)
             ]["_position"].to_numpy(dtype=int)
             if len(unrelated_children) > 0:
                 fallback_rules_used.add(
@@ -386,27 +419,9 @@ def _infer_spm_unit_id(
             union(row_position, spouse_position)
             fallback_rules_used.add("link_spouses")
 
-    if pointer_column is not None and parent_columns:
-        person_lookup = {
-            (row["_household"], row[pointer_work_column]): int(
-                row["_position"]
-            )
-            for _, row in work.iterrows()
-        }
-        for parent_column_name in parent_columns:
-            for row_position, parent_value in enumerate(
-                persons[parent_column_name]
-            ):
-                if pd.isna(parent_value):
-                    continue
-                household_value = work["_household"].iloc[row_position]
-                parent_position = person_lookup.get(
-                    (household_value, parent_value)
-                )
-                if parent_position is None:
-                    continue
-                union(row_position, parent_position)
-                fallback_rules_used.add("link_parent_child")
+    for child_position, parent_position in parent_links:
+        union(child_position, parent_position)
+        fallback_rules_used.add("link_parent_child")
 
     root_to_id: dict[int, int] = {}
     values: list[int] = []
@@ -557,10 +572,10 @@ def _normalize_relationship(values: pd.Series) -> pd.Series:
                 "son",
                 "daughter",
                 "stepchild",
-                "foster child",
             }
         )
     ] = "child"
+    result.loc[normalized.eq("foster child")] = "foster_child"
     return result
 
 
