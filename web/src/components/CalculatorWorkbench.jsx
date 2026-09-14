@@ -370,6 +370,7 @@ print(result["threshold"])`;
 
   function selectLocation(code) {
     setSelectedGeographyId(code);
+    locationInputRef.current?.focus();
     closeLocationSearch();
     if (!setupComplete) setAdvanceRequest({ stepId: "location" });
   }

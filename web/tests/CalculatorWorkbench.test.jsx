@@ -425,6 +425,36 @@ describe("explicit personal setup", () => {
 });
 
 describe("canonical calculator controls and shared layout", () => {
+  it("restores input focus after committing from the listbox and accepts a fresh query", () => {
+    render(<CalculatorWorkbench data={makeRollingCalculatorData()} />);
+    const search = screen.getByLabelText("Search SPM areas");
+    act(() => search.focus());
+    const list = screen.getByRole("listbox", { name: "Matching SPM areas" });
+    act(() => list.focus());
+    expect(list).toHaveFocus();
+    fireEvent.keyDown(list, { key: "End", code: "End" });
+    expect(within(list).getByRole("option", { selected: true })).toHaveAttribute(
+      "data-value", "41940",
+    );
+    fireEvent.keyDown(list, { key: "Enter", code: "Enter" });
+    expect(search).toHaveFocus();
+    expect(search).toHaveValue("San Jose-Sunnyvale-Santa Clara, CA MSA");
+    expect(search).toHaveAttribute("aria-expanded", "false");
+    expect(screen.getByTestId("primary-result")).toHaveTextContent("$58,381");
+
+    expect(fireEvent.keyDown(search, { key: "s", code: "KeyS" })).toBe(false);
+    expect(search).toHaveValue("s");
+    expect(search).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("option", {
+      name: "San Jose-Sunnyvale-Santa Clara, CA MSA",
+      exact: true,
+    })).toHaveAttribute("data-value", "41940");
+    fireEvent.keyDown(search, { key: "Escape", code: "Escape" });
+    expect(search).toHaveFocus();
+    expect(search).toHaveValue("San Jose-Sunnyvale-Santa Clara, CA MSA");
+    expect(screen.getByTestId("primary-result")).toHaveTextContent("$58,381");
+  });
+
   it("restores the committed field and input focus when Escape targets the listbox", () => {
     const data = makeRollingCalculatorData();
     render(<CalculatorWorkbench data={data} />);

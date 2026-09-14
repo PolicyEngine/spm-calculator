@@ -546,6 +546,15 @@ test("area search selects by click and Enter and preserves selection on no match
     await expect(search).toHaveValue(name);
   }
   await search.click();
+  await matches.focus();
+  await matches.press("End");
+  await matches.press("Enter");
+  await expect(search).toHaveValue(lastArea);
+  await expect(search).toBeFocused();
+  await search.pressSequentially("san jose");
+  await expect(search).toHaveValue("san jose");
+  await search.press("Escape");
+  await search.click();
   // Click the list's padding, outside an option: focus must stay in the input
   // and Enter must not turn the automatic highlight into a committed choice.
   await matches.click({ position: { x: 1, y: 1 } });
