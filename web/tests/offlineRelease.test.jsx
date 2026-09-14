@@ -159,59 +159,58 @@ describe("canonical export integration", () => {
     );
   });
 
-  it("offers each year's 349 estimation groups offline with the correct published-area membership", async () => {
+  // Keep each year's full menu audit within its own test budget on slower CI.
+  it.each(YEARS)("offers all 349 estimation groups offline with correct published membership in %i", async (year) => {
     const fetch = vi.fn(() => {
       throw new Error("Network unavailable");
     });
     vi.stubGlobal("fetch", fetch);
     const data = readCalculatorData();
     render(<CalculatorWorkbench data={data} />);
-    for (const year of YEARS) {
-      selectYear(year);
-      const areas = data.areasByYear[year];
-      const entries = Object.values(areas);
-      const geography = Object.values(
-        data.forecast.scenarios[data.forecast.defaultScenario].years[year]
-          .geography_by_area,
+    selectYear(year);
+    const areas = data.areasByYear[year];
+    const entries = Object.values(areas);
+    const geography = Object.values(
+      data.forecast.scenarios[data.forecast.defaultScenario].years[year]
+        .geography_by_area,
+    );
+    expect(
+      geography.filter((area) => area.official_published_area),
+    ).toHaveLength(year === 2022 ? 342 : 341);
+    expect(
+      geography.filter((area) => !area.official_published_area),
+    ).toHaveLength(year === 2022 ? 7 : 8);
+    expect(new Set(entries.map((area) => area.area_type))).toEqual(
+      new Set([
+        "msa",
+        "state_metro_residual",
+        "modeled_residual_metro",
+        "state_nonmetro",
+      ]),
+    );
+    const search = screen.getByLabelText("Search SPM areas");
+    fireEvent.focus(search);
+    const menu = screen.getByRole("listbox", { name: "Matching SPM areas" });
+    expect(menu).toBeVisible();
+    // Check visibility once for the list, avoiding thousands of repeated
+    // jsdom ancestor-style checks while verifying every annual option ID.
+    expect(
+      within(menu)
+        .getAllByRole("option", { hidden: true })
+        .map((option) => option.getAttribute("data-value"))
+        .sort(),
+    ).toEqual(Object.keys(areas).sort());
+    fireEvent.keyDown(search, { key: "Escape", code: "Escape" });
+    expect(
+      screen.queryByRole("listbox", { name: "Matching SPM areas" }),
+    ).toBeNull();
+    for (const scenario of Object.values(data.forecast.scenarios)) {
+      expect(Object.keys(scenario.years[year].rent_indices).sort()).toEqual(
+        Object.keys(areas).sort(),
       );
       expect(
-        geography.filter((area) => area.official_published_area),
-      ).toHaveLength(year === 2022 ? 342 : 341);
-      expect(
-        geography.filter((area) => !area.official_published_area),
-      ).toHaveLength(year === 2022 ? 7 : 8);
-      expect(new Set(entries.map((area) => area.area_type))).toEqual(
-        new Set([
-          "msa",
-          "state_metro_residual",
-          "modeled_residual_metro",
-          "state_nonmetro",
-        ]),
-      );
-      const search = screen.getByLabelText("Search SPM areas");
-      fireEvent.focus(search);
-      const menu = screen.getByRole("listbox", { name: "Matching SPM areas" });
-      expect(menu).toBeVisible();
-      // Check visibility once for the list, avoiding thousands of repeated
-      // jsdom ancestor-style checks while verifying every annual option ID.
-      expect(
-        within(menu)
-          .getAllByRole("option", { hidden: true })
-          .map((option) => option.getAttribute("data-value"))
-          .sort(),
+        Object.keys(scenario.years[year].geography_by_area).sort(),
       ).toEqual(Object.keys(areas).sort());
-      fireEvent.keyDown(search, { key: "Escape", code: "Escape" });
-      expect(
-        screen.queryByRole("listbox", { name: "Matching SPM areas" }),
-      ).toBeNull();
-      for (const scenario of Object.values(data.forecast.scenarios)) {
-        expect(Object.keys(scenario.years[year].rent_indices).sort()).toEqual(
-          Object.keys(areas).sort(),
-        );
-        expect(
-          Object.keys(scenario.years[year].geography_by_area).sort(),
-        ).toEqual(Object.keys(areas).sort());
-      }
     }
     selectArea("1002");
     expect(
