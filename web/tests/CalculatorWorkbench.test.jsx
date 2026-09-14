@@ -80,6 +80,52 @@ describe("explicit personal setup", () => {
     expect(screen.getByLabelText("Adults")).toHaveValue(null);
   });
 
+  it.each([
+    ["Home", { key: "Home", code: "Home" }],
+    ["End", { key: "End", code: "End" }],
+    ["Ctrl+n", { key: "n", code: "KeyN", ctrlKey: true }],
+    ["Ctrl+j", { key: "j", code: "KeyJ", ctrlKey: true }],
+    ["Ctrl+p", { key: "p", code: "KeyP", ctrlKey: true }],
+    ["Ctrl+k", { key: "k", code: "KeyK", ctrlKey: true }],
+  ])("commits an empty-query area choice made with %s then Enter", (_, key) => {
+    renderSetup(<CalculatorWorkbench data={makeRollingCalculatorData()} />);
+    const search = screen.getByLabelText("Search SPM areas");
+    act(() => search.focus());
+    const list = screen.getByRole("listbox", { name: "Matching SPM areas" });
+    fireEvent.keyDown(search, key);
+    expect(search).toHaveValue("");
+    const selected = within(list).getByRole("option", { selected: true });
+    const name = selected.textContent;
+    fireEvent.keyDown(search, { key: "Enter", code: "Enter" });
+    expect(
+      screen.getByRole("heading", { name: "Who is in your household?" }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("navigation", { name: "Setup progress" }),
+    ).toHaveTextContent(name);
+  });
+
+  it("commits a pointer-highlighted empty-query area choice with Enter", () => {
+    renderSetup(<CalculatorWorkbench data={makeRollingCalculatorData()} />);
+    const search = screen.getByLabelText("Search SPM areas");
+    act(() => search.focus());
+    const option = screen.getByRole("option", {
+      name: "San Jose-Sunnyvale-Santa Clara, CA MSA",
+      exact: true,
+    });
+    fireEvent.pointerMove(option, { pointerType: "mouse" });
+    expect(search).toHaveFocus();
+    expect(search).toHaveValue("");
+    expect(option).toHaveAttribute("aria-selected", "true");
+    fireEvent.keyDown(search, { key: "Enter", code: "Enter" });
+    expect(
+      screen.getByRole("heading", { name: "Who is in your household?" }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("navigation", { name: "Setup progress" }),
+    ).toHaveTextContent("San Jose-Sunnyvale-Santa Clara, CA MSA");
+  });
+
   it.each([{ keyCode: 229 }, { isComposing: true }])(
     "leaves composition Enter to the input method during setup %j",
     (composition) => {

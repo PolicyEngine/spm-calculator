@@ -609,6 +609,15 @@ print(result["threshold"])`;
                   }
                   locationNavigated.current = true;
                 } else if (
+                  locationEditing &&
+                  (event.key === "Home" ||
+                    event.key === "End" ||
+                    (event.ctrlKey && ["n", "j", "p", "k"].includes(event.key)))
+                ) {
+                  // These keys also move cmdk's highlight. Let cmdk handle the
+                  // movement, and accept that deliberate choice on Enter.
+                  locationNavigated.current = true;
+                } else if (
                   !locationEditing &&
                   !event.ctrlKey &&
                   !event.metaKey &&
@@ -647,6 +656,9 @@ print(result["threshold"])`;
                     value={code}
                     className="min-h-11 cursor-pointer px-3 py-2 leading-snug"
                     onMouseDown={(event) => event.preventDefault()}
+                    onPointerMoveCapture={() => {
+                      locationNavigated.current = true;
+                    }}
                     onSelect={() => selectLocation(code)}
                   >
                     {info.name}

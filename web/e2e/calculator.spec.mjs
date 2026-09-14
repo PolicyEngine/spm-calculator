@@ -513,6 +513,14 @@ test("area search selects by click and Enter and preserves selection on no match
   const firstArea = await matches.getByRole("option").first().textContent();
   await search.press("Enter");
   await expect(search).toHaveValue(firstArea);
+  await search.click();
+  await search.press("End");
+  const lastArea = await matches.getByRole("option").last().textContent();
+  await expect(matches.getByRole("option").last()).toHaveAttribute(
+    "aria-selected", "true",
+  );
+  await search.press("Enter");
+  await expect(search).toHaveValue(lastArea);
   await search.fill("san jose");
   await expect(matches.getByRole("option")).toHaveCount(1);
   await matches.focus();
