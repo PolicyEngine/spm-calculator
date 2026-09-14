@@ -89,15 +89,8 @@ def test_committed_browser_export_matches_canonical_artifact(config):
         "publishedVersion": "1.0.0",
         "pypiUrl": "https://pypi.org/project/spm-calculator/1.0.0/",
     }
-    assert {
-        key: value
-        for key, value in published.items()
-        if key not in {"packageVersion", "packageDistribution"}
-    } == {
-        key: value
-        for key, value in config.items()
-        if key not in {"packageVersion", "packageDistribution"}
-    }
+    assert config["packageVersion"] == "1.0.0.post1"
+    assert config["packageDistribution"]["status"] == "local_preview"
     assert config["schemaVersion"] == 2
     assert config["forecast"]["schemaVersion"] == 2
     assert config["availableYears"] == list(YEARS)

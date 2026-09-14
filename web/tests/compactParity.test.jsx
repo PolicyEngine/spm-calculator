@@ -118,20 +118,23 @@ describe("compact browser export parity with the scientific artifact", () => {
     }
   });
 
-  it("replays all 14 years × 2 scenarios × 349 actual areas × 3 tenures across seven household compositions", () => {
-    let combinations = 0;
-    expect(data.methodology.equivalenceScale.referenceFamilyRaw).toBe(3 ** 0.7);
-    for (const [adults, children, raw] of HOUSEHOLDS) {
-      expect(getRawEquivalenceScale(adults, children, data.methodology)).toBe(
-        raw,
-      );
-    }
-    for (const [scenarioId, scenario] of Object.entries(canonical.scenarios)) {
-      expect(Object.keys(scenario.years).map(Number)).toEqual(YEARS);
-      for (const year of YEARS) {
+  it.each(YEARS)(
+    "replays %i across 2 scenarios × 349 actual areas × 3 tenures × seven household compositions",
+    (year) => {
+      let combinations = 0;
+      expect(data.methodology.equivalenceScale.referenceFamilyRaw).toBe(3 ** 0.7);
+      for (const [adults, children, raw] of HOUSEHOLDS) {
+        expect(getRawEquivalenceScale(adults, children, data.methodology)).toBe(
+          raw,
+        );
+      }
+      expect(Object.keys(canonical.scenarios)).toHaveLength(2);
+      for (const [scenarioId, scenario] of Object.entries(canonical.scenarios)) {
+        expect(Object.keys(scenario.years).map(Number)).toEqual(YEARS);
         const expected = scenario.years[year];
         const actual = data.forecast.scenarios[scenarioId].years[year];
         const areas = Object.keys(expected.geography_by_area).sort();
+        expect(areas).toHaveLength(349);
         expect(Object.keys(actual.geography_by_area).sort()).toEqual(areas);
         expect(Object.keys(data.areasByYear[year]).sort()).toEqual(areas);
         expect(Object.keys(actual.rent_indices).sort()).toEqual(areas);
@@ -175,9 +178,9 @@ describe("compact browser export parity with the scientific artifact", () => {
           }
         }
       }
-    }
-    expect(combinations).toBe(14 * 2 * 349 * 3 * HOUSEHOLDS.length);
-  });
+      expect(combinations).toBe(2 * 349 * 3 * HOUSEHOLDS.length);
+    },
+  );
 
   it("preserves warning decisions and displayed diagnostic numbers for every actual area and year", () => {
     let thinSupportCount = 0;
