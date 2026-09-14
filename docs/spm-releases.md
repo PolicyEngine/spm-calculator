@@ -90,7 +90,7 @@ identities even if all amounts remain equal.
 
 ## Current artifact identity
 
-Version 1.0.0 uses these pins:
+Versions 1.0.0 and 1.0.0.post1 use these pins:
 
 | Identity | SHA-256 |
 | --- | --- |
@@ -100,7 +100,7 @@ Version 1.0.0 uses these pins:
 
 The [current canonical download](../web/public/data/canonical/rolling-forecast-cc06784feb81f8c7935d4494cea0a9821a79af868ac50383da8be37c6dc14b99.json)
 has the file-byte digest above. These pins describe the published 1.0.0
-distribution and this source checkout; each downstream bundle declares its
+distribution and the unchanged data in 1.0.0.post1; each downstream bundle declares its
 own coordinated pins.
 
 The September 9, 2026 Python AST portability adaptation changes source and
@@ -135,12 +135,21 @@ Verify the adaptation, lightweight assembly and export without raw microdata:
 python scripts/adapt_acs_code_identity.py --check
 python scripts/build_rolling_forecast.py --check
 python scripts/adapt_acs_code_identity.py --finalize --check
-python scripts/export_web_release.py --published-package-version 1.0.0 --check
 ```
 
-The publication flag matches the committed browser export and verified PyPI
-package 1.0.0. Omit it only when generating and checking an unpublished preview
-export, whose default status is `local_preview`.
+The committed browser export identifies the verified PyPI package 1.0.0.
+After PyPI publishes 1.0.0.post1, promote the browser metadata and verify the
+result with:
+
+```sh
+python scripts/export_web_release.py --published-package-version 1.0.0.post1
+python scripts/export_web_release.py --published-package-version 1.0.0.post1 --check
+```
+
+The exporter requires the publication flag to match `pyproject.toml`. Omit the
+flag when generating and checking an unpublished preview export, whose default
+status is `local_preview`. Package publication and browser promotion happen
+separately; the live app retains its verified package pin until promotion.
 
 ## Responsibilities
 

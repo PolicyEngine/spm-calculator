@@ -5,17 +5,16 @@ inputs and conditional CE/ACS rolling forecasts. The package works offline for
 standalone calculations and supplies the same forecast artifact to optional
 PolicyEngine, Microcosm Frame and actual Axiom core integrations.
 
-Version 1.0.0 is published on
-[PyPI](https://pypi.org/project/spm-calculator/1.0.0/). The calculator runs at
+Install the package from
+[PyPI](https://pypi.org/project/spm-calculator/). The calculator runs at
 [policyengine.org/us/spm-calculator](https://policyengine.org/us/spm-calculator),
 the documentation is at
 [policyengine-docs.vercel.app/spm-calculator](https://policyengine-docs.vercel.app/spm-calculator/),
 and the companion paper is at
 [spm-threshold-paper.vercel.app](https://spm-threshold-paper.vercel.app/).
 
-Version 1.0 changes the public calculation API and removes the legacy modules.
-Existing PolicyEngine environments require coordinated dependency pins; read
-the [1.0 migration guide](docs/migration.md) before upgrading.
+PolicyEngine integrations require coordinated dependency pins; read
+the [migration guide](https://github.com/PolicyEngine/spm-calculator/blob/main/docs/migration.md) before upgrading an existing environment.
 
 ## Published 2025 inputs
 
@@ -28,10 +27,10 @@ The national reference family has two SPM adults and two children. The bundled
 | Owner without mortgage | 34,325.997720 | 0.3120194707 |
 | Renter | 41,700.555713 | 0.4336857704 |
 
-The [BLS housing-share workbook](spm_calculator/data/current/bls_spm_shares.xlsx)
-supplies the shelter-plus-utilities fractions. The [published-cell receipt](spm_calculator/data/current/bls_published_cell_receipt.json)
+The [BLS housing-share workbook](https://github.com/PolicyEngine/spm-calculator/blob/main/spm_calculator/data/current/bls_spm_shares.xlsx)
+supplies the shelter-plus-utilities fractions. The [published-cell receipt](https://github.com/PolicyEngine/spm-calculator/blob/main/spm_calculator/data/current/bls_published_cell_receipt.json)
 links threshold cells to the source workbooks and rounded BLS page values.
-The [source and validation guide](docs/validation.md) distinguishes these
+The [source and validation guide](https://github.com/PolicyEngine/spm-calculator/blob/main/docs/validation.md) distinguishes these
 published values from replicated or projected amounts. A published national
 base does not make a local 2025 estimate an official Census threshold: the
 selected area's rent input can be modeled.
@@ -41,11 +40,11 @@ selected area's rent input can be modeled.
 Python 3.9 or newer:
 
 ```sh
-pip install spm-calculator==1.0.0
+pip install spm-calculator==1.0.0.post1
 ```
 
-With uv, `uv pip install spm-calculator==1.0.0`, or
-`uv add spm-calculator==1.0.0` inside a uv project. To work on the
+With uv, `uv pip install spm-calculator==1.0.0.post1`, or
+`uv add spm-calculator==1.0.0.post1` inside a uv project. To work on the
 package itself, install this checkout instead with
 `python -m pip install -e .`.
 
@@ -124,7 +123,7 @@ unresolved CE sample policies, fixed future donors and weights, and unestimated
 forecast uncertainty limit interpretation. Relative rent indices stabilize from
 2029 under the baseline donor and price assumptions even as windows advance;
 this is not evidence of persistent local growth differences. Read the
-[rolling forecast methods and validation limits](docs/rolling-forecasts.md)
+[rolling forecast methods and validation limits](https://github.com/PolicyEngine/spm-calculator/blob/main/docs/rolling-forecasts.md)
 before comparing scenarios or historical geography series breaks.
 
 ## Command line
@@ -143,19 +142,19 @@ spm-calculator --scenario zero_real export --format csv
 Global options (`--forecast`, `--expect-sha256`, `--as-of`, `--scenario`) precede
 the subcommand. Retain a reviewed content digest and supply it on replay; the
 reader does not obtain a newer artifact over the network. See the
-[quickstart](docs/quickstart.md) and [artifact contract](docs/spm-releases.md).
+[quickstart](https://github.com/PolicyEngine/spm-calculator/blob/main/docs/quickstart.md) and [artifact contract](https://github.com/PolicyEngine/spm-calculator/blob/main/docs/spm-releases.md).
 
 ## Integrations and app
 
-- [PolicyEngine](docs/policyengine-release-integration.md): in this
+- [PolicyEngine](https://github.com/PolicyEngine/spm-calculator/blob/main/docs/policyengine-release-integration.md): in this
   integration the country model reads forecast configuration by default and
   retains its tax, benefit and resource formulas. The country and wrapper
   sides ship in their own packages: `policyengine-us` 2.0 and the
   `policyengine` wrapper 6.0 are in progress. Read the
-  [1.0 migration guide](docs/migration.md) before pinning them.
-- [Microcosm Frame](docs/microcosm-integration.md): preserve native membership
+  [1.0 migration guide](https://github.com/PolicyEngine/spm-calculator/blob/main/docs/migration.md) before pinning them.
+- [Microcosm Frame](https://github.com/PolicyEngine/spm-calculator/blob/main/docs/microcosm-integration.md): preserve native membership
   and typed weights, attach canonical results and summarize with Frame operations.
-- [Axiom core](docs/axiom-integration.md): execute person classification,
+- [Axiom core](https://github.com/PolicyEngine/spm-calculator/blob/main/docs/axiom-integration.md): execute person classification,
   native unit counts, bounded canonical scale lookup and threshold/housing/poverty
   arithmetic in real core. The dense Microcosm AxiomEngine does not support this
   bridge; exact decimal poverty boundaries can differ from Python float results.
@@ -167,15 +166,15 @@ Run it locally from `web` with `bun install --frozen-lockfile` and
 
 ## Sources and research history
 
-- [Validation](docs/validation.md): published BLS cells and shares, Census
+- [Validation](https://github.com/PolicyEngine/spm-calculator/blob/main/docs/validation.md): published BLS cells and shares, Census
   geography anchors, forecast comparisons and reproducible checks.
-- [Methodology](docs/methodology.md): threshold, housing and equivalence formulas.
-- [Current CE replication experiment](docs/current-ce-replication.md): source
+- [Methodology](https://github.com/PolicyEngine/spm-calculator/blob/main/docs/methodology.md): threshold, housing and equivalence formulas.
+- [Current CE replication experiment](https://github.com/PolicyEngine/spm-calculator/blob/main/docs/current-ce-replication.md): source
   policies, measured replication differences and unresolved approximations.
-- [2026 BLS correction and frozen experiments](docs/bls-2026-correction.md):
+- [2026 BLS correction and frozen experiments](https://github.com/PolicyEngine/spm-calculator/blob/main/docs/bls-2026-correction.md):
   historical publication vintages and the immutable 2025 forecast commitment.
-- [API reference](docs/api.md): current calculation and membership interfaces.
+- [API reference](https://github.com/PolicyEngine/spm-calculator/blob/main/docs/api.md): current calculation and membership interfaces.
 - [Companion paper](https://spm-threshold-paper.vercel.app/): calculating and
   projecting Supplemental Poverty Measure thresholds.
 
-[MIT license](LICENSE).
+[MIT license](https://github.com/PolicyEngine/spm-calculator/blob/main/LICENSE).

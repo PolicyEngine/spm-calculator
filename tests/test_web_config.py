@@ -74,8 +74,14 @@ def test_archived_nowcast_remains_separate_from_canonical_forecast(config):
 
 
 def test_committed_browser_export_matches_canonical_artifact(config):
-    # 1.0.0 is the explicitly verified PyPI release; future versions need review.
-    published = build_config(published_package_version="1.0.0")
+    # Keep the deployed package pin until the next release reaches PyPI.
+    # A package metadata update may precede that separate browser promotion.
+    # Every scientific input must still match the current canonical artifact.
+    published = {
+        **config,
+        "packageVersion": "1.0.0",
+        "packageDistribution": package_distribution("1.0.0", "1.0.0"),
+    }
     assert CONFIG.read_bytes() == encode_config(published)
     assert published["packageDistribution"] == {
         "status": "published",
@@ -86,11 +92,11 @@ def test_committed_browser_export_matches_canonical_artifact(config):
     assert {
         key: value
         for key, value in published.items()
-        if key != "packageDistribution"
+        if key not in {"packageVersion", "packageDistribution"}
     } == {
         key: value
         for key, value in config.items()
-        if key != "packageDistribution"
+        if key not in {"packageVersion", "packageDistribution"}
     }
     assert config["schemaVersion"] == 2
     assert config["forecast"]["schemaVersion"] == 2
