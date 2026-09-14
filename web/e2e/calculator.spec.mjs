@@ -36,6 +36,14 @@ const threshold = (page) =>
     .locator("span")
     .nth(1);
 
+async function selectArea(page, id) {
+  await page.getByRole("combobox", { name: "Search SPM areas" }).fill(id);
+  await page
+    .getByRole("listbox", { name: "Matching SPM areas" })
+    .locator(`[role="option"][data-value="${id}"]`)
+    .click();
+}
+
 async function completeSetup(page) {
   await page.getByRole("combobox", { name: "Search SPM areas" }).fill("35620");
   await page
@@ -241,9 +249,7 @@ test("guided setup retains answers and allows direct editing after results", asy
   await expect(
     page.getByRole("heading", { name: "Where do you live?" }),
   ).toBeVisible();
-  await expect(
-    page.getByRole("button", { name: menu(2025)["41940"].name, exact: true }),
-  ).toBeVisible();
+  await expect(search).toHaveValue(menu(2025)["41940"].name);
   await search.fill("no matching place xyz");
   await search.press("Enter");
   await expect(
@@ -264,9 +270,7 @@ test("guided setup retains answers and allows direct editing after results", asy
   await expect(
     page.getByRole("heading", { name: "Where do you live?" }),
   ).toBeVisible();
-  await page
-    .getByRole("button", { name: menu(2025)["41940"].name, exact: true })
-    .click();
+  await selectArea(page, "41940");
   await expect(
     page.getByRole("heading", { name: "Who is in your household?" }),
   ).toBeVisible();
@@ -290,10 +294,8 @@ test("guided setup retains answers and allows direct editing after results", asy
   await yearControl.focus();
   await yearControl.selectOption("2025");
   await expect(yearControl).toBeFocused();
-  const areaControl = page.getByLabel("SPM estimation area", { exact: true });
-  await areaControl.focus();
-  await areaControl.selectOption("1002");
-  await expect(areaControl).toBeFocused();
+  await selectArea(page, "1002");
+  await expect(search).toBeFocused();
   await expect(
     page.getByTestId("primary-result").getByRole("heading"),
   ).not.toBeFocused();
@@ -400,6 +402,17 @@ test("guided setup accepts keyboard area selection and explicit zero children", 
   );
   await expect(page.getByLabel("Children", { exact: true })).toHaveValue("0");
   await expect(threshold(page)).toHaveText(/^\$[\d,]+$/);
+  await expectCompactLocationSearch(page);
+  await page.locator("[cmdk-root]").screenshot({
+    path: testInfo.outputPath("results-mobile-area-selected.png"),
+  });
+  await search.fill("New York");
+  await expect(page.getByRole("listbox", { name: "Matching SPM areas" })).toBeVisible();
+  await page.locator("[cmdk-root]").screenshot({
+    path: testInfo.outputPath("results-mobile-area-search.png"),
+  });
+  await search.press("Escape");
+  await expect(search).toHaveValue("Alabama Nonmetro");
 });
 
 test("guided setup checks historical area membership after the year choice", async ({
@@ -478,20 +491,44 @@ test("one shared header, working mobile navigation, and app-owned provenance", a
 
 test("area search selects by click and Enter and preserves selection on no match", async ({
   page,
-}) => {
+}, testInfo) => {
   const search = page.getByRole("combobox", { name: "Search SPM areas" });
-  const area = page.getByLabel("SPM estimation area", { exact: true });
+  await expect(search).toHaveCount(1);
+  await expect(
+    page.getByLabel("SPM estimation area", { exact: true }),
+  ).toHaveCount(0);
   await search.fill("san jose");
   const matches = page.getByRole("listbox", { name: "Matching SPM areas" });
   await expect(matches.getByRole("option")).toHaveCount(1);
   await matches
     .getByRole("option", { name: menu(2025)["41940"].name, exact: true })
     .click();
-  await expect(area).toHaveValue("41940");
+  await expect(search).toHaveValue(menu(2025)["41940"].name);
   await expect(
     page.getByTestId("primary-result").getByRole("heading"),
   ).toHaveText(menu(2025)["41940"].name);
-  await expect(search).toHaveValue("");
+  await expect(matches).toHaveCount(0);
+  await expect(search).toHaveAttribute("aria-expanded", "false");
+  await page.locator("[cmdk-root]").screenshot({
+    path: testInfo.outputPath("results-area-selected.png"),
+  });
+  // The same field reopens after selection, even while it retains focus.
+  await search.click();
+  await expect(matches.getByRole("option")).toHaveCount(
+    Object.keys(menu(2025)).length,
+  );
+  await search.fill("no matching place xyz");
+  await search.press("Escape");
+  await expect(search).toHaveValue(menu(2025)["41940"].name);
+  await expect(matches).toHaveCount(0);
+  await search.press("ArrowDown");
+  await expect(matches).toBeVisible();
+  await search.fill("Alabama");
+  await page.locator("[cmdk-root]").screenshot({
+    path: testInfo.outputPath("results-area-search.png"),
+  });
+  await page.getByLabel("Adults", { exact: true }).focus();
+  await expect(search).toHaveValue(menu(2025)["41940"].name);
   await expect(matches).toHaveCount(0);
   await search.fill("1002");
   await expect(matches.getByRole("option")).toHaveCount(5);
@@ -499,7 +536,7 @@ test("area search selects by click and Enter and preserves selection on no match
     menu(2025)["1002"].name,
   );
   await search.press("Enter");
-  await expect(area).toHaveValue("1002");
+  await expect(search).toHaveValue(menu(2025)["1002"].name);
   await expect(
     page.getByTestId("primary-result").getByRole("heading"),
   ).toHaveText(menu(2025)["1002"].name);
@@ -508,29 +545,33 @@ test("area search selects by click and Enter and preserves selection on no match
   await expect(page.getByText("No SPM areas match your search.")).toBeVisible();
   await expect(matches.getByRole("option")).toHaveCount(0);
   await search.press("Enter");
-  await expect(area).toHaveValue("1002");
+  await expect(
+    page.getByTestId("primary-result").getByRole("heading"),
+  ).toHaveText(menu(2025)["1002"].name);
   await expect(threshold(page)).toHaveText(selectedThreshold);
 });
 
 test("annual SPM-area menus and published versus modeled geography are explicit", async ({
   page,
 }) => {
-  const area = page.getByLabel("SPM estimation area", { exact: true });
   const year = page.getByLabel("Threshold year", { exact: true });
   await expect(page.getByLabel("Geography type", { exact: true })).toHaveCount(
     0,
   );
   for (const value of [2022, 2024, 2025, 2035]) {
     await year.selectOption(String(value));
-    const actual = await area
-      .locator("option")
+    await page.getByRole("combobox", { name: "Search SPM areas" }).click();
+    const actual = await page
+      .getByRole("listbox", { name: "Matching SPM areas" })
+      .getByRole("option")
       .evaluateAll((options) =>
         Object.fromEntries(
-          options
-            .filter((option) => option.value)
-            .map((option) => [option.value, option.textContent]),
+          options.map((option) => [option.dataset.value, option.textContent]),
         ),
       );
+    await page
+      .getByRole("combobox", { name: "Search SPM areas" })
+      .press("Escape");
     expect(actual).toEqual(
       Object.fromEntries(
         Object.entries(menu(value)).map(([id, entry]) => [id, entry.name]),
@@ -558,21 +599,21 @@ test("annual SPM-area menus and published versus modeled geography are explicit"
   );
   expect(official).toBeTruthy();
   expect(modeled).toBeTruthy();
-  await area.selectOption(official);
+  await selectArea(page, official);
   await expect(page.getByTestId("primary-result")).toContainText(
     "2024 published geography anchor",
   );
   await expect(page.getByTestId("area-provenance")).toContainText(
     "This area has a published Census geography anchor.",
   );
-  await area.selectOption(modeled);
+  await selectArea(page, modeled);
   await expect(page.getByTestId("primary-result")).toContainText(
     "Modeled geography",
   );
   await expect(page.getByTestId("area-provenance")).toContainText(
     "This residual group has no published Census geography anchor.",
   );
-  await area.selectOption(official);
+  await selectArea(page, official);
   await year.selectOption("2025");
   await expect(
     page.getByText("Published by BLS", { exact: true }),
@@ -833,22 +874,24 @@ for (const failure of ["failed", "stalled"]) {
 test("an unavailable area stays explicit until the user selects a valid area", async ({
   page,
 }) => {
-  const area = page.getByLabel("SPM estimation area", { exact: true });
   const year = page.getByLabel("Threshold year", { exact: true });
   await year.selectOption("2022");
-  await area.selectOption("45001");
+  await selectArea(page, "45001");
   await expect(threshold(page)).toHaveText(/^\$[\d,]+$/);
   await year.selectOption("2023");
-  await expect(area).toHaveValue("");
+  const search = page.getByRole("combobox", { name: "Search SPM areas" });
+  await expect(search).toHaveValue("");
+  await expect(search).toHaveAttribute(
+    "placeholder",
+    "Selected area unavailable in 2023",
+  );
+  await search.fill("45001");
   await expect(
-    area.getByRole("option", {
-      name: "Selected area unavailable in 2023",
-      exact: true,
-    }),
-  ).toBeDisabled();
-  await expect(area.locator('option[value="45001"]')).toHaveCount(0);
+    page.getByRole("option", { name: menu(2022)["45001"].name, exact: true }),
+  ).toHaveCount(0);
+  await search.press("Escape");
   await expect(threshold(page)).toHaveText("Unavailable");
-  await area.selectOption("modeled_residual_metro:45");
+  await selectArea(page, "modeled_residual_metro:45");
   await expect(threshold(page)).toHaveText(/^\$[\d,]+$/);
   await expect(
     page.getByTestId("primary-result").getByRole("heading"),
@@ -858,12 +901,11 @@ test("an unavailable area stays explicit until the user selects a valid area", a
 test("Massachusetts and Sumter series breaks remain visible in later years", async ({
   page,
 }) => {
-  const area = page.getByLabel("SPM estimation area", { exact: true });
   const year = page.getByLabel("Threshold year", { exact: true });
   const warning = page.getByTestId("historical-series-break-warning");
   for (const id of ["25002", "modeled_residual_metro:45"]) {
     await year.selectOption("2023");
-    await area.selectOption(id);
+    await selectArea(page, id);
     const disclosure = geography(2023)[id].series_breaks[0];
     await expect(warning).toContainText(
       `${disclosure.from_year}→${disclosure.to_year}: ${disclosure.interpretation}`,
@@ -871,14 +913,13 @@ test("Massachusetts and Sumter series breaks remain visible in later years", asy
     await year.selectOption("2035");
     await expect(warning).toContainText(disclosure.interpretation);
   }
-  await area.selectOption("41940");
+  await selectArea(page, "41940");
   await expect(warning).toHaveCount(0);
 });
 
 test("rental support and topcoding diagnostics follow the actual area and year", async ({
   page,
 }) => {
-  const area = page.getByLabel("SPM estimation area", { exact: true });
   const year = page.getByLabel("Threshold year", { exact: true });
   const diagnostics =
     source.geographies[yearEntry(2035).geographyRef].median_diagnostics;
@@ -902,7 +943,7 @@ test("rental support and topcoding diagnostics follow the actual area and year",
     page.getByTestId("primary-result").getByTestId("median-diagnostics-note"),
   ).toHaveCount(0);
   for (const id of [thin, topcoded]) {
-    await area.selectOption(id);
+    await selectArea(page, id);
     const entry = diagnostics[id];
     if (!(await warning.evaluate((element) => element.open)))
       await warning.locator("summary").click();

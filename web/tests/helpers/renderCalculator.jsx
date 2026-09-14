@@ -1,5 +1,18 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 
+export function selectArea(id) {
+  fireEvent.change(screen.getByLabelText("Search SPM areas"), {
+    target: { value: id },
+  });
+  const option = within(
+    screen.getByRole("listbox", { name: "Matching SPM areas" }),
+  )
+    .getAllByRole("option")
+    .find((candidate) => candidate.getAttribute("data-value") === id);
+  if (!option) throw new Error(`No matching SPM area option for ${id}`);
+  fireEvent.click(option);
+}
+
 export function completeSetup({
   area = "35620",
   adults = 2,
@@ -8,14 +21,7 @@ export function completeSetup({
 } = {}) {
   // Result tests use an explicit reference-family fixture. Production setup
   // starts blank; never let this helper rely on preselected personal answers.
-  fireEvent.change(screen.getByLabelText("Search SPM areas"), {
-    target: { value: area },
-  });
-  fireEvent.click(
-    within(
-      screen.getByRole("listbox", { name: "Matching SPM areas" }),
-    ).getAllByRole("option")[0],
-  );
+  selectArea(area);
   fireEvent.change(screen.getByLabelText("Adults"), {
     target: { value: String(adults) },
   });

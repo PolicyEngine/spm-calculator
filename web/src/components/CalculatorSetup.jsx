@@ -121,11 +121,13 @@ export default function CalculatorSetup({ steps, onComplete, advanceRequest }) {
                 }`}
               >
                 <span className="block">{step.shortTitle ?? step.title}</span>
-                {index <= furthestIndex && step.valid !== false && step.summary && (
-                  <span className="mt-1 hidden text-xs font-normal text-muted-foreground sm:block">
-                    {step.summary}
-                  </span>
-                )}
+                {index <= furthestIndex &&
+                  step.valid !== false &&
+                  step.summary && (
+                    <span className="mt-1 hidden text-xs font-normal text-muted-foreground sm:block">
+                      {step.summary}
+                    </span>
+                  )}
               </button>
             </li>
           ))}

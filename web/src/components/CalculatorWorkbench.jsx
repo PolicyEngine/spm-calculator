@@ -206,6 +206,7 @@ export default function CalculatorWorkbench({ data }) {
   const [tenure, setTenure] = useState("");
   const [selectedGeographyId, setSelectedGeographyId] = useState("");
   const [locationQuery, setLocationQuery] = useState("");
+  const [locationEditing, setLocationEditing] = useState(false);
   const selectedAreaStatus =
     selectedEntry?.geography_by_area?.[selectedGeographyId];
   const selectedArea =
@@ -342,10 +343,6 @@ result = projection.calculate_unit(SPMUnit(
     geography_id="${currentLocation.id}",
 ), scenario="${scenarioId}")
 print(result["threshold"])`;
-  const locationSelectOptions = metroEntries.map(([value, area]) => ({
-    value,
-    label: area.name,
-  }));
   const yearSelectOptions = availableYears.map((value) => ({
     value,
     label: `${value}${selectedScenario.years[value].national_status === "forecast" ? " (forecast)" : ""}`,
@@ -356,6 +353,7 @@ print(result["threshold"])`;
   function selectLocation(code) {
     setSelectedGeographyId(code);
     setLocationQuery("");
+    setLocationEditing(false);
     if (!setupComplete) setAdvanceRequest({ stepId: "location" });
   }
 
@@ -520,15 +518,63 @@ print(result["threshold"])`;
           <Command
             label="Search SPM areas"
             shouldFilter={false}
+            onBlur={(event) => {
+              if (!event.currentTarget.contains(event.relatedTarget)) {
+                setLocationEditing(false);
+                setLocationQuery("");
+              }
+            }}
             className="h-auto rounded-lg border border-border bg-background transition-colors focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/15 motion-reduce:transition-none [&_[data-slot=command-input-wrapper]]:h-12 [&_[data-slot=command-input-wrapper]]:border-0 [&_[data-slot=command-input-wrapper]]:px-4"
           >
             <CommandInput
-              placeholder="Search a metro area or state"
+              asChild
+              placeholder={
+                setupComplete && !selectedArea && !locationEditing
+                  ? `Selected area unavailable in ${year}`
+                  : "Search a metro area or state"
+              }
               className="h-12 py-0 text-base"
-              value={locationQuery}
-              onValueChange={setLocationQuery}
-            />
-            {locationQuery.trim() && (
+              value={
+                locationEditing ? locationQuery : (selectedArea?.name ?? "")
+              }
+              title={!locationEditing ? selectedArea?.name : undefined}
+              onFocus={() => {
+                setLocationQuery("");
+                setLocationEditing(true);
+              }}
+              onClick={() => {
+                if (!locationEditing) {
+                  setLocationQuery("");
+                  setLocationEditing(true);
+                }
+              }}
+              onValueChange={(value) => {
+                setLocationQuery(value);
+                setLocationEditing(true);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Escape") {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  setLocationEditing(false);
+                  setLocationQuery("");
+                } else if (event.key === "ArrowDown" && !locationEditing) {
+                  event.preventDefault();
+                  setLocationEditing(true);
+                }
+              }}
+            >
+              {/* cmdk assumes an always-open palette. Its input slot lets this
+                  collapsible selector expose its actual state to screen readers. */}
+              <input
+                aria-expanded={locationEditing}
+                {...(!locationEditing && {
+                  "aria-controls": undefined,
+                  "aria-activedescendant": undefined,
+                })}
+              />
+            </CommandInput>
+            {locationEditing && (
               <CommandList
                 label="Matching SPM areas"
                 className="max-h-60 border-t border-border p-1"
@@ -539,6 +585,7 @@ print(result["threshold"])`;
                     key={code}
                     value={code}
                     className="min-h-11 cursor-pointer px-3 py-2 leading-snug"
+                    onMouseDown={(event) => event.preventDefault()}
                     onSelect={() => selectLocation(code)}
                   >
                     {info.name}
@@ -547,32 +594,6 @@ print(result["threshold"])`;
               </CommandList>
             )}
           </Command>
-          {setupComplete ? (
-            <SelectInput
-              id="spm-census-area"
-              aria-label="SPM estimation area"
-              label="SPM estimation area"
-              options={locationSelectOptions}
-              value={selectedArea ? selectedGeographyId : ""}
-              placeholder={
-                selectedArea
-                  ? undefined
-                  : `Selected area unavailable in ${year}`
-              }
-              onChange={selectLocation}
-            />
-          ) : (
-            selectedArea && (
-              <Button
-                type="button"
-                variant="outline"
-                className="h-auto min-h-11 w-full justify-start whitespace-normal text-left"
-                onClick={() => selectLocation(selectedGeographyId)}
-              >
-                {selectedArea.name}
-              </Button>
-            )
-          )}
           {setupComplete ? (
             <p className="text-xs leading-5 text-muted-foreground">
               SPM estimation areas: MSAs, residual metro groups and state nonmetro

@@ -1,4 +1,7 @@
-import { renderCalculator as render } from "./helpers/renderCalculator";
+import {
+  renderCalculator as render,
+  selectArea as chooseArea,
+} from "./helpers/renderCalculator";
 import {
   fireEvent,
   render as renderSetup,
@@ -29,16 +32,6 @@ function renderLayout(data = makeRollingCalculatorData()) {
   );
 }
 
-const chooseArea = (id) => {
-  fireEvent.change(screen.getByLabelText("Search SPM areas"), {
-    target: { value: id },
-  });
-  fireEvent.click(
-    within(
-      screen.getByRole("listbox", { name: "Matching SPM areas" }),
-    ).getAllByRole("option")[0],
-  );
-};
 const chooseSetupYear = (year) =>
   fireEvent.click(
     screen.getByRole("button", {
@@ -189,12 +182,9 @@ describe("explicit personal setup", () => {
     expect(
       screen.getByRole("heading", { name: "Where do you live?" }),
     ).toBeVisible();
-    expect(
-      screen.getByRole("button", {
-        name: "San Jose-Sunnyvale-Santa Clara, CA MSA",
-        exact: true,
-      }),
-    ).toBeVisible();
+    expect(screen.getByLabelText("Search SPM areas")).toHaveValue(
+      "San Jose-Sunnyvale-Santa Clara, CA MSA",
+    );
     fireEvent.change(screen.getByLabelText("Search SPM areas"), {
       target: { value: "no matching place" },
     });
@@ -227,9 +217,9 @@ describe("explicit personal setup", () => {
     yearControl.focus();
     selectYear(2025);
     expect(yearControl).toHaveFocus();
-    const areaControl = screen.getByLabelText("SPM estimation area");
+    const areaControl = screen.getByLabelText("Search SPM areas");
     areaControl.focus();
-    fireEvent.change(areaControl, { target: { value: "1002" } });
+    chooseArea("1002");
     expect(areaControl).toHaveFocus();
     expect(
       within(screen.getByTestId("primary-result")).getByRole("heading", {
@@ -374,13 +364,15 @@ describe("canonical calculator controls and shared layout", () => {
         name: "San Jose-Sunnyvale-Santa Clara, CA MSA",
       }),
     ).toBeTruthy();
-    expect(screen.getByLabelText("SPM estimation area")).toHaveValue("41940");
-    expect(screen.getByLabelText("Search SPM areas")).toHaveValue("");
-    expect(screen.queryByRole("listbox")).toBeNull();
+    expect(screen.queryByLabelText("SPM estimation area")).toBeNull();
+    expect(screen.getByLabelText("Search SPM areas")).toHaveValue(
+      "San Jose-Sunnyvale-Santa Clara, CA MSA",
+    );
+    expect(screen.queryByRole("listbox", { name: "Matching SPM areas" })).toBeNull();
     expect(screen.getByTestId("primary-result")).toHaveTextContent("$58,381");
   });
 
-  it("selects an area code with Enter and preserves the selected area after an empty search", () => {
+  it("selects an area code with Enter and preserves the selected area after a search with no matches", () => {
     render(<CalculatorWorkbench data={makeRollingCalculatorData()} />);
     const search = screen.getByLabelText("Search SPM areas");
     fireEvent.change(search, { target: { value: "1002" } });
@@ -388,16 +380,94 @@ describe("canonical calculator controls and shared layout", () => {
     expect(
       screen.getByRole("heading", { name: "Alabama Nonmetro" }),
     ).toBeTruthy();
+    expect(search).toHaveValue("Alabama Nonmetro");
+    expect(screen.queryByRole("listbox", { name: "Matching SPM areas" })).toBeNull();
     fireEvent.change(search, { target: { value: "no matching place" } });
     expect(screen.getByText("No SPM areas match your search.")).toBeTruthy();
     const matches = screen.getByRole("listbox", { name: "Matching SPM areas" });
     expect(within(matches).queryAllByRole("option")).toHaveLength(0);
     fireEvent.keyDown(search, { key: "Enter", code: "Enter" });
-    expect(screen.getByLabelText("SPM estimation area")).toHaveValue("1002");
+    expect(search).toHaveValue("no matching place");
     expect(screen.getByTestId("primary-result")).toHaveTextContent("$33,360");
     fireEvent.change(search, { target: { value: "" } });
-    expect(screen.queryByRole("listbox")).toBeNull();
+    expect(
+      within(
+        screen.getByRole("listbox", { name: "Matching SPM areas" }),
+      ).getAllByRole("option"),
+    ).toHaveLength(4);
+    fireEvent.keyDown(search, { key: "Escape", code: "Escape" });
+    expect(search).toHaveValue("Alabama Nonmetro");
+    expect(screen.queryByRole("listbox", { name: "Matching SPM areas" })).toBeNull();
   });
+
+  it("uses one area selector and opens all yearly options without changing the current result", () => {
+    const data = makeRollingCalculatorData();
+    render(<CalculatorWorkbench data={data} />);
+    const name = data.areasByYear[2025]["35620"].name;
+    const search = screen.getByLabelText("Search SPM areas");
+    const result = screen.getByTestId("primary-result").textContent;
+    expect(screen.getAllByLabelText("Search SPM areas")).toHaveLength(1);
+    expect(screen.queryByLabelText("SPM estimation area")).toBeNull();
+    expect(screen.queryByRole("button", { name, exact: true })).toBeNull();
+    expect(search).toHaveValue(name);
+    expect(search).toHaveAttribute("aria-expanded", "false");
+    expect(search).not.toHaveAttribute("aria-controls");
+    expect(search).not.toHaveAttribute("aria-activedescendant");
+    expect(screen.queryByRole("listbox", { name: "Matching SPM areas" })).toBeNull();
+
+    fireEvent.focus(search);
+    expect(search).toHaveValue("");
+    expect(search).toHaveAttribute("aria-expanded", "true");
+    const list = screen.getByRole("listbox", { name: "Matching SPM areas" });
+    expect(search).toHaveAttribute("aria-controls", list.id);
+    const options = within(list).getAllByRole("option");
+    expect(
+      options.map((option) => option.getAttribute("data-value")).sort(),
+    ).toEqual(Object.keys(data.areasByYear[2025]).sort());
+    for (const option of options) {
+      expect(option.textContent).toBe(
+        data.areasByYear[2025][option.getAttribute("data-value")].name,
+      );
+    }
+    expect(screen.getByTestId("primary-result").textContent).toBe(result);
+    fireEvent.keyDown(search, { key: "Escape", code: "Escape" });
+    expect(search).toHaveValue(name);
+    expect(search).toHaveAttribute("aria-expanded", "false");
+    expect(search).not.toHaveAttribute("aria-controls");
+    expect(search).not.toHaveAttribute("aria-activedescendant");
+    expect(screen.queryByRole("listbox", { name: "Matching SPM areas" })).toBeNull();
+    expect(screen.getByTestId("primary-result").textContent).toBe(result);
+  });
+
+  it.each(["Escape", "blur"])(
+    "discards a matching draft on %s without committing an area",
+    (dismiss) => {
+      const data = makeRollingCalculatorData();
+      render(<CalculatorWorkbench data={data} />);
+      const search = screen.getByLabelText("Search SPM areas");
+      const result = screen.getByTestId("primary-result").textContent;
+      fireEvent.focus(search);
+      fireEvent.change(search, { target: { value: "san jose" } });
+      expect(
+        screen.getByRole("option", {
+          name: "San Jose-Sunnyvale-Santa Clara, CA MSA",
+          exact: true,
+        }),
+      ).toHaveAttribute("data-value", "41940");
+      if (dismiss === "Escape") {
+        fireEvent.keyDown(search, { key: "Escape", code: "Escape" });
+      } else {
+        fireEvent.blur(search, {
+          relatedTarget: screen.getByLabelText("Threshold year"),
+        });
+      }
+      expect(search).toHaveValue(data.areasByYear[2025]["35620"].name);
+      expect(
+        screen.queryByRole("listbox", { name: "Matching SPM areas" }),
+      ).toBeNull();
+      expect(screen.getByTestId("primary-result").textContent).toBe(result);
+    },
+  );
 
   it("offers all 2022–2035 years and only actual SPM estimation geography types", () => {
     render(<CalculatorWorkbench data={makeRollingCalculatorData()} />);
@@ -413,13 +483,15 @@ describe("canonical calculator controls and shared layout", () => {
       ).toBeTruthy();
     }
     expect(screen.queryByLabelText("Geography type")).toBeNull();
-    const areas = screen.getByLabelText("SPM estimation area");
+    const search = screen.getByLabelText("Search SPM areas");
+    fireEvent.focus(search);
+    const areas = screen.getByRole("listbox", { name: "Matching SPM areas" });
     expect(
       within(areas).getByRole("option", { name: "Alabama Nonmetro" }),
     ).toBeTruthy();
     expect(
       within(areas).getByRole("option", { name: /Alabama residual Metro/ }),
-    ).toHaveValue(MODELED_AREA_ID);
+    ).toHaveAttribute("data-value", MODELED_AREA_ID);
     for (const name of [
       "National average",
       "State",
@@ -430,17 +502,21 @@ describe("canonical calculator controls and shared layout", () => {
         within(areas).queryByRole("option", { name, exact: true }),
       ).toBeNull();
     }
+    fireEvent.keyDown(search, { key: "Escape", code: "Escape" });
   });
 
   it("restricts search and menu to each year and preserves an unavailable selection until explicitly changed", () => {
     render(<CalculatorWorkbench data={makeRollingCalculatorData()} />);
-    const areas = screen.getByLabelText("SPM estimation area");
     const search = screen.getByLabelText("Search SPM areas");
+    fireEvent.focus(search);
     expect(
-      within(areas).queryByRole("option", { name: "Historical Metro Group" }),
+      within(
+        screen.getByRole("listbox", { name: "Matching SPM areas" }),
+      ).queryByRole("option", { name: "Historical Metro Group" }),
     ).toBeNull();
+    fireEvent.keyDown(search, { key: "Escape", code: "Escape" });
     selectYear(2022);
-    fireEvent.change(areas, { target: { value: HISTORICAL_AREA_ID } });
+    chooseArea(HISTORICAL_AREA_ID);
     expect(
       screen.getByRole("heading", { name: "Historical Metro Group" }),
     ).toBeTruthy();
@@ -448,13 +524,15 @@ describe("canonical calculator controls and shared layout", () => {
       "Unavailable",
     );
     selectYear(2023);
-    const unavailable = within(areas).getByRole("option", {
-      name: "Selected area unavailable in 2023",
-    });
-    expect(unavailable).toBeDisabled();
-    expect(areas).toHaveValue("");
+    expect(search).toHaveAttribute(
+      "placeholder", "Selected area unavailable in 2023",
+    );
+    expect(search).toHaveValue("");
+    fireEvent.focus(search);
     expect(
-      within(areas).queryByRole("option", { name: "Historical Metro Group" }),
+      within(
+        screen.getByRole("listbox", { name: "Matching SPM areas" }),
+      ).queryByRole("option", { name: "Historical Metro Group" }),
     ).toBeNull();
     expect(screen.getByTestId("primary-result")).toHaveTextContent(
       "Unavailable",
@@ -463,15 +541,17 @@ describe("canonical calculator controls and shared layout", () => {
     fireEvent.change(search, { target: { value: "historical" } });
     expect(screen.getByText("No SPM areas match your search.")).toBeTruthy();
     fireEvent.keyDown(search, { key: "Enter", code: "Enter" });
-    expect(areas).toHaveValue("");
+    expect(screen.getByTestId("primary-result")).toHaveTextContent("Unavailable");
+    fireEvent.keyDown(search, { key: "Escape", code: "Escape" });
+    expect(search).toHaveValue("");
     selectYear(2022);
-    expect(areas).toHaveValue(HISTORICAL_AREA_ID);
+    expect(search).toHaveValue("Historical Metro Group");
     expect(screen.getByTestId("primary-result")).not.toHaveTextContent(
       "Unavailable",
     );
     selectYear(2023);
-    fireEvent.change(areas, { target: { value: "1002" } });
-    expect(areas).toHaveValue("1002");
+    chooseArea("1002");
+    expect(search).toHaveValue("Alabama Nonmetro");
     expect(screen.getByTestId("primary-result")).not.toHaveTextContent(
       "Unavailable",
     );
