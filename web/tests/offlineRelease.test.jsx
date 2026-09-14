@@ -191,9 +191,12 @@ describe("canonical export integration", () => {
       const search = screen.getByLabelText("Search SPM areas");
       fireEvent.focus(search);
       const menu = screen.getByRole("listbox", { name: "Matching SPM areas" });
+      expect(menu).toBeVisible();
+      // Check visibility once for the list, avoiding thousands of repeated
+      // jsdom ancestor-style checks while verifying every annual option ID.
       expect(
         within(menu)
-          .getAllByRole("option")
+          .getAllByRole("option", { hidden: true })
           .map((option) => option.getAttribute("data-value"))
           .sort(),
       ).toEqual(Object.keys(areas).sort());
