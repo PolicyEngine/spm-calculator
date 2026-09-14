@@ -290,6 +290,41 @@ describe("explicit personal setup", () => {
 });
 
 describe("canonical calculator controls and shared layout", () => {
+  it.each([
+    ["Adults", 2, "2 adults, 2 children"],
+    ["Children", 0, "2 adults, 0 children"],
+  ])(
+    "keeps the threshold and family-size breakdown unavailable while %s is blank",
+    (label, restoredValue, household) => {
+      render(<CalculatorWorkbench data={makeRollingCalculatorData()} />);
+      const familySize = screen
+        .getByText("Family size", { exact: true })
+        .closest('[data-slot="card"]');
+      expect(familySize).not.toBeNull();
+      enterCount(label, "");
+      expect(screen.getByLabelText(label)).toHaveValue(null);
+      expect(screen.getByTestId("primary-result")).toHaveTextContent(
+        "Unavailable",
+      );
+      expect(screen.getByTestId("primary-result")).not.toHaveTextContent(/\$/);
+      for (const field of ["Formula", "Normalized scale", "Household"]) {
+        expect(
+          within(familySize).getByText(field, { exact: true }).parentElement,
+        ).toHaveTextContent("Unavailable");
+      }
+      expect(familySize).not.toHaveTextContent("0.000");
+      enterCount(label, restoredValue);
+      expect(screen.getByTestId("primary-result")).not.toHaveTextContent(
+        "Unavailable",
+      );
+      expect(screen.getByTestId("primary-result")).toHaveTextContent(
+        /\$[\d,]+/,
+      );
+      expect(familySize).not.toHaveTextContent("Unavailable");
+      expect(familySize).toHaveTextContent(household);
+    },
+  );
+
   it("renders one actual shared navigation header and keeps app methodology in the results footnote", () => {
     renderLayout();
     selectYear(2026);

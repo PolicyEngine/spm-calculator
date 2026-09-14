@@ -278,11 +278,48 @@ test("guided setup retains answers and allows direct editing after results", asy
   await expect(page.getByLabel("Real spending", { exact: true })).toHaveValue(
     "zero_real",
   );
+  const children = page.getByLabel("Children", { exact: true });
+  const familySize = page
+    .locator('[data-slot="card"]')
+    .filter({ has: page.getByText("Family size", { exact: true }) });
+  await children.fill("");
+  await expect(children).toHaveValue("");
+  await expect(threshold(page)).toHaveText("Unavailable");
+  for (const field of ["Formula", "Normalized scale", "Household"]) {
+    await expect(
+      familySize.getByText(field, { exact: true }).locator(".."),
+    ).toContainText("Unavailable");
+  }
+  await expect(familySize).not.toContainText("0.000");
+  await children.fill("0");
+  await expect(children).toHaveValue("0");
+  await expect(threshold(page)).toHaveText(/^\$[\d,]+$/);
+  await expect(familySize).not.toContainText("Unavailable");
+  await expect(familySize).toContainText("3 adults, 0 children");
 });
 
 test("guided setup accepts keyboard area selection and explicit zero children", async ({
   page,
-}) => {
+}, testInfo) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const captureMobileStage = async (stage) => {
+    expect(
+      await page.evaluate(() =>
+        Math.max(
+          document.documentElement.scrollWidth,
+          document.body.scrollWidth,
+        ),
+      ),
+    ).toBeLessThanOrEqual(390);
+    await page.screenshot({
+      path: testInfo.outputPath(`guided-mobile-${stage}.png`),
+      fullPage: true,
+    });
+  };
+  await expect(
+    page.getByRole("heading", { name: "Where do you live?" }),
+  ).toBeVisible();
+  await captureMobileStage("location");
   const search = page.getByRole("combobox", { name: "Search SPM areas" });
   await search.fill("Alabama Nonmetro");
   await expect(
@@ -298,6 +335,7 @@ test("guided setup accepts keyboard area selection and explicit zero children", 
   await expect(
     page.getByRole("heading", { name: "Who is in your household?" }),
   ).toBeFocused();
+  await captureMobileStage("household");
   await page.getByLabel("Adults", { exact: true }).fill("1");
   await page.getByLabel("Children", { exact: true }).fill("0");
   const renter = page.getByRole("tab", { name: "Renter", exact: true });
@@ -309,6 +347,10 @@ test("guided setup accepts keyboard area selection and explicit zero children", 
   await renter.press("Space");
   await expect(renter).toHaveAttribute("aria-selected", "true");
   await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Which year?" }),
+  ).toBeVisible();
+  await captureMobileStage("year");
   await page.getByRole("button", { name: "2025", exact: true }).click();
   await expect(page.getByTestId("primary-result")).toContainText(
     "Alabama Nonmetro",

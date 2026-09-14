@@ -240,8 +240,9 @@ export default function CalculatorWorkbench({ data }) {
     ? getRawEquivalenceScale(numAdults, numChildren, methodology)
     : null;
   const householdValid = compositionValid && Boolean(TENURE_LABELS[tenure]);
-  const equivalenceScale =
-    rawScale / methodology.equivalenceScale.referenceFamilyRaw;
+  const equivalenceScale = compositionValid
+    ? rawScale / methodology.equivalenceScale.referenceFamilyRaw
+    : null;
   function areaAdjustment(areaTenure) {
     return selectedArea
       ? rollingAdjustment(selectedEntry, selectedGeographyId, areaTenure)
@@ -821,11 +822,13 @@ print(result["threshold"])`;
                     <div className="flex justify-between">
                       <Text className="text-muted-foreground">Formula</Text>
                       <Text className="font-mono text-xs font-medium">
-                        {describeEquivalenceFormula(
-                          numAdults,
-                          numChildren,
-                          methodology,
-                        )}
+                        {compositionValid
+                          ? describeEquivalenceFormula(
+                              numAdults,
+                              numChildren,
+                              methodology,
+                            )
+                          : "Unavailable"}
                       </Text>
                     </div>
                     <div className="flex justify-between">
@@ -833,14 +836,15 @@ print(result["threshold"])`;
                         Normalized scale
                       </Text>
                       <Text className="font-medium">
-                        {equivalenceScale.toFixed(3)}
+                        {equivalenceScale?.toFixed(3) ?? "Unavailable"}
                       </Text>
                     </div>
                     <div className="flex justify-between">
                       <Text className="text-muted-foreground">Household</Text>
                       <Text className="font-medium">
-                        {numAdults} adult{numAdults === 1 ? "" : "s"},{" "}
-                        {numChildren} child{numChildren === 1 ? "" : "ren"}
+                        {compositionValid
+                          ? `${numAdults} adult${numAdults === 1 ? "" : "s"}, ${numChildren} child${numChildren === 1 ? "" : "ren"}`
+                          : "Unavailable"}
                       </Text>
                     </div>
                   </div>
