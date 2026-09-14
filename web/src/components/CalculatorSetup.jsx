@@ -1,26 +1,27 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 
 import { Button } from "@policyengine/ui-kit";
 
-export default function CalculatorSetup({ steps, onComplete }) {
+export default function CalculatorSetup({ steps, onComplete, advanceRequest }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [furthestIndex, setFurthestIndex] = useState(0);
   const [error, setError] = useState("");
   const headingRef = useRef(null);
   const errorRef = useRef(null);
+  const consumedRequest = useRef(null);
   const headingId = useId();
   const errorId = useId();
   const current = steps[activeIndex];
   const lastStep = activeIndex === steps.length - 1;
 
   useEffect(() => {
-    headingRef.current?.focus({ preventScroll: true });
+    headingRef.current?.focus();
   }, [activeIndex]);
 
   useEffect(() => {
-    if (error) errorRef.current?.focus({ preventScroll: true });
+    if (error) errorRef.current?.focus();
   }, [error, activeIndex]);
 
   function goToStep(index) {
@@ -28,8 +29,8 @@ export default function CalculatorSetup({ steps, onComplete }) {
     setActiveIndex(index);
   }
 
-  function handleSubmit(event) {
-    event.preventDefault();
+  const advance = useCallback(() => {
+    if (!current) return;
     // Later answers can invalidate an earlier choice, such as an area that is
     // unavailable in the selected year. Recheck every step before completion.
     const invalidIndex = lastStep
@@ -45,7 +46,7 @@ export default function CalculatorSetup({ steps, onComplete }) {
           ? "Review your answers in this step before viewing thresholds."
           : "Review your answers in this step before continuing.",
       );
-      errorRef.current?.focus({ preventScroll: true });
+      errorRef.current?.focus();
       return;
     }
 
@@ -56,14 +57,43 @@ export default function CalculatorSetup({ steps, onComplete }) {
     }
     setFurthestIndex((previous) => Math.max(previous, activeIndex + 1));
     setActiveIndex(activeIndex + 1);
+  }, [activeIndex, current, lastStep, onComplete, steps]);
+
+  useEffect(() => {
+    if (!advanceRequest || advanceRequest === consumedRequest.current) return;
+    // The parent replaces this object only for an explicit selection. Consume
+    // it even if invalid or stale so revisiting a step cannot replay it.
+    consumedRequest.current = advanceRequest;
+    if (current?.autoAdvance && advanceRequest.stepId === current.id) {
+      advance();
+    }
+  }, [advanceRequest, current, advance]);
+
+  function handleSubmit(event) {
+    event.preventDefault();
+    // Search/command-menu Enter events may submit the enclosing form. Only
+    // the parent's selection request advances a single-choice step.
+    if (current?.autoAdvance) return;
+    advance();
   }
 
   if (!current) return null;
 
   return (
     <form
-      className="mx-auto w-full max-w-3xl space-y-8 py-4 sm:py-8"
+      className="mx-auto w-full max-w-3xl space-y-8 px-4 py-4 sm:px-0 sm:py-8"
       onSubmit={handleSubmit}
+      onKeyDown={(event) => {
+        // Let the input/menu handle selection before suppressing the browser's
+        // implicit submit, which could target the next step after selection.
+        if (
+          current.autoAdvance &&
+          event.key === "Enter" &&
+          event.target.tagName === "INPUT"
+        ) {
+          event.preventDefault();
+        }
+      }}
       noValidate
       aria-label="Set up your threshold"
     >
@@ -105,7 +135,7 @@ export default function CalculatorSetup({ steps, onComplete }) {
             ref={headingRef}
             id={headingId}
             tabIndex={-1}
-            className="text-2xl font-semibold tracking-tight text-foreground focus:outline-none"
+            className="scroll-mt-24 text-2xl font-semibold tracking-tight text-foreground focus:outline-none"
           >
             {current.title}
           </h2>
@@ -121,7 +151,7 @@ export default function CalculatorSetup({ steps, onComplete }) {
             id={errorId}
             role="alert"
             tabIndex={-1}
-            className="border-l-2 border-primary pl-3 text-sm text-foreground focus:outline-2 focus:outline-offset-4 focus:outline-ring"
+            className="scroll-mt-24 border-l-2 border-primary pl-3 text-sm text-foreground focus:outline-2 focus:outline-offset-4 focus:outline-ring"
           >
             {error}
           </p>
@@ -129,25 +159,30 @@ export default function CalculatorSetup({ steps, onComplete }) {
         <div className="space-y-5">{current.content}</div>
       </section>
 
-      <div className="flex items-center justify-end gap-3 border-t border-border pt-5">
-        {activeIndex > 0 && (
-          <Button
-            type="button"
-            variant="outline"
-            className="mr-auto min-h-11"
-            onClick={() => goToStep(activeIndex - 1)}
-          >
-            Back
-          </Button>
-        )}
-        <Button
-          type="submit"
-          className="min-h-11 min-w-36"
-          aria-describedby={error ? errorId : undefined}
-        >
-          {lastStep ? "View thresholds" : "Continue"}
-        </Button>
-      </div>
+      {(activeIndex > 0 || !current.autoAdvance) && (
+        <div className="flex items-center justify-end gap-3 border-t border-border pt-5">
+          {activeIndex > 0 && (
+            <Button
+              type="button"
+              variant="outline"
+              className="mr-auto min-h-11"
+              onClick={() => goToStep(activeIndex - 1)}
+            >
+              Back
+            </Button>
+          )}
+          {!current.autoAdvance && (
+            <Button
+              type="submit"
+              className="min-h-11 min-w-36"
+              aria-describedby={error ? errorId : undefined}
+              disabled={current.valid === false}
+            >
+              {lastStep ? "View thresholds" : "Continue"}
+            </Button>
+          )}
+        </div>
+      )}
     </form>
   );
 }
