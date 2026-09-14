@@ -17,11 +17,11 @@ export default function CalculatorSetup({ steps, onComplete, advanceRequest }) {
   const lastStep = activeIndex === steps.length - 1;
 
   useEffect(() => {
-    headingRef.current?.focus({ preventScroll: true });
+    headingRef.current?.focus();
   }, [activeIndex]);
 
   useEffect(() => {
-    if (error) errorRef.current?.focus({ preventScroll: true });
+    if (error) errorRef.current?.focus();
   }, [error, activeIndex]);
 
   function goToStep(index) {
@@ -46,7 +46,7 @@ export default function CalculatorSetup({ steps, onComplete, advanceRequest }) {
           ? "Review your answers in this step before viewing thresholds."
           : "Review your answers in this step before continuing.",
       );
-      errorRef.current?.focus({ preventScroll: true });
+      errorRef.current?.focus();
       return;
     }
 
@@ -81,7 +81,7 @@ export default function CalculatorSetup({ steps, onComplete, advanceRequest }) {
 
   return (
     <form
-      className="mx-auto w-full max-w-3xl space-y-8 py-4 sm:py-8"
+      className="mx-auto w-full max-w-3xl space-y-8 px-4 py-4 sm:px-0 sm:py-8"
       onSubmit={handleSubmit}
       onKeyDown={(event) => {
         // Let the input/menu handle selection before suppressing the browser's
@@ -135,7 +135,7 @@ export default function CalculatorSetup({ steps, onComplete, advanceRequest }) {
             ref={headingRef}
             id={headingId}
             tabIndex={-1}
-            className="text-2xl font-semibold tracking-tight text-foreground focus:outline-none"
+            className="scroll-mt-24 text-2xl font-semibold tracking-tight text-foreground focus:outline-none"
           >
             {current.title}
           </h2>
@@ -151,7 +151,7 @@ export default function CalculatorSetup({ steps, onComplete, advanceRequest }) {
             id={errorId}
             role="alert"
             tabIndex={-1}
-            className="border-l-2 border-primary pl-3 text-sm text-foreground focus:outline-2 focus:outline-offset-4 focus:outline-ring"
+            className="scroll-mt-24 border-l-2 border-primary pl-3 text-sm text-foreground focus:outline-2 focus:outline-offset-4 focus:outline-ring"
           >
             {error}
           </p>

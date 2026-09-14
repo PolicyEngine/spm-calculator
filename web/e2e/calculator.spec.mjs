@@ -351,6 +351,16 @@ test("guided setup accepts keyboard area selection and explicit zero children", 
     page.getByRole("heading", { name: "Which year?" }),
   ).toBeVisible();
   await captureMobileStage("year");
+  const back = page.getByRole("button", { name: "Back", exact: true });
+  await back.scrollIntoViewIfNeeded();
+  await back.click();
+  const householdHeading = page.getByRole("heading", {
+    name: "Who is in your household?",
+  });
+  await expect(householdHeading).toBeFocused();
+  await expect(householdHeading).toBeInViewport();
+  expect((await householdHeading.boundingBox()).y).toBeGreaterThanOrEqual(58);
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
   await page.getByRole("button", { name: "2025", exact: true }).click();
   await expect(page.getByTestId("primary-result")).toContainText(
     "Alabama Nonmetro",
