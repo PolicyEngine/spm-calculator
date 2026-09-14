@@ -1,0 +1,1619 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.36">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Max Ghenis">
+<meta name="dcterms.date" content="2026-09-13">
+
+<title>Calculating and projecting Supplemental Poverty Measure thresholds</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
+
+
+<script src="index_files/libs/clipboard/clipboard.min.js"></script>
+<script src="index_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="index_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="index_files/libs/quarto-html/popper.min.js"></script>
+<script src="index_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="index_files/libs/quarto-html/anchor.min.js"></script>
+<link href="index_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="index_files/libs/quarto-html/quarto-syntax-highlighting-845c23b38eaddc0f92fda52bfe77a8c8.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="index_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="index_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="index_files/libs/bootstrap/bootstrap-138a6193a3bd40baf1e627da441a4734.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body class="quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction"><span class="header-section-number">1</span> Introduction</a></li>
+  <li><a href="#sec-production" id="toc-sec-production" class="nav-link" data-scroll-target="#sec-production"><span class="header-section-number">2</span> Calculating the thresholds</a>
+  <ul class="collapse">
+  <li><a href="#national-reference-thresholds" id="toc-national-reference-thresholds" class="nav-link" data-scroll-target="#national-reference-thresholds"><span class="header-section-number">2.1</span> National reference thresholds</a></li>
+  <li><a href="#applying-a-threshold-to-an-spm-unit" id="toc-applying-a-threshold-to-an-spm-unit" class="nav-link" data-scroll-target="#applying-a-threshold-to-an-spm-unit"><span class="header-section-number">2.2</span> Applying a threshold to an SPM unit</a></li>
+  </ul></li>
+  <li><a href="#sec-replication" id="toc-sec-replication" class="nav-link" data-scroll-target="#sec-replication"><span class="header-section-number">3</span> Replication from public consumption data</a>
+  <ul class="collapse">
+  <li><a href="#expenditure-construction-and-estimation-sample" id="toc-expenditure-construction-and-estimation-sample" class="nav-link" data-scroll-target="#expenditure-construction-and-estimation-sample"><span class="header-section-number">3.1</span> Expenditure construction and estimation sample</a></li>
+  <li><a href="#replicated-levels-and-sample-sensitivities" id="toc-replicated-levels-and-sample-sensitivities" class="nav-link" data-scroll-target="#replicated-levels-and-sample-sensitivities"><span class="header-section-number">3.2</span> Replicated levels and sample sensitivities</a></li>
+  </ul></li>
+  <li><a href="#sec-projection" id="toc-sec-projection" class="nav-link" data-scroll-target="#sec-projection"><span class="header-section-number">4</span> Projecting thresholds</a>
+  <ul class="collapse">
+  <li><a href="#price-and-consumption-growth-rules" id="toc-price-and-consumption-growth-rules" class="nav-link" data-scroll-target="#price-and-consumption-growth-rules"><span class="header-section-number">4.1</span> Price and consumption growth rules</a></li>
+  <li><a href="#sec-current" id="toc-sec-current" class="nav-link" data-scroll-target="#sec-current"><span class="header-section-number">4.2</span> Retrospective comparison, 2020–2025</a></li>
+  <li><a href="#five-year-benchmark-for-the-2025-nowcast" id="toc-five-year-benchmark-for-the-2025-nowcast" class="nav-link" data-scroll-target="#five-year-benchmark-for-the-2025-nowcast"><span class="header-section-number">4.3</span> Five-year benchmark for the 2025 nowcast</a></li>
+  </ul></li>
+  <li><a href="#sec-nowcast" id="toc-sec-nowcast" class="nav-link" data-scroll-target="#sec-nowcast"><span class="header-section-number">5</span> Pre-committed 2025 validation</a>
+  <ul class="collapse">
+  <li><a href="#the-estimate-before-publication" id="toc-the-estimate-before-publication" class="nav-link" data-scroll-target="#the-estimate-before-publication"><span class="header-section-number">5.1</span> The estimate before publication</a></li>
+  <li><a href="#sec-evaluation" id="toc-sec-evaluation" class="nav-link" data-scroll-target="#sec-evaluation"><span class="header-section-number">5.2</span> Evaluation against published thresholds</a></li>
+  <li><a href="#validation-of-the-price-comparator" id="toc-validation-of-the-price-comparator" class="nav-link" data-scroll-target="#validation-of-the-price-comparator"><span class="header-section-number">5.3</span> Validation of the price comparator</a></li>
+  </ul></li>
+  <li><a href="#sec-rolling" id="toc-sec-rolling" class="nav-link" data-scroll-target="#sec-rolling"><span class="header-section-number">6</span> Conditional forecasts beyond available microdata</a>
+  <ul class="collapse">
+  <li><a href="#projecting-expenditure-records-and-rolling-windows" id="toc-projecting-expenditure-records-and-rolling-windows" class="nav-link" data-scroll-target="#projecting-expenditure-records-and-rolling-windows"><span class="header-section-number">6.1</span> Projecting expenditure records and rolling windows</a></li>
+  <li><a href="#projecting-local-relative-housing-costs" id="toc-projecting-local-relative-housing-costs" class="nav-link" data-scroll-target="#projecting-local-relative-housing-costs"><span class="header-section-number">6.2</span> Projecting local relative housing costs</a></li>
+  </ul></li>
+  <li><a href="#sec-discussion" id="toc-sec-discussion" class="nav-link" data-scroll-target="#sec-discussion"><span class="header-section-number">7</span> Discussion</a></li>
+  <li><a href="#appendix-a-replication-benchmark" id="toc-appendix-a-replication-benchmark" class="nav-link" data-scroll-target="#appendix-a-replication-benchmark">Appendix A: replication benchmark</a></li>
+  <li><a href="#appendix-b-reproducibility" id="toc-appendix-b-reproducibility" class="nav-link" data-scroll-target="#appendix-b-reproducibility">Appendix B: reproducibility</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul>
+<div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="index.pdf"><i class="bi bi-file-pdf"></i>PDF</a></li></ul></div></nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Calculating and projecting Supplemental Poverty Measure thresholds</h1>
+<p class="subtitle lead">Public consumption data, rolling forecasts, and a pre-committed 2025 validation</p>
+</div>
+
+
+<div class="quarto-title-meta-author">
+  <div class="quarto-title-meta-heading">Author</div>
+  <div class="quarto-title-meta-heading">Affiliation</div>
+  
+    <div class="quarto-title-meta-contents">
+    <p class="author">Max Ghenis <a href="mailto:max@policyengine.org" class="quarto-title-author-email"><i class="bi bi-envelope"></i></a> </p>
+  </div>
+  <div class="quarto-title-meta-contents">
+        <p class="affiliation">
+            PolicyEngine
+          </p>
+      </div>
+  </div>
+
+<div class="quarto-title-meta">
+
+      
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">September 13, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+<div>
+  <div class="abstract">
+    <div class="block-title">Abstract</div>
+    <p>The Bureau of Labor Statistics (BLS) estimates Supplemental Poverty Measure (SPM) thresholds from a rolling five-year Consumer Expenditure Survey window. BLS updates the thresholds for spending on basic needs and publishes them in the following year. Analysts must therefore estimate unpublished thresholds to project poverty. We reconstruct thresholds approximately from public microdata and compare four projection rules. For 2020–2025, we obtain mean absolute errors across housing tenures of 2.29 percent with the Consumer Price Index for All Urban Consumers (CPI-U), 1.65 percent with a composite price index, 0.51 percent with replicated consumption growth, and 0.90 percent with an equal blend of the latter two. We use revised data and overlapping estimation windows in these retrospective comparisons. We also evaluate a pre-committed 2025 nowcast against subsequently published thresholds. The blend yields a mean absolute error of 1.17 percent, compared with 2.58 percent for CPI-U adjustment and 0.75 percent for consumption growth alone. We obtain the largest error for renters. Beyond available microdata, we project expenditure and rent records through 2035 under explicit assumptions about prices and real spending. We evaluate prospective accuracy for 2025 only and leave several official imputations unreplicated.</p>
+  </div>
+</div>
+
+
+</header>
+
+
+<section id="introduction" class="level1" data-number="1">
+<h1 data-number="1"><span class="header-section-number">1</span> Introduction</h1>
+<p>The Bureau of Labor Statistics (BLS) estimates national Supplemental Poverty Measure (SPM) thresholds from Consumer Expenditure (CE) Interview Survey spending on food, clothing, shelter, utilities, telephone, and internet. BLS varies the thresholds by housing tenure. The U.S. Census Bureau adjusts them for family composition and local housing costs <span class="citation" data-cites="itwg2010 garner2021">(<a href="#ref-itwg2010" role="doc-biblioref">Interagency Technical Working Group on Developing a Supplemental Poverty Measure 2010</a>; <a href="#ref-garner2021" role="doc-biblioref">Garner and Munoz 2021</a>)</span>. By updating basic-needs standards with consumption, the agencies follow the National Academy of Sciences proposal <span class="citation" data-cites="citro1995">(<a href="#ref-citro1995" role="doc-biblioref">Citro and Michael 1995</a>)</span>.</p>
+<p>BLS publishes thresholds in the following year. It published the 2024 thresholds in September 2025 and the 2025 thresholds on August 24, 2026 <span class="citation" data-cites="p60-287 bls2025thresholds">(<a href="#ref-p60-287" role="doc-biblioref">U.S. Census Bureau 2025b</a>; <a href="#ref-bls2025thresholds" role="doc-biblioref">U.S. Bureau of Labor Statistics 2026c</a>)</span>. Analysts projecting poverty before publication must estimate thresholds and SPM resources. Adjusting the last published threshold for inflation captures price changes. BLS also re-estimates the expenditure distribution when it calculates the threshold.</p>
+<p>Urban Institute projections for 2021 adjusted the 2019 thresholds for projected inflation <span class="citation" data-cites="wheaton2021">(<a href="#ref-wheaton2021" role="doc-biblioref">Wheaton et al. 2021</a>)</span>. Columbia’s monthly poverty framework initially carried the latest published thresholds forward, identifying the need for more timely consumption data to project new ones <span class="citation" data-cites="parolin2022">(<a href="#ref-parolin2022" role="doc-biblioref">Parolin et al. 2022</a>)</span>. Researchers also use price adjustment to hold anchored-SPM thresholds fixed in real terms and compare resources and policy across years <span class="citation" data-cites="wimer2016 nasem2019">(<a href="#ref-wimer2016" role="doc-biblioref">Wimer et al. 2016</a>; <a href="#ref-nasem2019" role="doc-biblioref">National Academies of Sciences, Engineering, and Medicine 2019</a>)</span>. An anchored standard measures resource changes against a fixed real threshold; predicting the thresholds BLS will publish requires estimating changes in that standard.</p>
+<p>We compare four rules for projecting BLS thresholds using an approximate reconstruction from public CE files. We reconstruct 2019–2025 thresholds, test sample sensitivities, and evaluate one-year projections for 2020–2025. We also evaluate a pre-committed 2025 nowcast against the thresholds BLS subsequently published.</p>
+<p>Beyond available microdata, we project future expenditure and rental records and advance both five-year survey windows. These conditional forecasts use the CE and American Community Survey (ACS), with assumptions about prices, real expenditures, and rents.</p>
+</section>
+<section id="sec-production" class="level1" data-number="2">
+<h1 data-number="2"><span class="header-section-number">2</span> Calculating the thresholds</h1>
+<section id="national-reference-thresholds" class="level2" data-number="2.1">
+<h2 data-number="2.1" class="anchored" data-anchor-id="national-reference-thresholds"><span class="header-section-number">2.1</span> National reference thresholds</h2>
+<p>BLS estimates a national threshold for a two-adult, two-child reference unit in each of three housing tenures: owners with a mortgage, owners without a mortgage, and renters. Census applies the thresholds to SPM resource units after adjusting for composition and local housing costs, and computes poverty status from the corresponding resources <span class="citation" data-cites="itwg2010 garner2021">(<a href="#ref-itwg2010" role="doc-biblioref">Interagency Technical Working Group on Developing a Supplemental Poverty Measure 2010</a>; <a href="#ref-garner2021" role="doc-biblioref">Garner and Munoz 2021</a>)</span>.</p>
+<p>Under the methodology approved by the SPM Interagency Technical Working Group in September 2020, target year <span class="math inline">\(T\)</span> uses five years of CE Interview collection quarters, <span class="math inline">\((T-5)\)</span>Q2 through <span class="math inline">\(T\)</span>Q1 <span class="citation" data-cites="burnsfox2021 blsspmhome">(<a href="#ref-burnsfox2021" role="doc-biblioref">Burns and Fox 2021</a>; <a href="#ref-blsspmhome" role="doc-biblioref">U.S. Bureau of Labor Statistics 2026f</a>)</span>. For consumer units with children, BLS constructs spending on food, clothing, shelter, utilities, telephone, and internet (FCSUti), including owners’ mortgage-principal payments and imputed in-kind benefits. The latter include broadband subsidies, energy assistance, school lunches, rental assistance, and the Special Supplemental Nutrition Program for Women, Infants, and Children (WIC). BLS normalizes spending to the reference family using the three-parameter equivalence scale and updates it to target-year dollars with a composite FCSUti price index <span class="citation" data-cites="betson1996 garner2021">(<a href="#ref-betson1996" role="doc-biblioref">Betson 1996</a>; <a href="#ref-garner2021" role="doc-biblioref">Garner and Munoz 2021</a>)</span>.</p>
+<p>Let <span class="math inline">\(E\)</span> denote the pooled, survey-weighted 47th–53rd percentile band of reference-family FCSUti expenditures across all housing tenures. Let <span class="math inline">\(SU\)</span> denote shelter and utilities excluding telephone. For housing tenure <span class="math inline">\(h\)</span>, BLS calculates the national threshold as</p>
+<p><span class="math display">\[
+B_{T,h}=s\left(1.2\,\overline{FCSUti}_{E}
+-\overline{SU}_{E}+\overline{SU}_{E,h}\right).
+\]</span></p>
+<p>The pooled expenditure band defines the basic-needs amount. The 1.2 multiplier allows for other basic goods and services, and replacing the pooled housing mean with the tenure-specific mean differentiates the three thresholds. The revised official series uses an anchor share <span class="math inline">\(s\)</span> of 0.82, compared with 0.83 in the preceding series <span class="citation" data-cites="bls2026corrected">(<a href="#ref-bls2026corrected" role="doc-biblioref">U.S. Bureau of Labor Statistics 2026e</a>)</span>.</p>
+<p>We benchmark against the corrected BLS 2005–2024 workbook issued in July 2026 and the published 2025 values. In particular, the 2019–2024 comparisons use this July 2026 vintage. The historical comparisons therefore use information unavailable in the target years <span class="citation" data-cites="croushore2001">(<a href="#ref-croushore2001" role="doc-biblioref">Croushore and Stark 2001</a>)</span>.</p>
+</section>
+<section id="applying-a-threshold-to-an-spm-unit" class="level2" data-number="2.2">
+<h2 data-number="2.2" class="anchored" data-anchor-id="applying-a-threshold-to-an-spm-unit"><span class="header-section-number">2.2</span> Applying a threshold to an SPM unit</h2>
+<p>Census scales each tenure’s reference threshold to the unit’s composition. Let <span class="math inline">\(q(A,C)\)</span> denote that scale for <span class="math inline">\(A\)</span> adults and <span class="math inline">\(C\)</span> children, normalized to one for two adults and two children. For integer counts <span class="math inline">\(A\geq1\)</span> and <span class="math inline">\(C\geq0\)</span>, write <span class="math inline">\(q(A,C)=e(A,C)/3^{0.7}\)</span>, where</p>
+<p><span class="math display">\[
+e(A,C)=
+\begin{cases}
+1, &amp; A=1,\ C=0,\\
+1.41, &amp; A=2,\ C=0,\\
+(1+0.8+0.5(C-1))^{0.7}, &amp; A=1,\ C\geq1,\\
+(A+0.5C)^{0.7}, &amp; \text{otherwise}.
+\end{cases}
+\]</span></p>
+<p>The two-adult, no-child case uses Census’s stated constant 1.41 <span class="citation" data-cites="spmtechnical">(<a href="#ref-spmtechnical" role="doc-biblioref">U.S. Census Bureau, n.d.-b</a>)</span>. Census assigns adults and children to SPM composition roles using its resource-unit definition. Age counts alone do not determine those roles. For example, one adult with two children has <span class="math inline">\(q(1,2)=2.3^{0.7}/3^{0.7}\)</span>, while <span class="math inline">\(q(2,2)=1\)</span>. Geographic adjustment applies to the housing portion. Writing that portion as share <span class="math inline">\(a_{T,h}\)</span> and the local relative housing-cost index as <span class="math inline">\(g\)</span>, the calculation is</p>
+<p><span class="math display">\[
+B_{T,h}^{\mathrm{unit}}
+=B_{T,h}\,q(A,C)\left[(1-a_{T,h})+a_{T,h}g\right].
+\]</span></p>
+<p>The bracketed expression multiplies the whole threshold; the relative housing-cost index <span class="math inline">\(g\)</span> adjusts only the housing portion. Resources below the resulting threshold imply SPM poverty; equality does not. Population models must supply SPM membership, composition roles, and resources consistently with Census definitions.</p>
+<div id="tbl-current-release" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-current-release-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;1: Published 2025 reference-family thresholds and shelter-utilities shares. The shares sum the shelter and utilities components in the BLS shares workbook and exclude telephone and internet.
+</figcaption>
+<div aria-describedby="tbl-current-release-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Tenure</th>
+<th>Published 2025 base</th>
+<th>Published 2025 housing share</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Owner with mortgage</td>
+<td>$41,322.71</td>
+<td>0.428507</td>
+</tr>
+<tr class="even">
+<td>Owner without mortgage</td>
+<td>$34,326.00</td>
+<td>0.312019</td>
+</tr>
+<tr class="odd">
+<td>Renter</td>
+<td>$41,700.56</td>
+<td>0.433686</td>
+</tr>
+</tbody>
+</table>
+</div>
+</figure>
+</div>
+<p>Both components in <a href="#tbl-current-release" class="quarto-xref">Table&nbsp;1</a> use published 2025 values <span class="citation" data-cites="bls2025thresholds blsspmshares">(<a href="#ref-bls2025thresholds" role="doc-biblioref">U.S. Bureau of Labor Statistics 2026c</a>, <a href="#ref-blsspmshares" role="doc-biblioref">2026g</a>)</span>. Geographic indices follow a separate estimation and publication schedule. A local threshold that uses a modeled geographic index combines official and modeled inputs. Local estimation areas comprise metropolitan statistical areas and Census’s residual metropolitan and nonmetropolitan groups <span class="citation" data-cites="spmtechnical">(<a href="#ref-spmtechnical" role="doc-biblioref">U.S. Census Bureau, n.d.-b</a>)</span>. Counties identify the applicable estimation area. <a href="#sec-rolling" class="quarto-xref">Section&nbsp;6</a> describes the annual geographic projection.</p>
+</section>
+</section>
+<section id="sec-replication" class="level1" data-number="3">
+<h1 data-number="3"><span class="header-section-number">3</span> Replication from public consumption data</h1>
+<section id="expenditure-construction-and-estimation-sample" class="level2" data-number="3.1">
+<h2 data-number="3.1" class="anchored" data-anchor-id="expenditure-construction-and-estimation-sample"><span class="header-section-number">3.1</span> Expenditure construction and estimation sample</h2>
+<p>We read public CE Interview family-level FMLI files for each target year’s five-year window. Each record divides one three-month recall period between previous-quarter and current-quarter expenditure fields. We sum the fields and multiply by four to annualize spending. We retain telephone spending in FCSUti and exclude it from the narrower shelter-utilities measure. We include mortgage principal from the FMLI outlay fields <span class="citation" data-cites="cepumd blsspmhome">(<a href="#ref-cepumd" role="doc-biblioref">U.S. Bureau of Labor Statistics 2026d</a>, <a href="#ref-blsspmhome" role="doc-biblioref">2026f</a>)</span>.</p>
+<p>Newer CE records combine grocery spending in one summary. We allocate 80 percent of that summary to food; BLS specifies a narrower item-code allocation in its errata. We omit home-internet spending and in-kind imputations because the public FMLI summaries lack those components.</p>
+<p>We normalize each consumer unit’s expenditures to the two-adult, two-child reference family before estimating the expenditure band and housing means. We use CE interview survey weights and an inclusive 47th–53rd percentile band from a midpoint weighted cumulative distribution. We adjust prices annually by collection year; BLS adjusts them quarterly. For each target year, we derive expenditure-deflation weights from the selected CE sample before selecting the percentile band. We use separate, fixed weights for the price comparator in <a href="#sec-projection" class="quarto-xref">Section&nbsp;4</a>. We have not verified the percentile calculation against BLS’s code.</p>
+<p>Independent minors can form CE consumer units, so age counts alone cannot establish the SPM roles needed for equivalence scaling. We exclude these unresolved records from the baseline sample. To test sensitivity, we assign one adult and retain the reported child count. This nonofficial recode leaves membership unresolved. We also exclude housing-tenure codes 5 and 6 and assign code 3 to owners with a mortgage. We have not established whether BLS applies the same sample rules.</p>
+</section>
+<section id="replicated-levels-and-sample-sensitivities" class="level2" data-number="3.2">
+<h2 data-number="3.2" class="anchored" data-anchor-id="replicated-levels-and-sample-sensitivities"><span class="header-section-number">3.2</span> Replicated levels and sample sensitivities</h2>
+<p>We reconstruct seven target years, 2019–2025. <a href="#tbl-current-replication" class="quarto-xref">Table&nbsp;2</a> reports signed deviations from the revised published thresholds. Differences vary by tenure and year, including positive deviations for owners without mortgages in later windows. The comparison measures the combined discrepancy; it does not identify the contribution of any particular omitted component or sample rule.</p>
+<div id="tbl-current-replication" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-current-replication-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;2: Signed public-data replication deviations from published national thresholds. Negative values indicate a lower replication.
+</figcaption>
+<div aria-describedby="tbl-current-replication-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Target year</th>
+<th>With mortgage</th>
+<th>Without mortgage</th>
+<th>Renter</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>2019</td>
+<td>-1.67%</td>
+<td>-1.00%</td>
+<td>-1.12%</td>
+</tr>
+<tr class="even">
+<td>2020</td>
+<td>-1.69%</td>
+<td>-0.24%</td>
+<td>-1.45%</td>
+</tr>
+<tr class="odd">
+<td>2021</td>
+<td>-1.55%</td>
+<td>+0.78%</td>
+<td>-1.36%</td>
+</tr>
+<tr class="even">
+<td>2022</td>
+<td>-1.41%</td>
+<td>+1.67%</td>
+<td>-1.33%</td>
+</tr>
+<tr class="odd">
+<td>2023</td>
+<td>-2.05%</td>
+<td>+0.72%</td>
+<td>-1.07%</td>
+</tr>
+<tr class="even">
+<td>2024</td>
+<td>-2.25%</td>
+<td>+1.14%</td>
+<td>-1.40%</td>
+</tr>
+<tr class="odd">
+<td>2025</td>
+<td>-1.79%</td>
+<td>+0.11%</td>
+<td>-2.77%</td>
+</tr>
+</tbody>
+</table>
+</div>
+</figure>
+</div>
+<div id="tbl-current-sensitivity" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-current-sensitivity-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;3: Unresolved-youth interviews and their weighted share of child-containing CE interviews, with maximum absolute threshold changes across tenures under separate youth-recode and tenure sensitivities. The latter includes tenure codes 5 and 6 as renters. These overlapping windows reuse observations.
+</figcaption>
+<div aria-describedby="tbl-current-sensitivity-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<table class="caption-top table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Year</th>
+<th>Youth rows</th>
+<th>Youth weight share</th>
+<th>Youth recode</th>
+<th>Include tenures 5/6</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>2019</td>
+<td>12</td>
+<td>0.0328%</td>
+<td>0.0199%</td>
+<td>1.0882%</td>
+</tr>
+<tr class="even">
+<td>2020</td>
+<td>12</td>
+<td>0.0329%</td>
+<td>0.0220%</td>
+<td>0.8609%</td>
+</tr>
+<tr class="odd">
+<td>2021</td>
+<td>7</td>
+<td>0.0195%</td>
+<td>0.0410%</td>
+<td>1.7371%</td>
+</tr>
+<tr class="even">
+<td>2022</td>
+<td>5</td>
+<td>0.0145%</td>
+<td>0.0131%</td>
+<td>1.0967%</td>
+</tr>
+<tr class="odd">
+<td>2023</td>
+<td>1</td>
+<td>0.0051%</td>
+<td>0.0027%</td>
+<td>0.9893%</td>
+</tr>
+<tr class="even">
+<td>2024</td>
+<td>1</td>
+<td>0.0051%</td>
+<td>0.0354%</td>
+<td>0.8810%</td>
+</tr>
+<tr class="odd">
+<td>2025</td>
+<td>1</td>
+<td>0.0051%</td>
+<td>0.0000%</td>
+<td>0.6425%</td>
+</tr>
+</tbody>
+</table>
+</div>
+</figure>
+</div>
+<p>We obtain a maximum threshold change of 1.74 percent when we include tenure codes 5 and 6 as renters (<a href="#tbl-current-sensitivity" class="quarto-xref">Table&nbsp;3</a>). We observe no code-3 records, so assigning that code to owners without a mortgage changes no estimates. We cannot infer its effect in a sample that contains those records. We count consumer-unit interviews in the weighted shares, including repeated interviews.</p>
+<p>We test sensitivity to youth and tenure treatment. Annual price adjustment, the food allocation, omitted home internet and in-kind imputations, and percentile conventions can also affect the estimates. We have not estimated the replication’s sampling and imputation uncertainty. Published BLS standard errors provide scale for the level differences, but they do not account for replication error or covariance from shared survey inputs.</p>
+</section>
+</section>
+<section id="sec-projection" class="level1" data-number="4">
+<h1 data-number="4"><span class="header-section-number">4</span> Projecting thresholds</h1>
+<section id="price-and-consumption-growth-rules" class="level2" data-number="4.1">
+<h2 data-number="4.1" class="anchored" data-anchor-id="price-and-consumption-growth-rules"><span class="header-section-number">4.1</span> Price and consumption growth rules</h2>
+<p>We test whether public consumption growth predicts published thresholds more accurately than price adjustment. Let <span class="math inline">\(\widetilde B_{T,h}\)</span> be the replicated national threshold and <span class="math inline">\(P_T\)</span> a price index. Starting from an official base <span class="math inline">\(B_{T-1,h}\)</span>, the combined rule is</p>
+<p><span class="math display">\[
+\widehat B_{T,h}=B_{T-1,h}
+\left[\lambda\frac{\widetilde B_{T,h}}{\widetilde B_{T-1,h}}
++(1-\lambda)\frac{P_T}{P_{T-1}}\right].
+\]</span></p>
+<p>We compare All-Items CPI-U adjustment; adjustment by a static-weight composite matching the FCSUti components available in the data; the replication growth ratio alone; and an equal blend of replication growth and composite-price growth. The last three correspond to <span class="math inline">\(\lambda=0\)</span>, <span class="math inline">\(1\)</span>, and <span class="math inline">\(1/2\)</span> when <span class="math inline">\(P\)</span> is the composite index. We fix the blend weights at one half.</p>
+<p>We construct the projection composite from five CPI-U components: food, apparel, shelter, fuels and utilities, and telephone services. We assign respective weights of <span class="math inline">\((0.30, 0.05, 0.45, 0.12, 0.04)/0.96\)</span>, with no separate home-internet component, to approximate the BLS deflator. For component <span class="math inline">\(i\)</span>’s annual-average index <span class="math inline">\(P_{i,T}\)</span>, we calculate the six-year comparison’s price multiplier as <span class="math inline">\(\sum_i
+w_i(P_{i,T}/P_{i,T-1})\)</span>. We use the same normalized weights in the five-year benchmark and 2025 nowcast. We hold the benchmark’s index base at 2019 and rebase the nowcast to the prior year. We derive the separate expenditure-adjustment weights from each selected CE sample.</p>
+<p>If replication differs from the official level by a stable proportional factor, that factor cancels between adjacent years. A persistent additive difference need not cancel, and changing omissions or sample effects can alter growth.</p>
+<p>Census estimated that updating the 2023 SPM thresholds by CPI-U growth would produce a 2024 SPM rate of 12.4 percent, below the published 2024 rate <span class="citation" data-cites="creamer2025">(<a href="#ref-creamer2025" role="doc-biblioref">Creamer 2025</a>)</span>. Census used the threshold and poverty estimates published for 2024 in that analysis.</p>
+</section>
+<section id="sec-current" class="level2" data-number="4.2">
+<h2 data-number="4.2" class="anchored" data-anchor-id="sec-current"><span class="header-section-number">4.2</span> Retrospective comparison, 2020–2025</h2>
+<p>We evaluate six one-year projections for 2020–2025 (<a href="#tbl-current-projection" class="quarto-xref">Table&nbsp;4</a>). For every target year, we start each rule from the prior year’s revised published threshold. We hold the composite’s component weights fixed and rebase its price index to the prior year. We use the replication and price inputs recorded in September 2026. We do not reconstruct the data available at each historical forecast date.</p>
+<div id="tbl-current-projection" class="quarto-float quarto-figure quarto-figure-center anchored" data-tbl-colwidths="[16,16,24,24,20]">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-current-projection-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;4: Retrospective mean absolute percentage errors across three tenures, 2020–2025. The mean row weights the six years equally.
+</figcaption>
+<div aria-describedby="tbl-current-projection-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<table class="caption-top table">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 24%">
+<col style="width: 24%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Target year</th>
+<th>CPI-U</th>
+<th>Composite prices</th>
+<th>Replication ratio</th>
+<th>50/50 blend</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>2020</td>
+<td>1.78%</td>
+<td>0.90%</td>
+<td>0.38%</td>
+<td>0.38%</td>
+</tr>
+<tr class="even">
+<td>2021</td>
+<td>0.92%</td>
+<td>0.43%</td>
+<td>0.42%</td>
+<td>0.34%</td>
+</tr>
+<tr class="odd">
+<td>2022</td>
+<td>1.29%</td>
+<td>1.45%</td>
+<td>0.35%</td>
+<td>0.55%</td>
+</tr>
+<tr class="even">
+<td>2023</td>
+<td>3.99%</td>
+<td>2.50%</td>
+<td>0.62%</td>
+<td>1.47%</td>
+</tr>
+<tr class="odd">
+<td>2024</td>
+<td>3.16%</td>
+<td>2.61%</td>
+<td>0.32%</td>
+<td>1.33%</td>
+</tr>
+<tr class="even">
+<td>2025</td>
+<td>2.58%</td>
+<td>2.02%</td>
+<td>0.96%</td>
+<td>1.33%</td>
+</tr>
+<tr class="odd">
+<td>Mean</td>
+<td>2.29%</td>
+<td>1.65%</td>
+<td>0.51%</td>
+<td>0.90%</td>
+</tr>
+</tbody>
+</table>
+</div>
+</figure>
+</div>
+<p>Over these six years, the replication ratio has the lowest mean absolute error, followed by the blend, composite-price adjustment, and CPI-U adjustment. Errors vary across years. We use realized prices, which analysts could not observe before the target year ended. Adjacent CE windows share four of five years, and tenure estimates share observations. These shared observations make the errors dependent, and all six comparisons use outcomes known at implementation.</p>
+</section>
+<section id="five-year-benchmark-for-the-2025-nowcast" class="level2" data-number="4.3">
+<h2 data-number="4.3" class="anchored" data-anchor-id="five-year-benchmark-for-the-2025-nowcast"><span class="header-section-number">4.3</span> Five-year benchmark for the 2025 nowcast</h2>
+<p>We use a five-year benchmark covering 2020–2024 for the 2025 nowcast (<a href="#tbl-backtest" class="quarto-xref">Table&nbsp;5</a>). We use corrected thresholds and realized prices in this retrospective comparison. For this benchmark, we use sample rules and a fixed-2019-base price composite that differ from those in the six-year comparison. Appendix B identifies the implementation and inputs for each experiment.</p>
+<div id="tbl-backtest" class="quarto-float quarto-figure quarto-figure-center anchored" data-tbl-colwidths="[34,11,11,11,11,11,11]">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-backtest-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;5: Five-year benchmark mean absolute percentage errors across three tenure thresholds, projecting each year from the prior year’s corrected values.
+</figcaption>
+<div aria-describedby="tbl-backtest-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<table class="caption-top table">
+<colgroup>
+<col style="width: 34%">
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 11%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Rule</th>
+<th style="text-align: right;">2020</th>
+<th style="text-align: right;">2021</th>
+<th style="text-align: right;">2022</th>
+<th style="text-align: right;">2023</th>
+<th style="text-align: right;">2024</th>
+<th style="text-align: right;">Mean</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>All-Items CPI-U aging</td>
+<td style="text-align: right;">1.78%</td>
+<td style="text-align: right;">0.92%</td>
+<td style="text-align: right;">1.29%</td>
+<td style="text-align: right;">3.99%</td>
+<td style="text-align: right;">3.16%</td>
+<td style="text-align: right;">2.23%</td>
+</tr>
+<tr class="even">
+<td>FCSUti-composite CPI aging</td>
+<td style="text-align: right;">0.90%</td>
+<td style="text-align: right;">0.43%</td>
+<td style="text-align: right;">1.41%</td>
+<td style="text-align: right;">2.52%</td>
+<td style="text-align: right;">2.59%</td>
+<td style="text-align: right;">1.57%</td>
+</tr>
+<tr class="odd">
+<td>CE replication growth ratio</td>
+<td style="text-align: right;">0.65%</td>
+<td style="text-align: right;">0.25%</td>
+<td style="text-align: right;">0.57%</td>
+<td style="text-align: right;">0.26%</td>
+<td style="text-align: right;">0.33%</td>
+<td style="text-align: right;">0.41%</td>
+</tr>
+<tr class="even">
+<td><strong>50/50 blend (FCSUti CPI + replication)</strong></td>
+<td style="text-align: right;">0.45%</td>
+<td style="text-align: right;">0.09%</td>
+<td style="text-align: right;">0.54%</td>
+<td style="text-align: right;">1.39%</td>
+<td style="text-align: right;">1.32%</td>
+<td style="text-align: right;"><strong>0.76%</strong></td>
+</tr>
+</tbody>
+</table>
+</div>
+</figure>
+</div>
+<p>CPI-U adjustment has a mean absolute error of 2.23 percent and understates threshold growth in four of five years, with a signed mean error of −1.9 percent. Composite-price adjustment reduces the mean absolute error to 1.57 percent, removing about thirty percent of the CPI-U error in this sample. The replication ratio scores 0.41 percent, with a signed mean of +0.1 percent and annual signed means ranging from +0.5 to −0.3 percent. The equal blend scores 0.76 percent; its annual signed means range from −0.1 to −1.4 percent. These ranges describe variation across the five observed years; they do not quantify future forecast uncertainty.</p>
+</section>
+</section>
+<section id="sec-nowcast" class="level1" data-number="5">
+<h1 data-number="5"><span class="header-section-number">5</span> Pre-committed 2025 validation</h1>
+<section id="the-estimate-before-publication" class="level2" data-number="5.1">
+<h2 data-number="5.1" class="anchored" data-anchor-id="the-estimate-before-publication"><span class="header-section-number">5.1</span> The estimate before publication</h2>
+<p>We estimated the 2025 thresholds after the expenditure period ended and before BLS published the outcome, producing a nowcast <span class="citation" data-cites="giannone2008">(<a href="#ref-giannone2008" role="doc-biblioref">Giannone et al. 2008</a>)</span>. We used the CE window from 2020Q2 through 2025Q1 and eleven months of 2025 CPI observations. BLS did not publish October 2025 CPI. We average the other eleven months following BLS’s documented treatment <span class="citation" data-cites="blscpi2025shutdown">(<a href="#ref-blscpi2025shutdown" role="doc-biblioref">U.S. Bureau of Labor Statistics 2026b</a>)</span>.</p>
+<p>We amended the forecast on July 18, 2026 to correct the price composite. The <a href="https://github.com/PolicyEngine/spm-threshold-paper/blob/20bfbe1abcb83b4f9f60fbe54789144321ff62b0/docs/forecast-record.md">forecast record</a> links the August 7 archived page, tags, and timestamp proof that document both forecasts before BLS’s August 24 publication.</p>
+<p>We retained the equal blend as the primary forecast after the correction ranked the replication ratio first.<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a></p>
+<p>We committed to an equal blend that projected $41,036.34 for owners with mortgages, $34,135.99 for owners without mortgages, and $40,755.98 for renters. We apply replication and composite-price growth to the corrected 2024 thresholds specified in the forecast registration.</p>
+<div id="tbl-nowcast" class="quarto-float quarto-figure quarto-figure-center anchored" data-tbl-colwidths="[31,17,18,14,20]">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-nowcast-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;6: Pre-committed 2025 nowcast for a two-adult, two-child unit, with its replication and price components. These are model estimates.
+</figcaption>
+<div aria-describedby="tbl-nowcast-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<table class="caption-top table">
+<colgroup>
+<col style="width: 31%">
+<col style="width: 17%">
+<col style="width: 18%">
+<col style="width: 14%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Tenure</th>
+<th style="text-align: right;">Replication ratio</th>
+<th style="text-align: right;">FCSUti CPI ratio</th>
+<th style="text-align: right;">Blend</th>
+<th style="text-align: right;">Nowcast 2025</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Owners with mortgages</td>
+<td style="text-align: right;">1.0599</td>
+<td style="text-align: right;">1.0321</td>
+<td style="text-align: right;">1.0460</td>
+<td style="text-align: right;">$41,036.34</td>
+</tr>
+<tr class="even">
+<td>Owners without mortgages</td>
+<td style="text-align: right;">1.0443</td>
+<td style="text-align: right;">1.0321</td>
+<td style="text-align: right;">1.0382</td>
+<td style="text-align: right;">$34,135.99</td>
+</tr>
+<tr class="odd">
+<td>Renters</td>
+<td style="text-align: right;">1.0462</td>
+<td style="text-align: right;">1.0321</td>
+<td style="text-align: right;">1.0392</td>
+<td style="text-align: right;">$40,755.98</td>
+</tr>
+</tbody>
+</table>
+</div>
+</figure>
+</div>
+<p>Replicated threshold growth ranged from 4.4 to 6.0 percent by tenure, against 3.2 percent composite-price growth. Their blend projected 3.8 to 4.6 percent growth, compared with 2.6 percent realized CPI-U growth. The nowcast price component chain-links at the prior year; the five-year backtest composite holds a fixed 2019 base. The two composites therefore apply the same component weights to different index bases.</p>
+</section>
+<section id="sec-evaluation" class="level2" data-number="5.2">
+<h2 data-number="5.2" class="anchored" data-anchor-id="sec-evaluation"><span class="header-section-number">5.2</span> Evaluation against published thresholds</h2>
+<p>BLS published the 2025 thresholds on August 24, 2026: $41,323 for owners with mortgages, $34,326 for owners without, and $41,701 for renters <span class="citation" data-cites="bls2025thresholds">(<a href="#ref-bls2025thresholds" role="doc-biblioref">U.S. Bureau of Labor Statistics 2026c</a>)</span>. The linked workbook carries full-precision values and standard errors of $327, $560, and $393. BLS reports growth of 4.40 to 6.33 percent by tenure over the corrected 2024 base. We use that base, fixed before publication, for every forecast evaluation.</p>
+<div id="tbl-evaluation" class="quarto-float quarto-figure quarto-figure-center anchored" data-tbl-colwidths="[34,17,17,16,16]">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-evaluation-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;7: Signed percentage errors against published 2025 thresholds and mean absolute error across tenures. The CPI-U rule uses the pinned eleven-month 2025 annual average; the blend uses equal weights on consumption and composite-price growth.
+</figcaption>
+<div aria-describedby="tbl-evaluation-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<table class="caption-top table">
+<colgroup>
+<col style="width: 34%">
+<col style="width: 17%">
+<col style="width: 17%">
+<col style="width: 16%">
+<col style="width: 16%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Rule</th>
+<th style="text-align: right;">Owners w/ mortgage</th>
+<th style="text-align: right;">Owners w/o mortgage</th>
+<th style="text-align: right;">Renters</th>
+<th style="text-align: right;">Mean abs. error</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Committed equal blend</strong></td>
+<td style="text-align: right;">-0.69%</td>
+<td style="text-align: right;">-0.55%</td>
+<td style="text-align: right;">-2.27%</td>
+<td style="text-align: right;"><strong>1.17%</strong></td>
+</tr>
+<tr class="even">
+<td>CE replication growth ratio</td>
+<td style="text-align: right;">+0.62%</td>
+<td style="text-align: right;">+0.03%</td>
+<td style="text-align: right;">-1.60%</td>
+<td style="text-align: right;">0.75%</td>
+</tr>
+<tr class="odd">
+<td>Composite-price adjustment</td>
+<td style="text-align: right;">-2.01%</td>
+<td style="text-align: right;">-1.14%</td>
+<td style="text-align: right;">-2.93%</td>
+<td style="text-align: right;">2.02%</td>
+</tr>
+<tr class="even">
+<td>All-Items CPI-U adjustment</td>
+<td style="text-align: right;">-2.56%</td>
+<td style="text-align: right;">-1.70%</td>
+<td style="text-align: right;">-3.47%</td>
+<td style="text-align: right;">2.58%</td>
+</tr>
+</tbody>
+</table>
+</div>
+</figure>
+</div>
+<div id="tbl-evaluation-levels" class="quarto-float quarto-figure quarto-figure-center anchored" data-tbl-colwidths="[24,16,18,12,15,15]">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-evaluation-levels-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;8: Published 2025 thresholds and the committed nowcast in dollars, with BLS’s stated growth and the projected growth.
+</figcaption>
+<div aria-describedby="tbl-evaluation-levels-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<table class="caption-top table">
+<colgroup>
+<col style="width: 24%">
+<col style="width: 16%">
+<col style="width: 18%">
+<col style="width: 12%">
+<col style="width: 15%">
+<col style="width: 15%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Tenure</th>
+<th style="text-align: right;">BLS 2025 threshold</th>
+<th style="text-align: right;">Committed nowcast</th>
+<th style="text-align: right;">Error</th>
+<th style="text-align: right;">BLS-stated growth</th>
+<th style="text-align: right;">Nowcast growth</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Owners with mortgages</td>
+<td style="text-align: right;">$41,323</td>
+<td style="text-align: right;">$41,036.34</td>
+<td style="text-align: right;">-0.69%</td>
+<td style="text-align: right;">5.33%</td>
+<td style="text-align: right;">4.60%</td>
+</tr>
+<tr class="even">
+<td>Owners without mortgages</td>
+<td style="text-align: right;">$34,326</td>
+<td style="text-align: right;">$34,135.99</td>
+<td style="text-align: right;">-0.55%</td>
+<td style="text-align: right;">4.40%</td>
+<td style="text-align: right;">3.82%</td>
+</tr>
+<tr class="odd">
+<td>Renters</td>
+<td style="text-align: right;">$41,701</td>
+<td style="text-align: right;">$40,755.98</td>
+<td style="text-align: right;">-2.27%</td>
+<td style="text-align: right;">6.33%</td>
+<td style="text-align: right;">3.92%</td>
+</tr>
+</tbody>
+</table>
+</div>
+</figure>
+</div>
+<p>The committed blend understates the three thresholds by 0.69, 0.55, and 2.27 percent, giving a mean absolute error of 1.17 percent. The signed mean error also equals −1.17 percent. The owner differences fall within one published BLS standard error; the renter difference reaches about 2.4 standard errors. BLS standard errors measure official sampling uncertainty, so they cannot bound forecast errors or test the model’s discrepancies for significance.</p>
+<p>CPI-U adjustment understates all three thresholds by 1.70 to 3.47 percent, for a mean absolute error of 2.58 percent. The replication ratio alone scores 0.75 percent and has errors on both sides of zero; composite-price adjustment scores 2.02 percent. The replication ratio therefore ranks first in this validation year as well as in the five-year retrospective comparison. One year cannot establish whether any of these rankings will persist.</p>
+<p>The largest miss occurs for renters. BLS reports renter growth of 6.33 percent against 5.33 and 4.40 percent for the two owner tenures. The blend projects renter growth of 3.92 percent, and replication alone 4.62 percent. Omitted imputations, price treatment, sample classification, and percentile conventions can each affect growth. The comparison does not isolate their contributions to the renter miss.</p>
+</section>
+<section id="validation-of-the-price-comparator" class="level2" data-number="5.3">
+<h2 data-number="5.3" class="anchored" data-anchor-id="validation-of-the-price-comparator"><span class="header-section-number">5.3</span> Validation of the price comparator</h2>
+<p>BLS publishes its FCSUti deflator growth alongside the thresholds, providing an additional comparison after publication. We compare BLS’s deflator with the five-year backtest’s fixed-2019-base composite. The 2025 nowcast uses a separate, prior-year-based composite. The fixed-base composite differs from the BLS index by at most 0.7 percentage point in each year from 2020 through 2025, with a mean absolute gap of 0.4 point and no consistent sign. The composite approximates the deflator over these six years.</p>
+<div id="tbl-composite-validation" class="quarto-float quarto-figure quarto-figure-center anchored" data-tbl-colwidths="[10,18,22,14,18,18]">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-composite-validation-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;9: Year-over-year growth in BLS’s FCSUti deflator and the five-year backtest’s fixed-2019-base composite, with the CPI-U figures alongside.
+</figcaption>
+<div aria-describedby="tbl-composite-validation-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<table class="caption-top table">
+<colgroup>
+<col style="width: 10%">
+<col style="width: 18%">
+<col style="width: 22%">
+<col style="width: 14%">
+<col style="width: 18%">
+<col style="width: 18%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Year</th>
+<th style="text-align: right;">BLS FCSUti</th>
+<th style="text-align: right;">Our composite</th>
+<th style="text-align: right;">Gap (pp)</th>
+<th style="text-align: right;">BLS CPI-U</th>
+<th style="text-align: right;">Our CPI-U</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>2020</td>
+<td style="text-align: right;">2.39%</td>
+<td style="text-align: right;">2.15%</td>
+<td style="text-align: right;">-0.24</td>
+<td style="text-align: right;">1.23%</td>
+<td style="text-align: right;">1.23%</td>
+</tr>
+<tr class="even">
+<td>2021</td>
+<td style="text-align: right;">3.17%</td>
+<td style="text-align: right;">3.52%</td>
+<td style="text-align: right;">+0.35</td>
+<td style="text-align: right;">4.70%</td>
+<td style="text-align: right;">4.70%</td>
+</tr>
+<tr class="odd">
+<td>2022</td>
+<td style="text-align: right;">7.21%</td>
+<td style="text-align: right;">7.87%</td>
+<td style="text-align: right;">+0.66</td>
+<td style="text-align: right;">8.00%</td>
+<td style="text-align: right;">8.00%</td>
+</tr>
+<tr class="even">
+<td>2023</td>
+<td style="text-align: right;">6.17%</td>
+<td style="text-align: right;">5.71%</td>
+<td style="text-align: right;">-0.46</td>
+<td style="text-align: right;">4.12%</td>
+<td style="text-align: right;">4.12%</td>
+</tr>
+<tr class="odd">
+<td>2024</td>
+<td style="text-align: right;">3.98%</td>
+<td style="text-align: right;">3.56%</td>
+<td style="text-align: right;">-0.42</td>
+<td style="text-align: right;">2.95%</td>
+<td style="text-align: right;">2.95%</td>
+</tr>
+<tr class="even">
+<td>2025</td>
+<td style="text-align: right;">3.44%</td>
+<td style="text-align: right;">3.28%</td>
+<td style="text-align: right;">-0.16</td>
+<td style="text-align: right;">2.70%</td>
+<td style="text-align: right;">2.63%</td>
+</tr>
+</tbody>
+</table>
+</div>
+</figure>
+</div>
+<p>For 2025, the BLS threshold page reports CPI-U growth of 2.70 percent, compared with 2.63 percent implied by the eleven-month annual average in the pinned CPI observations. The threshold page does not reconcile this difference with the CPI program’s documented eleven-month averaging rule <span class="citation" data-cites="blscpi2025shutdown">(<a href="#ref-blscpi2025shutdown" role="doc-biblioref">U.S. Bureau of Labor Statistics 2026b</a>)</span>. The forecast evaluation uses the recorded eleven-month average.</p>
+</section>
+</section>
+<section id="sec-rolling" class="level1" data-number="6">
+<h1 data-number="6"><span class="header-section-number">6</span> Conditional forecasts beyond available microdata</h1>
+<section id="projecting-expenditure-records-and-rolling-windows" class="level2" data-number="6.1">
+<h2 data-number="6.1" class="anchored" data-anchor-id="projecting-expenditure-records-and-rolling-windows"><span class="header-section-number">6.1</span> Projecting expenditure records and rolling windows</h2>
+<p>For the retrospective comparisons, we observe the CE collection window for each target year. To forecast later thresholds, we supply the unobserved quarters and re-estimate each twenty-quarter window. We use CE records available on September 9, 2026, through 2025Q1. At that date, BLS scheduled the next annual CE microdata release for October 29, 2026 <span class="citation" data-cites="blsce2025shutdown">(<a href="#ref-blsce2025shutdown" role="doc-biblioref">U.S. Bureau of Labor Statistics 2026a</a>)</span>. For each later quarter, we reuse records from the latest observed quarter of the same season. We preserve their survey weights, composition, and identities, and multiply spending by cumulative price change and an assumed real-expenditure growth factor. We remove historical quarters as projected quarters enter and recalculate each threshold from the resulting sample.</p>
+<p>BLS interrupted CE collection in October and November 2025. It adjusts its annual expenditure estimates for this interruption but does not apply those adjustments directly to the public-use files <span class="citation" data-cites="blsce2025shutdown">(<a href="#ref-blsce2025shutdown" role="doc-biblioref">U.S. Bureau of Labor Statistics 2026a</a>)</span>. We use seasonal donor records and do not estimate how that missing-data treatment affects future published SPM thresholds.</p>
+<p>Let <span class="math inline">\(r\)</span> be an annual log growth rate for real expenditures. A donor record from year <span class="math inline">\(d\)</span> projected to year <span class="math inline">\(t\)</span> receives the multiplier <span class="math inline">\((P_t/P_d)\exp[r(t-d)]\)</span>. We report two scenarios: zero real growth and a CE trend. To estimate the latter, we construct five nonoverlapping annual collection blocks ending in 2021–2025, express them in common origin-year prices with fixed origin-window component weights, and compute each block’s survey-weighted mean in the 47th–53rd percentile FCSUti band. We regress the log means on year by ordinary least squares to estimate a slope, and we apply half that estimate. We chose the 0.5 shrinkage independently of the reported forecast scores.</p>
+<p>We express growth rates as compounded annual equivalents, <span class="math inline">\(\exp(r)-1\)</span>. The expenditure multiplier uses the log rate <span class="math inline">\(r\)</span>. We apply annual real growth of 0.914 percent, from an applied log rate of 0.910 percent. Using ten annual blocks, we obtain 0.817 percent; excluding the two blocks ending in 2021 and 2022 from the five-block fit leaves three blocks and gives −0.135 percent. Ordinary regression uncertainty omits repeated interviews, survey design, serial dependence, and future structural changes. Neither these sensitivities nor the zero-real scenario bound forecast uncertainty.</p>
+<p>We use annual CPI-U growth from the Congressional Budget Office (CBO)’s February 2026 economic projections and rebase the nominal path to the observed 2025 annual index <span class="citation" data-cites="cbodata2026">(<a href="#ref-cbodata2026" role="doc-biblioref">Congressional Budget Office 2026</a>)</span>. We assume that every expenditure price component and rents grow at CBO’s projected aggregate rate. Real growth and prices both affect projected spending; setting real growth to zero still allows changes from replacing older observations in the rolling window.</p>
+<p>We anchor each tenure’s national threshold and housing share to published 2025 values. Let <span class="math inline">\(\widetilde a_{T,h}\)</span> denote the housing share that we estimate from the projected microdata for target year <span class="math inline">\(T\)</span> and tenure <span class="math inline">\(h\)</span>. For origin <span class="math inline">\(O=2025\)</span>, we calculate</p>
+<p><span class="math display">\[
+\widehat B_{T,h}=B_{O,h}^{\mathrm{published}}
+\frac{\widetilde B_{T,h}}{\widetilde B_{O,h}},\qquad
+\widehat a_{T,h}=a_{O,h}^{\mathrm{published}}
+\frac{\widetilde a_{T,h}}{\widetilde a_{O,h}}.
+\]</span></p>
+<p>We estimate subsequent changes from the microdata and select the percentile band again for every target window. Changes in band membership can make the tenure-specific threshold under the positive-real-growth scenario slightly lower than under zero real growth in a particular year; the scenarios do not preserve a fixed ranking of selected observations.</p>
+<div id="tbl-rolling-projection" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-rolling-projection-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;10: Conditional national reference thresholds under the CE-trend and zero-real-growth scenarios. BLS supplies the 2025 bases; the projection estimates later values. These scenarios do not constitute prediction intervals.
+</figcaption>
+<div aria-describedby="tbl-rolling-projection-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<table class="caption-top table">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Year</th>
+<th>Scenario</th>
+<th>National status</th>
+<th>With mortgage</th>
+<th>Without mortgage</th>
+<th>Renter</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>2025</td>
+<td>CE trend</td>
+<td>Published</td>
+<td>$41,322.71</td>
+<td>$34,326.00</td>
+<td>$41,700.56</td>
+</tr>
+<tr class="even">
+<td>2025</td>
+<td>Zero real</td>
+<td>Published</td>
+<td>$41,322.71</td>
+<td>$34,326.00</td>
+<td>$41,700.56</td>
+</tr>
+<tr class="odd">
+<td>2026</td>
+<td>CE trend</td>
+<td>Forecast</td>
+<td>$43,276.19</td>
+<td>$35,957.29</td>
+<td>$43,829.55</td>
+</tr>
+<tr class="even">
+<td>2026</td>
+<td>Zero real</td>
+<td>Forecast</td>
+<td>$43,193.22</td>
+<td>$35,802.45</td>
+<td>$43,888.11</td>
+</tr>
+<tr class="odd">
+<td>2030</td>
+<td>CE trend</td>
+<td>Forecast</td>
+<td>$48,532.89</td>
+<td>$39,636.71</td>
+<td>$50,011.91</td>
+</tr>
+<tr class="even">
+<td>2030</td>
+<td>Zero real</td>
+<td>Forecast</td>
+<td>$46,899.67</td>
+<td>$38,389.88</td>
+<td>$48,954.72</td>
+</tr>
+<tr class="odd">
+<td>2035</td>
+<td>CE trend</td>
+<td>Forecast</td>
+<td>$56,789.77</td>
+<td>$46,380.08</td>
+<td>$58,520.42</td>
+</tr>
+<tr class="even">
+<td>2035</td>
+<td>Zero real</td>
+<td>Forecast</td>
+<td>$52,437.35</td>
+<td>$42,922.77</td>
+<td>$54,735.04</td>
+</tr>
+</tbody>
+</table>
+</div>
+</figure>
+</div>
+</section>
+<section id="projecting-local-relative-housing-costs" class="level2" data-number="6.2">
+<h2 data-number="6.2" class="anchored" data-anchor-id="projecting-local-relative-housing-costs"><span class="header-section-number">6.2</span> Projecting local relative housing costs</h2>
+<p>For threshold year <span class="math inline">\(T\)</span>, we use ACS years <span class="math inline">\(T-5\)</span> through <span class="math inline">\(T-1\)</span>. We allocate each Public Use Microdata Area (PUMA) fractionally to SPM estimation areas using a geographic crosswalk. We use the February 2013 metropolitan delineation and record the crosswalk and source versions. Fractional allocation, public-data topcoding, and the public rental sample limit exact reproduction of the Census calculation <span class="citation" data-cites="acs2024pumd">(<a href="#ref-acs2024pumd" role="doc-biblioref">U.S. Census Bureau 2025a</a>)</span>.</p>
+<p>We select occupied, cash-rented two-bedroom housing units with complete kitchen and plumbing facilities, positive gross rent, and positive housing weights <span class="citation" data-cites="spmtechnical">(<a href="#ref-spmtechnical" role="doc-biblioref">U.S. Census Bureau, n.d.-b</a>)</span>. For each complete five-year Public Use Microdata Sample (PUMS) product, we retain housing weights (<code>WGTP</code>) and group records by survey year using their identifiers. We do not combine overlapping products as independent observations. We multiply monthly gross rent (<code>GRNTP</code>) once by the housing-dollar adjustment (<code>ADJHSG</code>), divided by <span class="math inline">\(10^6\)</span>, to express rent on the product’s common dollar basis <span class="citation" data-cites="acs2024accuracy">(<a href="#ref-acs2024accuracy" role="doc-biblioref">U.S. Census Bureau, n.d.-a</a>)</span>. We multiply housing weights by PUMA-to-area allocation fractions, sort the adjusted rents, and select the first value whose cumulative weight reaches 50 percent. We do not interpolate between values. For future donor copies, we retain the original product weights without annual reweighting or a population-growth adjustment.</p>
+<p>We use observed ACS cohorts through 2024. For each later cohort, we copy the 2024 donor records and scale rents to a common price basis. We recompute local and national weighted rent medians from each complete five-cohort window. Equal nationwide rent growth therefore does not imply constant local relative costs: the mix changes as older observed cohorts leave the window. Once all five cohorts use the same donor distribution, the relative indices stabilize under this assumption. In this snapshot that occurs in 2029. The whole-threshold factor can continue changing as the housing share changes.</p>
+<p>The public-data products used for the 2024 anchor and subsequent windows differ. To avoid treating a product change as rent growth, we bridge them over the common 2020–2023 years. If <span class="math inline">\(m^{v}_{W,j}\)</span> is area <span class="math inline">\(j\)</span>’s local-to-national rent-median ratio for window <span class="math inline">\(W\)</span> in product <span class="math inline">\(v\)</span>, then, for an area with a published 2024 anchor,</p>
+<p><span class="math display">\[
+\widehat g_{T,j}=g^{\mathrm{published}}_{2024,j}
+\frac{m^{\mathrm{old}}_{2020:2023,j}}{m^{\mathrm{old}}_{2019:2023,j}}
+\frac{m^{\mathrm{new}}_{T-5:T-1,j}}{m^{\mathrm{new}}_{2020:2023,j}}.
+\]</span></p>
+<p>Unpublished residual groups retain explicitly modeled, unanchored indices. We estimate indices for 342 published and seven modeled areas in 2022, and 341 published and eight modeled areas from 2023. Annual comparisons distinguish published-index revisions and assignment changes from projected rent growth. In particular, the Massachusetts nonmetropolitan published index changes between 2022 and 2023, and Sumter County moves from a published residual group to an unanchored modeled group; we preserve both discontinuities separately from forecast rent growth.</p>
+<div id="tbl-rolling-validation" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-rolling-validation-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;11: Retrospective geographic comparison and late-horizon donor support. The support count includes each donor once, regardless of how many projected copies enter the window. These diagnostics do not measure prospective national-threshold accuracy.
+</figcaption>
+<div aria-describedby="tbl-rolling-validation-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Diagnostic</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>ACS retrospective comparison</td>
+<td>2023→2024; 341 areas</td>
+</tr>
+<tr class="even">
+<td>MAPE (model / carry-forward)</td>
+<td>1.2537% / 1.7284%</td>
+</tr>
+<tr class="odd">
+<td>Future donor cohort</td>
+<td>2024</td>
+</tr>
+<tr class="even">
+<td>ACS window (2035)</td>
+<td>2030–2034 (5 projected)</td>
+</tr>
+<tr class="odd">
+<td>Constant relative indices</td>
+<td>2029–2035</td>
+</tr>
+<tr class="even">
+<td>First all-projected window</td>
+<td>2030</td>
+</tr>
+<tr class="odd">
+<td>Unique original donors (2035)</td>
+<td>25–8,851</td>
+</tr>
+<tr class="even">
+<td>Allocation-expected donors (2035)</td>
+<td>22.03–8,835.61</td>
+</tr>
+<tr class="odd">
+<td>Donor-collapsed Kish (2035)</td>
+<td>13.08–5,396.44</td>
+</tr>
+<tr class="even">
+<td>Thin-support areas (2035)</td>
+<td>31 / 349</td>
+</tr>
+<tr class="odd">
+<td>Topcoding warnings (2035)</td>
+<td>149 local / 349 index</td>
+</tr>
+</tbody>
+</table>
+<p>Notes: MAPE uses equal-area retrospective errors with current source vintages; it does not validate the later vintage bridge. Support and warnings cover 349 modeled areas in 2035. Repeated donors are not independent observations; Kish is not survey-design effective sample size. These diagnostics are not confidence intervals. Local warnings concern the target median; index warnings include local or national medians in target, anchor or overlap ratios, not known bias. Under uniform growth/deflation, constant relative indices can coexist with changing housing shares and geographic factors; floating-point noise is not substantive movement.</p>
+</div>
+</figure>
+</div>
+<p>The 2023-origin, 2024-target geographic comparison covers 341 areas with published anchors. This retrospective comparison excludes the unanchored residual groups and does not test future rent assumptions. Support narrows as observed cohorts leave: 31 areas carry thin-donor warnings in projected years. Preserving record identity avoids mistaking five projected copies for five independent samples. We retain each area’s calculated factor when support is thin and flag its donor count.</p>
+<p>We collapse repeated copies to their original donor identities before calculating support. For allocation-expected support, we sum each donor’s geographic allocation fraction once. For donor-collapsed Kish support, we calculate <span class="math inline">\((\sum_i w_i)^2/\sum_i w_i^2\)</span> from each original donor’s total allocated weight <span class="math inline">\(w_i\)</span>. We flag thin support when any of the unique-donor count, allocation-expected count, or Kish count falls below 30. These counts describe donor coverage and unequal weights; they do not estimate survey-design uncertainty.</p>
+</section>
+</section>
+<section id="sec-discussion" class="level1" data-number="7">
+<h1 data-number="7"><span class="header-section-number">7</span> Discussion</h1>
+<p>We approximate published threshold levels from public CE data. Sample treatment, price adjustment, and omitted imputations can affect the estimates; we do not isolate their contributions to the observed discrepancies. Stable proportional differences cancel in adjacent-year growth ratios. We evaluate those growth ratios separately from threshold levels.</p>
+<p>In the periods examined, consumption-based growth improves on CPI-U adjustment as a predictor of published SPM thresholds. Annual re-estimation reflects consumption changes that price adjustment alone omits, consistent with the measure’s quasi-relative construction. The comparisons do not separate contributions from real spending, relative prices, sample composition, and in-kind benefits. Price-indexed anchored measures serve a different purpose: they hold the real standard fixed.</p>
+<p>We evaluate prospective performance against one year’s outcome. We run the six-year comparison on revised data after BLS published all six outcomes and use a five-year benchmark for the 2025 nowcast. We reuse CE observations across overlapping windows and housing-tenure estimates. These dependent comparisons cannot establish a general method ranking or estimate combination weights.</p>
+<p>When BLS releases the complete CE window before publishing thresholds, we can estimate a nowcast from observed consumption. For later years, we project both survey windows under assumptions about consumption and prices. We have not evaluated those longer-horizon projections prospectively. Changes to BLS methods, benefit imputations, and sample composition can alter growth relationships. We test sample and trend assumptions without constructing forecast intervals.</p>
+<p>Threshold choice affects modeled poverty through the distribution of resources near the line. A poverty-rate impact estimate therefore requires a specified population and resource model.</p>
+</section>
+<section id="appendix-a-replication-benchmark" class="level1 unnumbered">
+<h1 class="unnumbered">Appendix A: replication benchmark</h1>
+<p>The replication used for the 2025 nowcast has mean absolute deviations across tenures of 1.5 to 2.1 percent per year against revised 2019–2024 thresholds, and 1.0 to 1.6 percent against the preceding published series with its corresponding anchor share. Published BLS sampling standard errors span 0.7 to 2.1 percent of the revised threshold levels in those years. These standard errors describe official threshold estimation; they do not quantify the uncertainty of the replication.</p>
+<div id="tbl-replication" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-replication-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;12: Benchmark replication deviations by tenure, with the anchor share matched to each reference vintage. The benchmark uses the 2025 nowcast implementation. Within each cell, values follow the order: owners with mortgages, owners without mortgages, and renters.
+</figcaption>
+<div aria-describedby="tbl-replication-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Year</th>
+<th>vs published (83% anchor)</th>
+<th>vs corrected (82% anchor)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>2019</td>
+<td>-1.2% / -0.5% / -1.7%</td>
+<td>-2.4% / -2.1% / -1.9%</td>
+</tr>
+<tr class="even">
+<td>2020</td>
+<td>-1.5% / +0.6% / -1.7%</td>
+<td>-2.2% / -0.7% / -2.4%</td>
+</tr>
+<tr class="odd">
+<td>2021</td>
+<td>-1.4% / -0.7% / -1.5%</td>
+<td>-2.2% / -1.0% / -1.9%</td>
+</tr>
+<tr class="even">
+<td>2022</td>
+<td>-1.6% / +0.1% / -1.9%</td>
+<td>-2.1% / +0.4% / -2.0%</td>
+</tr>
+<tr class="odd">
+<td>2023</td>
+<td>-1.1% / +0.4% / -1.6%</td>
+<td>-2.4% / +0.1% / -2.1%</td>
+</tr>
+<tr class="even">
+<td>2024</td>
+<td>-1.4% / +2.4% / -1.2%</td>
+<td>-3.0% / +0.2% / -1.8%</td>
+</tr>
+</tbody>
+</table>
+</div>
+</figure>
+</div>
+</section>
+<section id="appendix-b-reproducibility" class="level1 unnumbered">
+<h1 class="unnumbered">Appendix B: reproducibility</h1>
+<p>The <a href="https://github.com/PolicyEngine/spm-threshold-paper">paper repository</a> provides the manuscript, table generators, verification tests, and recorded inputs. Its <a href="https://github.com/PolicyEngine/spm-threshold-paper/blob/20bfbe1abcb83b4f9f60fbe54789144321ff62b0/data/PROVENANCE.md">source-data provenance</a> describes the experimental collections. The companion calculator source <span class="citation" data-cites="spmcalculator2026">(<a href="#ref-spmcalculator2026" role="doc-biblioref">PolicyEngine 2026</a>)</span> contains the expenditure and geographic estimators, source acquisition scripts, and standalone implementation at the rolling projection’s exact revision.</p>
+<p>The five-year benchmark and 2025 nowcast use recorded outputs from spm-calculator at commit <code>d2746cfacce072f599ffb1788eb195777c6ca9ca</code>.</p>
+<p>The paper repository preserves the inputs and generated tables for the five-year benchmark and 2025 nowcast, together with a separate six-year replication artifact containing source hashes, methodology choices, and sample diagnostics. The 2019–2025 retrospective experiment uses spm-calculator 0.5.0 at commit <code>0d7fa0d77b0a88064ab7b9fe70557309b5f7901f</code>. The conditional rolling projection uses the separate 1.0.0 release candidate at commit <code>78bae15f76152c6076dd909a09f6b63dc2ec8c34</code>. The candidate’s content digest is:</p>
+<pre class="text small"><code>3d86d5c4c0423480e6b69b75d222ffa4a7a2639e4094df5ba2504af01be17173</code></pre>
+<p>The input manifests record exact source and release identities. The <a href="https://github.com/PolicyEngine/spm-threshold-paper/blob/20bfbe1abcb83b4f9f60fbe54789144321ff62b0/data/PROVENANCE.md">data provenance</a> and <a href="https://github.com/PolicyEngine/spm-threshold-paper/blob/20bfbe1abcb83b4f9f60fbe54789144321ff62b0/docs/forecast-record.md">forecast record</a> identify each experiment’s inputs and evidence.</p>
+<p>To verify the reported tables, clone the paper repository with its full tag history and check out the manuscript revision being evaluated. Run <code>python3 -B scripts/check_paper.py</code> and <code>python3 -B -m unittest discover -s tests -v</code>. Quarto 1.9.36 and TeX Live 2026 render HTML and PDF with <code>quarto render --to html</code> and <code>quarto render --to pdf</code>. These commands regenerate the tables from the recorded artifacts; regenerating the underlying CE and ACS estimates additionally requires the pinned calculator and its source files. The <a href="https://github.com/PolicyEngine/spm-threshold-paper/blob/20bfbe1abcb83b4f9f60fbe54789144321ff62b0/docs/reproducing-experiments.md">experiment replay guide</a> provides commands and source-file requirements for raw-data replication.</p>
+<p>The standalone calculator provides a portable projection artifact containing year-specific national bases, housing shares, geographic indices, assignments, and source fingerprints. It includes adapters for PolicyEngine’s tax-benefit model, Microcosm’s population-data tools, and Axiom’s rules engine. The PolicyEngine and Microcosm adapters apply the same forecast to supplied SPM membership, composition, and geography. The Axiom adapter exports forecast inputs to RuleSpec, Axiom’s policy specification format, and invokes the Axiom core runtime to calculate thresholds. Population models supply resources and weights separately. Researchers can reuse the expenditure forecast across engines; each adopting model requires its own runtime and release verification.</p>
+<p>In the linked <a href="https://github.com/PolicyEngine/policyengine-us/blob/7b2ef566aee52db17fe1d8ab5d0a744669802506/docs/spm.md">resource implementation</a>, PolicyEngine-US sums modeled housing awards within each household and allocates the total to SPM units by member share, following Census’s subsidy proration <span class="citation" data-cites="spmtechnical">(<a href="#ref-spmtechnical" role="doc-biblioref">U.S. Census Bureau, n.d.-b, 14</a>)</span>. It also sums tenant payments from units with positive awards and allocates those payments by the same shares. It caps each unit’s SPM housing resource at the housing portion of its threshold less allocated tenant payments, with a minimum of zero. The model calculates eligibility and program awards under U.S. Department of Housing and Urban Development (HUD) programs separately.</p>
+<p>Under that resource specification, population-data producers use the householder’s SPM unit to represent an assisted family and treat interview-time housing receipt as full-year receipt. They represent reported public housing and reduced rent through the HUD-family calculation, including reduced-rent programs that may fall outside HUD. The specification assumes the multi-unit tenant-payment split; Census does not document it. These resource conventions do not alter the threshold estimates.</p>
+<p>The build verifies artifact hashes, regenerates tables in temporary storage, and compares the outputs with the saved tables and evaluation JSON. It also checks the forecast record and archived evaluation tables.</p>
+</section>
+<section id="references" class="level1 unnumbered">
+<h1 class="unnumbered">References</h1>
+<div id="refs" class="references csl-bib-body hanging-indent" role="list">
+<div id="ref-betson1996" class="csl-entry" role="listitem">
+Betson, David M. 1996. <span>“<span>‘Is Everything Relative?’</span> The Role of Equivalence Scales in Poverty Measurement.”</span> In <em>Poverty Measurement Working Papers</em>. U.S. Census Bureau. <a href="https://www.census.gov/library/working-papers/1996/demo/betson-02.html">https://www.census.gov/library/working-papers/1996/demo/betson-02.html</a>.
+</div>
+<div id="ref-burnsfox2021" class="csl-entry" role="listitem">
+Burns, Kalee, and Liana E. Fox. 2021. <em>Improvements to the <span class="nocase">Census Bureau’s</span> Supplemental Poverty Measure for 2021</em>. SEHSD Working Paper Nos. 2021-17. U.S. Census Bureau. <a href="https://www.census.gov/library/working-papers/2021/demo/SEHSD-WP2021-17.html">https://www.census.gov/library/working-papers/2021/demo/SEHSD-WP2021-17.html</a>.
+</div>
+<div id="ref-citro1995" class="csl-entry" role="listitem">
+Citro, Constance F., and Robert T. Michael, eds. 1995. <em>Measuring Poverty: A New Approach</em>. National Academies Press. <a href="https://doi.org/10.17226/4759">https://doi.org/10.17226/4759</a>.
+</div>
+<div id="ref-cbodata2026" class="csl-entry" role="listitem">
+Congressional Budget Office. 2026. <em>Budget and Economic Data: February 2026 Economic Projections</em>. <a href="https://github.com/US-CBO/cbo-data/tree/284a95665f9f2f74ed1f482feb629b43fce323da">https://github.com/US-CBO/cbo-data/tree/284a95665f9f2f74ed1f482feb629b43fce323da</a>.
+</div>
+<div id="ref-creamer2025" class="csl-entry" role="listitem">
+Creamer, John. 2025. <em>How Updating Annual Poverty Thresholds Impacts Poverty Rates</em>. U.S. Census Bureau Research Matters blog. <a href="https://www.census.gov/newsroom/blogs/research-matters/2025/09/supplemental-poverty-measure.html">https://www.census.gov/newsroom/blogs/research-matters/2025/09/supplemental-poverty-measure.html</a>.
+</div>
+<div id="ref-croushore2001" class="csl-entry" role="listitem">
+Croushore, Dean, and Tom Stark. 2001. <span>“A Real-Time Data Set for Macroeconomists.”</span> <em>Journal of Econometrics</em> 105 (1): 111–30. <a href="https://doi.org/10.1016/S0304-4076(01)00072-0">https://doi.org/10.1016/S0304-4076(01)00072-0</a>.
+</div>
+<div id="ref-garner2021" class="csl-entry" role="listitem">
+Garner, Thesia I., and Juan D. Munoz. 2021. <em>Choices in Defining and Estimating Poverty Thresholds: Focus on the <span>U.S.</span> Supplemental Poverty Measure</em>. U.S. Bureau of Labor Statistics, Division of Price; Index Number Research. <a href="https://www.bls.gov/pir/spm/garner_spm_choices_03_15_21.pdf">https://www.bls.gov/pir/spm/garner_spm_choices_03_15_21.pdf</a>.
+</div>
+<div id="ref-giannone2008" class="csl-entry" role="listitem">
+Giannone, Domenico, Lucrezia Reichlin, and David Small. 2008. <span>“Nowcasting: The Real-Time Informational Content of Macroeconomic Data.”</span> <em>Journal of Monetary Economics</em> 55 (4): 665–76. <a href="https://doi.org/10.1016/j.jmoneco.2008.05.010">https://doi.org/10.1016/j.jmoneco.2008.05.010</a>.
+</div>
+<div id="ref-itwg2010" class="csl-entry" role="listitem">
+Interagency Technical Working Group on Developing a Supplemental Poverty Measure. 2010. <em>Observations from the Interagency Technical Working Group on Developing a Supplemental Poverty Measure</em>. <a href="https://www.census.gov/content/dam/Census/library/working-papers/2010/demo/SPM_Wkg-Grp.pdf">https://www.census.gov/content/dam/Census/library/working-papers/2010/demo/SPM_Wkg-Grp.pdf</a>.
+</div>
+<div id="ref-nasem2019" class="csl-entry" role="listitem">
+National Academies of Sciences, Engineering, and Medicine. 2019. <em>A Roadmap to Reducing Child Poverty</em>. National Academies Press. <a href="https://doi.org/10.17226/25246">https://doi.org/10.17226/25246</a>.
+</div>
+<div id="ref-parolin2022" class="csl-entry" role="listitem">
+Parolin, Zachary, Megan Curran, Jordan Matsudaira, Jane Waldfogel, and Christopher Wimer. 2022. <span>“Estimating Monthly Poverty Rates in the <span>United States</span>.”</span> <em>Journal of Policy Analysis and Management</em> 41 (4): 1177–203. <a href="https://doi.org/10.1002/pam.22403">https://doi.org/10.1002/pam.22403</a>.
+</div>
+<div id="ref-spmcalculator2026" class="csl-entry" role="listitem">
+PolicyEngine. 2026. <em><span class="nocase">spm-calculator</span>: Source Snapshot for the September 9 Rolling Projection</em>. <a href="https://github.com/PolicyEngine/spm-calculator/tree/78bae15f76152c6076dd909a09f6b63dc2ec8c34">https://github.com/PolicyEngine/spm-calculator/tree/78bae15f76152c6076dd909a09f6b63dc2ec8c34</a>.
+</div>
+<div id="ref-blsce2025shutdown" class="csl-entry" role="listitem">
+U.S. Bureau of Labor Statistics. 2026a. <em>2025 Federal Government Shutdown Impact on the Consumer Expenditure Surveys</em>. <a href="https://www.bls.gov/cex/2025-federal-government-shutdown-impact-ce.htm">https://www.bls.gov/cex/2025-federal-government-shutdown-impact-ce.htm</a>.
+</div>
+<div id="ref-blscpi2025shutdown" class="csl-entry" role="listitem">
+U.S. Bureau of Labor Statistics. 2026b. <em>2025 Federal Government Shutdown Impact on the Consumer Price Index</em>. <a href="https://www.bls.gov/cpi/additional-resources/2025-federal-government-shutdown-impact-cpi-faq.htm">https://www.bls.gov/cpi/additional-resources/2025-federal-government-shutdown-impact-cpi-faq.htm</a>.
+</div>
+<div id="ref-bls2025thresholds" class="csl-entry" role="listitem">
+U.S. Bureau of Labor Statistics. 2026c. <em>2025 Research Supplemental Poverty Measure Thresholds</em>. <a href="https://www.bls.gov/pir/spm/spm_thresholds_2025.htm">https://www.bls.gov/pir/spm/spm_thresholds_2025.htm</a>.
+</div>
+<div id="ref-cepumd" class="csl-entry" role="listitem">
+U.S. Bureau of Labor Statistics. 2026d. <em>Consumer Expenditure Surveys Public Use Microdata</em>. <a href="https://www.bls.gov/cex/pumd.htm">https://www.bls.gov/cex/pumd.htm</a>.
+</div>
+<div id="ref-bls2026corrected" class="csl-entry" role="listitem">
+U.S. Bureau of Labor Statistics. 2026e. <em>Corrected Supplemental Poverty Measure Thresholds</em>. <a href="https://www.bls.gov/pir/spm/spm_thresholds_2024_correction.htm">https://www.bls.gov/pir/spm/spm_thresholds_2024_correction.htm</a>.
+</div>
+<div id="ref-blsspmhome" class="csl-entry" role="listitem">
+U.S. Bureau of Labor Statistics. 2026f. <em>Experimental Poverty Measures: Research Supplemental Poverty Measure Thresholds</em>. <a href="https://www.bls.gov/pir/spmhome.htm">https://www.bls.gov/pir/spmhome.htm</a>.
+</div>
+<div id="ref-blsspmshares" class="csl-entry" role="listitem">
+U.S. Bureau of Labor Statistics. 2026g. <em>Supplemental Poverty Measure Threshold Expenditure Shares</em>. <a href="https://www.bls.gov/pir/spm/spm_shares.xlsx">https://www.bls.gov/pir/spm/spm_shares.xlsx</a>.
+</div>
+<div id="ref-acs2024pumd" class="csl-entry" role="listitem">
+U.S. Census Bureau. 2025a. <em>2024 American Community Survey Public Use Microdata Sample Documentation</em>. <a href="https://www.census.gov/programs-surveys/acs/microdata/documentation.2024.html">https://www.census.gov/programs-surveys/acs/microdata/documentation.2024.html</a>.
+</div>
+<div id="ref-p60-287" class="csl-entry" role="listitem">
+U.S. Census Bureau. 2025b. <em>Poverty in the United States: 2024</em>. Current Population Reports Nos. P60-287. U.S. Census Bureau. <a href="https://www.census.gov/library/publications/2025/demo/p60-287.html">https://www.census.gov/library/publications/2025/demo/p60-287.html</a>.
+</div>
+<div id="ref-acs2024accuracy" class="csl-entry" role="listitem">
+U.S. Census Bureau. n.d.-a. <em>Public Use Microdata Sample: Accuracy of the Data (2020–2024)</em>. Accessed September 9, 2026. <a href="https://www2.census.gov/programs-surveys/acs/tech_docs/pums/accuracy/2020_2024AccuracyPUMS.pdf">https://www2.census.gov/programs-surveys/acs/tech_docs/pums/accuracy/2020_2024AccuracyPUMS.pdf</a>.
+</div>
+<div id="ref-spmtechnical" class="csl-entry" role="listitem">
+U.S. Census Bureau. n.d.-b. <em>Supplemental Poverty Measure: Technical Documentation</em>. Accessed September 9, 2026. <a href="https://www2.census.gov/programs-surveys/supplemental-poverty-measure/datasets/spm/spm_techdoc.pdf">https://www2.census.gov/programs-surveys/supplemental-poverty-measure/datasets/spm/spm_techdoc.pdf</a>.
+</div>
+<div id="ref-wheaton2021" class="csl-entry" role="listitem">
+Wheaton, Laura, Linda Giannarelli, and Ilham Dehry. 2021. <em>2021 Poverty Projections: Assessing the Impact of Benefits and Stimulus Measures</em>. Urban Institute. <a href="https://www.urban.org/research/publication/2021-poverty-projections-assessing-impact-benefits-and-stimulus-measures">https://www.urban.org/research/publication/2021-poverty-projections-assessing-impact-benefits-and-stimulus-measures</a>.
+</div>
+<div id="ref-wimer2016" class="csl-entry" role="listitem">
+Wimer, Christopher, Liana Fox, Irwin Garfinkel, Neeraj Kaushal, and Jane Waldfogel. 2016. <span>“Progress on Poverty? <span>New</span> Estimates of Historical Trends Using an Anchored Supplemental Poverty Measure.”</span> <em>Demography</em> 53 (4): 1207–18. <a href="https://doi.org/10.1007/s13524-016-0485-7">https://doi.org/10.1007/s13524-016-0485-7</a>.
+</div>
+</div>
+</section>
+
+
+<div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+
+<ol>
+<li id="fn1"><p>The superseded blend had a mean absolute error of 0.98 percent, compared with 1.17 percent for the committed blend. The forecast record preserves both evaluations.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section></div></main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

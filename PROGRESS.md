@@ -1,3 +1,34 @@
+# Methods paper embedded at /paper — September 14, 2026
+
+## State
+
+In progress on `max/paper-embed-20260914`. The manuscript render is copied
+into the calculator's static assets; the wrapper page, tool link, sitemap
+entry and tests follow. No merge or deploy.
+
+## Done
+
+- Cloned `PolicyEngine/spm-threshold-paper` at `6937830` ("Introduce SPM
+  threshold methods in active prose (#7)", 2026-09-14) and rendered it fresh
+  with Quarto 1.9.36: `quarto render --to html` exit 0 and
+  `quarto render --to pdf` exit 0.
+- Copied `_output/paper/{index.html,index.pdf,index_files/}` byte-identically
+  to `web/public/paper/web/`. The HTML references `index_files/` relatively
+  and carries no root-relative URLs, so it serves standalone from
+  `/paper/web/index.html`.
+- Render hashes (sha256): `index.html`
+  `d1e3711ea1105fc045fb35810af589f2fd35cfbed0c580f385eca198501acc5b`,
+  `index.pdf`
+  `9fd1d77ee65d7af70cbb85ca7108b398a858d8257f824745a05ac1b5370cb1c9`.
+
+## Next
+
+- Wrapper page `web/app/paper/page.jsx` with the shared version constant.
+- Link the paper from the workbench and retire the external Vercel URL.
+- Sitemap entry, Vitest coverage, full test/lint/build verification, draft PR.
+
+---
+
 # Documentation refresh for the published 1.0.0 release — September 11, 2026
 
 ## State
