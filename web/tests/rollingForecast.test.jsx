@@ -1,4 +1,5 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { renderCalculator as render } from "./helpers/renderCalculator";
+import { fireEvent, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import CalculatorWorkbench from "../src/components/CalculatorWorkbench";
@@ -27,19 +28,57 @@ function selectArea(id) {
 function yearRow(year) {
   const table = within(screen.getByTestId("year-by-year-card")).getByRole(
     "table",
+    { hidden: true },
   );
   return within(table)
-    .getAllByRole("row")
+    .getAllByRole("row", { hidden: true })
     .find(
       (row) =>
-        within(row).queryAllByRole("cell")[0]?.textContent === String(year),
+        within(row).queryAllByRole("cell", { hidden: true })[0]?.textContent ===
+        String(year),
     );
 }
 
 describe("canonical rolling CE and ACS forecasts", () => {
+  it("only offers spending choices for forecast years and retains the choice across published years", () => {
+    render(<CalculatorWorkbench data={makeRollingCalculatorData()} />);
+    const publishedResult = screen.getByTestId("primary-result").textContent;
+    for (const year of [2022, 2023, 2024, 2025]) {
+      selectYear(year);
+      expect(screen.queryByLabelText("Real spending")).toBeNull();
+      expect(screen.getByTestId("methodology-card")).not.toHaveTextContent(
+        "Selected real spending growth",
+      );
+    }
+    selectYear(2026);
+    selectScenario("zero_real");
+    expect(screen.getByTestId("primary-result")).toHaveTextContent("$52,800");
+    selectYear(2025);
+    expect(screen.queryByLabelText("Real spending")).toBeNull();
+    expect(screen.getByTestId("primary-result").textContent).toBe(
+      publishedResult,
+    );
+    selectYear(2026);
+    expect(screen.getByLabelText("Real spending")).toHaveValue("zero_real");
+    expect(screen.getByTestId("primary-result")).toHaveTextContent("$52,800");
+  });
+
+  it("uses publication status as new national thresholds become available", () => {
+    const data = makeRollingCalculatorData();
+    data.forecast.latestPublishedYear = 2026;
+    for (const scenario of Object.values(data.forecast.scenarios)) {
+      scenario.years[2026].national_status = "published";
+    }
+    render(<CalculatorWorkbench data={data} />);
+    expect(screen.getByLabelText("Threshold year")).toHaveValue("2026");
+    expect(screen.queryByLabelText("Real spending")).toBeNull();
+    selectYear(2027);
+    expect(screen.getByLabelText("Real spending")).toHaveValue("ce_trend");
+  });
+
   it("uses the declared scenario and each year's own thresholds, shares and geography", () => {
     render(<CalculatorWorkbench data={makeRollingCalculatorData()} />);
-    expect(screen.getByLabelText("Real spending")).toHaveValue("ce_trend");
+    expect(screen.queryByLabelText("Real spending")).toBeNull();
     expect(screen.getByLabelText("Threshold year")).toHaveValue("2025");
     expect(screen.getByTestId("primary-result")).toHaveTextContent("$50,041");
     expect(screen.getByTestId("primary-result")).toHaveTextContent("1.200");
@@ -57,8 +96,9 @@ describe("canonical rolling CE and ACS forecasts", () => {
     const data = makeRollingCalculatorData();
     data.forecast.defaultScenario = "zero_real";
     render(<CalculatorWorkbench data={data} />);
-    expect(screen.getByLabelText("Real spending")).toHaveValue("zero_real");
+    expect(screen.queryByLabelText("Real spending")).toBeNull();
     selectYear(2026);
+    expect(screen.getByLabelText("Real spending")).toHaveValue("zero_real");
     expect(screen.getByTestId("primary-result")).toHaveTextContent("$52,800");
   });
 
@@ -66,8 +106,11 @@ describe("canonical rolling CE and ACS forecasts", () => {
     render(<CalculatorWorkbench data={makeRollingCalculatorData()} />);
     const table = within(screen.getByTestId("year-by-year-card")).getByRole(
       "table",
+      { hidden: true },
     );
-    expect(within(table).getAllByRole("row")).toHaveLength(15);
+    expect(within(table).getAllByRole("row", { hidden: true })).toHaveLength(
+      15,
+    );
     for (const year of AVAILABLE_YEARS) expect(yearRow(year)).toBeTruthy();
     for (const [year, base, factor, local] of [
       [2024, "$39,430", "1.160", "$45,736"],
@@ -81,7 +124,9 @@ describe("canonical rolling CE and ACS forecasts", () => {
       expect(yearRow(year)).toHaveTextContent(local);
     }
     selectYear(2035);
-    expect(within(table).getAllByRole("row")).toHaveLength(15);
+    expect(within(table).getAllByRole("row", { hidden: true })).toHaveLength(
+      15,
+    );
     expect(screen.getByTestId("primary-result")).toHaveTextContent("$94,350");
     selectScenario("zero_real");
     expect(yearRow(2026)).toHaveTextContent("$52,800");
@@ -93,6 +138,7 @@ describe("canonical rolling CE and ACS forecasts", () => {
   it("retains exact published national anchors and published BLS shares across scenarios through 2025", () => {
     render(<CalculatorWorkbench data={makeRollingCalculatorData()} />);
     for (const scenario of ["ce_trend", "zero_real"]) {
+      selectYear(2026);
       selectScenario(scenario);
       for (const [year, base] of [
         [2022, "$34,518"],
@@ -375,7 +421,9 @@ describe("canonical rolling CE and ACS forecasts", () => {
     render(<CalculatorWorkbench data={data} />);
     selectYear(2026);
     const result = screen.getByTestId("primary-result");
-    let diagnostic = within(result).getByTestId("median-diagnostics-warning");
+    const notes = screen.getByTestId("results-footnote");
+    expect(within(result).queryByTestId("median-diagnostics-note")).toBeNull();
+    let diagnostic = within(notes).getByTestId("median-diagnostics-note");
     expect(diagnostic).toHaveTextContent("Thin rental support");
     expect(diagnostic).toHaveTextContent("12 unique records");
     expect(diagnostic).toHaveTextContent("Kish effective count 8.5");
@@ -387,20 +435,16 @@ describe("canonical rolling CE and ACS forecasts", () => {
     );
     expect(result).toHaveTextContent("$58,800");
     selectArea("41940");
-    diagnostic = within(result).getByTestId("median-diagnostics-warning");
+    diagnostic = within(notes).getByTestId("median-diagnostics-note");
     expect(diagnostic).toHaveTextContent("Topcoding may affect this median");
     expect(diagnostic).toHaveTextContent("60.0% topcoded weight");
     expect(diagnostic).not.toHaveTextContent("Thin rental support");
     expect(result).toHaveTextContent("$67,200");
     selectYear(2025);
-    expect(
-      within(result).queryByTestId("median-diagnostics-warning"),
-    ).toBeNull();
+    expect(within(notes).queryByTestId("median-diagnostics-note")).toBeNull();
     selectYear(2026);
     selectArea("1002");
-    expect(
-      within(result).queryByTestId("median-diagnostics-warning"),
-    ).toBeNull();
+    expect(within(notes).queryByTestId("median-diagnostics-note")).toBeNull();
     expect(result).toHaveTextContent("$33,600");
   });
 });

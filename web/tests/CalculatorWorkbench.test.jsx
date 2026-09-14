@@ -1,4 +1,5 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { renderCalculator as render } from "./helpers/renderCalculator";
+import { fireEvent, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import CalculatorWorkbench from "../src/components/CalculatorWorkbench";

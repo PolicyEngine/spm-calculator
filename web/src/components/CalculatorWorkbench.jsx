@@ -30,8 +30,14 @@ import {
   Separator,
 } from "@policyengine/ui-kit";
 
+import CalculatorSetup from "./CalculatorSetup";
+import ThresholdHistoryChart from "./ThresholdHistoryChart";
 import { calculateGeoadj } from "@/lib/geoadj";
-import { ForecastMethodology, ForecastWarnings } from "./ForecastDiagnostics";
+import {
+  ForecastMethodology,
+  ForecastWarnings,
+  RentalDataNote,
+} from "./ForecastDiagnostics";
 
 const TENURE_OPTIONS = [
   { value: "renter", label: "Renter" },
@@ -139,6 +145,7 @@ export default function CalculatorWorkbench({ data }) {
     packageVersion,
     packageDistribution,
   } = data;
+  const [setupComplete, setSetupComplete] = useState(false);
   const latestPublishedYear = forecast.latestPublishedYear;
   const [scenarioId, setScenarioId] = useState(forecast.defaultScenario);
   const selectedScenario = forecast.scenarios[scenarioId];
@@ -263,6 +270,10 @@ export default function CalculatorWorkbench({ data }) {
       year: targetYear,
       nationalBase,
       adjustment,
+      nationalStatus: entry?.national_status,
+      housingShare: entry?.housing_shares?.[tenure] ?? null,
+      rentIndex: entry?.rent_indices?.[selectedGeographyId] ?? null,
+      equivalenceScale: compositionValid ? equivalenceScale : null,
       componentStatus: !areaStatus
         ? "Area unavailable"
         : `${entry.national_status === "published" ? "Published national base" : "Forecast national base"}; ${areaStatus.status === "published_anchor" ? "published geography" : "modeled geography"}; ${entry.housing_share_status === "published_anchor" ? "published shares" : "modeled shares"}`,
@@ -301,14 +312,8 @@ print(result["threshold"])`;
 
   // ── Render ──────────────────────────────────────────────────
 
-  const sidebar = (
-    <InputPanel title="Household and geography">
-      {!compositionValid && (
-        <p role="alert">
-          Enter at least one classified SPM adult and a nonnegative whole number
-          of children. Minor-only units need a separate classification decision.
-        </p>
-      )}
+  const yearControls = (
+    <>
       <SidebarSection title="Threshold year">
         <SelectInput
           id="spm-year"
@@ -319,7 +324,7 @@ print(result["threshold"])`;
         />
       </SidebarSection>
 
-      {
+      {yearIsForecast && (
         <SidebarSection title="Real spending">
           <SelectInput
             id="spm-scenario"
@@ -331,10 +336,17 @@ print(result["threshold"])`;
             onChange={setScenarioId}
           />
         </SidebarSection>
-      }
-
-      <SidebarDivider />
-
+      )}
+    </>
+  );
+  const householdControls = (
+    <>
+      {!compositionValid && (
+        <p role="alert">
+          Enter at least one classified SPM adult and a nonnegative whole number
+          of children. Minor-only units need a separate classification decision.
+        </p>
+      )}
       <SidebarSection title="Household composition">
         <div className="flex gap-3">
           <NumberInput
@@ -368,9 +380,10 @@ print(result["threshold"])`;
           size="sm"
         />
       </SidebarSection>
-
-      <SidebarDivider />
-
+    </>
+  );
+  const locationControls = (
+    <>
       <SidebarSection title="Geography">
         <div className="space-y-3">
           <Command label="Search SPM areas" shouldFilter={false}>
@@ -426,9 +439,17 @@ print(result["threshold"])`;
           {locationError}
         </div>
       )}
+    </>
+  );
 
+  const sidebar = (
+    <InputPanel title="Adjust your inputs">
+      {locationControls}
       <SidebarDivider />
-
+      {householdControls}
+      <SidebarDivider />
+      {yearControls}
+      <SidebarDivider />
       <SidebarSection title="Method details">
         <div className="space-y-2 text-sm text-muted-foreground">
           <div className="flex justify-between">
@@ -484,44 +505,42 @@ print(result["threshold"])`;
     },
   ];
 
-  const yearTableColumns = [
-    {
-      key: "year",
-      header: "Year",
-      format: (value) => (
-        <span
-          aria-current={value === year ? "date" : undefined}
-          className={value === year ? "font-semibold" : undefined}
-        >
-          {value}
-        </span>
-      ),
-    },
-    {
-      key: "nationalBase",
-      header: "National base",
-      align: "right",
-      format: (value) => fmtCurrency(value),
-    },
-    {
-      key: "adjustment",
-      header: "Location factor",
-      align: "right",
-      format: (value) =>
-        value === null ? "Unavailable" : `\u00D7${value.toFixed(3)}`,
-    },
-    {
-      key: "localThreshold",
-      header: "Local threshold",
-      align: "right",
-      format: (value) => fmtCurrency(value),
-    },
-    {
-      key: "componentStatus",
-      header: "Component status",
-      format: (value) => value,
-    },
-  ];
+  if (!setupComplete) {
+    return (
+      <DashboardShell>
+        <CalculatorSetup
+          steps={[
+            {
+              id: "location",
+              title: "Where do you live?",
+              description: "Choose your SPM estimation area.",
+              content: locationControls,
+              summary: currentLocation?.label ?? "Choose an area",
+              valid: Boolean(selectedArea),
+            },
+            {
+              id: "household",
+              title: "Who is in your household?",
+              description:
+                "Enter the number of adults and children, and how you pay for housing.",
+              content: householdControls,
+              summary: `${numAdults} adults, ${numChildren} children · ${selectedTenureLabel}`,
+              valid: compositionValid,
+            },
+            {
+              id: "year",
+              title: "Which year?",
+              description: "Choose a published year or explore a forecast.",
+              content: yearControls,
+              summary: `${year}${yearIsForecast ? ` · ${selectedScenario.label}` : " · Published national thresholds"}`,
+              valid: Boolean(selectedEntry),
+            },
+          ]}
+          onComplete={() => setSetupComplete(true)}
+        />
+      </DashboardShell>
+    );
+  }
 
   return (
     <DashboardShell>
@@ -608,20 +627,17 @@ print(result["threshold"])`;
                   <CardTitle>Year by year</CardTitle>
                   <CardDescription>
                     {currentLocation?.label} · {selectedTenureLabel} ·{" "}
-                    {numAdults} adults, {numChildren} children ·{" "}
-                    {selectedScenario?.label}. National bases are for two adults
-                    and two children; local thresholds use your household.
+                    {numAdults} adults, {numChildren} children · Forecast
+                    spending: {selectedScenario?.label}. National bases are for
+                    two adults and two children; local thresholds use your
+                    household.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <DataTable
-                    className="overflow-x-auto"
-                    role="region"
-                    aria-label="Year-by-year thresholds"
-                    tabIndex={0}
-                    columns={yearTableColumns}
+                  <ThresholdHistoryChart
                     data={yearComparisonData}
-                    styles={{ table: { minWidth: "520px" } }}
+                    selectedYear={year}
+                    onSelectYear={(value) => setYear(String(value))}
                   />
                   <p className="mt-3 text-xs text-muted-foreground">
                     National thresholds and housing shares are published for
@@ -718,9 +734,11 @@ print(result["threshold"])`;
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <Text className="text-muted-foreground">Location</Text>
-                      <Text className="font-medium">
+                    <div className="flex justify-between gap-4">
+                      <Text className="shrink-0 text-muted-foreground">
+                        Location
+                      </Text>
+                      <Text className="min-w-0 text-right font-medium">
                         {currentLocation?.label ?? "Unavailable"}
                       </Text>
                     </div>
@@ -778,6 +796,10 @@ print(result["threshold"])`;
               aria-label="Methodology and provenance"
               className="space-y-6"
             >
+              <RentalDataNote
+                entry={selectedEntry}
+                areaId={selectedGeographyId}
+              />
               {/* Methodology explainer */}
               <Card data-testid="methodology-card">
                 <CardHeader>
@@ -805,18 +827,20 @@ print(result["threshold"])`;
                           : "Unavailable"}
                         .
                       </p>
-                      <p>
-                        <strong>Common price assumptions</strong>:{" "}
-                        {annualForecastAssumptions ||
-                          "No price projections supplied"}
-                        . <strong>Selected real spending growth</strong>:{" "}
-                        {Number.isFinite(selectedScenario?.realGrowthRate)
-                          ? `${(selectedScenario.realGrowthRate * 100).toFixed(2)}% per year`
-                          : "Unavailable"}
-                        . New observations are projected; rolling history is
-                        retained. CE real spending and ACS rent assumptions are
-                        separate.
-                      </p>
+                      {yearIsForecast && (
+                        <p>
+                          <strong>Common price assumptions</strong>:{" "}
+                          {annualForecastAssumptions ||
+                            "No price projections supplied"}
+                          . <strong>Selected real spending growth</strong>:{" "}
+                          {Number.isFinite(selectedScenario?.realGrowthRate)
+                            ? `${(selectedScenario.realGrowthRate * 100).toFixed(2)}% per year`
+                            : "Unavailable"}
+                          . New observations are projected; rolling history is
+                          retained. CE real spending and ACS rent assumptions
+                          are separate.
+                        </p>
+                      )}
                       <p
                         data-testid="forecast-disclaimer"
                         className="text-muted-foreground"
@@ -862,8 +886,8 @@ print(result["threshold"])`;
                       <code className="font-mono">
                         1 + housing_share * (rent_index - 1)
                       </code>
-                      , using the selected scenario and year's inputs for SPM
-                      metro/nonmetro estimation areas. Housing shares: renter{" "}
+                      , using the selected year's inputs for SPM metro/nonmetro
+                      estimation areas. Housing shares: renter{" "}
                       {fmtInput(methodology.housingShares.renter)}, owner with
                       mortgage{" "}
                       {fmtInput(methodology.housingShares.owner_with_mortgage)},

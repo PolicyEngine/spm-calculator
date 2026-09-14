@@ -89,25 +89,13 @@ export function ForecastWarnings({
     entry,
     areaId,
   );
-  const median = getMedianDiagnostic(entry, areaId);
   const seriesBreaks = getHistoricalSeriesBreaks(
     forecast,
     scenarioId,
     areaId,
     entry,
   );
-  const counts = median
-    ? [
-        Number.isFinite(median.unique_records) &&
-          `${median.unique_records.toLocaleString("en-US")} unique records`,
-        Number.isFinite(median.kish_effective_count) &&
-          `Kish effective count ${median.kish_effective_count.toFixed(1)}`,
-        Number.isFinite(median.topcodedShare) &&
-          `${(median.topcodedShare * 100).toFixed(1)}% topcoded weight in local sample`,
-      ].filter(Boolean)
-    : [];
   if (
-    !median &&
     seriesBreaks.length === 0 &&
     ![validation.ce, validation.acs].some(
       (value) => value.used && (!value.complete || value.underperformed),
@@ -134,34 +122,48 @@ export function ForecastWarnings({
       )}
       <ComponentWarning kind="ce" evaluation={validation.ce} />
       <ComponentWarning kind="acs" evaluation={validation.acs} />
-      {median && (
-        <Alert
-          data-testid="median-diagnostics-warning"
-          className="border-border bg-muted/40"
-        >
-          <AlertTitle>
-            {median.thinSupport ? "Thin rental support" : "Rental topcoding"}
-          </AlertTitle>
-          <AlertDescription className="space-y-1">
-            {median.hasTopcoding && (
-              <p>
-                {median.indexTopcoding
-                  ? "Topcoding may affect a local or national median used by this projected rent index, including its vintage bridge."
-                  : median.materialTopcoding
-                    ? "Topcoding may affect this median."
-                    : "Some rental weight is topcoded."}
-              </p>
-            )}
-            {counts.length > 0 && <p>{counts.join("; ")}.</p>}
-            <p>
-              Repeated future cohorts do not add independent observations. These
-              are research diagnostics, not Census publication rules; the Kish
-              count is not a survey-design effective sample size.
-            </p>
-          </AlertDescription>
-        </Alert>
-      )}
     </div>
+  );
+}
+
+export function RentalDataNote({ entry, areaId }) {
+  const median = getMedianDiagnostic(entry, areaId);
+  if (!median) return null;
+  const counts = [
+    Number.isFinite(median.unique_records) &&
+      `${median.unique_records.toLocaleString("en-US")} unique records`,
+    Number.isFinite(median.kish_effective_count) &&
+      `Kish effective count ${median.kish_effective_count.toFixed(1)}`,
+    Number.isFinite(median.topcodedShare) &&
+      `${(median.topcodedShare * 100).toFixed(1)}% topcoded weight in local sample`,
+  ].filter(Boolean);
+  return (
+    <details
+      data-testid="median-diagnostics-note"
+      className="text-xs leading-5 text-muted-foreground"
+    >
+      <summary className="cursor-pointer font-medium text-foreground">
+        Rental data note:{" "}
+        {median.thinSupport ? "Thin rental support" : "Rental topcoding"}
+      </summary>
+      <div className="mt-2 space-y-1">
+        {median.hasTopcoding && (
+          <p>
+            {median.indexTopcoding
+              ? "Topcoding may affect a local or national median used by this projected rent index, including its vintage bridge."
+              : median.materialTopcoding
+                ? "Topcoding may affect this median."
+                : "Some rental weight is topcoded."}
+          </p>
+        )}
+        {counts.length > 0 && <p>{counts.join("; ")}.</p>}
+        <p>
+          Repeated future cohorts do not add independent observations. These are
+          research diagnostics, not Census publication rules; the Kish count is
+          not a survey-design effective sample size.
+        </p>
+      </div>
+    </details>
   );
 }
 

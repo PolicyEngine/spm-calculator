@@ -1,4 +1,5 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { renderCalculator as render } from "./helpers/renderCalculator";
+import { fireEvent, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 
@@ -240,13 +241,15 @@ describe("canonical export integration", () => {
     render(<CalculatorWorkbench data={data} />);
     selectArea("35620");
     for (const [scenarioId, scenario] of Object.entries(artifact.scenarios)) {
+      selectYear(2026);
       fireEvent.change(screen.getByLabelText("Real spending"), {
         target: { value: scenarioId },
       });
       const table = within(screen.getByTestId("year-by-year-card")).getByRole(
         "table",
+        { hidden: true },
       );
-      const rows = within(table).getAllByRole("row").slice(1);
+      const rows = within(table).getAllByRole("row", { hidden: true }).slice(1);
       expect(rows).toHaveLength(YEARS.length);
       for (const year of YEARS) {
         const entry = scenario.years[year];
@@ -255,8 +258,8 @@ describe("canonical export integration", () => {
         const expected = entry.thresholds.renter * adjustment;
         const row = rows.find(
           (candidate) =>
-            within(candidate).getAllByRole("cell")[0].textContent ===
-            String(year),
+            within(candidate).getAllByRole("cell", { hidden: true })[0]
+              .textContent === String(year),
         );
         expect(row).toHaveTextContent(currency(entry.thresholds.renter));
         expect(row).toHaveTextContent(adjustment.toFixed(3));
@@ -275,6 +278,7 @@ describe("canonical export integration", () => {
     render(<CalculatorWorkbench data={data} />);
     selectArea("25002");
     for (const scenarioId of Object.keys(artifact.scenarios)) {
+      selectYear(2026);
       fireEvent.change(screen.getByLabelText("Real spending"), {
         target: { value: scenarioId },
       });
@@ -299,6 +303,7 @@ describe("canonical export integration", () => {
     const artifact = readCanonicalArtifact();
     render(<CalculatorWorkbench data={data} />);
     for (const scenarioId of Object.keys(artifact.scenarios)) {
+      selectYear(2026);
       fireEvent.change(screen.getByLabelText("Real spending"), {
         target: { value: scenarioId },
       });
@@ -324,10 +329,11 @@ describe("canonical export integration", () => {
     }
   });
 
-  it("reproduces 2026–2035 from annual canonical inputs and exposes unsupported forecast horizons", async () => {
-    const data = readCalculatorData();
-    render(<CalculatorWorkbench data={data} />);
-    for (const year of YEARS.filter((year) => year >= 2026)) {
+  it.each(YEARS.filter((year) => year >= 2026))(
+    "reproduces %i from annual canonical inputs and exposes unsupported forecast horizons",
+    (year) => {
+      const data = readCalculatorData();
+      render(<CalculatorWorkbench data={data} />);
       expect(
         screen.getByRole("option", { name: `${year} (forecast)` }),
       ).toBeTruthy();
@@ -361,12 +367,14 @@ describe("canonical export integration", () => {
       expect(snippet).not.toMatch(
         /load_release|inflation_factor|nowcast|county|congressional/i,
       );
-    }
-    expect(screen.getByTestId("ce-validation-warning")).toHaveTextContent(
-      /10-year spending horizon.*no retrospective backtest support/i,
-    );
-    expect(screen.getByTestId("acs-validation-warning")).toHaveTextContent(
-      /11-year geographic horizon.*no retrospective backtest support/i,
-    );
-  });
+      if (year === 2035) {
+        expect(screen.getByTestId("ce-validation-warning")).toHaveTextContent(
+          /10-year spending horizon.*no retrospective backtest support/i,
+        );
+        expect(screen.getByTestId("acs-validation-warning")).toHaveTextContent(
+          /11-year geographic horizon.*no retrospective backtest support/i,
+        );
+      }
+    },
+  );
 });
