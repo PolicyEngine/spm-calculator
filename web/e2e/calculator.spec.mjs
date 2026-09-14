@@ -590,7 +590,7 @@ test("area search selects by click and Enter and preserves selection on no match
   await search.fill("san jose");
   await expect(matches.getByRole("option")).toHaveCount(1);
   await page.locator('[data-slot="command-input-wrapper"]').click({
-    position: { x: 1, y: 1 },
+    position: { x: 4, y: 24 },
   });
   await expect(search).toBeFocused();
   await expect(search).toHaveValue("san jose");
