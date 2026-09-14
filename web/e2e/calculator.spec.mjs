@@ -49,6 +49,30 @@ async function completeSetup(page) {
   await page.getByRole("button", { name: "2025", exact: true }).click();
 }
 
+async function expectCompactLocationSearch(page) {
+  const search = page.getByRole("combobox", { name: "Search SPM areas" });
+  // Check the rendered input row, including its wrapper: a tall container or
+  // duplicate visible label can look wrong even when the input itself is small.
+  const bounds = await search.evaluate((input) => {
+    const root = input.closest("[cmdk-root]");
+    const { x, width, height } = root.getBoundingClientRect();
+    return {
+      x,
+      width,
+      height,
+      fontSize: parseFloat(getComputedStyle(input).fontSize),
+    };
+  });
+  expect(bounds.height).toBeGreaterThanOrEqual(44);
+  expect(bounds.height).toBeLessThanOrEqual(56);
+  expect(bounds.width).toBeLessThanOrEqual(600);
+  expect(bounds.x).toBeGreaterThanOrEqual(16);
+  expect(bounds.x + bounds.width).toBeLessThanOrEqual(
+    page.viewportSize().width - 16,
+  );
+  expect(bounds.fontSize).toBeGreaterThanOrEqual(16);
+}
+
 test.beforeEach(async ({ page, baseURL }, testInfo) => {
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
@@ -143,8 +167,13 @@ test("guided setup retains answers and allows direct editing after results", asy
   );
   const search = page.getByRole("combobox", { name: "Search SPM areas" });
   await expect(search).toHaveValue("");
+  await expectCompactLocationSearch(page);
   await page.screenshot({ path: testInfo.outputPath("guided-location.png") });
   await search.fill("san jose");
+  await expect(page.getByRole("option").first()).toBeVisible();
+  await page.screenshot({
+    path: testInfo.outputPath("guided-location-search.png"),
+  });
   await expect(
     page.getByRole("heading", { name: "Where do you live?" }),
   ).toBeVisible();
@@ -319,6 +348,7 @@ test("guided setup accepts keyboard area selection and explicit zero children", 
   await expect(
     page.getByRole("heading", { name: "Where do you live?" }),
   ).toBeVisible();
+  await expectCompactLocationSearch(page);
   await captureMobileStage("location");
   const search = page.getByRole("combobox", { name: "Search SPM areas" });
   await search.fill("Alabama Nonmetro");
@@ -327,6 +357,9 @@ test("guided setup accepts keyboard area selection and explicit zero children", 
       .getByRole("listbox", { name: "Matching SPM areas" })
       .getByRole("option"),
   ).toHaveCount(1);
+  const optionBounds = await page.getByRole("option").boundingBox();
+  expect(optionBounds.height).toBeGreaterThanOrEqual(44);
+  await captureMobileStage("location-search");
   await search.press("ArrowDown");
   await expect(
     page.getByRole("heading", { name: "Where do you live?" }),

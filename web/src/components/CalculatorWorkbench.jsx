@@ -140,6 +140,20 @@ function rollingAdjustment(entry, areaId, tenure) {
   return calculateGeoadj({ rentIndex, housingShare });
 }
 
+function ControlSection({ title, inSidebar, children }) {
+  if (inSidebar) {
+    return <SidebarSection title={title}>{children}</SidebarSection>;
+  }
+  return (
+    <fieldset className="min-w-0 space-y-3">
+      {title && (
+        <legend className="text-sm font-medium text-foreground">{title}</legend>
+      )}
+      {children}
+    </fieldset>
+  );
+}
+
 export default function CalculatorWorkbench({ data }) {
   const {
     methodology: baseMethodology,
@@ -432,7 +446,10 @@ print(result["threshold"])`;
             decision.
           </p>
         )}
-      <SidebarSection title="Household composition">
+      <ControlSection
+        inSidebar={setupComplete}
+        title={setupComplete ? "Household composition" : undefined}
+      >
         <div className="flex gap-3">
           {[
             ["Adults", "spm-adults", numAdults, setNumAdults, 1, 12],
@@ -447,6 +464,9 @@ print(result["threshold"])`;
               </label>
               <Input
                 id={id}
+                className={
+                  setupComplete ? undefined : "h-12 bg-background text-base"
+                }
                 type="number"
                 inputMode="numeric"
                 value={value}
@@ -463,43 +483,62 @@ print(result["threshold"])`;
             </div>
           ))}
         </div>
-      </SidebarSection>
+      </ControlSection>
 
-      <SidebarDivider />
+      {setupComplete && <SidebarDivider />}
 
-      <SidebarSection title="Housing tenure">
+      <ControlSection
+        inSidebar={setupComplete}
+        title={setupComplete ? "Housing tenure" : "How do you pay for housing?"}
+      >
         <Tabs value={tenure} onValueChange={setTenure} activationMode="manual">
-          <TabsList aria-label="Housing tenure">
+          <TabsList
+            aria-label="Housing tenure"
+            className={setupComplete ? undefined : "h-auto w-full"}
+          >
             {TENURE_OPTIONS.map((option) => (
-              <TabsTrigger key={option.value} value={option.value}>
+              <TabsTrigger
+                key={option.value}
+                value={option.value}
+                className={setupComplete ? undefined : "min-h-11 flex-1"}
+              >
                 {option.label}
               </TabsTrigger>
             ))}
           </TabsList>
         </Tabs>
-      </SidebarSection>
+      </ControlSection>
     </>
   );
   const locationControls = (
     <>
-      <SidebarSection title="Geography">
+      <ControlSection
+        inSidebar={setupComplete}
+        title={setupComplete ? "Location" : undefined}
+      >
         <div className="space-y-3">
-          <Command label="Search SPM areas" shouldFilter={false}>
-            <p className="mb-1.5 text-sm font-medium text-muted-foreground">
-              Search SPM areas
-            </p>
+          <Command
+            label="Search SPM areas"
+            shouldFilter={false}
+            className="h-auto rounded-lg border border-border bg-background transition-colors focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/15 motion-reduce:transition-none [&_[data-slot=command-input-wrapper]]:h-12 [&_[data-slot=command-input-wrapper]]:border-0 [&_[data-slot=command-input-wrapper]]:px-4"
+          >
             <CommandInput
-              placeholder="New York, Alabama Nonmetro, 35620..."
+              placeholder="Search a metro area or state"
+              className="h-12 py-0 text-base"
               value={locationQuery}
               onValueChange={setLocationQuery}
             />
             {locationQuery.trim() && (
-              <CommandList label="Matching SPM areas" className="max-h-60">
+              <CommandList
+                label="Matching SPM areas"
+                className="max-h-60 border-t border-border p-1"
+              >
                 <CommandEmpty>No SPM areas match your search.</CommandEmpty>
                 {filteredMetroEntries.map(([code, info]) => (
                   <CommandItem
                     key={code}
                     value={code}
+                    className="min-h-11 cursor-pointer px-3 py-2 leading-snug"
                     onSelect={() => selectLocation(code)}
                   >
                     {info.name}
@@ -534,12 +573,18 @@ print(result["threshold"])`;
               </Button>
             )
           )}
-          <p className="text-xs leading-5 text-muted-foreground">
-            SPM estimation areas: MSAs, residual metro groups and state nonmetro
-            groups. Availability and publication status depend on the year.
-          </p>
+          {setupComplete ? (
+            <p className="text-xs leading-5 text-muted-foreground">
+              SPM estimation areas: MSAs, residual metro groups and state nonmetro
+              groups. Availability and publication status depend on the year.
+            </p>
+          ) : (
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              Outside a metro area? Search for your state.
+            </p>
+          )}
         </div>
-      </SidebarSection>
+      </ControlSection>
 
       {locationError && (
         <div
@@ -624,7 +669,8 @@ print(result["threshold"])`;
             {
               id: "location",
               title: "Where do you live?",
-              description: "Search for an area and select it to continue.",
+              shortTitle: "Location",
+              description: "Choose your area to find the local poverty threshold.",
               autoAdvance: true,
               content: locationControls,
               summary: currentLocation?.label ?? "Choose an area",
@@ -633,6 +679,7 @@ print(result["threshold"])`;
             {
               id: "household",
               title: "Who is in your household?",
+              shortTitle: "Household",
               description:
                 "Enter the number of adults and children, and how you pay for housing.",
               content: householdControls,
@@ -644,6 +691,7 @@ print(result["threshold"])`;
             {
               id: "year",
               title: "Which year?",
+              shortTitle: "Year",
               description:
                 "Select a year to view your threshold. You can change forecast assumptions in the results.",
               autoAdvance: true,

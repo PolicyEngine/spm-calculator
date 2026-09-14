@@ -208,7 +208,7 @@ describe("explicit personal setup", () => {
     const progress = screen.getByRole("navigation", { name: "Setup progress" });
     fireEvent.click(
       within(progress).getByRole("button", {
-        name: /Who is in your household/,
+        name: /^Household/,
       }),
     );
     expect(screen.getByLabelText("Adults")).toHaveValue(3);
