@@ -70,6 +70,7 @@ describe("canonical rolling CE and ACS forecasts", () => {
       scenario.years[2026].national_status = "published";
     }
     render(<CalculatorWorkbench data={data} />);
+    selectYear(2026);
     expect(screen.getByLabelText("Threshold year")).toHaveValue("2026");
     expect(screen.queryByLabelText("Real spending")).toBeNull();
     selectYear(2027);

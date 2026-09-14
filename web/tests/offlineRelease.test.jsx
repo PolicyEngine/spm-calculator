@@ -1,5 +1,10 @@
 import { renderCalculator as render } from "./helpers/renderCalculator";
-import { fireEvent, screen, within } from "@testing-library/react";
+import {
+  fireEvent,
+  render as renderSetup,
+  screen,
+  within,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 
@@ -30,6 +35,49 @@ const selectArea = (id) =>
 afterEach(() => vi.unstubAllGlobals());
 
 describe("canonical export integration", () => {
+  it("discovers the actual historical area before choosing a year and rejects an incompatible year", () => {
+    const fetch = vi.fn(() => {
+      throw new Error("Network unavailable");
+    });
+    vi.stubGlobal("fetch", fetch);
+    renderSetup(<CalculatorWorkbench data={readCalculatorData()} />);
+    const search = screen.getByLabelText("Search SPM areas");
+    fireEvent.change(search, { target: { value: "45001" } });
+    fireEvent.click(
+      within(
+        screen.getByRole("listbox", { name: "Matching SPM areas" }),
+      ).getByRole("option", { name: "South Carolina Metro", exact: true }),
+    );
+    fireEvent.change(screen.getByLabelText("Adults"), {
+      target: { value: "2" },
+    });
+    fireEvent.change(screen.getByLabelText("Children"), {
+      target: { value: "0" },
+    });
+    fireEvent.mouseDown(
+      screen.getByRole("tab", { name: "Renter", exact: true }),
+      { button: 0, ctrlKey: false },
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Continue", exact: true }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "2023", exact: true }));
+    expect(
+      screen.getByRole("heading", { name: "Where do you live?" }),
+    ).toBeVisible();
+    expect(screen.queryByTestId("primary-result")).toBeNull();
+    fireEvent.change(screen.getByLabelText("Search SPM areas"), {
+      target: { value: "45001" },
+    });
+    expect(
+      screen.queryByRole("option", {
+        name: "South Carolina Metro",
+        exact: true,
+      }),
+    ).toBeNull();
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
   it("loads schema 2 with no obsolete release, nowcast or global-union menu inputs", async () => {
     const data = readCalculatorData();
     expect(data.schemaVersion).toBe(2);
@@ -142,9 +190,11 @@ describe("canonical export integration", () => {
         ]),
       );
       const menu = screen.getByLabelText("SPM estimation area");
-      expect(Array.from(menu.options, (option) => option.value).sort()).toEqual(
-        Object.keys(areas).sort(),
-      );
+      expect(
+        Array.from(menu.options, (option) => option.value)
+          .filter(Boolean)
+          .sort(),
+      ).toEqual(Object.keys(areas).sort());
       for (const scenario of Object.values(data.forecast.scenarios)) {
         expect(Object.keys(scenario.years[year].rent_indices).sort()).toEqual(
           Object.keys(areas).sort(),

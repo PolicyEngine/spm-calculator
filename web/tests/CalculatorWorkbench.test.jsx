@@ -1,5 +1,10 @@
 import { renderCalculator as render } from "./helpers/renderCalculator";
-import { fireEvent, screen, within } from "@testing-library/react";
+import {
+  fireEvent,
+  render as renderSetup,
+  screen,
+  within,
+} from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import CalculatorWorkbench from "../src/components/CalculatorWorkbench";
@@ -23,6 +28,266 @@ function renderLayout(data = makeRollingCalculatorData()) {
     layout.props.children.find((child) => child.type === "body").props.children,
   );
 }
+
+const chooseArea = (id) => {
+  fireEvent.change(screen.getByLabelText("Search SPM areas"), {
+    target: { value: id },
+  });
+  fireEvent.click(
+    within(
+      screen.getByRole("listbox", { name: "Matching SPM areas" }),
+    ).getAllByRole("option")[0],
+  );
+};
+const chooseSetupYear = (year) =>
+  fireEvent.click(
+    screen.getByRole("button", {
+      name: year > 2025 ? `${year} (forecast)` : String(year),
+      exact: true,
+    }),
+  );
+const enterCount = (label, value) =>
+  fireEvent.change(screen.getByLabelText(label), {
+    target: { value: String(value) },
+  });
+const continueHousehold = () =>
+  fireEvent.click(
+    screen.getByRole("button", { name: "Continue", exact: true }),
+  );
+
+describe("explicit personal setup", () => {
+  it("starts with no selected area or result and waits for an explicit search selection", () => {
+    renderSetup(<CalculatorWorkbench data={makeRollingCalculatorData()} />);
+    expect(
+      screen.getByRole("heading", { name: "Where do you live?" }),
+    ).toHaveFocus();
+    expect(screen.queryByLabelText("SPM estimation area")).toBeNull();
+    expect(screen.getByLabelText("Search SPM areas")).toHaveValue("");
+    expect(
+      screen.queryByRole("button", { name: "Continue", exact: true }),
+    ).toBeNull();
+    expect(screen.queryByTestId("primary-result")).toBeNull();
+    expect(screen.queryByLabelText("Threshold year")).toBeNull();
+    const search = screen.getByLabelText("Search SPM areas");
+    // A historical identity must remain discoverable before any year exists.
+    fireEvent.change(search, { target: { value: "historical" } });
+    expect(
+      screen.getByRole("option", { name: "Historical Metro Group" }),
+    ).toBeVisible();
+    fireEvent.change(search, { target: { value: "san jose" } });
+    expect(
+      screen.getByRole("heading", { name: "Where do you live?" }),
+    ).toBeVisible();
+    expect(screen.queryByLabelText("Adults")).toBeNull();
+    const matches = screen.getByRole("listbox", { name: "Matching SPM areas" });
+    fireEvent.click(
+      within(matches).getByRole("option", {
+        name: "San Jose-Sunnyvale-Santa Clara, CA MSA",
+      }),
+    );
+    expect(
+      screen.getByRole("heading", { name: "Who is in your household?" }),
+    ).toHaveFocus();
+    expect(screen.queryByTestId("primary-result")).toBeNull();
+    expect(screen.getByLabelText("Adults")).toHaveValue(null);
+    expect(screen.getByLabelText("Children")).toHaveValue(null);
+    for (const tab of screen.getAllByRole("tab"))
+      expect(tab).toHaveAttribute("aria-selected", "false");
+  });
+
+  it("advances a keyboard-selected area and requires explicit counts, zero children and tenure", () => {
+    renderSetup(<CalculatorWorkbench data={makeRollingCalculatorData()} />);
+    const search = screen.getByLabelText("Search SPM areas");
+    fireEvent.change(search, { target: { value: "1002" } });
+    fireEvent.keyDown(search, { key: "Enter", code: "Enter" });
+    expect(
+      screen.getByRole("heading", { name: "Who is in your household?" }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "Continue", exact: true }),
+    ).toBeDisabled();
+    continueHousehold();
+    expect(screen.queryByLabelText("Threshold year")).toBeNull();
+    enterCount("Adults", 1);
+    expect(
+      screen.getByRole("button", { name: "Continue", exact: true }),
+    ).toBeDisabled();
+    continueHousehold();
+    expect(screen.queryByLabelText("Threshold year")).toBeNull();
+    enterCount("Children", 0);
+    expect(
+      screen.getByRole("button", { name: "Continue", exact: true }),
+    ).toBeDisabled();
+    continueHousehold();
+    expect(screen.queryByLabelText("Threshold year")).toBeNull();
+    const renter = screen.getByRole("tab", { name: "Renter", exact: true });
+    fireEvent.focus(renter);
+    expect(renter).toHaveAttribute("aria-selected", "false");
+    expect(
+      screen.getByRole("button", { name: "Continue", exact: true }),
+    ).toBeDisabled();
+    fireEvent.keyDown(renter, { key: "Enter", code: "Enter" });
+    expect(renter).toHaveAttribute("aria-selected", "true");
+    expect(
+      screen.getByRole("button", { name: "Continue", exact: true }),
+    ).toBeEnabled();
+    enterCount("Children", "");
+    expect(screen.getByLabelText("Children")).toHaveValue(null);
+    expect(
+      screen.getByRole("button", { name: "Continue", exact: true }),
+    ).toBeDisabled();
+    enterCount("Children", 0);
+    continueHousehold();
+    expect(screen.getByRole("heading", { name: "Which year?" })).toHaveFocus();
+    expect(screen.queryByLabelText("Threshold year")).toBeNull();
+    expect(
+      screen.getByRole("button", { name: "2025", exact: true }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "2035 (forecast)", exact: true }),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole("button", { name: "View thresholds", exact: true }),
+    ).toBeNull();
+    expect(screen.queryByLabelText("Real spending")).toBeNull();
+    expect(screen.queryByTestId("primary-result")).toBeNull();
+    chooseSetupYear(2025);
+    expect(screen.getByTestId("primary-result")).toHaveTextContent(
+      "Alabama Nonmetro",
+    );
+    expect(
+      within(screen.getByTestId("primary-result")).getByRole("heading", {
+        name: "Alabama Nonmetro",
+      }),
+    ).toHaveFocus();
+    expect(screen.getByLabelText("Children")).toHaveValue(0);
+    expect(
+      screen.queryByRole("form", { name: "Set up your threshold" }),
+    ).toBeNull();
+  });
+
+  it("retains answers when going back without replaying automatic advancement", () => {
+    renderSetup(<CalculatorWorkbench data={makeRollingCalculatorData()} />);
+    chooseArea("41940");
+    enterCount("Adults", 3);
+    enterCount("Children", 0);
+    fireEvent.mouseDown(
+      screen.getByRole("tab", { name: "Mortgage", exact: true }),
+      { button: 0, ctrlKey: false },
+    );
+    continueHousehold();
+    fireEvent.click(screen.getByRole("button", { name: "Back", exact: true }));
+    expect(
+      screen.getByRole("heading", { name: "Who is in your household?" }),
+    ).toBeVisible();
+    expect(screen.getByLabelText("Adults")).toHaveValue(3);
+    expect(screen.getByLabelText("Children")).toHaveValue(0);
+    expect(
+      screen.getByRole("tab", { name: "Mortgage", exact: true }),
+    ).toHaveAttribute("aria-selected", "true");
+    fireEvent.click(screen.getByRole("button", { name: "Back", exact: true }));
+    expect(
+      screen.getByRole("heading", { name: "Where do you live?" }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("button", {
+        name: "San Jose-Sunnyvale-Santa Clara, CA MSA",
+        exact: true,
+      }),
+    ).toBeVisible();
+    fireEvent.change(screen.getByLabelText("Search SPM areas"), {
+      target: { value: "no matching place" },
+    });
+    fireEvent.keyDown(screen.getByLabelText("Search SPM areas"), {
+      key: "Enter",
+      code: "Enter",
+    });
+    expect(
+      screen.getByRole("heading", { name: "Where do you live?" }),
+    ).toBeVisible();
+    const progress = screen.getByRole("navigation", { name: "Setup progress" });
+    fireEvent.click(
+      within(progress).getByRole("button", {
+        name: /Who is in your household/,
+      }),
+    );
+    expect(screen.getByLabelText("Adults")).toHaveValue(3);
+    continueHousehold();
+    expect(screen.queryByTestId("primary-result")).toBeNull();
+    chooseSetupYear(2030);
+    expect(screen.getByTestId("primary-result")).toHaveTextContent("San Jose");
+    expect(
+      within(screen.getByTestId("primary-result")).getByRole("heading"),
+    ).toHaveFocus();
+    expect(screen.getByLabelText("Real spending")).toHaveValue("ce_trend");
+    fireEvent.change(screen.getByLabelText("Real spending"), {
+      target: { value: "zero_real" },
+    });
+    const yearControl = screen.getByLabelText("Threshold year");
+    yearControl.focus();
+    selectYear(2025);
+    expect(yearControl).toHaveFocus();
+    const areaControl = screen.getByLabelText("SPM estimation area");
+    areaControl.focus();
+    fireEvent.change(areaControl, { target: { value: "1002" } });
+    expect(areaControl).toHaveFocus();
+    expect(
+      within(screen.getByTestId("primary-result")).getByRole("heading", {
+        name: "Alabama Nonmetro",
+      }),
+    ).not.toHaveFocus();
+    expect(screen.queryByLabelText("Real spending")).toBeNull();
+    enterCount("Adults", 2);
+    expect(screen.getByTestId("primary-result")).toBeVisible();
+    expect(
+      screen.queryByRole("heading", { name: "Where do you live?" }),
+    ).toBeNull();
+    selectYear(2030);
+    expect(screen.getByLabelText("Real spending")).toHaveValue("zero_real");
+  });
+
+  it("returns to location when the chosen year excludes the selected historical area", () => {
+    renderSetup(<CalculatorWorkbench data={makeRollingCalculatorData()} />);
+    chooseArea(HISTORICAL_AREA_ID);
+    enterCount("Adults", 2);
+    enterCount("Children", 2);
+    fireEvent.mouseDown(
+      screen.getByRole("tab", { name: "Renter", exact: true }),
+      { button: 0, ctrlKey: false },
+    );
+    continueHousehold();
+    chooseSetupYear(2023);
+    expect(
+      screen.getByRole("heading", { name: "Where do you live?" }),
+    ).toBeVisible();
+    expect(screen.queryByTestId("primary-result")).toBeNull();
+    expect(screen.getAllByRole("alert").length).toBeGreaterThan(0);
+    expect(
+      screen.queryByRole("button", {
+        name: "New York-Newark-Jersey City, NY-NJ-PA MSA",
+        exact: true,
+      }),
+    ).toBeNull();
+    fireEvent.change(screen.getByLabelText("Search SPM areas"), {
+      target: { value: "historical" },
+    });
+    expect(
+      screen.queryByRole("option", { name: "Historical Metro Group" }),
+    ).toBeNull();
+    chooseArea("1002");
+    expect(
+      screen.getByRole("heading", { name: "Who is in your household?" }),
+    ).toBeVisible();
+    expect(screen.getByLabelText("Adults")).toHaveValue(2);
+    continueHousehold();
+    expect(screen.getByRole("heading", { name: "Which year?" })).toBeVisible();
+    expect(screen.queryByTestId("primary-result")).toBeNull();
+    chooseSetupYear(2023);
+    expect(screen.getByTestId("primary-result")).toHaveTextContent(
+      "Alabama Nonmetro",
+    );
+  });
+});
 
 describe("canonical calculator controls and shared layout", () => {
   it("renders one actual shared navigation header and keeps app methodology in the results footnote", () => {
@@ -102,9 +367,10 @@ describe("canonical calculator controls and shared layout", () => {
   it("offers all 2022–2035 years and only actual SPM estimation geography types", () => {
     render(<CalculatorWorkbench data={makeRollingCalculatorData()} />);
     expect(
-      Array.from(screen.getByLabelText("Threshold year").options, (option) =>
-        Number(option.value),
-      ).sort((a, b) => a - b),
+      Array.from(screen.getByLabelText("Threshold year").options)
+        .filter((option) => option.value)
+        .map((option) => Number(option.value))
+        .sort((a, b) => a - b),
     ).toEqual(AVAILABLE_YEARS);
     for (const year of AVAILABLE_YEARS.filter((year) => year > 2025)) {
       expect(

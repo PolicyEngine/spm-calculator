@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import {
   DashboardShell,
@@ -15,8 +15,11 @@ import {
   SidebarSection,
   SidebarDivider,
   SelectInput,
-  NumberInput,
-  SegmentedControl,
+  Input,
+  Button,
+  Tabs,
+  TabsList,
+  TabsTrigger,
   MetricCard,
   DataTable,
   Card,
@@ -146,36 +149,53 @@ export default function CalculatorWorkbench({ data }) {
     packageDistribution,
   } = data;
   const [setupComplete, setSetupComplete] = useState(false);
+  const [advanceRequest, setAdvanceRequest] = useState(null);
+  const resultHeadingRef = useRef(null);
+  useEffect(() => {
+    if (setupComplete) resultHeadingRef.current?.focus();
+  }, [setupComplete]);
   const latestPublishedYear = forecast.latestPublishedYear;
   const [scenarioId, setScenarioId] = useState(forecast.defaultScenario);
   const selectedScenario = forecast.scenarios[scenarioId];
   const availableYears = Object.keys(selectedScenario.years).sort(
     (left, right) => Number(right) - Number(left),
   );
-  const [year, setYear] = useState(String(latestPublishedYear));
+  const [year, setYear] = useState("");
   const selectedEntry = selectedScenario.years[year];
-  const areas = areasByYear[year] ?? {};
+  // Offer every supported area before the user chooses a year. Once chosen,
+  // use that year's actual coverage and revalidate the selected area.
+  const areas = useMemo(
+    () =>
+      year
+        ? (areasByYear[year] ?? {})
+        : Object.assign(
+            {},
+            ...[...availableYears]
+              .reverse()
+              .map((value) => areasByYear[value] ?? {}),
+          ),
+    [year, areasByYear, selectedScenario],
+  );
   const metroEntries = useMemo(
     () =>
       Object.entries(areas)
-        .filter(([id]) => selectedEntry?.geography_by_area?.[id])
+        .filter(([id]) => !year || selectedEntry?.geography_by_area?.[id])
         .sort(([, left], [, right]) => left.name.localeCompare(right.name)),
-    [areas, selectedEntry],
+    [areas, selectedEntry, year],
   );
   const methodology = {
     ...baseMethodology,
     housingShares: selectedEntry?.housing_shares ?? {},
   };
-  const [numAdults, setNumAdults] = useState(2);
-  const [numChildren, setNumChildren] = useState(2);
-  const [tenure, setTenure] = useState("renter");
-  const [selectedGeographyId, setSelectedGeographyId] = useState(() =>
-    areas["35620"] ? "35620" : (Object.keys(areas)[0] ?? ""),
-  );
+  const [numAdults, setNumAdults] = useState("");
+  const [numChildren, setNumChildren] = useState("");
+  const [tenure, setTenure] = useState("");
+  const [selectedGeographyId, setSelectedGeographyId] = useState("");
   const [locationQuery, setLocationQuery] = useState("");
   const selectedAreaStatus =
     selectedEntry?.geography_by_area?.[selectedGeographyId];
-  const selectedArea = selectedAreaStatus ? areas[selectedGeographyId] : null;
+  const selectedArea =
+    !year || selectedAreaStatus ? (areas[selectedGeographyId] ?? null) : null;
   const currentLocation = selectedArea
     ? { id: selectedGeographyId, label: selectedArea.name }
     : null;
@@ -211,12 +231,15 @@ export default function CalculatorWorkbench({ data }) {
       : metroEntries;
   }, [locationQuery, metroEntries]);
   const base = selectedEntry?.thresholds?.[tenure] ?? null;
-  const rawScale = getRawEquivalenceScale(numAdults, numChildren, methodology);
   const compositionValid =
     Number.isInteger(numAdults) &&
     numAdults >= 1 &&
     Number.isInteger(numChildren) &&
     numChildren >= 0;
+  const rawScale = compositionValid
+    ? getRawEquivalenceScale(numAdults, numChildren, methodology)
+    : null;
+  const householdValid = compositionValid && Boolean(TENURE_LABELS[tenure]);
   const equivalenceScale =
     rawScale / methodology.equivalenceScale.referenceFamilyRaw;
   function areaAdjustment(areaTenure) {
@@ -227,11 +250,14 @@ export default function CalculatorWorkbench({ data }) {
   const geoadj = areaAdjustment(tenure);
   const rollingDataUnavailable =
     !selectedArea || geoadj === null || !Number.isFinite(base) || base <= 0;
-  const locationError = !selectedArea
-    ? `The selected area is unavailable in ${year}. Choose an area available for this year.`
-    : rollingDataUnavailable
-      ? "Rolling forecast data is unavailable for this area, tenure and year."
-      : "";
+  const locationError =
+    !year || !selectedGeographyId
+      ? ""
+      : !selectedArea
+        ? `The selected area is unavailable in ${year}. Choose an area available for this year.`
+        : tenure && rollingDataUnavailable
+          ? "Rolling forecast data is unavailable for this area, tenure and year."
+          : "";
   const threshold =
     rollingDataUnavailable || !compositionValid
       ? null
@@ -242,7 +268,7 @@ export default function CalculatorWorkbench({ data }) {
   const officialReferenceThreshold = rollingDataUnavailable
     ? null
     : base * geoadj;
-  const selectedTenureLabel = TENURE_LABELS[tenure];
+  const selectedTenureLabel = TENURE_LABELS[tenure] ?? "Choose housing tenure";
   const selectedLocationRentIndex = selectedArea
     ? selectedEntry?.rent_indices?.[selectedGeographyId]
     : null;
@@ -312,7 +338,59 @@ print(result["threshold"])`;
 
   // ── Render ──────────────────────────────────────────────────
 
-  const yearControls = (
+  function selectLocation(code) {
+    setSelectedGeographyId(code);
+    setLocationQuery("");
+    if (!setupComplete) setAdvanceRequest({ stepId: "location" });
+  }
+
+  function selectSetupYear(value) {
+    setYear(value);
+    setAdvanceRequest({ stepId: "year" });
+  }
+
+  const yearControls = !setupComplete ? (
+    <div className="space-y-6">
+      {[
+        ["Published national thresholds", false],
+        ["Forecasts", true],
+      ].map(([label, isForecast]) => (
+        <fieldset key={label} className="space-y-3">
+          <legend className="text-sm font-medium text-muted-foreground">
+            {label}
+          </legend>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {availableYears
+              .filter(
+                (value) =>
+                  (selectedScenario.years[value].national_status ===
+                    "forecast") ===
+                  isForecast,
+              )
+              .sort((a, b) => Number(a) - Number(b))
+              .map((value) => (
+                <Button
+                  key={value}
+                  type="button"
+                  variant="outline"
+                  aria-label={`${value}${isForecast ? " (forecast)" : ""}`}
+                  aria-pressed={year === value}
+                  onClick={() => selectSetupYear(value)}
+                  className="h-auto min-h-14 flex-col gap-1 py-3"
+                >
+                  <span>{value}</span>
+                  {Number(value) === latestPublishedYear && (
+                    <span className="text-xs font-normal text-muted-foreground">
+                      Latest published
+                    </span>
+                  )}
+                </Button>
+              ))}
+          </div>
+        </fieldset>
+      ))}
+    </div>
+  ) : (
     <>
       <SidebarSection title="Threshold year">
         <SelectInput
@@ -341,44 +419,63 @@ print(result["threshold"])`;
   );
   const householdControls = (
     <>
-      {!compositionValid && (
-        <p role="alert">
-          Enter at least one classified SPM adult and a nonnegative whole number
-          of children. Minor-only units need a separate classification decision.
-        </p>
-      )}
+      {!compositionValid &&
+        (numAdults !== "" || numChildren !== "") &&
+        ((numAdults !== "" &&
+          (!Number.isInteger(numAdults) || numAdults < 1)) ||
+          (numChildren !== "" &&
+            (!Number.isInteger(numChildren) || numChildren < 0))) && (
+          <p role="alert">
+            Enter at least one classified SPM adult and a nonnegative whole
+            number of children. Minor-only units need a separate classification
+            decision.
+          </p>
+        )}
       <SidebarSection title="Household composition">
         <div className="flex gap-3">
-          <NumberInput
-            label="Adults"
-            id="spm-adults"
-            aria-label="Adults"
-            value={numAdults}
-            onChange={setNumAdults}
-            min={1}
-            max={12}
-          />
-          <NumberInput
-            label="Children"
-            id="spm-children"
-            aria-label="Children"
-            value={numChildren}
-            onChange={setNumChildren}
-            min={0}
-            max={16}
-          />
+          {[
+            ["Adults", "spm-adults", numAdults, setNumAdults, 1, 12],
+            ["Children", "spm-children", numChildren, setNumChildren, 0, 16],
+          ].map(([label, id, value, setValue, min, max]) => (
+            <div key={id} className="flex min-w-0 flex-1 flex-col gap-1">
+              <label
+                htmlFor={id}
+                className="text-sm font-medium text-muted-foreground"
+              >
+                {label}
+              </label>
+              <Input
+                id={id}
+                type="number"
+                inputMode="numeric"
+                value={value}
+                onChange={(event) =>
+                  setValue(
+                    event.target.value === "" ? "" : Number(event.target.value),
+                  )
+                }
+                min={min}
+                max={max}
+                step={1}
+                required
+              />
+            </div>
+          ))}
         </div>
       </SidebarSection>
 
       <SidebarDivider />
 
       <SidebarSection title="Housing tenure">
-        <SegmentedControl
-          options={TENURE_OPTIONS}
-          value={tenure}
-          onValueChange={setTenure}
-          size="sm"
-        />
+        <Tabs value={tenure} onValueChange={setTenure} activationMode="manual">
+          <TabsList aria-label="Housing tenure">
+            {TENURE_OPTIONS.map((option) => (
+              <TabsTrigger key={option.value} value={option.value}>
+                {option.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
       </SidebarSection>
     </>
   );
@@ -402,10 +499,7 @@ print(result["threshold"])`;
                   <CommandItem
                     key={code}
                     value={code}
-                    onSelect={() => {
-                      setSelectedGeographyId(code);
-                      setLocationQuery("");
-                    }}
+                    onSelect={() => selectLocation(code)}
                   >
                     {info.name}
                   </CommandItem>
@@ -413,17 +507,32 @@ print(result["threshold"])`;
               </CommandList>
             )}
           </Command>
-          <SelectInput
-            id="spm-census-area"
-            aria-label="SPM estimation area"
-            label="SPM estimation area"
-            options={locationSelectOptions}
-            value={selectedArea ? selectedGeographyId : ""}
-            placeholder={
-              selectedArea ? undefined : `Selected area unavailable in ${year}`
-            }
-            onChange={setSelectedGeographyId}
-          />
+          {setupComplete ? (
+            <SelectInput
+              id="spm-census-area"
+              aria-label="SPM estimation area"
+              label="SPM estimation area"
+              options={locationSelectOptions}
+              value={selectedArea ? selectedGeographyId : ""}
+              placeholder={
+                selectedArea
+                  ? undefined
+                  : `Selected area unavailable in ${year}`
+              }
+              onChange={selectLocation}
+            />
+          ) : (
+            selectedArea && (
+              <Button
+                type="button"
+                variant="outline"
+                className="h-auto min-h-11 w-full justify-start whitespace-normal text-left"
+                onClick={() => selectLocation(selectedGeographyId)}
+              >
+                {selectedArea.name}
+              </Button>
+            )
+          )}
           <p className="text-xs leading-5 text-muted-foreground">
             SPM estimation areas: MSAs, residual metro groups and state nonmetro
             groups. Availability and publication status depend on the year.
@@ -509,11 +618,13 @@ print(result["threshold"])`;
     return (
       <DashboardShell>
         <CalculatorSetup
+          advanceRequest={advanceRequest}
           steps={[
             {
               id: "location",
               title: "Where do you live?",
-              description: "Choose your SPM estimation area.",
+              description: "Search for an area and select it to continue.",
+              autoAdvance: true,
               content: locationControls,
               summary: currentLocation?.label ?? "Choose an area",
               valid: Boolean(selectedArea),
@@ -524,15 +635,21 @@ print(result["threshold"])`;
               description:
                 "Enter the number of adults and children, and how you pay for housing.",
               content: householdControls,
-              summary: `${numAdults} adults, ${numChildren} children · ${selectedTenureLabel}`,
-              valid: compositionValid,
+              summary: householdValid
+                ? `${numAdults} adults, ${numChildren} children · ${selectedTenureLabel}`
+                : "Enter your household details",
+              valid: householdValid,
             },
             {
               id: "year",
               title: "Which year?",
-              description: "Choose a published year or explore a forecast.",
+              description:
+                "Select a year to view your threshold. You can change forecast assumptions in the results.",
+              autoAdvance: true,
               content: yearControls,
-              summary: `${year}${yearIsForecast ? ` · ${selectedScenario.label}` : " · Published national thresholds"}`,
+              summary: year
+                ? `${year}${yearIsForecast ? ` · ${selectedScenario.label}` : " · Published national thresholds"}`
+                : "Choose a year",
               valid: Boolean(selectedEntry),
             },
           ]}
@@ -550,7 +667,12 @@ print(result["threshold"])`;
             {/* Primary result */}
             <div data-testid="primary-result">
               <div className="mb-4 flex flex-wrap items-center gap-2">
-                <Title order={2} className="text-xl">
+                <Title
+                  ref={resultHeadingRef}
+                  order={2}
+                  tabIndex={-1}
+                  className="scroll-mt-24 text-xl focus:outline-none"
+                >
                   {currentLocation?.label ?? "Area unavailable"}
                 </Title>
                 <Badge variant="secondary">{selectedTenureLabel}</Badge>
