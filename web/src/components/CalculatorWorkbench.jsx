@@ -36,6 +36,7 @@ import {
 import CalculatorSetup from "./CalculatorSetup";
 import ThresholdHistoryChart from "./ThresholdHistoryChart";
 import { calculateGeoadj } from "@/lib/geoadj";
+import { paperPageUrl } from "@/src/paperVersion";
 import {
   ForecastMethodology,
   ForecastWarnings,
@@ -1237,6 +1238,10 @@ print(result["threshold"])`;
                       rel="noopener noreferrer"
                     >
                       P60-287
+                    </a>
+                    . Methods:{" "}
+                    <a className="underline" href={paperPageUrl}>
+                      Read the methods paper
                     </a>
                     .
                   </p>

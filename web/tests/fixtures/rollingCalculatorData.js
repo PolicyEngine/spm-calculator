@@ -189,7 +189,6 @@ export function makeRollingCalculatorData(overrides = {}) {
         referenceFamilyRaw: 3 ** 0.7,
       },
     },
-    paperUrl: "https://spm-threshold-paper.vercel.app",
     forecast: {
       schemaVersion: 2,
       latestPublishedYear: 2025,
