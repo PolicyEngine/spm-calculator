@@ -492,13 +492,21 @@ print(result["threshold"])`;
         <Tabs value={tenure} onValueChange={setTenure} activationMode="manual">
           <TabsList
             aria-label="Housing tenure"
-            className={setupComplete ? undefined : "h-auto w-full"}
+            className={
+              setupComplete
+                ? undefined
+                : "h-auto w-full gap-2 bg-transparent p-0"
+            }
           >
             {TENURE_OPTIONS.map((option) => (
               <TabsTrigger
                 key={option.value}
                 value={option.value}
-                className={setupComplete ? undefined : "min-h-11 flex-1"}
+                className={
+                  setupComplete
+                    ? undefined
+                    : "min-h-12 flex-1 border border-border bg-background data-[state=active]:border-primary data-[state=active]:bg-primary/5 data-[state=active]:text-primary"
+                }
               >
                 {option.label}
               </TabsTrigger>
@@ -533,7 +541,7 @@ print(result["threshold"])`;
                   ? `Selected area unavailable in ${year}`
                   : "Search a metro area or state"
               }
-              className="h-12 py-0 text-base"
+              className="h-12 text-ellipsis py-0 text-base"
               value={
                 locationEditing ? locationQuery : (selectedArea?.name ?? "")
               }
