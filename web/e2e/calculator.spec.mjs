@@ -514,7 +514,9 @@ test("area search selects by click and Enter and preserves selection on no match
   ).toHaveCount(0);
   const matches = page.getByRole("listbox", { name: "Matching SPM areas" });
   const initialThreshold = await threshold(page).textContent();
-  await search.focus();
+  await page.locator("[cmdk-root] svg").click();
+  await expect(search).toBeFocused();
+  await expect(search).toHaveAttribute("aria-expanded", "true");
   await search.press("Enter");
   await expect(search).toHaveValue(menu(2025)["35620"].name);
   await expect(threshold(page)).toHaveText(initialThreshold);
@@ -587,6 +589,11 @@ test("area search selects by click and Enter and preserves selection on no match
   await expect(search).toHaveValue(lastArea);
   await search.fill("san jose");
   await expect(matches.getByRole("option")).toHaveCount(1);
+  await page.locator('[data-slot="command-input-wrapper"]').click({
+    position: { x: 1, y: 1 },
+  });
+  await expect(search).toBeFocused();
+  await expect(search).toHaveValue("san jose");
   await matches.focus();
   await search.focus();
   await expect(search).toHaveValue("san jose");
@@ -1081,7 +1088,9 @@ test.describe("touch area selection", () => {
 
   test("guided setup accepts touch selection and lets results change area", async ({ page }, testInfo) => {
     const search = page.getByRole("combobox", { name: "Search SPM areas" });
-    await search.tap();
+    await page.locator("[cmdk-root] svg").tap();
+    await expect(search).toBeFocused();
+    await expect(search).toHaveAttribute("aria-expanded", "true");
     await search.fill("san jose");
     await page.getByRole("option", {
       name: menu(2025)["41940"].name, exact: true,

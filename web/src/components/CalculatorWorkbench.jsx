@@ -209,6 +209,7 @@ export default function CalculatorWorkbench({ data }) {
   const [locationEditing, setLocationEditing] = useState(false);
   const locationNavigated = useRef(false);
   const locationInputRef = useRef(null);
+  const pendingLocationEdit = useRef(null);
   const selectedAreaStatus =
     selectedEntry?.geography_by_area?.[selectedGeographyId];
   const selectedArea =
@@ -353,6 +354,7 @@ print(result["threshold"])`;
   // ── Render ──────────────────────────────────────────────────
 
   function editLocationSearch(query) {
+    pendingLocationEdit.current = null;
     locationNavigated.current = false;
     setLocationQuery(query);
     setLocationEditing(true);
@@ -363,6 +365,7 @@ print(result["threshold"])`;
   }
 
   function closeLocationSearch() {
+    pendingLocationEdit.current = null;
     locationNavigated.current = false;
     setLocationQuery("");
     setLocationEditing(false);
@@ -544,6 +547,13 @@ print(result["threshold"])`;
           <Command
             label="Search SPM areas"
             shouldFilter={false}
+            onMouseDown={(event) => {
+              if (event.target !== locationInputRef.current) {
+                event.preventDefault();
+                locationInputRef.current?.focus();
+                openLocationSearch();
+              }
+            }}
             onKeyDown={(event) => {
               if (
                 event.defaultPrevented ||
@@ -609,7 +619,17 @@ print(result["threshold"])`;
               title={!locationEditing ? selectedArea?.name : undefined}
               onFocus={openLocationSearch}
               onClick={openLocationSearch}
-              onValueChange={editLocationSearch}
+              onValueChange={(value) => {
+                // Some soft keyboards append directly to the displayed name
+                // without sending compositionstart or an editable keydown.
+                const name = selectedArea?.name;
+                const query = pendingLocationEdit.current ?? (
+                  !locationEditing && name && value.startsWith(name)
+                    ? value.slice(name.length)
+                    : value
+                );
+                editLocationSearch(query);
+              }}
               onPaste={(event) => {
                 if (!locationEditing) {
                   event.preventDefault();
@@ -649,6 +669,18 @@ print(result["threshold"])`;
                   collapsible selector expose its actual state to screen readers. */}
               <input
                 aria-expanded={locationEditing}
+                onInputCapture={(event) => {
+                  pendingLocationEdit.current = null;
+                  if (locationEditing) return;
+                  const { inputType, data } = event.nativeEvent;
+                  if (inputType?.startsWith("delete")) {
+                    pendingLocationEdit.current = "";
+                  } else if (
+                    inputType?.startsWith("insert") && typeof data === "string"
+                  ) {
+                    pendingLocationEdit.current = data;
+                  }
+                }}
                 {...(!locationEditing && {
                   "aria-controls": undefined,
                   "aria-activedescendant": undefined,
@@ -658,7 +690,6 @@ print(result["threshold"])`;
             {locationEditing && (
               <CommandList
                 label="Matching SPM areas"
-                onMouseDown={(event) => event.preventDefault()}
                 className="max-h-60 border-t border-border p-1"
               >
                 <CommandEmpty>No SPM areas match your search.</CommandEmpty>
@@ -667,7 +698,6 @@ print(result["threshold"])`;
                     key={code}
                     value={code}
                     className="min-h-11 cursor-pointer px-3 py-2 leading-snug"
-                    onMouseDown={(event) => event.preventDefault()}
                     onPointerMoveCapture={() => {
                       locationNavigated.current = true;
                     }}

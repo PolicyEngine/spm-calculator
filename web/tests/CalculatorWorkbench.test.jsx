@@ -425,6 +425,126 @@ describe("explicit personal setup", () => {
 });
 
 describe("canonical calculator controls and shared layout", () => {
+  it.each(["icon", "wrapper", "border"])(
+    "opens and focuses a fresh area query from the idle %s",
+    (surface) => {
+      render(<CalculatorWorkbench data={makeRollingCalculatorData()} />);
+      const search = screen.getByLabelText("Search SPM areas");
+      const root = search.closest('[data-slot="command"]');
+      const target = surface === "icon"
+        ? root.querySelector("svg")
+        : surface === "wrapper"
+          ? search.closest('[data-slot="command-input-wrapper"]')
+          : root;
+      expect(search).toHaveAttribute("aria-expanded", "false");
+      expect(search).not.toHaveFocus();
+      expect(fireEvent.mouseDown(target, { button: 0 })).toBe(false);
+      expect(search).toHaveFocus();
+      expect(search).toHaveValue("");
+      expect(search).toHaveAttribute("aria-expanded", "true");
+      fireEvent.keyDown(search, { key: "s", code: "KeyS" });
+      fireEvent.input(search, { target: { value: "s" } });
+      expect(search).toHaveValue("s");
+      expect(screen.getByRole("option", {
+        name: "San Jose-Sunnyvale-Santa Clara, CA MSA",
+        exact: true,
+      })).toHaveAttribute("data-value", "41940");
+    },
+  );
+
+  it.each(["wrapper", "border"])(
+    "preserves an active area draft when pressing the %s",
+    (surface) => {
+      render(<CalculatorWorkbench data={makeRollingCalculatorData()} />);
+      const search = screen.getByLabelText("Search SPM areas");
+      act(() => search.focus());
+      fireEvent.change(search, { target: { value: "san jose" } });
+      const target = surface === "wrapper"
+        ? search.closest('[data-slot="command-input-wrapper"]')
+        : search.closest('[data-slot="command"]');
+      expect(fireEvent.mouseDown(target, { button: 0 })).toBe(false);
+      expect(search).toHaveFocus();
+      expect(search).toHaveValue("san jose");
+      expect(search).toHaveAttribute("aria-expanded", "true");
+      expect(within(
+        screen.getByRole("listbox", { name: "Matching SPM areas" }),
+      ).getAllByRole("option")).toHaveLength(1);
+    },
+  );
+
+  it.each([
+    ["appended", "Alabama Nonmetros", "s"],
+    ["replacement", "san jose", "san jose"],
+  ])("uses the fresh %s query after a soft-keyboard input without compositionstart", (_, value, query) => {
+    render(<CalculatorWorkbench data={makeRollingCalculatorData()} />);
+    const search = screen.getByLabelText("Search SPM areas");
+    act(() => search.focus());
+    chooseArea("1002");
+    expect(search).toHaveFocus();
+    expect(search).toHaveValue("Alabama Nonmetro");
+    expect(search).toHaveAttribute("aria-expanded", "false");
+    expect(fireEvent.keyDown(search, {
+      key: "Unidentified", keyCode: 229,
+    })).toBe(true);
+    fireEvent.change(search, { target: { value } });
+    expect(search).toHaveValue(query);
+    expect(search).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("option", {
+      name: "San Jose-Sunnyvale-Santa Clara, CA MSA",
+      exact: true,
+    })).toHaveAttribute("data-value", "41940");
+    fireEvent.keyDown(search, { key: "Escape", code: "Escape" });
+    expect(search).toHaveValue("Alabama Nonmetro");
+    expect(screen.getByTestId("primary-result")).toHaveTextContent("$33,360");
+  });
+
+  it.each([
+    ["backspace", "deleteContentBackward", null, "Alabama Nonmetr", ""],
+    ["end insertion", "insertText", "s", "Alabama Nonmetros", "s"],
+    ["middle insertion", "insertText", "s", "Alabama sNonmetro", "s"],
+  ])("starts a fresh draft from native %s metadata while idle", (_, inputType, data, value, query) => {
+    render(<CalculatorWorkbench data={makeRollingCalculatorData()} />);
+    const search = screen.getByLabelText("Search SPM areas");
+    act(() => search.focus());
+    chooseArea("1002");
+    expect(search).toHaveValue("Alabama Nonmetro");
+    expect(search).toHaveAttribute("aria-expanded", "false");
+    fireEvent.input(search, { inputType, data, target: { value } });
+    expect(search).toHaveValue(query);
+    expect(search).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("option", {
+      name: "San Jose-Sunnyvale-Santa Clara, CA MSA",
+      exact: true,
+    })).toHaveAttribute("data-value", "41940");
+    if (!query) {
+      expect(within(
+        screen.getByRole("listbox", { name: "Matching SPM areas" }),
+      ).getAllByRole("option")).toHaveLength(4);
+    }
+    fireEvent.keyDown(search, { key: "Escape", code: "Escape" });
+    expect(search).toHaveValue("Alabama Nonmetro");
+    expect(screen.getByTestId("primary-result")).toHaveTextContent("$33,360");
+  });
+
+  it("preserves normal input values after composition opens an area draft", () => {
+    render(<CalculatorWorkbench data={makeRollingCalculatorData()} />);
+    const search = screen.getByLabelText("Search SPM areas");
+    act(() => search.focus());
+    chooseArea("1002");
+    fireEvent.compositionStart(search);
+    expect(search).toHaveValue("");
+    fireEvent.input(search, {
+      inputType: "insertCompositionText", data: "s", target: { value: "s" },
+    });
+    fireEvent.compositionEnd(search, { data: "s" });
+    fireEvent.input(search, {
+      inputType: "insertText", data: "a", target: { value: "sa" },
+    });
+    expect(search).toHaveValue("sa");
+    expect(search).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByTestId("primary-result")).toHaveTextContent("$33,360");
+  });
+
   it("restores input focus after committing from the listbox and accepts a fresh query", () => {
     render(<CalculatorWorkbench data={makeRollingCalculatorData()} />);
     const search = screen.getByLabelText("Search SPM areas");
