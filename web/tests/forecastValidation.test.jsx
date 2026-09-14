@@ -5,6 +5,7 @@ import { getForecastValidation } from "../lib/forecastValidation";
 import {
   ForecastMethodology,
   ForecastWarnings,
+  RentalDataNote,
 } from "../src/components/ForecastDiagnostics";
 
 const AREA = "35620";
@@ -114,14 +115,20 @@ function evaluation(forecast, kind, props = {}) {
 function warnings(forecast = makeForecast(), props = {}) {
   const year = props.year ?? 2025;
   return (
-    <ForecastWarnings
-      forecast={forecast}
-      scenarioId="ce_trend"
-      year={year}
-      entry={makeEntry(year)}
-      areaId={AREA}
-      {...props}
-    />
+    <>
+      <RentalDataNote
+        entry={props.entry ?? makeEntry(year)}
+        areaId={props.areaId ?? AREA}
+      />
+      <ForecastWarnings
+        forecast={forecast}
+        scenarioId="ce_trend"
+        year={year}
+        entry={makeEntry(year)}
+        areaId={AREA}
+        {...props}
+      />
+    </>
   );
 }
 
@@ -415,7 +422,7 @@ describe("selected-area research diagnostics", () => {
     expect(within(warning).getAllByText(/Massachusetts Nonmetro/)).toHaveLength(
       1,
     );
-    expect(screen.queryByTestId("median-diagnostics-warning")).toBeNull();
+    expect(screen.queryByTestId("median-diagnostics-note")).toBeNull();
     rerender(warnings(forecast, { year: 2035, areaId: "25002" }));
     expect(
       screen.getByTestId("historical-series-break-warning"),
@@ -452,9 +459,9 @@ describe("selected-area research diagnostics", () => {
     const { rerender } = render(
       warnings(makeForecast(), { year: 2024, entry }),
     );
-    expect(screen.queryByTestId("median-diagnostics-warning")).toBeNull();
+    expect(screen.queryByTestId("median-diagnostics-note")).toBeNull();
     rerender(warnings(makeForecast(), { year: 2024, entry, areaId: RESIDUAL }));
-    const warning = screen.getByTestId("median-diagnostics-warning");
+    const warning = screen.getByTestId("median-diagnostics-note");
     expect(warning).toHaveTextContent("Thin rental support");
     expect(warning).toHaveTextContent("Topcoding may affect this median");
     expect(warning).toHaveTextContent("24 unique records");
@@ -486,7 +493,7 @@ describe("selected-area research diagnostics", () => {
         [AREA]: { thin_support: false, ...diagnostic },
       };
       render(warnings(makeForecast(), { year: 2026, entry }));
-      const warning = screen.getByTestId("median-diagnostics-warning");
+      const warning = screen.getByTestId("median-diagnostics-note");
       expect(warning).toHaveTextContent(message);
       expect(warning).not.toHaveTextContent("Thin rental support");
     },
@@ -499,7 +506,7 @@ describe("selected-area research diagnostics", () => {
       [RESIDUAL]: { thin_support: true },
     };
     render(warnings(makeForecast(), { year: 2026, entry }));
-    expect(screen.queryByTestId("median-diagnostics-warning")).toBeNull();
+    expect(screen.queryByTestId("median-diagnostics-note")).toBeNull();
   });
 });
 

@@ -19,6 +19,12 @@ const currency = (value) => new Intl.NumberFormat("en-US", {
 const threshold = (page) => page.getByTestId("primary-result")
   .getByText("SPM threshold", { exact: true }).locator("..").locator("span").nth(1);
 
+async function completeSetup(page) {
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await page.getByRole("button", { name: "View thresholds", exact: true }).click();
+}
+
 test.beforeEach(async ({ page, baseURL }, testInfo) => {
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
@@ -58,8 +64,11 @@ test.beforeEach(async ({ page, baseURL }, testInfo) => {
     expect(data.packageDistribution.publishedVersion).toBeNull();
   }
   if (!process.env.SPM_E2E_BASE_URL) expect(sha256(bytes)).toBe(sha256(sourceBytes));
-  await expect(page.getByTestId("primary-result")).toBeVisible();
-  await expect(threshold(page)).toHaveText(/^\$[\d,]+$/);
+  if (!testInfo.title.startsWith("guided setup")) {
+    await completeSetup(page);
+    await expect(page.getByTestId("primary-result")).toBeVisible();
+    await expect(threshold(page)).toHaveText(/^\$[\d,]+$/);
+  }
   await testInfo.attach("surface-identity.json", {
     contentType: "application/json",
     body: JSON.stringify({
@@ -73,6 +82,31 @@ test.beforeEach(async ({ page, baseURL }, testInfo) => {
 
 test.afterEach(async ({}, testInfo) => {
   expect(observations.get(testInfo)?.errors ?? [], "Uncaught browser errors").toEqual([]);
+});
+
+test("guided setup retains answers and allows direct editing after results", async ({ page }, testInfo) => {
+  await expect(page.getByRole("heading", { name: "Where do you live?" })).toBeVisible();
+  await expect(page.getByTestId("primary-result")).toHaveCount(0);
+  await page.screenshot({ path: testInfo.outputPath("guided-location.png") });
+  await page.getByLabel("SPM estimation area", { exact: true }).selectOption("41940");
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await page.getByLabel("Adults", { exact: true }).fill("3");
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await expect(page.getByLabel("Real spending", { exact: true })).toHaveCount(0);
+  await page.getByLabel("Threshold year", { exact: true }).selectOption("2030");
+  await page.getByLabel("Real spending", { exact: true }).selectOption("zero_real");
+  await page.getByRole("button", { name: "Back", exact: true }).click();
+  await expect(page.getByLabel("Adults", { exact: true })).toHaveValue("3");
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await expect(page.getByLabel("Real spending", { exact: true })).toHaveValue("zero_real");
+  await page.getByRole("button", { name: "View thresholds", exact: true }).click();
+  await expect(page.getByTestId("primary-result")).toContainText("San Jose");
+  await expect(page.getByLabel("Adults", { exact: true })).toHaveValue("3");
+  await page.getByLabel("Threshold year", { exact: true }).selectOption("2025");
+  await expect(page.getByLabel("Real spending", { exact: true })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Where do you live?" })).toHaveCount(0);
+  await page.getByLabel("Threshold year", { exact: true }).selectOption("2030");
+  await expect(page.getByLabel("Real spending", { exact: true })).toHaveValue("zero_real");
 });
 
 test("one shared header, working mobile navigation, and app-owned provenance", async ({ page }) => {
@@ -165,6 +199,7 @@ test("future years, real spending, and household controls update real results", 
     await expect(threshold(page)).toHaveText(/^\$[\d,]+$/);
   }
   await expect(factor).not.toHaveText(factor2025);
+  await page.getByTestId("threshold-history-values").locator("summary").click();
   const row = page.getByRole("region", { name: "Year-by-year thresholds" })
     .getByRole("row").filter({ has: page.getByRole("cell", { name: "2035", exact: true }) });
   const scenario = page.getByLabel("Real spending", { exact: true });
@@ -186,6 +221,40 @@ test("future years, real spending, and household controls update real results", 
   await expect(threshold(page)).not.toHaveText(familyThreshold);
   await expect(page.getByTestId("primary-result")).toContainText("Owner without mortgage");
   await expect(page.getByTestId("forecast-provenance")).toContainText(expectedContent);
+});
+
+test("year chart exposes the breakdown by pointer, keyboard and touch", async ({ page }, testInfo) => {
+  const chart = page.getByTestId("threshold-history-chart");
+  await expect(chart).toBeVisible();
+  await expect(page.getByTestId("threshold-history-segment")).toHaveCount(13);
+  await expect(page.getByTestId("threshold-history-values")).not.toHaveAttribute("open");
+  const point = page.getByTestId("threshold-year-2026");
+  await point.hover();
+  const tooltip = page.getByRole("tooltip");
+  await expect(tooltip).toContainText("2026");
+  await expect(tooltip).toContainText("National base (2 adults, 2 children)");
+  await expect(tooltip).toContainText(currency(yearEntry(2026).thresholds.renter));
+  await expect(tooltip).toContainText("Household scale");
+  await expect(tooltip).toContainText("Location factor (GEOADJ)");
+  await expect(tooltip).toContainText("housing share");
+  await expect(tooltip).toContainText("rent index");
+  await chart.scrollIntoViewIfNeeded();
+  await point.hover();
+  await page.screenshot({ path: testInfo.outputPath("chart-desktop.png") });
+  await point.focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(page.getByTestId("threshold-year-2027")).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(page.getByLabel("Threshold year", { exact: true })).toHaveValue("2027");
+  await page.keyboard.press("Escape");
+  await expect(tooltip).toHaveCount(0);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByTestId("threshold-year-2024").click();
+  await expect(page.getByLabel("Threshold year", { exact: true })).toHaveValue("2024");
+  await expect(page.getByRole("tooltip")).toContainText("2024");
+  await chart.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: testInfo.outputPath("chart-mobile.png") });
+  await expect(page.getByLabel("Real spending", { exact: true })).toHaveCount(0);
 });
 
 test("canonical download and package provenance match the served calculation", async ({ page }, testInfo) => {
@@ -245,6 +314,7 @@ for (const failure of ["failed", "stalled"]) {
     const data = await response.json();
     expect(data.forecast).toEqual(source.forecast);
     expect(data.geographies).toEqual(source.geographies);
+    await completeSetup(page);
     await expect(page.getByTestId("primary-result")).toBeVisible();
     await expect(threshold(page)).toHaveText(/^\$[\d,]+$/);
     await expect(page.getByRole("button", { name: "Try again", exact: true })).toHaveCount(0);
@@ -294,10 +364,12 @@ test("rental support and topcoding diagnostics follow the actual area and year",
   expect(menu(2035)[thin]).toBeTruthy();
   expect(menu(2035)[topcoded]).toBeTruthy();
   await year.selectOption("2035");
-  const warning = page.getByTestId("primary-result").getByTestId("median-diagnostics-warning");
+  const warning = page.getByTestId("results-footnote").getByTestId("median-diagnostics-note");
+  await expect(page.getByTestId("primary-result").getByTestId("median-diagnostics-note")).toHaveCount(0);
   for (const id of [thin, topcoded]) {
     await area.selectOption(id);
     const entry = diagnostics[id];
+    if (!(await warning.evaluate((element) => element.open))) await warning.locator("summary").click();
     await expect(warning).toContainText(entry.thin_support ? "Thin rental support" : "Rental topcoding");
     await expect(warning).toContainText(`${entry.unique_records.toLocaleString("en-US")} unique records`);
     await expect(warning).toContainText(`Kish effective count ${entry.kish_effective_count.toFixed(1)}`);

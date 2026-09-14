@@ -1,3 +1,4 @@
+import { completeSetup } from "./helpers/renderCalculator";
 import {
   act,
   fireEvent,
@@ -173,7 +174,9 @@ describe("calculator data loading", () => {
     expect(screen.queryByLabelText("Threshold year")).toBeNull();
 
     await act(async () => resolveResponse(mockDataResponse()));
-    expect(await screen.findByLabelText("Threshold year")).toHaveValue("2025");
+    await screen.findByRole("heading", { name: "Where do you live?" });
+    completeSetup();
+    expect(screen.getByLabelText("Threshold year")).toHaveValue("2025");
     expect(screen.getByTestId("primary-result")).toHaveTextContent("$50,041");
     expect(screen.queryByRole("status")).toBeNull();
     fireEvent.change(screen.getByLabelText("Threshold year"), {
@@ -215,9 +218,9 @@ describe("calculator data loading", () => {
       expect(screen.getByRole("status")).toHaveTextContent(
         "Loading thresholds",
       );
-      expect(await screen.findByLabelText("Threshold year")).toHaveValue(
-        "2025",
-      );
+      await screen.findByRole("heading", { name: "Where do you live?" });
+      completeSetup();
+      expect(screen.getByLabelText("Threshold year")).toHaveValue("2025");
       expect(screen.queryByRole("alert")).toBeNull();
       expect(fetch).toHaveBeenCalledTimes(2);
       expect(fetch.mock.calls[0][1].signal.aborted).toBe(true);
@@ -249,6 +252,7 @@ describe("calculator data loading", () => {
     await act(async () =>
       fireEvent.click(screen.getByRole("button", { name: "Try again" })),
     );
+    completeSetup();
     expect(screen.getByLabelText("Threshold year")).toHaveValue("2025");
     expect(fetch).toHaveBeenCalledTimes(2);
   });
