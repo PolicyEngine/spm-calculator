@@ -1,6 +1,6 @@
 # Forecast and unit API
 
-Version 1.0.0 uses `SPMForecast` for current threshold calculations.
+`SPMForecast` calculates thresholds for a selected year, area and household.
 The reader loads a verified artifact without downloading data or importing an
 optional model runtime. `SPMUnit` is the scalar measurement input; it does not
 construct household membership or SPM resources.

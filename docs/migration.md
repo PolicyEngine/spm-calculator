@@ -5,6 +5,12 @@ Version 1.0.0 is published on
 integrations ship in their own packages: `policyengine-us` 2.0 and the
 `policyengine` wrapper 6.0 are in progress.
 
+The standalone installation examples target the documentation update
+`1.0.0.post1`. It contains the same calculation code and bundled data as
+`1.0.0`. Existing downstream pins to `spm-calculator==1.0.0` continue selecting
+that distribution. Adopting the metadata update requires a deliberate pin and
+lockfile change; it does not require new scientific artifact hashes.
+
 ## Public API replacement
 
 Version 1.0.0 replaces the legacy calculation path with `SPMUnit`, `load_forecast`,

@@ -1,7 +1,7 @@
 # API reference
 
-Version 1.0.0 exposes one current forecast calculation path. Examples use
-public interfaces of the published package.
+`SPMForecast` calculates thresholds from the bundled artifact. The package
+also provides geography assignment, equivalence scales and optional adapters.
 
 | Task | Interface |
 | --- | --- |
@@ -15,7 +15,5 @@ public interfaces of the published package.
 | Execute native classification and arithmetic | [Actual Axiom core integration](axiom-integration.md) |
 
 The [quickstart](quickstart.md) also covers the installed CLI.
-The [artifact contract](spm-releases.md) distinguishes schema-2 forecasts from
-archived schema-1 release records. Retired calculator/geographic helper pages
-are replaced by the forecast and geography references above; there is no
-current runtime compatibility shim.
+The [artifact contract](spm-releases.md) describes schema-2 forecasts and
+their source metadata.

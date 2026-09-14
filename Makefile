@@ -7,11 +7,11 @@ test:
 	pytest tests/ -v --cov=spm_calculator --cov-report=term-missing
 
 format:
-	black .
 	ruff check --fix .
+	ruff format .
 
 lint:
-	black --check .
+	ruff format --check .
 	ruff check .
 
 docs:
