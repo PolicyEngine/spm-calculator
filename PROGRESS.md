@@ -38,19 +38,19 @@ changed, and no data file, source module, test or workflow was touched.
   did before the change, with byte-identical output. The six need optional
   runtimes or a preceding block's variables.
 
-## Next
+## Publication alignment — September 13, 2026
 
-- The deployed app still serves `packageDistribution.status` `local_preview`
-  with a null `publishedVersion`, so it tells readers that publication on PyPI
-  is not confirmed. Regenerate `web/public/data/release_config.json` with
-  `SPM_PUBLISHED_PACKAGE_VERSION=1.0.0 python3 -m scripts.export_web_release`,
-  run `--check`, rebuild and redeploy. No documentation edit can fix this.
-- The 1.0.0 project page on PyPI carries the old README as its frozen long
-  description. That text reaches PyPI only with the next release.
-- `pyproject.toml` still declares `Development Status :: 3 - Alpha`, a
-  `Documentation` URL pointing at the GitHub tree rather than the hub, and
-  `spm-calculator.vercel.app` as `Homepage`. Those also apply from the next
-  release onward.
+- PyPI publishes `spm-calculator==1.0.0.post1` with package installation
+  instructions, stable classifier, and links to the calculator, documentation
+  hub, and methods paper. Downloaded wheel and sdist hashes match the registry;
+  all 62 runtime/data files match 1.0.0 and reviewed source commit
+  `698d923ac62b2cdf123f1098973c81c323fc4d62` byte for byte.
+- The browser export identifies verified published version `1.0.0.post1`.
+  Reproduce it with `python scripts/export_web_release.py
+  --published-package-version 1.0.0.post1` and verify with `--check`.
+- The package metadata change preserves the scientific artifact and all
+  calculation values. Coordinated downstream pins remain independently
+  declared by their runtime bundles.
 
 ---
 

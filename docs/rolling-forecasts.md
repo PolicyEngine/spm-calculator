@@ -343,8 +343,8 @@ coverage, and reproduces the portable artifact without raw microdata:
 python scripts/build_rolling_forecast.py --check
 ```
 
-The committed browser export identifies the verified PyPI package 1.0.0.
-After PyPI publishes 1.0.0.post1, export and verify its browser metadata with:
+The committed browser export identifies the verified PyPI package 1.0.0.post1.
+Reproduce and verify the export with:
 
 ```sh
 python scripts/export_web_release.py --published-package-version 1.0.0.post1
