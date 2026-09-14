@@ -329,10 +329,11 @@ describe("canonical export integration", () => {
     }
   });
 
-  it("reproduces 2026–2035 from annual canonical inputs and exposes unsupported forecast horizons", async () => {
-    const data = readCalculatorData();
-    render(<CalculatorWorkbench data={data} />);
-    for (const year of YEARS.filter((year) => year >= 2026)) {
+  it.each(YEARS.filter((year) => year >= 2026))(
+    "reproduces %i from annual canonical inputs and exposes unsupported forecast horizons",
+    (year) => {
+      const data = readCalculatorData();
+      render(<CalculatorWorkbench data={data} />);
       expect(
         screen.getByRole("option", { name: `${year} (forecast)` }),
       ).toBeTruthy();
@@ -366,12 +367,14 @@ describe("canonical export integration", () => {
       expect(snippet).not.toMatch(
         /load_release|inflation_factor|nowcast|county|congressional/i,
       );
-    }
-    expect(screen.getByTestId("ce-validation-warning")).toHaveTextContent(
-      /10-year spending horizon.*no retrospective backtest support/i,
-    );
-    expect(screen.getByTestId("acs-validation-warning")).toHaveTextContent(
-      /11-year geographic horizon.*no retrospective backtest support/i,
-    );
-  });
+      if (year === 2035) {
+        expect(screen.getByTestId("ce-validation-warning")).toHaveTextContent(
+          /10-year spending horizon.*no retrospective backtest support/i,
+        );
+        expect(screen.getByTestId("acs-validation-warning")).toHaveTextContent(
+          /11-year geographic horizon.*no retrospective backtest support/i,
+        );
+      }
+    },
+  );
 });

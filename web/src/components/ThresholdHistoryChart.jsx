@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
+import { useId, useLayoutEffect, useRef, useState } from "react";
 
 const CHART_HEIGHT = 252;
 const PLOT_TOP = 18;
@@ -100,6 +100,9 @@ export default function ThresholdHistoryChart({
 }) {
   const id = useId();
   const pointRefs = useRef(new Map());
+  const chartRef = useRef(null);
+  const popupRef = useRef(null);
+  const [popupPosition, setPopupPosition] = useState({});
   const [hoverYear, setHoverYear] = useState(null);
   const [focusYear, setFocusYear] = useState(null);
   const [pinnedYear, setPinnedYear] = useState(null);
@@ -109,6 +112,7 @@ export default function ThresholdHistoryChart({
   const numericSelectedYear = Number(selectedYear);
   const activeYear = hoverYear ?? focusYear ?? pinnedYear;
   const activeRow = rows.find((row) => row.year === activeYear);
+  const hasActiveRow = Boolean(activeRow);
   const tabYear = rows.some((row) => row.year === numericSelectedYear)
     ? numericSelectedYear
     : rows[0]?.year;
@@ -131,6 +135,80 @@ export default function ThresholdHistoryChart({
       )
       .map((row) => row.year),
   );
+
+  useLayoutEffect(() => {
+    const chart = chartRef.current;
+    const popup = popupRef.current;
+    if (!hasActiveRow || !chart || !popup) return;
+
+    // The shared shell places its sticky header before the outer main. Walk
+    // past the calculator's inner main rather than assuming the nearest main
+    // owns that header, and measure the rendered height instead of hardcoding it.
+    const headers = [];
+    for (
+      let ancestor = chart.parentElement;
+      ancestor;
+      ancestor = ancestor.parentElement
+    ) {
+      if (ancestor.tagName !== "MAIN") continue;
+      const header = ancestor.previousElementSibling;
+      if (
+        header &&
+        ["sticky", "fixed"].includes(getComputedStyle(header).position)
+      ) {
+        headers.push(header);
+      }
+    }
+
+    function updatePosition() {
+      // The mobile breakpoint keeps the breakdown in document flow.
+      if (getComputedStyle(popup).position !== "absolute") {
+        setPopupPosition((previous) =>
+          Object.keys(previous).length ? {} : previous,
+        );
+        return;
+      }
+      const chartBounds = chart.getBoundingClientRect();
+      const viewportBottom = window.innerHeight - 8;
+      const viewportTop =
+        Math.max(
+          0,
+          ...headers.map((header) => {
+            const bounds = header.getBoundingClientRect();
+            return bounds.top <= 0 && bounds.bottom > 0 ? bounds.bottom : 0;
+          }),
+        ) + 8;
+      const maxHeight = Math.max(0, viewportBottom - viewportTop);
+      const height = Math.min(popup.getBoundingClientRect().height, maxHeight);
+      const top =
+        Math.max(
+          viewportTop,
+          Math.min(chartBounds.top + 4, viewportBottom - height),
+        ) - chartBounds.top;
+      const visibility =
+        chartBounds.bottom < viewportTop || chartBounds.top > viewportBottom
+          ? "hidden"
+          : "visible";
+      setPopupPosition((previous) =>
+        previous.top === top &&
+        previous.maxHeight === maxHeight &&
+        previous.visibility === visibility
+          ? previous
+          : { top, maxHeight, visibility, overflowY: "auto" },
+      );
+    }
+
+    updatePosition();
+    const observer = new ResizeObserver(updatePosition);
+    [chart, popup, ...headers].forEach((element) => observer.observe(element));
+    window.addEventListener("scroll", updatePosition, true);
+    window.addEventListener("resize", updatePosition);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("scroll", updatePosition, true);
+      window.removeEventListener("resize", updatePosition);
+    };
+  }, [activeYear, hasActiveRow]);
 
   function dismiss() {
     setHoverYear(null);
@@ -193,7 +271,11 @@ export default function ThresholdHistoryChart({
         the breakdown. Component status distinguishes published inputs from
         modeled geography and shares.
       </p>
-      <div className="relative" onMouseLeave={() => setHoverYear(null)}>
+      <div
+        ref={chartRef}
+        className="relative"
+        onMouseLeave={() => setHoverYear(null)}
+      >
         <svg
           role="group"
           aria-label="Year-by-year threshold chart"
@@ -355,7 +437,10 @@ export default function ThresholdHistoryChart({
         </svg>
         {activeRow && (
           <div
+            ref={popupRef}
+            data-testid="threshold-history-popup"
             className={`relative z-10 mb-2 w-80 max-w-full sm:absolute sm:top-1 sm:mb-0 ${positionX(activeRow.year) < 50 ? "right-0" : "left-0"}`}
+            style={popupPosition}
             onKeyDown={(event) => {
               if (event.key === "Escape") dismiss();
             }}

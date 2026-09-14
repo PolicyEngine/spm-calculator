@@ -240,6 +240,21 @@ test("year chart exposes the breakdown by pointer, keyboard and touch", async ({
   await expect(tooltip).toContainText("rent index");
   await chart.scrollIntoViewIfNeeded();
   await point.hover();
+  const header = page.locator("main").first().locator("xpath=preceding-sibling::*[1]");
+  const expectVisibleBreakdown = async () => {
+    const headerBox = await header.boundingBox();
+    await expect.poll(async () => {
+      const box = await tooltip.boundingBox();
+      return box?.y ?? -1;
+    }).toBeGreaterThanOrEqual(headerBox.y + headerBox.height);
+    const box = await tooltip.boundingBox();
+    expect(box.y + box.height).toBeLessThanOrEqual(page.viewportSize().height);
+  };
+  await expectVisibleBreakdown();
+  // Keep the year hit target visible while scrolling the chart top under the
+  // shared header. The complete breakdown must remain readable.
+  await page.evaluate(() => window.scrollBy(0, 40));
+  await expectVisibleBreakdown();
   await page.screenshot({ path: testInfo.outputPath("chart-desktop.png") });
   await point.focus();
   await page.keyboard.press("ArrowRight");

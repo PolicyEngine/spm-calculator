@@ -22,6 +22,83 @@ function row(year, overrides = {}) {
 }
 
 describe("annual threshold chart", () => {
+  it("keeps desktop breakdowns below the shared sticky header while scrolling and resizing", () => {
+    let chartTop = -30;
+    let popupMode = "absolute";
+    let popupHeight = 260;
+    const originalStyle = window.getComputedStyle;
+    const originalBounds = Element.prototype.getBoundingClientRect;
+    const styleSpy = vi
+      .spyOn(window, "getComputedStyle")
+      .mockImplementation((element, ...args) =>
+        element.dataset?.testid === "threshold-history-popup"
+          ? { position: popupMode }
+          : originalStyle(element, ...args),
+      );
+    const boundsSpy = vi
+      .spyOn(Element.prototype, "getBoundingClientRect")
+      .mockImplementation(function () {
+        if (this.dataset?.testid === "shared-header")
+          return new DOMRect(0, 0, 1280, 58);
+        if (this.dataset?.testid === "threshold-history-popup")
+          return new DOMRect(0, 0, 320, popupHeight);
+        if (
+          this.querySelector(
+            ':scope > [aria-label="Year-by-year threshold chart"]',
+          )
+        )
+          return new DOMRect(360, chartTop, 880, 252);
+        return originalBounds.call(this);
+      });
+    vi.stubGlobal("innerHeight", 720);
+    try {
+      render(
+        <div>
+          <div
+            data-testid="shared-header"
+            style={{ position: "sticky", top: 0 }}
+          />
+          <main>
+            <aside />
+            <main>
+              <ThresholdHistoryChart data={[row(2025), row(2026)]} />
+            </main>
+          </main>
+        </div>,
+      );
+      fireEvent.click(screen.getByTestId("threshold-year-2025"));
+      const popup = screen.getByTestId("threshold-history-popup");
+      expect(popup.style.top).toBe("96px"); // -30 chart top + 96 = 58 header + 8 gap.
+      expect(popup.style.maxHeight).toBe("646px");
+
+      chartTop = -70;
+      fireEvent.scroll(window);
+      expect(popup.style.top).toBe("136px");
+
+      chartTop = 320;
+      vi.stubGlobal("innerHeight", 400);
+      fireEvent.resize(window);
+      expect(Number.parseFloat(popup.style.top) + chartTop + popupHeight).toBe(
+        392,
+      );
+
+      popupHeight = 500;
+      fireEvent.resize(window);
+      expect(popup.style.maxHeight).toBe("326px");
+      expect(Number.parseFloat(popup.style.top) + chartTop).toBe(66);
+      expect(popup.style.overflowY).toBe("auto");
+
+      popupMode = "relative";
+      fireEvent.resize(window);
+      expect(popup.style.top).toBe("");
+      expect(popup.style.maxHeight).toBe("");
+    } finally {
+      styleSpy.mockRestore();
+      boundsSpy.mockRestore();
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("shows the complete breakdown on hover and preserves component status", () => {
     render(
       <ThresholdHistoryChart

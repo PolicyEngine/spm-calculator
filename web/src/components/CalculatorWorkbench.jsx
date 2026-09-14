@@ -734,9 +734,11 @@ print(result["threshold"])`;
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <Text className="text-muted-foreground">Location</Text>
-                      <Text className="font-medium">
+                    <div className="flex justify-between gap-4">
+                      <Text className="shrink-0 text-muted-foreground">
+                        Location
+                      </Text>
+                      <Text className="min-w-0 text-right font-medium">
                         {currentLocation?.label ?? "Unavailable"}
                       </Text>
                     </div>
