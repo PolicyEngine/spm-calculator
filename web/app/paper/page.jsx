@@ -110,7 +110,7 @@ export default function PaperPage() {
           src={paperHtmlUrl}
           title={`${PAPER_TITLE} (manuscript)`}
           loading="lazy"
-          sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+          sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
           referrerPolicy="same-origin"
           style={{
             height: "calc(100vh - 16rem)",
