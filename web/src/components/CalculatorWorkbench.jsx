@@ -36,7 +36,7 @@ import {
 import CalculatorSetup from "./CalculatorSetup";
 import ThresholdHistoryChart from "./ThresholdHistoryChart";
 import { calculateGeoadj } from "@/lib/geoadj";
-import { paperPageUrl } from "@/src/paperVersion";
+import { paperPageUrl, paperPdfUrl } from "@/src/paperVersion";
 import {
   ForecastMethodology,
   ForecastWarnings,
@@ -1120,6 +1120,23 @@ print(result["threshold"])`;
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3 text-sm leading-6">
+                  <div
+                    data-testid="methodology-paper-actions"
+                    className="flex flex-wrap gap-2"
+                  >
+                    <a
+                      className="inline-flex items-center rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground no-underline transition-colors hover:bg-primary/90"
+                      href={paperPageUrl}
+                    >
+                      Read the methods paper
+                    </a>
+                    <a
+                      className="inline-flex items-center rounded-lg border border-border bg-card px-3 py-1.5 text-sm font-medium text-foreground no-underline transition-colors hover:bg-muted"
+                      href={paperPdfUrl}
+                    >
+                      Download the PDF
+                    </a>
+                  </div>
                   <p>
                     Threshold = <code className="font-mono">base[tenure]</code>{" "}
                     × <code className="font-mono">equivalence_scale</code> ×{" "}
