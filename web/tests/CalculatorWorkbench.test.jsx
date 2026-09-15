@@ -20,6 +20,7 @@ import {
   MODELED_AREA_ID,
   makeRollingCalculatorData,
 } from "./fixtures/rollingCalculatorData";
+import { paperPageUrl, paperPdfUrl } from "../src/paperVersion";
 
 const selectYear = (year) =>
   fireEvent.change(screen.getByLabelText("Threshold year"), {
@@ -1071,5 +1072,18 @@ describe("canonical calculator controls and shared layout", () => {
         'a[href*="census.gov/library/publications/2025/demo/p60-287"]',
       ),
     ).not.toBeNull();
+  });
+
+  it("offers the methods paper as buttons at the top of the methodology card", () => {
+    render(<CalculatorWorkbench data={makeRollingCalculatorData()} />);
+    selectYear(2024);
+    const actions = screen.getByTestId("methodology-paper-actions");
+    const read = within(actions).getByRole("link", { name: "Read the methods paper" });
+    const pdf = within(actions).getByRole("link", { name: "Download the PDF" });
+    expect(read).toHaveAttribute("href", paperPageUrl);
+    expect(read.className).toContain("bg-primary");
+    expect(pdf).toHaveAttribute("href", paperPdfUrl);
+    const methodology = screen.getByTestId("methodology-card");
+    expect(methodology.querySelector("[data-testid='methodology-paper-actions']")).not.toBeNull();
   });
 });

@@ -95,6 +95,14 @@ describe("paper wrapper page", () => {
     ]);
   });
 
+  it("lets the embedded render run its own scripts so MathJax typesets the equations", () => {
+    render(<PaperPage />);
+    const frame = document.querySelector("iframe");
+    const grants = frame.getAttribute("sandbox").split(" ");
+    expect(grants).toContain("allow-scripts");
+    expect(grants).toContain("allow-same-origin");
+  });
+
   it("frames the manuscript in one sandboxed, lazy, white-backed iframe", () => {
     render(<PaperPage />);
     const frames = document.querySelectorAll("iframe");
@@ -104,7 +112,7 @@ describe("paper wrapper page", () => {
     expect(frame.getAttribute("title")).toBe(`${PAPER_TITLE} (manuscript)`);
     expect(frame.getAttribute("loading")).toBe("lazy");
     expect(frame.getAttribute("sandbox")).toBe(
-      "allow-same-origin allow-popups allow-popups-to-escape-sandbox",
+      "allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox",
     );
     expect(frame.getAttribute("referrerpolicy")).toBe("same-origin");
     expect(frame.style.height).toBe("calc(100vh - 16rem)");

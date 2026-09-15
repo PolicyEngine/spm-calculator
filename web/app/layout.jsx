@@ -4,6 +4,8 @@ import "@policyengine/ui-kit/styles.css";
 import Script from "next/script";
 import "./globals.css";
 
+import ToolHeader from "@/src/components/ToolHeader";
+
 const GA_ID = "G-2YHG89FY0N";
 const TOOL_NAME = "spm-calculator";
 const SITE_URL = "https://policyengine.org/us/spm-calculator";
@@ -133,7 +135,10 @@ export default function RootLayout({ children }) {
         </Script>
       </head>
       <body>
-        <PolicyEngineShell country="us">{children}</PolicyEngineShell>
+        <PolicyEngineShell country="us">
+          <ToolHeader />
+          {children}
+        </PolicyEngineShell>
       </body>
     </html>
   );
