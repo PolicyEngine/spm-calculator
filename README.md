@@ -1,15 +1,15 @@
 # spm-calculator
 
-Calculate [Supplemental Poverty Measure (SPM)](https://www.census.gov/topics/income-poverty/supplemental-poverty-measure.html) thresholds for any US geography and year.
+Calculate [Supplemental Poverty Measure (SPM)](https://www.census.gov/topics/income-poverty/supplemental-poverty-measure.html) thresholds for Census metro/nonmetro areas and ACS-derived custom geographies.
 
 [![Try the Calculator](https://img.shields.io/badge/Try-Calculator-teal)](https://spm-calculator.vercel.app/)
 [![Documentation](https://img.shields.io/badge/docs-github-green)](https://github.com/PolicyEngine/spm-calculator/tree/main/docs)
 
 ## Interactive Calculator
 
-**[Try the SPM Threshold Calculator](https://spm-calculator.vercel.app/)** - A browser-based calculator for metros, states, counties, and congressional districts, with a direct handoff to the Python package for tract-level and batch work.
+**[Try the SPM Threshold Calculator](https://spm-calculator.vercel.app/)** - A browser-based calculator for Census metro and nonmetro workbook areas, with a direct handoff to the Python package for reproducible and batch work.
 
-The calculator runs entirely in your browser with no server required. National thresholds and official metro data are bundled; state, county, and district rent adjustments are fetched directly from the Census ACS API.
+The calculator runs entirely in your browser with no server required. Base thresholds and official Census metro/nonmetro data are bundled.
 
 ### Run Locally
 
@@ -37,7 +37,7 @@ threshold = base_threshold[tenure] × equivalence_scale × geoadj[tenure]
 Where:
 - **base_threshold** varies by housing tenure (renter, owner with mortgage, owner without mortgage), calculated from 5-year rolling Consumer Expenditure Survey data
 - **equivalence_scale** adjusts for family composition using the official Betson three-parameter SPM scale
-- **geoadj** adjusts for local housing costs, using official Census metro thresholds where available and a tenure-specific ACS rent adjustment elsewhere
+- **geoadj** adjusts for local housing costs, using official Census metro/nonmetro thresholds where available and a tenure-specific ACS rent adjustment elsewhere
 
 ## Installation
 
@@ -53,7 +53,7 @@ from spm_calculator import SPMCalculator
 # Initialize calculator for a specific year
 calc = SPMCalculator(year=2024)
 
-# Get base thresholds by tenure (national, before geographic adjustment)
+# Get BLS/Betson base amounts by tenure (before required geographic adjustment)
 base = calc.get_base_thresholds()
 # {'renter': 39430, 'owner_with_mortgage': 39068, 'owner_without_mortgage': 32586}
 
@@ -72,7 +72,7 @@ threshold = calc.calculate_threshold(
 # $45,736 (official 2024 Census metro threshold for NYC renters)
 ```
 
-Official metro thresholds are bundled with the package. For custom ACS-based
+Official Census metro/nonmetro thresholds are bundled with the package. For custom ACS-based
 geographies like states, counties, congressional districts, PUMAs, and tracts,
 set `CENSUS_API_KEY` to fetch current median rents.
 
@@ -116,10 +116,9 @@ The optional ASEC parity tests run against a real Census CPS ASEC HDFStore when
 
 ## Supported Geographies
 
-- `nation` - National average
 - `state` - 50 states + DC
 - `county` - ~3,200 counties
-- `metro_area` - Metropolitan statistical areas
+- `metro_area` - Census metro/nonmetro workbook areas
 - `congressional_district` - 435 congressional districts
 - `puma` - Public Use Microdata Areas
 - `tract` - Census tracts (limited availability)

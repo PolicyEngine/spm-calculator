@@ -20,6 +20,16 @@ export function makeCalculatorData(overrides = {}) {
         owner_with_mortgage: 39068,
         owner_without_mortgage: 32586,
       },
+      "2025": {
+        renter: 40416,
+        owner_with_mortgage: 40045,
+        owner_without_mortgage: 33401,
+      },
+      "2026": {
+        renter: 41345,
+        owner_with_mortgage: 40966,
+        owner_without_mortgage: 34169,
+      },
     },
     methodology: {
       referenceRawScale: 3 ** 0.7,

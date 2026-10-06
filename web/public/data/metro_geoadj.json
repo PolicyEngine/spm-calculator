@@ -2,7 +2,7 @@
   "year": 2024,
   "source": "Census Bureau SPM Thresholds by Metro Area 2024",
   "sourceUrl": "https://www2.census.gov/programs-surveys/demo/tables/p60/287/SPM-pov-threshold-2024.xlsx",
-  "nationalThresholds": {
+  "baseThresholds": {
     "renter": 39430,
     "owner_with_mortgage": 39068,
     "owner_without_mortgage": 32586

@@ -1,6 +1,6 @@
 # SPM Calculator
 
-Calculate [Supplemental Poverty Measure (SPM)](https://www.census.gov/topics/income-poverty/supplemental-poverty-measure.html) thresholds for any US geography and year.
+Calculate [Supplemental Poverty Measure (SPM)](https://www.census.gov/topics/income-poverty/supplemental-poverty-measure.html) thresholds for Census metro/nonmetro areas and ACS-derived custom geographies.
 
 ## Overview
 
@@ -10,7 +10,7 @@ The SPM is an alternative poverty measure developed by the Census Bureau that ac
 - **Housing tenure** - Different thresholds for renters, owners with mortgages, and owners without mortgages
 - **Family composition** - Thresholds scale with family size using a three-parameter equivalence scale
 
-This package provides tools to calculate SPM thresholds at any geographic level supported by the American Community Survey.
+This package provides tools to calculate SPM thresholds for official Census metro/nonmetro workbook areas and ACS-derived custom geographies.
 
 ## The SPM Threshold Formula
 
@@ -21,7 +21,7 @@ threshold = base_threshold[tenure] × equivalence_scale × geoadj[tenure]
 Where:
 - **base_threshold** comes from the BLS Consumer Expenditure Survey (5-year rolling)
 - **equivalence_scale** adjusts for family composition
-- **geoadj** adjusts for local housing costs using official Census metro thresholds where available and tenure-specific ACS rent adjustments elsewhere
+- **geoadj** adjusts for local housing costs using official Census metro/nonmetro thresholds where available and tenure-specific ACS rent adjustments elsewhere
 
 ## Installation
 
@@ -53,11 +53,10 @@ print(f"SPM threshold: ${threshold:,.0f}")
 
 | Geography Type | Description | Example ID |
 |---------------|-------------|------------|
-| `nation` | National average | `"US"` |
 | `state` | 50 states + DC | `"06"` (California) |
 | `county` | ~3,200 counties | `"06075"` (San Francisco) |
 | `congressional_district` | 435 districts | `"0611"` (CA-11) |
-| `metro_area` | Metropolitan areas | `"41860"` (SF-Oakland) |
+| `metro_area` | Census metro/nonmetro workbook areas | `"41860"` (SF-Oakland) |
 | `puma` | Public Use Microdata Areas | `"0600101"` |
 | `tract` | Census tracts | `"06075010100"` |
 

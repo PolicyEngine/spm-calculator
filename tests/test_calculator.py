@@ -36,18 +36,17 @@ class TestSPMCalculator:
         assert all(v > 0 for v in base.values())
 
     def test_future_year_base_thresholds_use_shared_forecast_path(self):
-        from spm_calculator import SPMCalculator, get_thresholds
+        from spm_calculator import SPMCalculator, get_base_thresholds
 
         calc = SPMCalculator(year=2026)
-        assert calc.get_base_thresholds() == get_thresholds(2026)
+        assert calc.get_base_thresholds() == get_base_thresholds(2026)
 
-    def test_get_geoadj_nation(self):
+    def test_get_geoadj_nation_is_not_supported(self):
         from spm_calculator import SPMCalculator
 
         calc = SPMCalculator(year=2024)
-        geoadj = calc.get_geoadj("nation", "US", tenure="renter")
-
-        assert geoadj == pytest.approx(1.0)
+        with pytest.raises(ValueError, match="Unsupported geography type"):
+            calc.get_geoadj("nation", "US", tenure="renter")
 
     def test_get_geoadj_metro_uses_official_census_data(self):
         from spm_calculator import SPMCalculator
@@ -70,19 +69,18 @@ class TestSPMCalculator:
 class TestThresholdCalculation:
     """Test full threshold calculation."""
 
-    def test_reference_family_national(self):
+    def test_national_geography_threshold_is_not_supported(self):
         from spm_calculator import SPMCalculator
 
         calc = SPMCalculator(year=2024)
-        threshold = calc.calculate_threshold(
-            num_adults=2,
-            num_children=2,
-            tenure="renter",
-            geography_type="nation",
-            geography_id="US",
-        )
-
-        assert threshold == pytest.approx(calc.get_base_thresholds()["renter"])
+        with pytest.raises(ValueError, match="Unsupported geography type"):
+            calc.calculate_threshold(
+                num_adults=2,
+                num_children=2,
+                tenure="renter",
+                geography_type="nation",
+                geography_id="US",
+            )
 
     def test_single_adult_scales_down(self):
         from spm_calculator import SPMCalculator
@@ -93,16 +91,16 @@ class TestThresholdCalculation:
             num_adults=2,
             num_children=2,
             tenure="renter",
-            geography_type="nation",
-            geography_id="US",
+            geography_type="metro_area",
+            geography_id="1002",
         )
 
         single_threshold = calc.calculate_threshold(
             num_adults=1,
             num_children=0,
             tenure="renter",
-            geography_type="nation",
-            geography_id="US",
+            geography_type="metro_area",
+            geography_id="1002",
         )
 
         ratio = single_threshold / ref_threshold
@@ -126,13 +124,13 @@ class TestThresholdCalculation:
         from spm_calculator import spm_threshold
 
         assert spm_threshold(
-            2, 2, tenure="renter", metro="35620", year=2024
+            2, 2, tenure="renter", metro_area="35620", year=2024
         ) == pytest.approx(45736)
         assert spm_threshold(
             2,
             2,
             tenure="owner_with_mortgage",
-            metro="35620",
+            metro_area="35620",
             year=2024,
         ) == pytest.approx(45189)
 
@@ -141,10 +139,10 @@ class TestThresholdCalculation:
         from spm_calculator import spm_threshold
 
         by_code = spm_threshold(
-            2, 2, tenure="renter", metro="41940", year=2024
+            2, 2, tenure="renter", metro_area="41940", year=2024
         )
         by_name = spm_threshold(
-            2, 2, tenure="renter", metro="San Jose", year=2024
+            2, 2, tenure="renter", metro_area="San Jose", year=2024
         )
         assert by_code == pytest.approx(59815)
         assert by_name == pytest.approx(by_code)
@@ -153,10 +151,30 @@ class TestThresholdCalculation:
             1,
             0,
             tenure="owner_without_mortgage",
-            metro="Alabama Nonmetro",
+            metro_area="Alabama Nonmetro",
             year=2024,
         )
         assert alabama == pytest.approx(12921.81, rel=1e-4)
+
+    def test_spm_threshold_requires_metro_area(self):
+        from spm_calculator import spm_threshold
+
+        with pytest.raises(ValueError, match="metro_area is required"):
+            spm_threshold(2, 2, tenure="renter", year=2024)
+
+    def test_get_thresholds_requires_metro_area(self):
+        from spm_calculator import get_thresholds
+
+        with pytest.raises(ValueError, match="metro_area is required"):
+            get_thresholds(2024)
+
+    def test_get_thresholds_returns_metro_reference_family(self):
+        from spm_calculator import get_thresholds
+
+        thresholds = get_thresholds(2024, metro_area="35620")
+        assert thresholds["renter"] == pytest.approx(45736)
+        assert thresholds["owner_with_mortgage"] == pytest.approx(45189)
+        assert thresholds["owner_without_mortgage"] == pytest.approx(36386)
 
     def test_tenure_affects_threshold(self):
         from spm_calculator import SPMCalculator
@@ -167,16 +185,16 @@ class TestThresholdCalculation:
             num_adults=2,
             num_children=2,
             tenure="renter",
-            geography_type="nation",
-            geography_id="US",
+            geography_type="metro_area",
+            geography_id="1002",
         )
 
         owner_no_mortgage = calc.calculate_threshold(
             num_adults=2,
             num_children=2,
             tenure="owner_without_mortgage",
-            geography_type="nation",
-            geography_id="US",
+            geography_type="metro_area",
+            geography_id="1002",
         )
 
         assert owner_no_mortgage < renter
@@ -196,8 +214,8 @@ class TestHouseholdValidation:
                 num_adults=0,
                 num_children=2,
                 tenure="renter",
-                geography_type="nation",
-                geography_id="US",
+                geography_type="metro_area",
+                geography_id="1002",
             )
 
     def test_zero_adults_with_children_raises_batch(self):
@@ -209,8 +227,8 @@ class TestHouseholdValidation:
                 num_adults=np.array([1, 0, 2]),
                 num_children=np.array([0, 2, 2]),
                 tenure="renter",
-                geography_type="nation",
-                geography_ids="US",
+                geography_type="metro_area",
+                geography_ids="1002",
             )
 
     def test_negative_counts_raise_batch(self):
@@ -222,8 +240,8 @@ class TestHouseholdValidation:
                 num_adults=np.array([-1, 2]),
                 num_children=np.array([0, 2]),
                 tenure="renter",
-                geography_type="nation",
-                geography_ids="US",
+                geography_type="metro_area",
+                geography_ids="1002",
             )
 
     def test_negative_children_raises_batch(self):
@@ -235,8 +253,8 @@ class TestHouseholdValidation:
                 num_adults=np.array([2, 2]),
                 num_children=np.array([0, -1]),
                 tenure="renter",
-                geography_type="nation",
-                geography_ids="US",
+                geography_type="metro_area",
+                geography_ids="1002",
             )
 
 
@@ -269,16 +287,16 @@ class TestBatchCalculation:
             num_adults=np.array([1, 2, 3]),
             num_children=np.array([0, 2, 4]),
             tenure=["renter", "renter", "renter"],
-            geography_type="nation",
-            geography_ids="US",
+            geography_type="metro_area",
+            geography_ids="1002",
         )
 
         assert len(results) == 3
-        base = calc.get_base_thresholds()["renter"]
+        reference_threshold = 31622
         expected_scales = (
             np.array([1.0, REFERENCE_RAW_SCALE, 5**0.7]) / REFERENCE_RAW_SCALE
         )
-        expected = base * expected_scales
+        expected = reference_threshold * expected_scales
         np.testing.assert_allclose(results, expected)
 
     def test_batch_uses_tenure_specific_metro_adjustments(self):
@@ -332,11 +350,11 @@ def test_metro_reference_thresholds_match_published_2024(
     from spm_calculator import spm_threshold
 
     assert spm_threshold(
-        2, 2, tenure="renter", metro=metro_geoid, year=2024
+        2, 2, tenure="renter", metro_area=metro_geoid, year=2024
     ) == pytest.approx(renter)
     assert spm_threshold(
-        2, 2, tenure="owner_with_mortgage", metro=metro_geoid, year=2024
+        2, 2, tenure="owner_with_mortgage", metro_area=metro_geoid, year=2024
     ) == pytest.approx(owner_with_mortgage)
     assert spm_threshold(
-        2, 2, tenure="owner_without_mortgage", metro=metro_geoid, year=2024
+        2, 2, tenure="owner_without_mortgage", metro_area=metro_geoid, year=2024
     ) == pytest.approx(owner_without_mortgage)

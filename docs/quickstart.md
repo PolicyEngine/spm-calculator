@@ -28,16 +28,16 @@ from spm_calculator import SPMCalculator
 calc = SPMCalculator(year=2024)
 
 # Calculate threshold for reference family (2 adults, 2 children)
-# as a renter at the national level
+# as a renter in the New York metro area
 threshold = calc.calculate_threshold(
     num_adults=2,
     num_children=2,
     tenure="renter",
-    geography_type="nation",
-    geography_id="US"
+    geography_type="metro_area",
+    geography_id="35620"
 )
-print(f"National renter threshold: ${threshold:,.0f}")
-# National renter threshold: $39,430
+print(f"New York renter threshold: ${threshold:,.0f}")
+# New York renter threshold: $45,736
 ```
 
 ### Different Tenure Types
@@ -52,14 +52,14 @@ for tenure in ["renter", "owner_with_mortgage", "owner_without_mortgage"]:
         num_adults=2,
         num_children=2,
         tenure=tenure,
-        geography_type="nation",
-        geography_id="US"
+        geography_type="metro_area",
+        geography_id="35620"
     )
     print(f"{tenure}: ${threshold:,.0f}")
 
-# renter: $39,430
-# owner_with_mortgage: $39,068
-# owner_without_mortgage: $32,586
+# renter: $45,736
+# owner_with_mortgage: $45,189
+# owner_without_mortgage: $36,386
 ```
 
 ### Geographic Variation
@@ -70,7 +70,6 @@ The same family has different thresholds in different locations:
 calc = SPMCalculator(year=2024)
 
 locations = [
-    ("nation", "US", "National"),
     ("metro_area", "1002", "Alabama Nonmetro"),
     ("metro_area", "35620", "New York metro"),
     ("metro_area", "41940", "San Jose metro"),
@@ -128,9 +127,6 @@ Get the tenure-specific GEOADJ factor for any geography:
 
 ```python
 calc = SPMCalculator(year=2024)
-
-# National is always 1.0
-print(calc.get_geoadj("nation", "US", tenure="renter"))  # 1.0
 
 # Official metro adjustment from bundled Census data
 print(calc.get_geoadj("metro_area", "35620", tenure="renter"))  # ~1.160 (New York)

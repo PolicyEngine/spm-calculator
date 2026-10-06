@@ -1,7 +1,7 @@
 version: 1
 project:
   title: SPM Calculator
-  description: Calculate Supplemental Poverty Measure thresholds for any US geography and year
+  description: Calculate Supplemental Poverty Measure thresholds for Census metro/nonmetro areas and ACS-derived custom geographies
   keywords:
     - poverty
     - SPM

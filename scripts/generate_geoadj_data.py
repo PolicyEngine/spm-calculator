@@ -130,7 +130,7 @@ def generate_metro_data() -> dict:
     workbook = _load_workbook_from_bytes(response.content)
     sheet = workbook["Thresholds 2024"]
 
-    national_thresholds = HISTORICAL_THRESHOLDS["2024"]
+    base_thresholds = HISTORICAL_THRESHOLDS["2024"]
     metro_areas = {}
 
     for row in sheet.iter_rows(min_row=3, values_only=True):
@@ -145,8 +145,8 @@ def generate_metro_data() -> dict:
             "renter": int(row[5]),
         }
         adjustments = {
-            tenure: reference_thresholds[tenure] / national_thresholds[tenure]
-            for tenure in national_thresholds
+            tenure: reference_thresholds[tenure] / base_thresholds[tenure]
+            for tenure in base_thresholds
         }
 
         metro_areas[str(int(code)).zfill(4 if int(code) < 10000 else 5)] = {
@@ -160,7 +160,7 @@ def generate_metro_data() -> dict:
         "year": 2024,
         "source": "Census Bureau SPM Thresholds by Metro Area 2024",
         "sourceUrl": METRO_SOURCE_URL,
-        "nationalThresholds": national_thresholds,
+        "baseThresholds": base_thresholds,
         "housingShares": TENURE_HOUSING_SHARES,
         "metroAreas": metro_areas,
     }

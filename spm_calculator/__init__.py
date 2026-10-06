@@ -5,16 +5,16 @@ Install with: uv add spm-calculator
 
 Quick start:
     >>> from spm_calculator import spm_threshold
-    >>> spm_threshold(2, 2, metro="San Jose")  # 2 adults, 2 children
+    >>> spm_threshold(2, 2, metro_area="San Jose")  # 2 adults, 2 children
     59815.0
-    >>> spm_threshold(1, 0, tenure="owner_without_mortgage", metro="Alabama Nonmetro")
+    >>> spm_threshold(1, 0, tenure="owner_without_mortgage", metro_area="Alabama Nonmetro")
     12921.81
 
 The threshold calculation is: base[tenure] × equivalence_scale × geoadj[tenure]
 
 Get the pieces separately:
-    >>> from spm_calculator import get_thresholds, spm_equivalence_scale, get_metro_geoadj, get_metro_rent_index
-    >>> get_thresholds(2024)["renter"]  # Base threshold
+    >>> from spm_calculator import get_base_thresholds, spm_equivalence_scale, get_metro_geoadj, get_metro_rent_index
+    >>> get_base_thresholds(2024)["renter"]  # Base amount, not a final threshold
     39430.0
     >>> spm_equivalence_scale(2, 2)  # Family size adjustment
     1.0
@@ -24,7 +24,7 @@ Get the pieces separately:
     2.167
 """
 
-from .calculator import SPMCalculator, spm_threshold
+from .calculator import SPMCalculator, get_thresholds, spm_threshold
 from .ce_threshold import calculate_base_thresholds, get_published_thresholds
 from .equivalence_scale import spm_equivalence_scale
 from .fcsuti_cpi import (
@@ -37,9 +37,9 @@ from .forecast import (
     HISTORICAL_THRESHOLDS,
     forecast_thresholds,
     get_available_years,
+    get_base_threshold_with_metadata,
+    get_base_thresholds,
     get_latest_published_year,
-    get_threshold_with_metadata,
-    get_thresholds,
 )
 from .geoadj import (
     calculate_geoadj_from_rent,
@@ -101,8 +101,9 @@ __all__ = [
     "compute_fcsuti_weights_from_ce",
     "FCSUTI_WEIGHTS",
     "forecast_thresholds",
+    "get_base_thresholds",
+    "get_base_threshold_with_metadata",
     "get_thresholds",
-    "get_threshold_with_metadata",
     "get_available_years",
     "get_latest_published_year",
     "HISTORICAL_THRESHOLDS",

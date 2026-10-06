@@ -8,13 +8,29 @@
  * doesn't regress.
  */
 
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import CalculatorWorkbench from "../src/components/CalculatorWorkbench";
 import { makeCalculatorData } from "./fixtures/calculatorData";
 
 describe("CalculatorWorkbench", () => {
+  it("starts with explicit setup instead of defaulting inputs", () => {
+    render(<CalculatorWorkbench data={makeCalculatorData()} />);
+    const [yearSelect, locationSelect] = screen.getAllByRole("combobox");
+
+    expect(yearSelect).toHaveValue("");
+    expect(locationSelect).toHaveValue("");
+    expect(screen.getByTestId("setup-wizard")).toHaveTextContent(
+      "Choose a year",
+    );
+    expect(screen.getByTestId("setup-wizard")).toHaveTextContent(
+      "Enter adults and children",
+    );
+    expect(screen.queryByText("Tenure comparison")).toBeNull();
+    expect(screen.queryByText("Reproduce with Python")).toBeNull();
+  });
+
   it("renders the methodology card with the formula", () => {
     render(<CalculatorWorkbench data={makeCalculatorData()} />);
     const card = screen.getByTestId("methodology-card");
@@ -23,11 +39,23 @@ describe("CalculatorWorkbench", () => {
     expect(card.textContent).toMatch(/base\[tenure\]/);
     expect(card.textContent).toMatch(/equivalence_scale/);
     expect(card.textContent).toMatch(/geoadj\[tenure\]/);
-    // Tenure-specific shares should appear so users can tell which
-    // geoadj they're seeing.
-    expect(card.textContent).toMatch(/0\.443/);
-    expect(card.textContent).toMatch(/0\.434/);
-    expect(card.textContent).toMatch(/0\.323/);
+    expect(card.textContent).toMatch(/metro and nonmetro/);
+  });
+
+  it("limits geography choices to official Census workbook areas", () => {
+    render(<CalculatorWorkbench data={makeCalculatorData()} />);
+
+    expect(screen.getByText("Census metro/nonmetro area")).toBeInTheDocument();
+    expect(screen.queryByText("Adjustment basis")).toBeNull();
+    expect(screen.queryByText("Search")).toBeNull();
+    expect(
+      screen.queryByRole("option", { name: "National average" }),
+    ).toBeNull();
+    expect(screen.queryByRole("option", { name: "State" })).toBeNull();
+    expect(screen.queryByRole("option", { name: "County" })).toBeNull();
+    expect(
+      screen.queryByRole("option", { name: "Congressional district" }),
+    ).toBeNull();
   });
 
   it("surfaces the package version and data vintage in the footer", () => {
@@ -78,5 +106,29 @@ describe("CalculatorWorkbench", () => {
         'a[href*="census.gov/library/publications/2025/demo/p60-287"]',
       ),
     ).not.toBeNull();
+  });
+
+  it("surfaces person-level SPM unit reconstruction workflows", () => {
+    render(<CalculatorWorkbench data={makeCalculatorData()} />);
+    const card = screen.getByTestId("microdata-card");
+
+    expect(card.textContent).toMatch(/Person microdata/);
+    expect(card.textContent).toMatch(/SPM_ID/);
+    expect(card.textContent).toMatch(/spm_unit_id/);
+    expect(card.textContent).toMatch(/spm_unit_id_match/);
+    expect(card.textContent).toMatch(/PECOHAB/);
+    expect(screen.getByText("Unit ID docs")).toBeInTheDocument();
+  });
+
+  it("warns instead of calculating child-only SPM units", () => {
+    render(<CalculatorWorkbench data={makeCalculatorData()} />);
+    const [adultInput, childInput] = screen.getAllByRole("spinbutton");
+
+    fireEvent.change(adultInput, { target: { value: "0" } });
+    fireEvent.change(childInput, { target: { value: "2" } });
+
+    expect(screen.getByTestId("composition-error").textContent).toMatch(
+      /at least one adult/,
+    );
   });
 });

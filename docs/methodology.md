@@ -124,7 +124,7 @@ Where:
 | Area | Approximate GEOADJ |
 |------|-------------------|
 | Alabama Nonmetro (renter) | ~0.80 |
-| National average | 1.00 |
+| Rent parity | 1.00 |
 | New York metro (renter) | ~1.16 |
 | San Jose metro (renter) | ~1.52 |
 

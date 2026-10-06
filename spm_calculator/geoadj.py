@@ -27,8 +27,8 @@ VALID_TENURE_TYPES = (
 )
 
 # These 2024 tenure-specific housing shares exactly reproduce the official
-# 2024 Census metro thresholds when combined with the published national BLS
-# thresholds and the published metro rent index.
+# 2024 Census metro thresholds when combined with the published BLS/Betson
+# reference-family base amounts and the published metro rent index.
 TENURE_HOUSING_SHARES = {
     "owner_with_mortgage": 0.434,
     "owner_without_mortgage": 0.323,
@@ -36,7 +36,6 @@ TENURE_HOUSING_SHARES = {
 }
 
 SUPPORTED_GEOGRAPHIES = {
-    "nation": "us",
     "state": "state",
     "county": "county",
     "metro_area": "metropolitan statistical area/micropolitan statistical area",
@@ -265,18 +264,18 @@ def _load_bundled_metro_data(year: int = 2024) -> dict:
     with open(data_file) as f:
         data = json.load(f)
 
-    if "nationalThresholds" not in data:
-        from .forecast import get_thresholds
+    if "baseThresholds" not in data:
+        from .forecast import get_base_thresholds
 
-        national_thresholds = get_thresholds(resolved_year)
-        data["nationalThresholds"] = national_thresholds
+        base_thresholds = get_base_thresholds(resolved_year)
+        data["baseThresholds"] = base_thresholds
         data["housingShares"] = TENURE_HOUSING_SHARES.copy()
         for info in data["metroAreas"].values():
             rent_index = _require_rent_index(info)
             info["rentIndex"] = rent_index
             info["referenceThresholds"] = {
                 tenure: round(
-                    national_thresholds[tenure]
+                    base_thresholds[tenure]
                     * (rent_index * share + (1.0 - share))
                 )
                 for tenure, share in TENURE_HOUSING_SHARES.items()
@@ -284,7 +283,7 @@ def _load_bundled_metro_data(year: int = 2024) -> dict:
             info["adjustments"] = {
                 tenure: (
                     info["referenceThresholds"][tenure]
-                    / national_thresholds[tenure]
+                    / base_thresholds[tenure]
                 )
                 for tenure in VALID_TENURE_TYPES
             }
@@ -624,9 +623,6 @@ def get_geoadj(
             f"Unsupported geography type: {geography_type}. "
             f"Supported: {list(SUPPORTED_GEOGRAPHIES.keys())}"
         )
-
-    if geography_type == "nation":
-        return 1.0
 
     if geography_type != "metro_area":
         latest_available = get_latest_available_acs_year()

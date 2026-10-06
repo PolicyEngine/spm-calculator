@@ -42,7 +42,7 @@ Calculate GEOADJ from local and national median rents.
 ```python
 from spm_calculator.geoadj import calculate_geoadj_from_rent
 
-# National average
+# Rent parity
 geoadj = calculate_geoadj_from_rent(1500, 1500, tenure="renter")
 # 1.0
 
@@ -92,9 +92,8 @@ from spm_calculator.geoadj import get_geoadj
 nyc_geoadj = get_geoadj("metro_area", "35620", year=2024, tenure="renter")
 # 1.159928988080142
 
-# National reference is always 1.0
-us_geoadj = get_geoadj("nation", "US", year=2024, tenure="renter")
-# 1.0
+# BLS/Betson base amounts are available from get_base_thresholds(),
+# but "nation" is not a supported final-threshold geography.
 ```
 
 ### create_geoadj_lookup

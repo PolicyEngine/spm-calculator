@@ -334,8 +334,8 @@ def calculate_base_thresholds(
             lagged window.
         target_year: The year these thresholds represent.
         use_published_fallback: If True, fall back to the BLS
-            published-thresholds dict (``HISTORICAL_THRESHOLDS`` via
-            ``forecast.get_thresholds``) when CE computation fails and
+            published base-thresholds dict (``HISTORICAL_THRESHOLDS`` via
+            ``forecast.get_base_thresholds``) when CE computation fails and
             the target year has a published value.
 
     Returns:
@@ -444,9 +444,9 @@ def calculate_base_thresholds(
         if use_published_fallback:
             try:
                 # Lazy import avoids a circular import at module load.
-                from .forecast import get_thresholds
+                from .forecast import get_base_thresholds
 
-                fallback = get_thresholds(target_year, allow_forecast=False)
+                fallback = get_base_thresholds(target_year, allow_forecast=False)
                 warnings.warn(
                     f"CE calculation failed ({e}); using published BLS "
                     f"thresholds for {target_year}.",

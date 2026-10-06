@@ -11,7 +11,7 @@ import numpy as np
 
 from .ce_threshold import calculate_base_thresholds
 from .equivalence_scale import spm_equivalence_scale
-from .forecast import get_thresholds
+from .forecast import get_base_thresholds
 from .geoadj import (
     SUPPORTED_GEOGRAPHIES,
     VALID_TENURE_TYPES,
@@ -63,7 +63,7 @@ class SPMCalculator:
             return self._base_thresholds.copy()
 
         if self.use_published_thresholds:
-            self._base_thresholds = get_thresholds(self.year)
+            self._base_thresholds = get_base_thresholds(self.year)
         else:
             self._base_thresholds = calculate_base_thresholds(
                 target_year=self.year,
@@ -74,8 +74,8 @@ class SPMCalculator:
 
     def _geoadj_year(self, geography_type: str) -> int:
         # Metro area GEOADJ uses the bundled SPM workbook for self.year;
-        # nation always returns 1.0 regardless, so the year is irrelevant.
-        if geography_type in ("metro_area", "nation"):
+        # ACS-derived experimental geographies use the latest available ACS.
+        if geography_type == "metro_area":
             return self.year
         latest_acs_year = get_latest_available_acs_year(date.today())
         return min(self.year - 1, latest_acs_year)
@@ -229,8 +229,10 @@ def _get_metro_code(metro: str) -> str:
 def spm_threshold(
     num_adults: int,
     num_children: int,
+    *,
     tenure: str = "renter",
-    metro: str = "35620",
+    metro_area: str | None = None,
+    metro: str | None = None,
     year: int = 2024,
 ) -> float:
     """
@@ -241,8 +243,10 @@ def spm_threshold(
         num_children: Number of children (under 18) in the SPM unit.
         tenure: ``"renter"`` (default), ``"owner_with_mortgage"``, or
             ``"owner_without_mortgage"``.
-        metro: A CBSA code (e.g. ``"35620"``) or a metro name match
-            (e.g. ``"New York"``, ``"San Jose"``). Defaults to New York.
+        metro_area: Required CBSA/nonmetro code (e.g. ``"35620"``) or
+            a metro/nonmetro name match (e.g. ``"New York"``,
+            ``"San Jose"``).
+        metro: Deprecated alias for ``metro_area``.
         year: Target threshold year. Defaults to 2024 (latest published).
 
     Returns:
@@ -250,17 +254,61 @@ def spm_threshold(
 
     Example:
         >>> from spm_calculator import spm_threshold
-        >>> round(spm_threshold(2, 2, metro="San Jose"))
+        >>> round(spm_threshold(2, 2, metro_area="San Jose"))
         59815
         >>> round(spm_threshold(1, 0, tenure="owner_without_mortgage",
-        ...                     metro="Alabama Nonmetro"))
+        ...                     metro_area="Alabama Nonmetro"))
         12921
     """
+    resolved_metro = _resolve_required_metro_area(metro_area=metro_area, metro=metro)
     calc = SPMCalculator(year=year)
     return calc.calculate_threshold(
         num_adults=num_adults,
         num_children=num_children,
         tenure=tenure,
         geography_type="metro_area",
-        geography_id=_get_metro_code(metro),
+        geography_id=_get_metro_code(resolved_metro),
     )
+
+
+def get_thresholds(
+    year: int,
+    *,
+    metro_area: str | None = None,
+    metro: str | None = None,
+) -> dict[str, float]:
+    """Get official reference-family SPM thresholds for a metro/nonmetro area.
+
+    The returned values are for the 2-adult, 2-child reference family and
+    include the required Census metro/nonmetro geographic adjustment. A
+    metro area is required because SPM has no final national threshold.
+    """
+    resolved_metro = _resolve_required_metro_area(metro_area=metro_area, metro=metro)
+    calc = SPMCalculator(year=year)
+    geography_id = _get_metro_code(resolved_metro)
+    return {
+        tenure: calc.calculate_threshold(
+            num_adults=2,
+            num_children=2,
+            tenure=tenure,
+            geography_type="metro_area",
+            geography_id=geography_id,
+        )
+        for tenure in VALID_TENURE_TYPES
+    }
+
+
+def _resolve_required_metro_area(
+    *,
+    metro_area: str | None,
+    metro: str | None,
+) -> str:
+    if metro_area is not None and metro is not None:
+        raise ValueError("Provide only one of metro_area or metro.")
+    resolved = metro_area if metro_area is not None else metro
+    if resolved is None or str(resolved).strip() == "":
+        raise ValueError(
+            "metro_area is required; SPM thresholds require a Census "
+            "metro/nonmetro geography and cannot be national."
+        )
+    return str(resolved)

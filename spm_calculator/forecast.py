@@ -189,7 +189,7 @@ def _maybe_warn_far_forecast(year: int, base_year: int) -> None:
 
     Silently compounding decades of 2% inflation off a hardcoded 2024
     base is not useful output; the warning gives downstream code a
-    chance to surface the uncertainty to users. `get_threshold_with_metadata`
+    chance to surface the uncertainty to users. `get_base_threshold_with_metadata`
     also exposes this horizon via the returned dict.
     """
     horizon = year - base_year
@@ -204,16 +204,16 @@ def _maybe_warn_far_forecast(year: int, base_year: int) -> None:
         )
 
 
-def get_thresholds(
+def get_base_thresholds(
     year: int,
     allow_forecast: bool = True,
     custom_inflation: Optional[float] = None,
 ) -> dict[str, float]:
     """
-    Get SPM thresholds for any year, with optional forecasting.
+    Get BLS/Betson reference-family base amounts by tenure.
 
-    This is the main entry point for getting thresholds. It returns
-    published values when available and forecasts when necessary.
+    These are not final SPM poverty thresholds: final SPM thresholds
+    require a metro/nonmetro geographic adjustment.
 
     Args:
         year: Target year
@@ -222,7 +222,7 @@ def get_thresholds(
         custom_inflation: Optional custom inflation rate for forecasting.
 
     Returns:
-        Dict with threshold values by tenure type
+        Dict with base values by tenure type
 
     Raises:
         ValueError: If year not available and forecasting disabled
@@ -239,13 +239,13 @@ def get_thresholds(
     return forecast_thresholds(year, custom_inflation=custom_inflation)
 
 
-def get_threshold_with_metadata(
+def get_base_threshold_with_metadata(
     year: int,
     allow_forecast: bool = True,
     custom_inflation: Optional[float] = None,
 ) -> dict:
     """
-    Get thresholds with metadata about source and methodology.
+    Get base amounts with metadata about source and methodology.
 
     Args:
         year: Target year
@@ -254,7 +254,7 @@ def get_threshold_with_metadata(
 
     Returns:
         Dict with:
-        - thresholds: threshold values by tenure
+        - base_thresholds: base values by tenure
         - year: the year
         - source: 'published' or 'forecast'
         - base_year: base year used for forecast (if applicable)
@@ -265,14 +265,14 @@ def get_threshold_with_metadata(
     if is_forecast and not allow_forecast:
         raise ValueError(f"Year {year} requires forecasting")
 
-    thresholds = get_thresholds(
+    base_thresholds = get_base_thresholds(
         year,
         allow_forecast=allow_forecast,
         custom_inflation=custom_inflation,
     )
 
     result = {
-        "thresholds": thresholds,
+        "base_thresholds": base_thresholds,
         "year": year,
         "source": "forecast" if is_forecast else "published",
     }

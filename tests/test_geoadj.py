@@ -85,7 +85,6 @@ class TestSupportedGeographies:
     """Test that all required geography types are supported."""
 
     REQUIRED_GEOGRAPHIES = [
-        "nation",
         "state",
         "county",
         "metro_area",
@@ -100,11 +99,11 @@ class TestSupportedGeographies:
         for geo in self.REQUIRED_GEOGRAPHIES:
             assert geo in SUPPORTED_GEOGRAPHIES, f"{geo} not supported"
 
-    def test_nation_geoadj_is_one(self):
+    def test_nation_geography_is_not_supported(self):
         from spm_calculator.geoadj import get_geoadj
 
-        result = get_geoadj("nation", "US", year=2024, tenure="renter")
-        assert result == pytest.approx(1.0)
+        with pytest.raises(ValueError, match="Unsupported geography type"):
+            get_geoadj("nation", "US", year=2024, tenure="renter")
 
 
 @REQUIRES_CENSUS_API
@@ -346,7 +345,7 @@ class TestBundledMetroData:
         assert "year" in data
         assert "source" in data
         assert "sourceUrl" in data
-        assert "nationalThresholds" in data
+        assert "baseThresholds" in data
         assert "housingShares" in data
         assert "metroAreas" in data
         assert data["year"] == 2024

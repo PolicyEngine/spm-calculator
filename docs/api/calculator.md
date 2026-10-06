@@ -59,7 +59,7 @@ Get a tenure-specific geographic adjustment factor for a location.
 
 **Parameters:**
 
-- `geography_type`: One of `nation`, `state`, `county`, `congressional_district`, `metro_area`, `puma`, `tract`
+- `geography_type`: One of `state`, `county`, `congressional_district`, `metro_area`, `puma`, `tract`
 - `geography_id`: FIPS code or other identifier
 - `tenure`: One of `'renter'`, `'owner_with_mortgage'`, `'owner_without_mortgage'`
 
@@ -166,11 +166,14 @@ List of supported geography types.
 ```python
 calc = SPMCalculator(year=2024)
 print(calc.supported_geographies)
-# ['nation', 'state', 'county', 'metro_area', 'congressional_district', 'puma', 'tract']
+# ['state', 'county', 'metro_area', 'congressional_district', 'puma', 'tract']
 ```
 
 ## Notes
 
 - `metro_area` uses the bundled official Census metro workbook.
 - Other subnational geographies use ACS median rents and require the Census API path.
-- Forecast years preserve the latest bundled metro adjustments and forecast only the national base thresholds.
+- BLS/Betson base amounts are exposed by `get_base_thresholds()`.
+- `get_thresholds()` requires a Census metro/nonmetro area and returns final
+  reference-family thresholds for that geography.
+- Forecast years preserve the latest bundled metro adjustments and forecast only the base amounts.

@@ -23,7 +23,7 @@ from spm_calculator.forecast import (
     LATEST_PUBLISHED_YEAR,
     calculate_cumulative_inflation,
     forecast_thresholds,
-    get_threshold_with_metadata,
+    get_base_threshold_with_metadata,
 )
 
 
@@ -50,13 +50,13 @@ class TestForecastHorizonWarning:
         target = LATEST_PUBLISHED_YEAR + FORECAST_WARNING_HORIZON + 10
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            meta = get_threshold_with_metadata(target)
+            meta = get_base_threshold_with_metadata(target)
         assert meta["beyond_reliable_horizon"] is True
         assert meta["horizon_years"] == target - LATEST_PUBLISHED_YEAR
 
     def test_near_horizon_metadata_flag_is_false(self):
         target = LATEST_PUBLISHED_YEAR + 1
-        meta = get_threshold_with_metadata(target)
+        meta = get_base_threshold_with_metadata(target)
         assert meta["beyond_reliable_horizon"] is False
 
 
