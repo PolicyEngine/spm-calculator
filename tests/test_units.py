@@ -1,6 +1,7 @@
 """Tests for SPM resource-unit membership helpers."""
 
 import pandas as pd
+import pytest
 
 from spm_calculator import spm_unit_id
 
@@ -199,6 +200,143 @@ def test_spm_unit_id_attaches_unrelated_children_under_15():
     assert diagnostics["fallback_rules_used"] == [
         "attach_unrelated_under_15_to_reference_unit"
     ]
+
+
+@pytest.mark.parametrize(
+    "parent_column,pointer_column,pointer_values",
+    [
+        ("parent_id", "person_id", [101, 102, 103]),
+        ("mother_id", "person_id", [101, 102, 103]),
+        ("father_id", "person_id", [101, 102, 103]),
+        ("PEPAR1", "A_LINENO", [10, 20, 30]),
+        ("PEPAR2", "A_LINENO", [10, 20, 30]),
+    ],
+)
+@pytest.mark.parametrize("has_family_ids", [False, True])
+def test_spm_unit_id_keeps_roommates_child_with_own_parent(
+    parent_column, pointer_column, pointer_values, has_family_ids
+):
+    """Census WP2011-22, p.7: the under-15 rule excludes another member's child."""
+    persons = pd.DataFrame(
+        {
+            "household_id": [10, 10, 10],
+            "person_id": [101, 102, 103],
+            "age": [40, 35, 8],
+            "relationship_to_head": ["head", "other", "other"],
+            pointer_column: pointer_values,
+            parent_column: [None, None, pointer_values[1]],
+        },
+        index=["householder", "roommate", "child"],
+    )
+    if has_family_ids:
+        persons["family_id"] = [1, 2, 2]
+    before = persons.copy(deep=True)
+
+    ids, diagnostics = spm_unit_id(persons, diagnostics=True)
+
+    assert ids.loc["roommate"] == ids.loc["child"]
+    assert ids.loc["householder"] != ids.loc["child"]
+    assert "link_parent_child" in diagnostics["fallback_rules_used"]
+    assert (
+        "attach_unrelated_under_15_to_reference_unit"
+        not in diagnostics["fallback_rules_used"]
+    )
+    pd.testing.assert_frame_equal(persons, before)
+
+
+@pytest.mark.parametrize("unresolved_parent", [None, 999, 103, 201])
+def test_spm_unit_id_falls_back_without_another_parent_in_same_household(
+    unresolved_parent,
+):
+    """Unresolved links retain an assumed fallback, not observed parent absence."""
+    persons = pd.DataFrame(
+        {
+            "person_id": [101, 103, 201],
+            "household_id": [10, 10, 20],
+            "age": [50, 8, 35],
+            "relationship_to_head": ["head", "other", "head"],
+            "parent_id": [None, unresolved_parent, None],
+        }
+    )
+
+    ids, diagnostics = spm_unit_id(persons, diagnostics=True)
+
+    assert ids.iloc[0] == ids.iloc[1]
+    assert ids.iloc[0] != ids.iloc[2]
+    assert (
+        "attach_unrelated_under_15_to_reference_unit"
+        in diagnostics["fallback_rules_used"]
+    )
+
+
+@pytest.mark.parametrize("foster_age", [14, 17, 21, 22, 25])
+def test_spm_unit_id_foster_relationship_respects_age_22_boundary(foster_age):
+    """Census WP2011-22, p.7: foster attachment applies only below age 22."""
+    persons = pd.DataFrame(
+        {
+            "person_id": [1, 2],
+            "household_id": [10, 10],
+            "age": [50, foster_age],
+            "relationship_to_head": ["head", "foster child"],
+        }
+    )
+
+    ids, diagnostics = spm_unit_id(persons, diagnostics=True)
+
+    assert (ids.iloc[0] == ids.iloc[1]) == (foster_age < 22)
+    assert (
+        "attach_foster_under_22_to_reference_unit"
+        in diagnostics["fallback_rules_used"]
+    ) == (foster_age < 22)
+
+
+def test_spm_unit_id_foster_age_22_preserves_explicit_family_membership():
+    persons = pd.DataFrame(
+        {
+            "person_id": [1, 2],
+            "household_id": [10, 10],
+            "family_id": [100, 100],
+            "age": [50, 22],
+            "relationship_to_head": ["head", "foster child"],
+        }
+    )
+
+    ids = spm_unit_id(persons)
+
+    assert ids.iloc[0] == ids.iloc[1]
+
+
+def test_spm_unit_id_does_not_recode_raw_acs_roommate_as_partner():
+    # Raw ACS codes are outside the generic relationship schema. In particular,
+    # RELSHIPP 34 must not be recoded into a supported partner relationship.
+    persons = pd.DataFrame(
+        {
+            "person_id": [1, 2],
+            "household_id": [10, 10],
+            "age": [40, 35],
+            "relationship_to_head": [20, 34],
+        }
+    )
+
+    ids, diagnostics = spm_unit_id(persons, diagnostics=True)
+
+    assert ids.iloc[0] != ids.iloc[1]
+    assert "link_unmarried_partners" not in diagnostics["fallback_rules_used"]
+
+
+def test_spm_unit_id_keeps_adult_own_child_in_reference_family():
+    persons = pd.DataFrame(
+        {
+            "person_id": [1, 2],
+            "household_id": [10, 10],
+            "age": [50, 25],
+            "relationship_to_head": ["head", "own child"],
+        }
+    )
+
+    ids = spm_unit_id(persons)
+
+    assert ids.iloc[0] == ids.iloc[1]
 
 
 def test_spm_unit_id_attaches_foster_children_under_22():

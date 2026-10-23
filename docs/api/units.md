@@ -46,6 +46,29 @@ or infer primitive independence roles from its output.
 Pointer columns are matched to `line_number` when it is present; otherwise they
 are matched to `person_id`.
 
+The helper resolves parent pointers within each household before applying the
+unrelated-child fallback. A child under 15 with a resolved parent pointer joins
+that parent's unit. When no pointer resolves, the helper assumes that an
+unrelated child under 15 belongs in the household reference unit and records
+`attach_unrelated_under_15_to_reference_unit` in its fallback diagnostics.
+Missing pointers, pointers to another household and self-pointers do not
+establish a parent link. This fallback does not establish that a resident parent
+is absent.
+
+The generic relationship label `foster child` uses the foster attachment rule,
+which joins children under 22 to the household reference unit. That label alone
+does not attach someone aged 22 or older. Existing family membership and other
+explicit links still apply.
+
+These rules follow [Census working paper 2011-22, printed page 7](https://www.census.gov/content/dam/Census/library/working-papers/2011/demo/SEHSD-WP2011-22.pdf#page=8).
+Source records must retain the parent links needed to distinguish unrelated
+subfamilies. Reconstruction cannot recover a missing relationship from age alone.
+Source adapters must resolve or quarantine ambiguous parent candidates before
+calling the helper. Duplicate household/person pointer keys are not validated;
+the helper's lookup retains the last matching row. Generic relationship
+normalization does not implement an ACS `RELSHIPP` recode. Native IDs, explicit
+family grouping and Census assignment flags retain their existing precedence.
+
 ### Diagnostics
 
 With `diagnostics=True`, the function returns `(ids, diagnostics)`. The
