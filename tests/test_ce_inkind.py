@@ -814,12 +814,18 @@ def brute_force_distances(sorted_hat, target, k):
     k=st.integers(1, 8),
 )
 def test_pmm_pools_hold_the_k_nearest_distinct_donors(donors, targets, k):
-    """Differential check against brute force, with ties (integer
-    predictions) and targets outside the donor range."""
+    """Differential checks, with ties (integer predictions) and targets
+    outside the donor range: distances against brute force over all
+    donors, and donor identities against a scalar reading of the
+    documented rule (the window of 2k positions starting k before the
+    insertion point, shifted inward at the ends; equal distances in
+    window order)."""
     sorted_hat = np.sort(np.array(donors))
     target_hat = np.array(targets)
     pools = ce_inkind._pmm_pools(sorted_hat, target_hat, k)
-    size = min(k, len(sorted_hat))
+    n = len(sorted_hat)
+    size = min(k, n)
+    width = min(2 * size, n)
     assert pools.shape == (len(target_hat), size)
     for row, target in zip(pools, target_hat):
         assert len(set(row.tolist())) == size
@@ -828,6 +834,13 @@ def test_pmm_pools_hold_the_k_nearest_distinct_donors(donors, targets, k):
         np.testing.assert_array_equal(
             distances, brute_force_distances(sorted_hat, target, size)
         )
+        insertion = int(np.searchsorted(sorted_hat, target))
+        start = min(max(insertion - size, 0), n - width)
+        window = range(start, start + width)
+        expected = sorted(
+            window, key=lambda j: (abs(sorted_hat[j] - target), j)
+        )[:size]
+        assert row.tolist() == expected
 
 
 def test_pmm_pools_at_the_boundaries():
@@ -841,6 +854,75 @@ def test_pmm_pools_at_the_boundaries():
     assert sorted(few[0].tolist()) == [0, 1, 2]
     with pytest.raises(ValueError, match="at least one donor"):
         ce_inkind._pmm_pools(np.array([]), np.array([0.0]), 5)
+
+
+def test_pmm_pools_take_ties_first_in_the_window():
+    """The documented tie rule. Twenty donors share one prediction; a
+    target above them takes the last five of the window, positions 10-14,
+    not the five lowest positions overall."""
+    tied = np.zeros(20)
+    assert ce_inkind._pmm_pools(tied, np.array([1.0]), 5)[0].tolist() == [
+        10,
+        11,
+        12,
+        13,
+        14,
+    ]
+    assert ce_inkind._pmm_pools(tied, np.array([-1.0]), 5)[0].tolist() == [
+        0,
+        1,
+        2,
+        3,
+        4,
+    ]
+
+
+@pytest.mark.parametrize("constant", [False, True])
+def test_constant_participation_needs_no_model(constant):
+    """When every CPS donor participates, or none does, the logit has no
+    finite estimate. Imputation takes the constant outcome instead of
+    failing, and its diagnostics stay valid JSON. Broadband reaches the
+    all-zero case once Census's values end with the ACP."""
+    units = ce_units(11, (2022,), n=150)
+    donors = cps_donors(11, (2022,), n=500)
+    rng = np.random.default_rng(11)
+    in_lunch_universe = donors["n_5_18"].to_numpy() >= 1
+    donors["nslp"] = constant & in_lunch_universe
+    donors["nslp_children"] = np.where(donors["nslp"], donors["n_5_18"], 0)
+    donors["spm_schlunch"] = np.where(
+        donors["nslp"], 700.0 * donors["n_5_18"], 0.0
+    )
+    donors["wic"] = constant
+    donors["liheap"] = constant
+    donors["liheap_amount"] = (
+        rng.lognormal(6.0, 0.6, len(donors)) if constant else 0.0
+    )
+    donors["broadband"] = constant
+    donors["spm_bbsubval"] = 360.0 if constant else 0.0
+    components = ("nslp", "wic", "liheap", "broadband")
+    result = impute_in_kind(
+        units, donors, InKindConfig(implicates=2, components=components)
+    )
+    for component in components:
+        diagnostics = result.diagnostics[component]["2022"]
+        assert diagnostics["constant_outcome"] is constant
+        assert diagnostics["ce_participation_rate_mean"] == float(constant)
+    for frame in result.implicates:
+        f = frame.set_index("NEWID")
+        u = units.set_index("key").loc[f.index]
+        if constant:
+            assert (f["liheap"] > 0).all() and (f["broadband"] > 0).all()
+            assert (f.loc[u["n_5_18"].to_numpy() >= 1, "nslp"] > 0).all()
+        else:
+            assert (f[list(components)] == 0).all().all()
+    json.dumps(result.diagnostics, allow_nan=False)
+
+
+def test_unit_inputs_must_come_from_the_loader():
+    fmli = pd.DataFrame({"NEWID": [11], "ce_year": [2024], "ce_quarter": [2]})
+    units = unit_inputs_for([11]).drop(columns="rent_paid_monthly")
+    with pytest.raises(ValueError, match="rent_paid_monthly"):
+        ce_unit_covariates(fmli, units)
 
 
 # ---------------------------------------------------------------------------

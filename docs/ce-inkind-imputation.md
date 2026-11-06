@@ -85,6 +85,12 @@ of the five CPS recipients nearest to it in predicted value, chosen by
 the unit's hashed draw. A unit beyond either end of the donor range
 draws from the five end donors, never from repeated copies of one.
 
+When no CPS donor in a program's universe participates in a reference
+year, or every one does, the logit has no finite estimate. The stage then
+gives every CE unit in the universe that constant outcome and records it
+in the diagnostics. Broadband reaches the first case once Census's values
+fall to zero after the ACP ended.
+
 The WIC universe follows BLS: a woman aged 15–45, or a child under 5 with
 a woman aged 15 or older. From the 2025 thresholds BLS drops the woman
 requirement for units with children under 5, so `for_target` applies the

@@ -109,6 +109,20 @@ IPR_EDGES = (0.5, 1.0, 1.3, 1.5, 1.85, 2.5, 4.0)
 #: rent (implausible market rents, such as employer-provided housing).
 MIN_UNASSISTED_MONTHLY_RENT = 50.0
 
+#: Columns :func:`ce_unit_covariates` needs from :func:`load_ce_unit_inputs`.
+UNIT_INPUT_COLUMNS = (
+    "NEWID",
+    "n_lt5",
+    "n_infants",
+    "n_5_18",
+    "n_lt18",
+    "n_ge65",
+    "n_women_15_45",
+    "n_women_15_plus",
+    "housing_assistance",
+    "rent_paid_monthly",
+)
+
 _TENURE_BY_CUTENURE = {
     1: "owner_with_mortgage",
     2: "owner_without_mortgage",
@@ -461,6 +475,12 @@ def ce_unit_covariates(
     The columns match :func:`spm_calculator.cps_asec.build_household_donors`
     plus CE-only housing characteristics used by the rent model.
     """
+    missing = sorted(set(UNIT_INPUT_COLUMNS) - set(units.columns))
+    if missing:
+        raise ValueError(
+            f"CE unit inputs lack {missing}; build them with "
+            "load_ce_unit_inputs"
+        )
     f = fmli.reset_index(drop=True)
     newid = _numeric(f, "NEWID")
     if newid.isna().any() or newid.duplicated().any():
@@ -717,7 +737,25 @@ def _participation(
     config: InKindConfig,
     diagnostics: dict,
 ) -> list[np.ndarray]:
-    """Imputed participation for each implicate (boolean per CE row)."""
+    """Imputed participation for each implicate (boolean per CE row).
+
+    When no CPS donor participates, or every one does, the logit has no
+    finite estimate; every CE unit then takes the donors' constant
+    outcome, and ``diagnostics["constant_outcome"]`` records it. Broadband
+    reaches this case once Census's values fall to zero after the ACP
+    ended.
+    """
+    outcome = np.asarray(outcome, dtype=bool)
+    if len(outcome) == 0:
+        raise ValueError(f"No CPS ASEC donors in the {component} universe")
+    if outcome.all() or not outcome.any():
+        constant = bool(outcome[0])
+        diagnostics["model_columns"] = {}
+        diagnostics["constant_outcome"] = constant
+        return [
+            np.full(len(ce), constant, dtype=bool)
+            for _ in range(config.implicates)
+        ]
     states = sorted(int(s) for s in cps["state"].dropna().unique())
     masks = _geography_masks(ce)
     draws = [np.zeros(len(ce), dtype=bool) for _ in range(config.implicates)]
@@ -802,14 +840,19 @@ def _pmm(
 def _pmm_pools(
     sorted_hat: np.ndarray, target_hat: np.ndarray, k: int
 ) -> np.ndarray:
-    """Positions of the ``k`` donors nearest each target, nearest first.
+    """Positions of ``k`` donors nearest each target, nearest first.
 
     ``sorted_hat`` holds the donors' predicted values in ascending order.
-    In a sorted array the ``k`` nearest values to a target always lie
-    within the ``2k`` positions around its insertion point. That window
-    shifts inward at either end rather than repeating the end donor, so
-    every pool holds ``min(k, len(sorted_hat))`` distinct donors. Equal
-    distances go to the lower position.
+    In a sorted array, some set of ``k`` nearest donors always lies within
+    the ``2k`` positions that start ``k`` before the target's insertion
+    point, so the pool comes from that window. The window shifts inward at
+    either end rather than repeating the end donor, so every pool holds
+    ``min(k, len(sorted_hat))`` distinct donors with the smallest
+    distances. Among donors at equal distance, the pool takes those that
+    come first in the window. When donors tie at the ``k``-th distance,
+    those need not be the lowest positions overall: with 20 donors
+    predicted at 0 and a target at 1, the window spans positions 10-19
+    and the pool is positions 10-14.
 
     Returns:
         An integer array of shape ``(len(target_hat), min(k, n))``.
@@ -1230,9 +1273,13 @@ def _parameter_hashes() -> dict:
     }
 
 
-def _weighted_mean(values, weights) -> float:
+def _weighted_mean(values, weights) -> Optional[float]:
+    """Weighted mean, or None for a group with no weight (no members)."""
     weights = np.asarray(weights, dtype=float)
-    return float(np.sum(np.asarray(values) * weights) / weights.sum())
+    total = weights.sum()
+    if not total > 0:
+        return None
+    return float(np.sum(np.asarray(values, dtype=float) * weights) / total)
 
 
 def impute_in_kind(
@@ -1394,7 +1441,9 @@ def impute_in_kind(
                         participants["nslp_value"], participants["weight"]
                     ),
                     "value_source": (
-                        "census_spm_schlunch"
+                        None
+                        if participants.empty
+                        else "census_spm_schlunch"
                         if participants["spm_schlunch"].notna().all()
                         else "usda_formula"
                     ),
