@@ -27,6 +27,7 @@ from hypothesis import given
 from hypothesis import strategies as st
 
 from scripts import render_ce_inkind_bls_tables as render
+from spm_calculator import ce_bls_shares
 from spm_calculator.ce_bls_shares import (
     COMMODITIES,
     COMPONENTS,
@@ -624,7 +625,34 @@ def test_receipt_matches_the_in_kind_replication():
                 assert ours == pytest.approx(theirs, rel=1e-12)
 
 
-def test_receipt_bls_bands_come_from_the_workbook():
+def plain_sum(values, start=0):
+    """The built-in ``sum`` before Python 3.12, with no rounding compensation."""
+    total = start
+    for value in values:
+        total += value
+    return total
+
+
+def assert_same_record(actual, expected, tolerance=1e-9):
+    """Nested records match in keys and strings, and in numbers within ``tolerance``.
+
+    Python 3.12 made the built-in ``sum`` compensate for rounding, so float sums
+    differ in their last bits across the versions CI runs, by about 1e-11 dollars
+    here.
+    """
+    if isinstance(expected, dict):
+        assert actual.keys() == expected.keys()
+        for key, value in expected.items():
+            assert_same_record(actual[key], value, tolerance)
+    elif isinstance(expected, str):
+        assert actual == expected
+    else:
+        assert actual == pytest.approx(expected, abs=tolerance)
+
+
+@pytest.mark.parametrize("summation", (sum, plain_sum))
+def test_receipt_bls_bands_come_from_the_workbook(monkeypatch, summation):
+    monkeypatch.setattr(ce_bls_shares, "sum", summation, raising=False)
     receipt = committed_receipt()
     shares = read_threshold_shares()
     for year in YEARS:
@@ -634,9 +662,11 @@ def test_receipt_bls_bands_come_from_the_workbook():
             get_tenure_shares(year),
         )
         record = receipt["bls"]["years"][str(year)]
-        assert record["band"] == band.to_dict()
-        assert record["checks"] == checks
-        assert record["imputed_total"] == band.imputed_total
+        assert_same_record(record["band"], band.to_dict())
+        assert_same_record(record["checks"], checks)
+        assert record["imputed_total"] == pytest.approx(
+            band.imputed_total, abs=1e-9
+        )
 
 
 @pytest.mark.parametrize("run", RUNS)
