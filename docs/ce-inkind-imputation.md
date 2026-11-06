@@ -460,13 +460,14 @@ year.
 
 ## Comparison with BLS components
 
-BLS publishes each component's share of each threshold, based on the
-components' values within the percentile band
-([shares workbook](https://www.bls.gov/pir/spm/spm_shares.xlsx)), and each
-tenure's percentage of its weighted sample
-([thresholds workbook](https://www.bls.gov/pir/spm/spm_thresholds.xlsx)).
-Those two files give BLS's in-band dollars. With `F = C + SU`, where `C`
-sums the components every tenure shares, a threshold
+BLS computes each component's share of each threshold from the components'
+values within the percentile band and publishes the shares
+([shares workbook](https://www.bls.gov/pir/spm/spm_shares.xlsx)). It also
+publishes each tenure's weighted share of the consumer units with children in
+that band
+([thresholds workbook](https://www.bls.gov/pir/spm/spm_thresholds.xlsx),
+footnote 3). From those two files we compute BLS's in-band dollars. With
+`F = C + SU`, where `C` sums the components every tenure shares, a threshold
 `T_h = 0.82 × (1.2 × F − SU + SU_h)` rearranges to:
 
 ```text
@@ -475,12 +476,10 @@ F          = C + Σ_h P_h × SU_h
 ```
 
 A share times `T_h / 0.82` gives a component's dollars, and BLS's "Other"
-share gives `0.2 × F`. With `P_h` as that percentage, BLS's published values
-satisfy both identities within $0.00001 in every year from 2019 to 2025. `SU_h`
-differs by thousands of dollars across tenures, so a mix from any other sample
-would miss the second identity by dollars, and we read `P_h` as the band's mix.
-`spm_calculator/ce_bls_shares.py` computes the same means for the
-replication's band, and they reproduce every threshold.
+share gives `0.2 × F`. With `P_h` as the tenure's share of the band, BLS's
+published values satisfy both identities within $0.00001 in every year from
+2019 to 2025. We compute the same means for the replication's band with
+`spm_calculator/ce_bls_shares.py`, and they reproduce every threshold.
 
 All figures in this section come from
 `ce_inkind_bls_components_2019_2025.json`, in threshold-year dollars for two
