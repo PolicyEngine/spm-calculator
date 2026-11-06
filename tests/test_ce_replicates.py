@@ -31,6 +31,7 @@ import pytest
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
+from scripts import render_ce_replicate_tables as render
 from spm_calculator.ce_bls_shares import band_components
 from spm_calculator.ce_inkind_stage import (
     IN_KIND_COMPONENTS,
@@ -118,7 +119,8 @@ def rubin_reference(estimates, within, nu_com=NU_COM):
     total = float(u.mean()) + (1 + 1 / m) * between
     fraction = (1 + 1 / m) * between / total if total > 0 else 0.0
     nu_obs = (nu_com + 1) / (nu_com + 3) * nu_com * (1 - fraction)
-    if fraction == 0:
+    if fraction**2 == 0:
+        # nu_m is infinite, so nu_m * nu_obs / (nu_m + nu_obs) tends to nu_obs.
         return float(q.mean()), total, nu_obs
     nu_m = (m - 1) / fraction**2
     df = 0.0 if nu_obs == 0 else nu_m * nu_obs / (nu_m + nu_obs)
@@ -276,6 +278,12 @@ def test_rubin_degenerate_cases():
     assert between_only.fraction_missing == 1
     assert between_only.df_rubin == 2
     assert between_only.df == 0
+    # Hypothesis found this one: the fraction is positive, but its square
+    # rounds to zero, so Rubin's df cannot be held as a float.
+    tiny = combine_implicates([0.0, 6.09213877853091e-80], [0.0, 3543.0])
+    assert 0 < tiny.fraction_missing < 1e-150
+    assert tiny.df_rubin is None
+    assert tiny.df == pytest.approx(NU_COM * (NU_COM + 1) / (NU_COM + 3))
     with pytest.raises(ValueError, match="two or more"):
         combine_implicates([1.0], [1.0])
     with pytest.raises(ValueError, match="nonnegative"):
@@ -684,3 +692,11 @@ def test_receipt_intervals_use_t_quantiles():
             assert entry["t_975"] == pytest.approx(
                 float(stats.t.ppf(0.975, entry["df"])), rel=1e-12
             )
+
+
+def test_docs_page_holds_the_receipt_tables():
+    page = (ROOT / "docs/ce-inkind-imputation.md").read_text()
+    components = json.loads(COMPONENTS_RECEIPT.read_text())
+    tables = render.render_tables(committed_receipt(), components)
+    for name, table in tables.items():
+        assert table in page, name
