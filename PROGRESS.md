@@ -24,6 +24,10 @@ follow.
   corrected levels for every tenure in every year from 2019 to 2025. It
   changes 2022–2025 growth by −0.6 to +1.0 points; real out-of-pocket
   spending carries growth beyond prices.
+- Price-index sensitivity: deflating with BLS's published FCSUti index
+  instead of the package composite adds 0.9–2.0 points of 2022–2025
+  growth and brings the replication without the stage within 0.7 points
+  of BLS's growth for every tenure.
 
 ## Next
 

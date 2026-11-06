@@ -40,7 +40,8 @@ result["thresholds"], result["out_of_pocket"]["thresholds"]
 
 `scripts/replicate_ce_inkind.py` builds `ce_units` and `cps_donors` from
 cached CE Interview bundles (2014–2024) and CPS ASEC public-use files
-(2015–2025), runs 2019–2025 with and without the stage, and writes
+(2015–2025), runs 2019–2025 with and without the stage, repeats both with
+BLS's FCSUti index as the deflator, and writes
 `spm_calculator/data/current/ce_inkind_replication_2019_2025.json`. It
 makes no network requests. It stops with an error unless the
 out-of-pocket run matches the archived receipt exactly and an all-zero
@@ -141,8 +142,19 @@ produced it.
 ## Results
 
 All figures come from the committed receipt, five implicates, with CPI
-pinned to the package's `cpi_annual.json`. The CE estimation sample is
-consumer units with children.
+pinned to the package's `cpi_annual.json` unless a section says
+otherwise. The CE estimation sample is consumer units with children.
+
+In short:
+
+- Imputed benefits lift the replication's thresholds by 1.1–3.9% and
+  carry them above BLS's corrected levels for every tenure in every year
+  from 2019 to 2025.
+- They change 2022–2025 threshold growth by −0.6 to +1.0 points.
+- The price index matters more. Deflating with BLS's FCSUti index instead
+  of the package's composite CPI adds 0.9–2.0 points of 2022–2025 growth
+  and brings the replication without the stage within 0.7 points of
+  BLS's growth for every tenure.
 
 ### Imputed amounts
 
@@ -307,7 +319,9 @@ replication's growth beyond prices, and the stage leaves the renter
 shortfall against BLS's growth unexplained (−1.8 points without the
 stage, −2.4 with it). The package's composite CPI assigns about one point
 less to prices than BLS's FCSUti index, and the decomposition moves that
-point to real spending.
+point to real spending. The decomposition attributes fixed thresholds;
+the last results section reruns the replication with BLS's index as the
+deflator, which changes the thresholds themselves.
 
 ### Year over year
 
@@ -326,9 +340,60 @@ the between-implicate standard deviation:
 The in-kind term runs from −1.5 to +1.4 points a year. Owners without
 mortgages swing most and carry the largest implicate spread: they make
 up fewer than one in ten units in the estimation band (136 of 1,550 in
-the 2025 out-of-pocket band), so a few units reorder their mean. Each window shares four of its
-five reference years with the next, and sampling uncertainty remains
-unestimated, so single-year movements of this size deserve caution.
+the 2025 out-of-pocket band), so a few units reorder their mean. Each
+window shares four of its five reference years with the next, and
+sampling uncertainty remains unestimated, so single-year movements of
+this size deserve caution.
+
+### Deflating with BLS's FCSUti index
+
+The replication carries each unit's spending to threshold-year dollars
+with a composite of five CPI-U series (food, apparel, shelter, fuels and
+utilities, and telephone services), weighted by the window's CE spending
+and applied by collection year. BLS deflates with its FCSUti index, which
+it builds from CPI basic item-area indexes. That index also prices
+internet service, and its 2025 average imputes October, which BLS did not
+collect ([BLS 2025 thresholds](https://www.bls.gov/pir/spm/spm_thresholds_2025.htm)).
+A sensitivity run replaces every component series with BLS's published
+FCSUti levels ([BLS table](https://www.bls.gov/pir/spm/spm_chart_2025data.htm)),
+so each unit's price factor becomes `I(T) / I(c)` for collection year
+`c`; the script checks that factor for every collection year.
+
+2022–2025 growth:
+
+| Tenure | BLS corrected | Package CPI, without stage | Package CPI, with stage | FCSUti, without stage | FCSUti, with stage |
+|---|---:|---:|---:|---:|---:|
+| Renter | +22.15% | +20.37% | +19.78% | +21.48% | +20.94% |
+| Owner with mortgage | +21.61% | +21.15% | +21.22% | +22.08% | +22.13% |
+| Owner without mortgage | +20.63% | +18.79% | +19.75% | +20.81% | +21.64% |
+
+BLS's index adds 1.1 points of 2022–2025 growth for renters, 0.9 for
+owners with mortgages and 2.0 for owners without mortgages: in each
+tenure, more than the in-kind stage moves it. Without the stage, the
+replication's growth then lands within 0.7 points of BLS's for every
+tenure (−0.67, +0.47 and +0.18 points) and reproduces 95%, 104% and 102%
+of BLS's growth above CPI-U. With the stage, renters fall 1.21 points
+short and owners without mortgages run 1.01 points ahead.
+
+Gap from BLS's corrected thresholds with FCSUti deflation, without → with
+the stage:
+
+| Target | Renter | Owner with mortgage | Owner without mortgage |
+|---|---:|---:|---:|
+| 2019 | −0.76% → +2.08% | −1.35% → +1.20% | −0.54% → +3.10% |
+| 2020 | −1.16% → +1.53% | −1.31% → +1.37% | +0.23% → +3.81% |
+| 2021 | −1.34% → +1.72% | −1.55% → +0.84% | +0.48% → +2.91% |
+| 2022 | −1.63% → +1.84% | −1.67% → +0.97% | +1.00% → +2.91% |
+| 2023 | −1.10% → +1.47% | −2.10% → +1.05% | +0.65% → +2.58% |
+| 2024 | −0.96% → +2.05% | −1.99% → +1.09% | +1.29% → +2.57% |
+| 2025 | −2.16% → +0.83% | −1.29% → +1.40% | +1.15% → +3.77% |
+
+Out-of-pocket levels move by −0.65% to +1.04% against the package-CPI
+run, and the stage still carries every tenure above BLS in every year.
+The run shows how much the deflator matters, not how BLS deflates: BLS's
+index prices internet service, which the replication's spending omits,
+and the run keeps the replication's annual price factors by collection
+year.
 
 ## Limitations
 
@@ -380,7 +445,8 @@ Nothing in the canonical forecast uses the stage today.
 - `spm_calculator/ce_inkind.py`: the imputation.
 - `spm_calculator/ce_inkind_stage.py`: the stage that adds a table of
   amounts to the CE frame and re-estimates thresholds.
-- `spm_calculator/ce_decomposition.py`: the growth decomposition.
+- `spm_calculator/ce_decomposition.py`: the growth decomposition and
+  BLS's published FCSUti levels, 2002–2025.
 - `spm_calculator/cps_asec.py`: CPS ASEC household donors.
 - `spm_calculator/data/inkind/`: USDA lunch rates and donated-food values,
   WIC food costs and EBT dates, official poverty thresholds, and the
