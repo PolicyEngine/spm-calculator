@@ -137,8 +137,11 @@ def growth_percent(
 ) -> dict[str, float]:
     """Percent change by tenure."""
     return {
-        tenure: 100 * (_positive(target[tenure], "target") / _positive(
-            base[tenure], "base"
-        ) - 1)
+        tenure: 100
+        * (
+            _positive(target[tenure], "target")
+            / _positive(base[tenure], "base")
+            - 1
+        )
         for tenure in TENURES
     }

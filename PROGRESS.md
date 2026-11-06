@@ -1,3 +1,39 @@
+# CE in-kind benefit imputation — November 5, 2026
+
+## State
+
+Draft PR [#55](https://github.com/PolicyEngine/spm-calculator/pull/55) on
+`max/ce-inkind-imputation-20261105`. The branch holds the stage,
+imputation, tests, receipt and docs page; independent review and merge
+follow.
+
+## Done
+
+- `ce_inkind_stage.py`: an optional stage that adds in-kind amounts to the
+  CE expenditure frame through `ce_threshold`'s public functions. The
+  default replication, its September 8 receipt and the canonical forecast's
+  code identity stay unchanged.
+- `ce_inkind.py` and `cps_asec.py`: BLS-style imputation of school lunch,
+  WIC, LIHEAP, broadband and rental assistance from CPS ASEC household
+  donors and CE rent records, with five implicates.
+- `ce_decomposition.py`: an exact price × real out-of-pocket × in-kind
+  growth decomposition under the package CPI and BLS's FCSUti index.
+- Receipt `spm_calculator/data/current/ce_inkind_replication_2019_2025.json`
+  and docs page `docs/ce-inkind-imputation.md`.
+- Result: the stage lifts thresholds 1.1–3.9% and overshoots BLS's
+  corrected levels for every tenure in every year from 2019 to 2025. It
+  changes 2022–2025 growth by −0.6 to +1.0 points; real out-of-pocket
+  spending carries growth beyond prices.
+
+## Next
+
+- Independent GPT-6.1 Sol review, CI and merge.
+- A summary for John Creamer, held for Max's go.
+- Follow-ups: the stage in forecast windows (off by default) and home
+  internet spending, which the replication still omits.
+
+---
+
 # Methods paper embedded at /paper — September 14, 2026
 
 ## State
