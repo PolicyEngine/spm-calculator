@@ -463,7 +463,7 @@ year.
 BLS publishes each component's share of each threshold, based on the
 components' values within the percentile band
 ([shares workbook](https://www.bls.gov/pir/spm/spm_shares.xlsx)), and each
-year's weighted distribution of consumer units by tenure
+tenure's percentage of its weighted sample
 ([thresholds workbook](https://www.bls.gov/pir/spm/spm_thresholds.xlsx)).
 Those two files give BLS's in-band dollars. With `F = C + SU`, where `C`
 sums the components every tenure shares, a threshold
@@ -475,10 +475,10 @@ F          = C + Σ_h P_h × SU_h
 ```
 
 A share times `T_h / 0.82` gives a component's dollars, and BLS's "Other"
-share gives `0.2 × F`. BLS's published values satisfy both identities within
-$0.00001 in every year from 2019 to 2025. `SU_h` differs by thousands of
-dollars across tenures, so a distribution from any other sample would miss
-the second identity by dollars, and we read BLS's `P_h` as the band's mix.
+share gives `0.2 × F`. With `P_h` as that percentage, BLS's published values
+satisfy both identities within $0.00001 in every year from 2019 to 2025. `SU_h`
+differs by thousands of dollars across tenures, so a mix from any other sample
+would miss the second identity by dollars, and we read `P_h` as the band's mix.
 `spm_calculator/ce_bls_shares.py` computes the same means for the
 replication's band, and they reproduce every threshold.
 
