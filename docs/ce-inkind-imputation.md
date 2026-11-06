@@ -60,10 +60,10 @@ year r + 1.
 | Component | Participation | Value | Enters |
 |---|---|---|---|
 | School lunch (NSLP) | Logit on CPS households with a member aged 5–18 (`HFLUNCH`). The CE universe applies only the age rule, as BLS does. | Hot deck from participating CPS households in the same state, SNAP, below-150%-of-poverty and child-count cell (widening to region, then the nation, when a cell has too few donors), scaled to the CE unit's children aged 5–18. Donor values: Census's `SPM_SCHLUNCH` for reference years 2018 onward; for earlier years, the traditional formula (USDA reimbursement plus donated-food value per lunch, weighted 5/9 spring and 4/9 fall school year, times 179 days, for each child receiving lunch; free below 150% of the official poverty line, otherwise free or reduced with equal probability). | FCSUti |
-| WIC | Logit on CPS households in the WIC universe | Census's participant rule (all children under 5, plus the mother of a child aged 0–1, otherwise one pregnant woman) × 12 × USDA's national fiscal-year average monthly food cost. Zero where the state finished WIC EBT before the middle of the reference period. | FCSUti |
+| WIC | Logit on CPS households in the WIC universe | Census's participant rule (all children under 5, plus the mother of a child aged 0–1 when the unit includes a woman 15 or older, otherwise one pregnant woman) × 12 × USDA's national fiscal-year average monthly food cost. Zero where the state finished WIC EBT before the middle of the reference period. | FCSUti |
 | LIHEAP | Logit on all CPS households | Predictive mean matching on household-reported `HENGVAL` | FCSUti and SU |
 | Broadband (EBB, ACP) | Logit on all CPS households, reference years 2021 onward | Predictive mean matching on Census's assigned `SPM_BBSUBVAL` | FCSUti |
-| Rental assistance | CE renters reporting `GOVTCOST` or `PUBLHOUS` in the rent file | Weighted Tobit of log monthly rent on unit characteristics, with assisted units censored from above at their rent paid. Benefit = 12 × (imputed market rent − rent paid). | FCSUti and SU |
+| Rental assistance | CE renters reporting `GOVTCOST` or `PUBLHOUS` in the rent file | Weighted Tobit of log monthly rent paid on unit characteristics, with assisted units censored from above at their rent paid. Benefit = 12 × (imputed market rent − rent paid). | FCSUti and SU |
 
 Participation models share one covariate set that both surveys measure:
 income relative to the official poverty threshold, SNAP, public
@@ -72,9 +72,18 @@ counts of children under 5, children aged 5–18, members 65 and over and
 earners, and the reference person's age, sex, race, Hispanic origin and
 education. Each model uses state indicators where the CE identifies the
 state, region indicators where it identifies only the region, and neither
-otherwise. Census's school lunch values carry its COVID-era methods for
-virtual schooling and P-EBT (Shrider 2021, 2022, 2023), which BLS also
-says it follows, and its later universal-free-meal and Summer EBT rules.
+otherwise. A CE unit receives SNAP when it reports an amount
+(`JFS_AMT`), CE completes one (`JFS_AMTM`) or it reports months of
+receipt (`FS_MTHI`). Census's school lunch values carry its COVID-era
+methods for virtual schooling and P-EBT (Shrider 2021, 2022, 2023), which
+BLS also says it follows, and its later universal-free-meal and Summer
+EBT rules.
+
+Predictive mean matching fits a weighted regression of log amount on
+CPS recipients, then gives each imputed CE recipient the amount of one
+of the five CPS recipients nearest to it in predicted value, chosen by
+the unit's hashed draw. A unit beyond either end of the donor range
+draws from the five end donors, never from repeated copies of one.
 
 The WIC universe follows BLS: a woman aged 15–45, or a child under 5 with
 a woman aged 15 or older. From the 2025 thresholds BLS drops the woman
@@ -85,7 +94,12 @@ from reference year 2023.
 
 The rental model fits renters per reference year: unassisted units with
 rent of at least $50 a month enter as observed, assisted units as
-censored at their rent paid. Covariates cover bedrooms, bathrooms,
+censored at their rent paid. Rent paid is the rent file's three-month
+rent (`QRT3MCMX`) summed over the unit's records and divided by three.
+That sum equals the unit's rent-of-dwelling expenditure, UCC 210110,
+which a test checks on cached CE data; the FMLI summary of rented
+dwellings (`RENDWEPQ + RENDWECQ`) also counts maintenance, insurance and
+other costs. Covariates cover bedrooms, bathrooms,
 building type, urbanicity, population size, state (or region where the
 CE suppresses the state) and quarter. Each assisted unit's market rent is
 a draw from the fitted distribution above its rent paid.
@@ -112,7 +126,7 @@ The stage never lowers any unit's FCSUti or SU, yet a single component
 can still lower a tenure's threshold slightly: added benefits reorder
 units and change which of them land in the 47th–53rd percentile band.
 In 2025, WIC alone lowers the renter threshold by 0.03% and broadband
-alone by 0.04%.
+alone by 0.05%.
 
 ## Invariants
 
@@ -129,10 +143,15 @@ alone by 0.04%.
    assistance needs an assisted renter.
 6. Growth factors exactly into price × real out-of-pocket × in-kind, and
    the additive contributions sum to total growth.
+7. Every predictive mean matching pool holds min(k, n) distinct donors,
+   the k nearest to the target by predicted value.
 
 `tests/test_ce_inkind.py` checks each on synthetic CE and CPS data:
-Hypothesis property tests cover invariants 1, 2, 3 and 6, and fixture
-tests cover 4 and 5. It also compares the USDA lunch formula with
+Hypothesis property tests cover invariants 1, 2, 3, 6 and 7 (the last
+against brute force, with tied predictions and targets beyond the donor
+range), and fixture tests cover 4 and 5. It also checks rent paid against
+UCC 210110 in the second quarters of 2015, 2019 and 2024 when those CE
+bundles are cached, compares the USDA lunch formula with
 the values Census assigned in 2018 and 2019 (the formula gives
 $626.35/$554.75 against Census's $627/$555, and $642.71/$571.11 against
 $643/$571), checks that the logit and Tobit recover known parameters,
@@ -147,10 +166,10 @@ otherwise. The CE estimation sample is consumer units with children.
 
 In short:
 
-- Imputed benefits lift the replication's thresholds by 1.1–3.9% and
+- Imputed benefits lift the replication's thresholds by 1.1–3.8% and
   carry them above BLS's corrected levels for every tenure in every year
   from 2019 to 2025.
-- They change 2022–2025 threshold growth by −0.6 to +1.0 points.
+- They change 2022–2025 threshold growth by −0.6 to +0.9 points.
 - The price index matters more. Deflating with BLS's FCSUti index instead
   of the package's composite CPI adds 0.9–2.0 points of 2022–2025 growth
   and brings the replication without the stage within 0.7 points of
@@ -163,16 +182,16 @@ dollars:
 
 | Target | School lunch | WIC | LIHEAP | Broadband | Rental assistance | Total | Share with any |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| 2019 | 319 | 51 | 17 | 0 | 439 | 826 | 33.8% |
-| 2020 | 342 | 43 | 18 | 0 | 438 | 840 | 34.4% |
-| 2021 | 333 | 33 | 18 | 0 | 450 | 834 | 33.1% |
-| 2022 | 425 | 25 | 21 | 2 | 484 | 957 | 36.4% |
-| 2023 | 509 | 16 | 24 | 5 | 477 | 1,031 | 38.6% |
-| 2024 | 552 | 9 | 25 | 9 | 504 | 1,099 | 39.9% |
-| 2025 | 587 | 3 | 25 | 11 | 530 | 1,156 | 41.1% |
+| 2019 | 321 | 52 | 18 | 0 | 447 | 838 | 34.0% |
+| 2020 | 344 | 44 | 18 | 0 | 444 | 849 | 34.7% |
+| 2021 | 335 | 33 | 18 | 0 | 454 | 840 | 33.3% |
+| 2022 | 425 | 25 | 22 | 2 | 486 | 960 | 36.6% |
+| 2023 | 508 | 16 | 26 | 5 | 480 | 1,035 | 38.9% |
+| 2024 | 551 | 9 | 26 | 9 | 504 | 1,100 | 40.1% |
+| 2025 | 586 | 3 | 26 | 11 | 528 | 1,155 | 41.3% |
 
 School lunch and rental assistance supply over 90% of the total in every
-year. School lunch grows the most, from $319 to $587 a unit. Among CPS
+year. School lunch grows the most, from $321 to $586 a unit. Among CPS
 households with school-age children, reported participation rises from
 33% in reference year 2014 to 54% in 2021, then falls back to 49% in
 2024, while the mean donor value per participating household rises from
@@ -183,14 +202,14 @@ imputed against CPS donors, by reference year:
 
 | Component | 2014 | 2018 | 2021 | 2024 |
 |---|---|---|---|---|
-| School lunch (households with a member 5–18) | 33.9% / 33.2% | 38.1% / 37.2% | 54.5% / 53.7% | 47.7% / 48.6% |
-| WIC (WIC universe) | 7.3% / 7.5% | 5.9% / 5.5% | 4.9% / 4.8% | 5.5% / 5.4% |
-| LIHEAP (all) | 3.4% / 3.5% | 3.3% / 3.2% | 3.3% / 3.2% | 3.4% / 3.3% |
-| Broadband (all) | — | — | 1.8% / 1.7% | 2.6% / 2.4% |
+| School lunch (households with a member 5–18) | 34.3% / 33.2% | 38.3% / 37.2% | 54.8% / 53.7% | 47.9% / 48.6% |
+| WIC (WIC universe) | 7.5% / 7.5% | 6.1% / 5.5% | 5.0% / 4.8% | 5.6% / 5.4% |
+| LIHEAP (all) | 3.6% / 3.5% | 3.5% / 3.2% | 3.4% / 3.2% | 3.6% / 3.3% |
+| Broadband (all) | — | — | 1.9% / 1.7% | 2.7% / 2.4% |
 
 Rental assistance comes from the CE itself: 12.7% of CE renters report
-assistance in 2014 and 14.0% in 2024, with mean annual benefits of $7,389
-and $12,439 per assisted unit.
+assistance in 2014 and 14.0% in 2024, with mean annual benefits of $7,608
+and $12,210 per assisted unit.
 
 ### Levels: gap to BLS's corrected thresholds
 
@@ -199,13 +218,13 @@ stage:
 
 | Target | Renter | Owner with mortgage | Owner without mortgage |
 |---|---:|---:|---:|
-| 2019 | −1.12 → +1.67 | −1.67 → +0.85 | −1.00 → +2.85 |
-| 2020 | −1.45 → +1.24 | −1.69 → +0.95 | −0.24 → +3.53 |
-| 2021 | −1.36 → +1.75 | −1.55 → +0.81 | +0.78 → +3.06 |
-| 2022 | −1.33 → +2.23 | −1.41 → +1.25 | +1.67 → +3.30 |
-| 2023 | −1.07 → +1.42 | −2.05 → +1.08 | +0.72 → +3.01 |
-| 2024 | −1.40 → +1.67 | −2.25 → +0.74 | +1.14 → +2.23 |
-| 2025 | −2.77 → +0.25 | −1.79 → +0.92 | +0.11 → +2.54 |
+| 2019 | −1.12 → +1.73 | −1.67 → +0.94 | −1.00 → +2.75 |
+| 2020 | −1.45 → +1.28 | −1.69 → +1.04 | −0.24 → +3.53 |
+| 2021 | −1.36 → +1.79 | −1.55 → +0.89 | +0.78 → +3.01 |
+| 2022 | −1.33 → +2.27 | −1.41 → +1.26 | +1.67 → +3.28 |
+| 2023 | −1.07 → +1.49 | −2.05 → +1.06 | +0.72 → +2.85 |
+| 2024 | −1.40 → +1.69 | −2.25 → +0.72 | +1.14 → +2.23 |
+| 2025 | −2.77 → +0.26 | −1.79 → +0.92 | +0.11 → +2.48 |
 
 The without column matches the [September 8 replication](current-ce-replication.md)
 exactly. In-kind lift (percent of the out-of-pocket threshold), with the
@@ -213,13 +232,13 @@ between-implicate standard deviation in percent of the threshold:
 
 | Target | Renter | Owner with mortgage | Owner without mortgage |
 |---|---:|---:|---:|
-| 2019 | 2.82 (0.15) | 2.56 (0.24) | 3.89 (0.12) |
-| 2020 | 2.73 (0.23) | 2.69 (0.22) | 3.77 (0.22) |
-| 2021 | 3.15 (0.18) | 2.40 (0.22) | 2.27 (0.33) |
-| 2022 | 3.60 (0.25) | 2.70 (0.21) | 1.61 (0.34) |
-| 2023 | 2.51 (0.14) | 3.20 (0.13) | 2.27 (0.99) |
-| 2024 | 3.11 (0.20) | 3.06 (0.15) | 1.08 (0.69) |
-| 2025 | 3.10 (0.34) | 2.76 (0.08) | 2.43 (0.86) |
+| 2019 | 2.88 (0.22) | 2.65 (0.22) | 3.79 (0.23) |
+| 2020 | 2.77 (0.26) | 2.78 (0.19) | 3.77 (0.34) |
+| 2021 | 3.20 (0.17) | 2.48 (0.21) | 2.21 (0.35) |
+| 2022 | 3.65 (0.20) | 2.71 (0.19) | 1.59 (0.31) |
+| 2023 | 2.58 (0.05) | 3.18 (0.05) | 2.11 (1.03) |
+| 2024 | 3.13 (0.20) | 3.03 (0.16) | 1.08 (0.71) |
+| 2025 | 3.12 (0.37) | 2.76 (0.11) | 2.37 (0.91) |
 
 Share of the gap the stage closes, `(with − without) / (BLS − without)`.
 Values above 1 overshoot; negative values mean the replication already
@@ -228,19 +247,19 @@ under 0.5%, where the ratio means little.
 
 | Target | Renter | Owner with mortgage | Owner without mortgage |
 |---|---:|---:|---:|
-| 2019 | 2.49 | 1.51 | 3.85 |
-| 2020 | 1.85 | 1.56 | — |
-| 2021 | 2.28 | 1.52 | −2.93 |
-| 2022 | 2.67 | 1.89 | −0.98 |
-| 2023 | 2.33 | 1.53 | −3.17 |
-| 2024 | 2.20 | 1.33 | −0.96 |
-| 2025 | 1.09 | 1.52 | — |
+| 2019 | 2.54 | 1.57 | 3.75 |
+| 2020 | 1.88 | 1.62 | — |
+| 2021 | 2.31 | 1.58 | −2.86 |
+| 2022 | 2.71 | 1.89 | −0.97 |
+| 2023 | 2.39 | 1.52 | −2.94 |
+| 2024 | 2.21 | 1.32 | −0.96 |
+| 2025 | 1.10 | 1.52 | — |
 
 Without the stage, the replication runs 1.07–2.77% below BLS for renters
 and 1.41–2.25% below for owners with mortgages in every year. The stage
-lifts thresholds by 2.40–3.60% for those two groups, so both land above
-BLS in every year: renters by 0.25–2.23% and owners with mortgages by
-0.74–1.25%. Owners without mortgages already sit above BLS in five of
+lifts thresholds by 2.48–3.65% for those two groups, so both land above
+BLS in every year: renters by 0.26–2.27% and owners with mortgages by
+0.72–1.26%. Owners without mortgages already sit above BLS in five of
 seven years, and the stage moves them to 2.23–3.53% above.
 
 The imputed benefits therefore exceed the gap they might explain. Two
@@ -257,11 +276,11 @@ threshold:
 
 | Component | 2022 renter | 2022 with mortgage | 2022 without mortgage | 2025 renter | 2025 with mortgage | 2025 without mortgage |
 |---|---:|---:|---:|---:|---:|---:|
-| School lunch | +1.28 | +1.40 | +0.13 | +1.36 | +1.31 | +1.93 |
-| WIC | +0.10 | +0.07 | −0.20 | −0.03 | −0.03 | +0.17 |
-| LIHEAP | +0.12 | +0.03 | −0.08 | +0.03 | +0.04 | +0.28 |
-| Broadband | +0.02 | +0.01 | +0.02 | −0.04 | +0.00 | +0.36 |
-| Rental assistance | +2.41 | +1.32 | +0.74 | +1.96 | +1.23 | +1.22 |
+| School lunch | +1.28 | +1.40 | +0.12 | +1.37 | +1.30 | +1.93 |
+| WIC | +0.11 | +0.07 | −0.20 | −0.03 | −0.03 | +0.17 |
+| LIHEAP | +0.12 | +0.03 | −0.08 | +0.02 | +0.04 | +0.25 |
+| Broadband | +0.02 | +0.00 | +0.02 | −0.05 | +0.01 | +0.36 |
+| Rental assistance | +2.48 | +1.30 | +0.71 | +1.97 | +1.19 | +1.23 |
 
 School lunch and rental assistance account for nearly all of the lift.
 The components interact through band composition, so they do not sum to
@@ -289,13 +308,13 @@ sums to total growth.
 | Tenure | BLS corrected | Without stage | With stage | Price | Real out-of-pocket | In-kind (implicate SD) |
 |---|---:|---:|---:|---:|---:|---:|
 | BLS FCSUti index | | | | | | |
-| Renter | +22.15% | +20.37% | +19.78% | 14.19 | 6.18 | −0.58 (0.59) |
-| Owner with mortgage | +21.61% | +21.15% | +21.22% | 14.19 | 6.96 | +0.07 (0.35) |
-| Owner without mortgage | +20.63% | +18.79% | +19.75% | 14.19 | 4.59 | +0.96 (0.86) |
+| Renter | +22.15% | +20.37% | +19.75% | 14.19 | 6.18 | −0.62 (0.62) |
+| Owner with mortgage | +21.61% | +21.15% | +21.21% | 14.19 | 6.96 | +0.06 (0.36) |
+| Owner without mortgage | +20.63% | +18.79% | +19.70% | 14.19 | 4.59 | +0.91 (1.03) |
 | Package composite CPI | | | | | | |
-| Renter | | | | 13.25 | 7.12 | −0.58 (0.59) |
-| Owner with mortgage | | | | 13.12 | 8.03 | +0.07 (0.35) |
-| Owner without mortgage | | | | 13.02 | 5.77 | +0.96 (0.86) |
+| Renter | | | | 13.25 | 7.12 | −0.62 (0.62) |
+| Owner with mortgage | | | | 13.12 | 8.03 | +0.06 (0.36) |
+| Owner without mortgage | | | | 13.02 | 5.77 | +0.91 (1.03) |
 
 Contributions are percentage points of 2022–2025 growth. The implicate
 standard deviation pairs implicates by index across the two windows.
@@ -304,15 +323,15 @@ CPI-U rose 10.01% over the same span (`cpi_annual.json`, 292.655 to
 321.943). BLS's thresholds rose 10.6–12.1 points more than CPI-U. Without
 the stage the replication reproduces 85% of that excess for renters, 96%
 for owners with mortgages and 83% for owners without; with the stage,
-81%, 97% and 92%.
+80%, 97% and 91%.
 
 In-kind benefits change the replication's 2022–2025 growth by −0.6
-points for renters, +0.1 for owners with mortgages and +1.0 for owners
+points for renters, +0.1 for owners with mortgages and +0.9 for owners
 without mortgages. Each lies within about one between-implicate standard
 deviation of zero, before any sampling uncertainty. The lift itself
-moved little: from 3.60% to 3.10% for renters, 2.70% to 2.76% for owners
-with mortgages and 1.61% to 2.43% for owners without mortgages. Mean
-imputed amounts rose 21% in threshold-year dollars ($957 to $1,156), in
+moved little: from 3.65% to 3.12% for renters, 2.71% to 2.76% for owners
+with mortgages and 1.59% to 2.37% for owners without mortgages. Mean
+imputed amounts rose 20% in threshold-year dollars ($960 to $1,155), in
 line with the 19–21% growth of the out-of-pocket thresholds. Real
 out-of-pocket spending in the CE, not in-kind benefits, carries the
 replication's growth beyond prices, and the stage leaves the renter
@@ -330,14 +349,14 @@ the between-implicate standard deviation:
 
 | Years | Renter | Owner with mortgage | Owner without mortgage |
 |---|---:|---:|---:|
-| 2019–2020 | −0.09 (0.13) | +0.13 (0.11) | −0.11 (0.21) |
-| 2020–2021 | +0.43 (0.11) | −0.29 (0.08) | −1.51 (0.21) |
-| 2021–2022 | +0.48 (0.14) | +0.32 (0.21) | −0.71 (0.53) |
-| 2022–2023 | −1.16 (0.13) | +0.53 (0.13) | +0.70 (1.23) |
-| 2023–2024 | +0.62 (0.26) | −0.15 (0.24) | −1.26 (1.30) |
-| 2024–2025 | −0.01 (0.17) | −0.30 (0.13) | +1.37 (0.78) |
+| 2019–2020 | −0.11 (0.20) | +0.13 (0.11) | −0.01 (0.34) |
+| 2020–2021 | +0.43 (0.10) | −0.30 (0.10) | −1.56 (0.16) |
+| 2021–2022 | +0.48 (0.09) | +0.24 (0.17) | −0.68 (0.67) |
+| 2022–2023 | −1.13 (0.24) | +0.49 (0.22) | +0.55 (0.99) |
+| 2023–2024 | +0.56 (0.19) | −0.15 (0.18) | −1.09 (1.36) |
+| 2024–2025 | −0.01 (0.19) | −0.28 (0.09) | +1.31 (0.69) |
 
-The in-kind term runs from −1.5 to +1.4 points a year. Owners without
+The in-kind term runs from −1.6 to +1.3 points a year. Owners without
 mortgages swing most and carry the largest implicate spread: they make
 up fewer than one in ten units in the estimation band (136 of 1,550 in
 the 2025 out-of-pocket band), so a few units reorder their mean. Each
@@ -363,30 +382,30 @@ so each unit's price factor becomes `I(T) / I(c)` for collection year
 
 | Tenure | BLS corrected | Package CPI, without stage | Package CPI, with stage | FCSUti, without stage | FCSUti, with stage |
 |---|---:|---:|---:|---:|---:|
-| Renter | +22.15% | +20.37% | +19.78% | +21.48% | +20.94% |
-| Owner with mortgage | +21.61% | +21.15% | +21.22% | +22.08% | +22.13% |
-| Owner without mortgage | +20.63% | +18.79% | +19.75% | +20.81% | +21.64% |
+| Renter | +22.15% | +20.37% | +19.75% | +21.48% | +20.85% |
+| Owner with mortgage | +21.61% | +21.15% | +21.21% | +22.08% | +22.12% |
+| Owner without mortgage | +20.63% | +18.79% | +19.70% | +20.81% | +21.68% |
 
 BLS's index adds 1.1 points of 2022–2025 growth for renters, 0.9 for
 owners with mortgages and 2.0 for owners without mortgages: in each
 tenure, more than the in-kind stage moves it. Without the stage, the
 replication's growth then lands within 0.7 points of BLS's for every
 tenure (−0.67, +0.47 and +0.18 points) and reproduces 95%, 104% and 102%
-of BLS's growth above CPI-U. With the stage, renters fall 1.21 points
-short and owners without mortgages run 1.01 points ahead.
+of BLS's growth above CPI-U. With the stage, renters fall 1.29 points
+short and owners without mortgages run 1.05 points ahead.
 
 Signed gap from BLS's corrected thresholds in percent with FCSUti
 deflation, without → with the stage:
 
 | Target | Renter | Owner with mortgage | Owner without mortgage |
 |---|---:|---:|---:|
-| 2019 | −0.76 → +2.08 | −1.35 → +1.20 | −0.54 → +3.10 |
-| 2020 | −1.16 → +1.53 | −1.31 → +1.37 | +0.23 → +3.81 |
-| 2021 | −1.34 → +1.72 | −1.55 → +0.84 | +0.48 → +2.91 |
-| 2022 | −1.63 → +1.84 | −1.67 → +0.97 | +1.00 → +2.91 |
-| 2023 | −1.10 → +1.47 | −2.10 → +1.05 | +0.65 → +2.58 |
-| 2024 | −0.96 → +2.05 | −1.99 → +1.09 | +1.29 → +2.57 |
-| 2025 | −2.16 → +0.83 | −1.29 → +1.40 | +1.15 → +3.77 |
+| 2019 | −0.76 → +2.16 | −1.35 → +1.24 | −0.54 → +3.21 |
+| 2020 | −1.16 → +1.63 | −1.31 → +1.41 | +0.23 → +3.71 |
+| 2021 | −1.34 → +1.75 | −1.55 → +0.93 | +0.48 → +2.92 |
+| 2022 | −1.63 → +1.91 | −1.67 → +0.97 | +1.00 → +2.85 |
+| 2023 | −1.10 → +1.53 | −2.10 → +1.03 | +0.65 → +2.53 |
+| 2024 | −0.96 → +2.05 | −1.99 → +1.10 | +1.29 → +2.59 |
+| 2025 | −2.16 → +0.83 | −1.29 → +1.39 | +1.15 → +3.74 |
 
 Out-of-pocket levels move by −0.65% to +1.04% against the package-CPI
 run, and the stage still carries every tenure above BLS in every year.
@@ -407,6 +426,11 @@ year.
   receiving free, reduced-price or universal-free lunch. Census also
   values paid lunches and, in some years, P-EBT or Summer EBT for
   households without free or reduced-price lunch.
+- Census's school lunch values for reference years 2020–2023 include
+  P-EBT, which arrived on EBT cards. BLS says it follows Census's
+  COVID-era methods, so the stage does too, but by BLS's reasoning for
+  leaving out SNAP, reported food spending may already include those
+  benefits.
 - WIC uses USDA's national fiscal-year average food cost; Census has used
   state averages since its revised 2019 estimates.
 - All participation models share one covariate set across programs and

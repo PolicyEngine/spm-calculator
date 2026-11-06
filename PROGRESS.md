@@ -4,8 +4,8 @@
 
 Draft PR [#55](https://github.com/PolicyEngine/spm-calculator/pull/55) on
 `max/ce-inkind-imputation-20261105`. The branch holds the stage,
-imputation, tests, receipt and docs page; independent review and merge
-follow.
+imputation, tests, receipt and docs page. The first independent review
+asked for five fixes, now made; a second review and merge follow.
 
 ## Done
 
@@ -20,9 +20,15 @@ follow.
   growth decomposition under the package CPI and BLS's FCSUti index.
 - Receipt `spm_calculator/data/current/ce_inkind_replication_2019_2025.json`
   and docs page `docs/ce-inkind-imputation.md`.
-- Result: the stage lifts thresholds 1.1–3.9% and overshoots BLS's
+- Review fixes: rent paid now comes from the rent file's rent-only
+  records (UCC 210110) rather than the FMLI rented-dwelling summary;
+  predictive mean matching pools hold distinct donors at the ends of the
+  donor range; SNAP receipt counts CE's completed amounts and months of
+  receipt; WIC counts an infant's mother only when the unit has a woman
+  15 or older; rental assistance returns zero for owner-only samples.
+- Result: the stage lifts thresholds 1.1–3.8% and overshoots BLS's
   corrected levels for every tenure in every year from 2019 to 2025. It
-  changes 2022–2025 growth by −0.6 to +1.0 points; real out-of-pocket
+  changes 2022–2025 growth by −0.6 to +0.9 points; real out-of-pocket
   spending carries growth beyond prices.
 - Price-index sensitivity: deflating with BLS's published FCSUti index
   instead of the package composite adds 0.9–2.0 points of 2022–2025
@@ -31,7 +37,7 @@ follow.
 
 ## Next
 
-- Independent GPT-6.1 Sol review, CI and merge.
+- Second GPT-6.1 Sol review, CI and merge.
 - A summary for John Creamer, held for Max's go.
 - Follow-ups: the stage in forecast windows (off by default) and home
   internet spending, which the replication still omits.
