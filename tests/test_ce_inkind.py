@@ -11,6 +11,8 @@ Invariants (stated in the PR and docs/ce-inkind-imputation.md):
 5. Units outside a component's universe receive zero.
 6. Growth decomposes exactly: total = price x real x in-kind, and the
    additive contributions sum to total growth.
+7. Every predictive-mean-matching pool holds min(k, n) distinct donors,
+   the k nearest to the target by predicted value.
 """
 
 import hashlib
@@ -24,7 +26,7 @@ import pytest
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
-from spm_calculator import ce_inkind
+from spm_calculator import ce_inkind, ce_threshold
 from spm_calculator.ce_decomposition import (
     BLS_FCSUTI_INDEX,
     TENURES,
@@ -612,16 +614,22 @@ def test_tobit_recovers_parameters_under_censoring():
 
 
 def test_unit_inputs_from_bundle(tmp_path):
-    """MEMI counts and RNT assistance flags from a synthetic bundle."""
+    """MEMI counts, RNT assistance flags and rent paid from a bundle."""
     memi = pd.DataFrame(
-        {"NEWID": [11, 11, 11, 21], "AGE": [35, 4, 1, 70], "SEX": [2, 1, 2, 1]}
+        {
+            "NEWID": [11, 11, 11, 21, 31],
+            "AGE": [35, 4, 1, 70, 40],
+            "SEX": [2, 1, 2, 1, 1],
+        }
     )
     rent = pd.DataFrame(
         {
-            "QYEAR": [20232, 20232, 20233],
-            "NEWID": [11, 11, 21],
-            "GOVTCOST": [2, 1, 1],
-            "PUBLHOUS": [2, 2, 2],
+            "QYEAR": [20232, 20232, 20233, 20232],
+            "NEWID": [11, 11, 21, 31],
+            "GOVTCOST": [2, 1, 1, 2],
+            "PUBLHOUS": [2, 2, 2, 2],
+            # Rent for the three-month reference period; "." is missing.
+            "QRT3MCMX": ["2400", "600", "3000", "."],
         }
     )
     with zipfile.ZipFile(tmp_path / "intrvw23.zip", "w") as archive:
@@ -635,6 +643,38 @@ def test_unit_inputs_from_bundle(tmp_path):
     assert units.loc[11, "housing_assistance"]
     assert not units.loc[21, "housing_assistance"]  # its record is 2023Q3
     assert units.loc[21, "n_ge65"] == 1
+    # Records of one unit add up; other quarters and missing amounts don't.
+    assert units.loc[11, "rent_paid_monthly"] == pytest.approx(1000.0)
+    assert units.loc[21, "rent_paid_monthly"] == 0.0
+    assert units.loc[31, "rent_paid_monthly"] == 0.0
+
+
+def _cached_bundle(year: int) -> Path:
+    bundle = ce_threshold._default_cache_dir() / f"intrvw{year % 100:02d}.zip"
+    if not (bundle.exists() and zipfile.is_zipfile(bundle)):
+        pytest.skip(f"CE bundle {bundle.name} is not cached")
+    return bundle
+
+
+@pytest.mark.parametrize("year", [2015, 2019, 2024])
+def test_rent_paid_equals_ucc_210110(year):
+    """Differential check on cached CE data: the rent records' QRT3MCMX,
+    summed per unit, equals the unit's rent-of-dwelling expenditure in the
+    MTBI file (UCC 210110). The FMLI summary RENDWEPQ + RENDWECQ also
+    counts maintenance, insurance and other costs, so it differs."""
+    bundle = _cached_bundle(year)
+    units = load_ce_unit_inputs(
+        [(year, 2)], cache_dir=bundle.parent
+    ).set_index("NEWID")
+    mtbi = ce_threshold._read_bundle_member(
+        bundle, f"mtbi{year % 100:02d}2.csv"
+    )
+    mtbi = mtbi.apply(pd.to_numeric, errors="coerce")
+    ucc = mtbi.loc[mtbi["UCC"] == 210110].groupby("NEWID")["COST"].sum()
+    paid = 3 * units["rent_paid_monthly"]
+    expected = ucc.reindex(paid.index, fill_value=0.0)
+    np.testing.assert_allclose(paid.to_numpy(), expected.to_numpy(), atol=0.5)
+    assert (paid > 0).sum() > 1000
 
 
 def test_ce_unit_covariates_harmonizes_codes():
@@ -652,6 +692,7 @@ def test_ce_unit_covariates_harmonizes_codes():
             "EDUC_REF": [11, 15],
             "REF_RACE": [2, 4],
             "BUILDING": [11, 7],
+            # The FMLI summary adds non-rent costs; the model ignores it.
             "RENDWEPQ": [900, 0],
             "RENDWECQ": [300, 0],
             "FAM_SIZE": [3, 2],
@@ -668,6 +709,7 @@ def test_ce_unit_covariates_harmonizes_codes():
             "n_women_15_45": [1, 0],
             "n_women_15_plus": [1, 1],
             "housing_assistance": [True, False],
+            "rent_paid_monthly": [380.0, 0.0],
         }
     )
     out = ce_unit_covariates(fmli, units)
@@ -678,7 +720,127 @@ def test_ce_unit_covariates_harmonizes_codes():
     assert out["head_race"].tolist() == ["black", "other"]
     assert out["building"].tolist() == ["detached_mobile_other", "high_rise"]
     assert np.isnan(out.loc[1, "region"]) and np.isnan(out.loc[1, "state"])
-    assert out.loc[0, "rent_paid_monthly"] == pytest.approx(400.0)
+    assert out.loc[0, "rent_paid_monthly"] == pytest.approx(380.0)
+
+
+def unit_inputs_for(newids) -> pd.DataFrame:
+    """Member and rent inputs for FMLI-only tests: one adult per unit."""
+    n = len(newids)
+    frame = pd.DataFrame({"NEWID": list(newids)})
+    for column in (
+        "n_lt5",
+        "n_infants",
+        "n_5_18",
+        "n_lt18",
+        "n_ge65",
+        "n_women_15_45",
+    ):
+        frame[column] = np.zeros(n, dtype=int)
+    frame["n_women_15_plus"] = np.ones(n, dtype=int)
+    frame["housing_assistance"] = False
+    frame["rent_paid_monthly"] = 0.0
+    return frame
+
+
+def test_snap_flag_counts_receipt_without_a_raw_amount():
+    """CE completes a missing SNAP amount in JFS_AMTM, and FS_MTHI counts
+    months of receipt, so either marks a recipient. 2024Q2 NEWID 5422304
+    reports FS_MTHI 12 and JFS_AMTM 3,679 with JFS_AMT 0."""
+    fmli = pd.DataFrame(
+        {
+            "NEWID": [11, 21, 31, 41, 51],
+            "ce_year": 2024,
+            "ce_quarter": 2,
+            "CUTENURE": 4,
+            "JFS_AMT": [1200, 0, 0, ".", "."],
+            "JFS_AMTM": [1200, 3679, 0, ".", 0],
+            "FS_MTHI": [12, 12, 3, ".", 0],
+        }
+    )
+    out = ce_unit_covariates(fmli, unit_inputs_for(fmli["NEWID"]))
+    assert out["snap"].tolist() == [True, True, True, False, False]
+
+
+def test_wic_counts_a_mother_only_when_a_woman_lives_in_the_unit():
+    """Census's rule: children under 5, the mother of an infant, otherwise
+    one pregnant woman. A father raising an infant adds no participant."""
+    units = pd.DataFrame(
+        {
+            "n_lt5": [1, 1, 2, 0],
+            "n_infants": [1, 1, 0, 0],
+            "n_women_15_plus": [0, 1, 1, 1],
+        }
+    )
+    participants = ce_inkind._wic_participants(units)
+    assert participants.tolist() == [1.0, 2.0, 2.0, 1.0]
+
+
+def test_rental_assistance_is_zero_without_assisted_renters():
+    """An owner-only sample has no rent rows to fit; the component returns
+    zeros instead of failing."""
+    units = ce_units(5, (2022,), n=60)
+    units["cutenure"] = 1.0
+    units["tenure"] = "owner_with_mortgage"
+    units["housing_assistance"] = False
+    units["rent_paid_monthly"] = 0.0
+    result = impute_in_kind(
+        units,
+        cps_donors(5, (2022,), n=300),
+        InKindConfig(implicates=2, components=("rental_assistance",)),
+    )
+    for frame in result.implicates:
+        assert (frame[list(IN_KIND_COMPONENTS)] == 0).all().all()
+    diagnostics = result.diagnostics["rental_assistance"]["2022"]
+    assert diagnostics["assisted"] == 0 and diagnostics["sigma"] is None
+
+
+# ---------------------------------------------------------------------------
+# Invariant 7: predictive mean matching pools
+# ---------------------------------------------------------------------------
+
+
+def brute_force_distances(sorted_hat, target, k):
+    return np.sort(np.abs(sorted_hat - target))[:k]
+
+
+@PROPERTY
+@given(
+    donors=st.lists(st.integers(-20, 20).map(float), min_size=1, max_size=40),
+    targets=st.lists(
+        st.floats(-40, 40, allow_nan=False, allow_infinity=False),
+        min_size=1,
+        max_size=20,
+    ),
+    k=st.integers(1, 8),
+)
+def test_pmm_pools_hold_the_k_nearest_distinct_donors(donors, targets, k):
+    """Differential check against brute force, with ties (integer
+    predictions) and targets outside the donor range."""
+    sorted_hat = np.sort(np.array(donors))
+    target_hat = np.array(targets)
+    pools = ce_inkind._pmm_pools(sorted_hat, target_hat, k)
+    size = min(k, len(sorted_hat))
+    assert pools.shape == (len(target_hat), size)
+    for row, target in zip(pools, target_hat):
+        assert len(set(row.tolist())) == size
+        distances = np.abs(sorted_hat[row] - target)
+        assert np.all(np.diff(distances) >= 0)  # nearest first
+        np.testing.assert_array_equal(
+            distances, brute_force_distances(sorted_hat, target, size)
+        )
+
+
+def test_pmm_pools_at_the_boundaries():
+    """Targets beyond either end get the k end donors, not k copies of
+    the end donor."""
+    sorted_hat = np.arange(10.0)
+    pools = ce_inkind._pmm_pools(sorted_hat, np.array([-100.0, 100.0]), 5)
+    assert pools[0].tolist() == [0, 1, 2, 3, 4]
+    assert pools[1].tolist() == [9, 8, 7, 6, 5]
+    few = ce_inkind._pmm_pools(np.array([1.0, 2.0, 3.0]), np.array([0.0]), 5)
+    assert sorted(few[0].tolist()) == [0, 1, 2]
+    with pytest.raises(ValueError, match="at least one donor"):
+        ce_inkind._pmm_pools(np.array([]), np.array([0.0]), 5)
 
 
 # ---------------------------------------------------------------------------

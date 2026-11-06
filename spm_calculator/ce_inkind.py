@@ -363,9 +363,15 @@ def load_ce_unit_inputs(
     cached CE bundles. Never downloads.
 
     Returns:
-        One row per ``NEWID`` with member counts by age and sex and
+        One row per ``NEWID`` with member counts by age and sex,
         ``housing_assistance`` (any rent record with ``GOVTCOST == 1`` or
-        ``PUBLHOUS == 1``).
+        ``PUBLHOUS == 1``) and ``rent_paid_monthly``: the unit's rent
+        records' ``QRT3MCMX`` (rent for the three-month reference period)
+        summed and divided by three. That sum equals the unit's
+        rent-of-dwelling expenditure, UCC 210110, and leaves out the
+        maintenance, insurance and other costs that the FMLI summary
+        ``RENDWEPQ + RENDWECQ`` adds. A missing ``QRT3MCMX`` counts as no
+        rent, as it does in UCC 210110.
     """
     rent_files: dict[int, pd.DataFrame] = {}
     pieces = []
@@ -412,7 +418,7 @@ def load_ce_unit_inputs(
                 except (FileNotFoundError, RuntimeError, ValueError):
                     continue
                 rent_files[bundle_year] = frame[
-                    ["QYEAR", "NEWID", "GOVTCOST", "PUBLHOUS"]
+                    ["QYEAR", "NEWID", "GOVTCOST", "PUBLHOUS", "QRT3MCMX"]
                 ].apply(pd.to_numeric, errors="coerce")
             frame = rent_files[bundle_year]
             selected = frame.loc[frame["QYEAR"] == year * 10 + quarter]
@@ -429,6 +435,10 @@ def load_ce_unit_inputs(
         counts["housing_assistance"] = assisted.reindex(
             counts.index, fill_value=False
         ).astype(bool)
+        rent_paid = rent["QRT3MCMX"].fillna(0).groupby(rent["NEWID"]).sum()
+        counts["rent_paid_monthly"] = (
+            rent_paid.reindex(counts.index, fill_value=0.0).astype(float) / 3.0
+        )
         counts["ce_year"], counts["ce_quarter"] = year, quarter
         pieces.append(counts.reset_index())
     out = pd.concat(pieces, ignore_index=True)
@@ -488,7 +498,13 @@ def ce_unit_covariates(
             .to_numpy(),
             "cutenure": tenure_code.to_numpy(),
             "income": _numeric(f, "FINCBTXM").fillna(0).to_numpy(),
-            "snap": (_numeric(f, "JFS_AMT").fillna(0) > 0).to_numpy(),
+            # CE completes missing SNAP amounts in JFS_AMTM; FS_MTHI counts
+            # months of receipt. Any of the three marks a recipient.
+            "snap": (
+                (_numeric(f, "JFS_AMT").fillna(0) > 0)
+                | (_numeric(f, "JFS_AMTM").fillna(0) > 0)
+                | (_numeric(f, "FS_MTHI").fillna(0) > 0)
+            ).to_numpy(),
             "public_assistance": (
                 _numeric(f, "WELFAREM").fillna(0) > 0
             ).to_numpy(),
@@ -515,11 +531,9 @@ def ce_unit_covariates(
                 ["lt_hs", "hs", "some_college", "ba_plus"],
                 "lt_hs",
             ),
-            "rent_paid_monthly": (
-                (_numeric(f, "RENDWEPQ").fillna(0))
-                + (_numeric(f, "RENDWECQ").fillna(0))
-            ).to_numpy()
-            / 3.0,
+            "rent_paid_monthly": merged["rent_paid_monthly"]
+            .fillna(0.0)
+            .to_numpy(dtype=float),
             "bedrooms": _numeric(f, "BEDROOMQ").to_numpy(),
             "bathrooms": _numeric(f, "BATHRMQ").to_numpy(),
             "building": building.fillna("unknown").to_numpy(),
@@ -771,30 +785,46 @@ def _pmm(
         ce_hat = (
             design_matrix(ce.loc[target], geography, states) @ coefficients
         )
-        k = min(config.pmm_neighbors, len(order))
-        position = np.searchsorted(sorted_hat, ce_hat)
-        offsets = np.arange(-k, k)
-        candidates = np.clip(
-            position[:, None] + offsets[None, :], 0, len(order) - 1
-        )
-        distance = np.abs(sorted_hat[candidates] - ce_hat[:, None])
-        # Duplicated clipped candidates sit at the edges; distances break ties
-        # by position, so the nearest k positions are taken in order.
-        nearest = np.argsort(
-            distance + 1e-12 * np.abs(offsets)[None, :], axis=1
-        )[:, :k]
+        pools = _pmm_pools(sorted_hat, ce_hat, config.pmm_neighbors)
+        k = pools.shape[1]
         u = hashed_uniform(
             ce.loc[target, "key"].to_numpy(),
             seed=config.seed,
             stream=f"{component}:pmm-donor",
             implicate=implicate,
         )
-        pick = nearest[
-            np.arange(len(u)), np.minimum((u * k).astype(int), k - 1)
-        ]
-        chosen = order[candidates[np.arange(len(u)), pick]]
+        pick = np.minimum((u * k).astype(int), k - 1)
+        chosen = order[pools[np.arange(len(u)), pick]]
         out[target] = amounts[chosen]
     return out
+
+
+def _pmm_pools(
+    sorted_hat: np.ndarray, target_hat: np.ndarray, k: int
+) -> np.ndarray:
+    """Positions of the ``k`` donors nearest each target, nearest first.
+
+    ``sorted_hat`` holds the donors' predicted values in ascending order.
+    In a sorted array the ``k`` nearest values to a target always lie
+    within the ``2k`` positions around its insertion point. That window
+    shifts inward at either end rather than repeating the end donor, so
+    every pool holds ``min(k, len(sorted_hat))`` distinct donors. Equal
+    distances go to the lower position.
+
+    Returns:
+        An integer array of shape ``(len(target_hat), min(k, n))``.
+    """
+    n = len(sorted_hat)
+    if n == 0:
+        raise ValueError("Predictive mean matching needs at least one donor")
+    k = min(k, n)
+    width = min(2 * k, n)
+    position = np.searchsorted(sorted_hat, target_hat)
+    start = np.clip(position - k, 0, n - width)
+    candidates = start[:, None] + np.arange(width)[None, :]
+    distance = np.abs(sorted_hat[candidates] - target_hat[:, None])
+    nearest = np.argsort(distance, axis=1, kind="stable")[:, :k]
+    return np.take_along_axis(candidates, nearest, axis=1)
 
 
 def _hotdeck(
@@ -885,9 +915,17 @@ def _nslp_donor_values(
 
 
 def _wic_participants(ce: pd.DataFrame) -> np.ndarray:
+    """Census's WIC participant count for a participating unit.
+
+    All children under 5, plus the mother of a child aged 0-1 when the
+    unit has a woman aged 15 or older (a father-only unit has no maternal
+    participant); otherwise one pregnant woman.
+    """
     young = ce["n_lt5"].to_numpy()
-    infant = ce["n_infants"].to_numpy() > 0
-    return np.where(young > 0, young + infant.astype(int), 1).astype(float)
+    mother = (ce["n_infants"].to_numpy() > 0) & (
+        ce["n_women_15_plus"].to_numpy() >= 1
+    )
+    return np.where(young > 0, young + mother.astype(int), 1).astype(float)
 
 
 def _wic_ebt_complete(ce: pd.DataFrame, config: InKindConfig) -> np.ndarray:
@@ -1092,6 +1130,19 @@ def _rental_assistance(
     ) | (assisted & (rent > 0))
     order = np.argsort(ce["key"].to_numpy(), kind="stable")
     fit_rows_sorted = order[fit_rows[order]]
+    diagnostics.update(
+        {
+            "renters": int(renters.sum()),
+            "assisted": int(assisted.sum()),
+            "assisted_zero_rent": int((assisted & (rent <= 0)).sum()),
+            "fit_rows": int(fit_rows.sum()),
+            "sigma": None,
+        }
+    )
+    # Without assisted renters there is nothing to value, and an owner-only
+    # sample has no rows to fit.
+    if not assisted.any():
+        return out
     states = sorted(int(s) for s in ce["state"].dropna().unique())
     x = _rent_design(ce, states)
     y = np.log(np.where(rent > 0, rent, 1.0))
@@ -1102,17 +1153,7 @@ def _rental_assistance(
         ce["weight"].to_numpy(dtype=float)[fit_rows_sorted],
         config.ridge,
     )
-    diagnostics.update(
-        {
-            "renters": int(renters.sum()),
-            "assisted": int(assisted.sum()),
-            "assisted_zero_rent": int((assisted & (rent <= 0)).sum()),
-            "fit_rows": int(fit_rows.sum()),
-            "sigma": float(1 / theta[-1]),
-        }
-    )
-    if not assisted.any():
-        return out
+    diagnostics["sigma"] = float(1 / theta[-1])
     keys = ce.loc[assisted, "key"].to_numpy()
     for m in range(config.implicates):
         rng = _rng(config.seed, "rental_assistance", reference_year, m)

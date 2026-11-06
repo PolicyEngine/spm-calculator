@@ -115,6 +115,8 @@ IN_KIND_COLUMNS = {
     "STATE",
     "FINCBTXM",
     "JFS_AMT",
+    "JFS_AMTM",
+    "FS_MTHI",
     "WELFAREM",
     "FSSIXM",
     "NO_EARNR",
@@ -129,8 +131,6 @@ IN_KIND_COLUMNS = {
     "BUILDING",
     "BLS_URBN",
     "POPSIZE",
-    "RENDWEPQ",
-    "RENDWECQ",
 }
 CODE_PATHS = (
     "spm_calculator/ce_threshold.py",
