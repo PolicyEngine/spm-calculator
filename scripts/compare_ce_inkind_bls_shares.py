@@ -68,6 +68,8 @@ from spm_calculator.ce_bls_shares import (
     level_gap,
     mean_components,
     read_threshold_shares,
+    removed_by_bls_paper_definition,
+    unit_components,
 )
 from spm_calculator.ce_decomposition import BLS_FCSUTI_INDEX
 from spm_calculator.ce_inkind import (
@@ -87,6 +89,7 @@ from spm_calculator.ce_threshold import (
 )
 from spm_calculator.cps_asec import load_household_donors
 from spm_calculator.fcsuti_cpi import CPI_SERIES
+from spm_calculator.equivalence_scale import REFERENCE_RAW_SCALE
 from spm_calculator.published_thresholds import (
     get_published_thresholds,
     get_tenure_shares,
@@ -142,6 +145,61 @@ def largest_difference(ours, expected, what: str, tolerance: float) -> float:
             )
         largest = max(largest, difference)
     return largest
+
+
+def definition_check(window: pd.DataFrame, target: int, cpi: dict) -> dict:
+    """Largest unit errors of BLS's written definitions against what they name.
+
+    With one price index for every component, each unit keeps its price
+    factor under both definitions, so its shelter and food must fall by
+    exactly the amounts the definitions remove.
+    """
+    options = {"youth_policy": "exclude_unresolved", "cpi_series": cpi}
+    before = prepare_out_of_pocket(window, target, **options).expenditures
+    after = prepare_out_of_pocket(
+        apply_bls_paper_definition(window), target, **options
+    ).expenditures
+    if not before["NEWID"].equals(after["NEWID"]):
+        raise RuntimeError(f"{target}: the definitions changed the sample")
+    removed = removed_by_bls_paper_definition(before)
+    factor = (
+        4.0
+        * before["inflation_factor"].to_numpy(dtype=float)
+        * (REFERENCE_RAW_SCALE / before["equiv_scale"]).to_numpy(dtype=float)
+    )
+    units_before, units_after = unit_components(before), unit_components(after)
+    expected_shelter = (
+        removed["other_lodging"]
+        + removed["rent_as_pay"]
+        + removed["vacation_home_principal"]
+    ).to_numpy() * factor
+    expected_food = removed["meals_as_pay"].to_numpy() * factor
+    errors = {
+        "shelter": float(
+            np.abs(
+                (units_before["shelter"] - units_after["shelter"]).to_numpy()
+                - expected_shelter
+            ).max()
+        ),
+        "food": float(
+            np.abs(
+                (units_before["food"] - units_after["food"]).to_numpy()
+                - expected_food
+            ).max()
+        ),
+    }
+    if max(errors.values()) > 1e-6:
+        raise RuntimeError(f"{target}: definitions miss by {errors}")
+    return {
+        "largest_unit_error_dollars": errors,
+        "units": len(before),
+        "units_with_amount_removed": {
+            piece: int((removed[piece] > 0).sum()) for piece in removed
+        },
+        "units_with_negative_amount": {
+            piece: int((removed[piece] < 0).sum()) for piece in removed
+        },
+    }
 
 
 def gap_record(
@@ -512,6 +570,13 @@ def main() -> None:
         }
         print(f"Finished {run} at {time.time() - started:.0f}s", flush=True)
 
+    definition_checks = {
+        str(target): definition_check(
+            window(target, False), target, deflators["fcsuti"]
+        )
+        for target in TARGETS
+    }
+
     receipt = {
         "schema_version": 1,
         "generated_by": "scripts/compare_ce_inkind_bls_shares.py",
@@ -557,6 +622,7 @@ def main() -> None:
             }
             for run in ("package", "fcsuti")
         },
+        "definition_check": definition_checks,
         "bls": {
             "years": {
                 str(t): {

@@ -13,7 +13,12 @@ Invariants (stated in the PR and docs/ce-inkind-imputation.md):
 6. Imputed and non-imputed shares of growth beyond inflation sum to one.
 7. ``apply_bls_paper_definition`` lowers each unit's FCSUti by exactly the
    amounts it removes, and a second application changes nothing.
+
+The committed receipt must come from this code, reproduce its thresholds and
+growth from its own band means, and supply every table on the docs page.
 """
+
+import json
 
 import numpy as np
 import pandas as pd
@@ -21,6 +26,7 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
+from scripts import render_ce_inkind_bls_tables as render
 from spm_calculator.ce_bls_shares import (
     COMMODITIES,
     COMPONENTS,
@@ -53,10 +59,26 @@ from spm_calculator.published_thresholds import (
     get_published_thresholds,
     get_tenure_shares,
 )
-from tests.test_ce_inkind import PROPERTY, ce_frame, flat_cpi, in_kind_table
+from tests.test_ce_inkind import (
+    PROPERTY,
+    ROOT,
+    ce_frame,
+    flat_cpi,
+    in_kind_table,
+    sha256,
+)
 
 YEARS = range(2019, 2026)
 SHELTER_COLUMNS = ("OWNDWE", "RNTXRP", "RNTAPY", "OTHLOD")
+CURRENT = ROOT / "spm_calculator/data/current"
+RECEIPT = CURRENT / "ce_inkind_bls_components_2019_2025.json"
+REPLICATION_RECEIPT = CURRENT / "ce_inkind_replication_2019_2025.json"
+RUNS = (
+    "package",
+    "fcsuti",
+    "package_bls_definition",
+    "fcsuti_bls_definition",
+)
 
 
 def definition_frame(seed: int, n: int = 60) -> pd.DataFrame:
@@ -562,3 +584,147 @@ def test_shelter_pieces_reject_a_frame_that_fails_the_identity():
     run = prepare_out_of_pocket(raw, 2024, cpi_series=flat_cpi())
     with pytest.raises(ValueError, match="pieces"):
         shelter_pieces(run.expenditures)
+
+
+def committed_receipt() -> dict:
+    return json.loads(RECEIPT.read_text())
+
+
+def band_from(record: dict) -> BandComponents:
+    return BandComponents(
+        record["pooled"], record["by_tenure"], record["tenure_mix"]
+    )
+
+
+def test_committed_receipt_comes_from_this_code():
+    receipt = committed_receipt()
+    for name, digest in receipt["code_sha256"].items():
+        assert sha256(ROOT / name) == digest, name
+    for source in receipt["inputs"].values():
+        assert sha256(ROOT / source["path"]) == source["sha256"]
+
+
+def test_receipt_matches_the_in_kind_replication():
+    receipt = committed_receipt()
+    replication = json.loads(REPLICATION_RECEIPT.read_text())
+    for year, result in replication["results"].items():
+        for run, expected in (
+            ("package", result),
+            ("fcsuti", result["fcsuti_deflated"]),
+        ):
+            record = receipt["runs"][run]["years"][year]
+            assert (
+                record["without_in_kind"]["thresholds"]
+                == expected["without_in_kind"]
+            )
+            for ours, theirs in zip(
+                record["with_in_kind"]["thresholds_by_implicate"],
+                expected["with_in_kind_by_implicate"],
+            ):
+                assert ours == pytest.approx(theirs, rel=1e-12)
+
+
+def test_receipt_bls_bands_come_from_the_workbook():
+    receipt = committed_receipt()
+    shares = read_threshold_shares()
+    for year in YEARS:
+        band, checks = bls_band_components(
+            shares[year],
+            get_published_thresholds(year),
+            get_tenure_shares(year),
+        )
+        record = receipt["bls"]["years"][str(year)]
+        assert record["band"] == band.to_dict()
+        assert record["checks"] == checks
+        assert record["imputed_total"] == band.imputed_total
+
+
+@pytest.mark.parametrize("run", RUNS)
+def test_receipt_bands_reproduce_thresholds_and_gaps(run):
+    receipt = committed_receipt()
+    for year, record in receipt["runs"][run]["years"].items():
+        published = receipt["bls"]["years"][year]["published_thresholds"]
+        without = record["without_in_kind"]
+        with_stage = record["with_in_kind"]
+        band = band_from(with_stage["band"])
+        for tenure in TENURES:
+            assert band_from(without["band"]).threshold(
+                tenure
+            ) == pytest.approx(without["thresholds"][tenure], rel=1e-9)
+            assert band.threshold(tenure) == pytest.approx(
+                np.mean(
+                    [
+                        implicate[tenure]
+                        for implicate in with_stage["thresholds_by_implicate"]
+                    ]
+                ),
+                rel=1e-9,
+            )
+            gap = record["level_gap_percent_of_bls"][tenure]
+            assert sum(gap["terms"].values()) == pytest.approx(gap["total"])
+            # BLS's published identities hold within a cent of dollars.
+            assert gap["total"] == pytest.approx(
+                with_stage["gap_percent"][tenure], abs=1e-4
+            )
+            assert with_stage["gap_percent"][tenure] == pytest.approx(
+                100
+                * (with_stage["thresholds"][tenure] / published[tenure] - 1)
+            )
+        assert sum(band.tenure_mix.values()) == pytest.approx(1.0)
+
+
+@pytest.mark.parametrize("run", RUNS)
+def test_receipt_growth_follows_from_its_bands(run):
+    receipt = committed_receipt()
+    years = receipt["runs"][run]["years"]
+    growth = receipt["runs"][run]["growth_2022_2025"]
+    a = band_from(years["2022"]["with_in_kind"]["band"])
+    b = band_from(years["2025"]["with_in_kind"]["band"])
+    ratio = receipt["inputs"]["cpi"]["cpi_u_ratio_2022_2025"]
+    assert growth["imputed_total"]["rise"] == pytest.approx(
+        b.imputed_total - a.imputed_total
+    )
+    for tenure in TENURES:
+        record = growth["by_tenure"][tenure]
+        assert record["growth_with_stage"] == pytest.approx(
+            growth_percent(a.threshold(tenure), b.threshold(tenure))
+        )
+        assert record["band_fixed_effect_points"] == pytest.approx(
+            band_fixed_growth_effect(a, b, tenure)
+        )
+        assert record["growth_without_imputed_terms"] == pytest.approx(
+            growth_without_imputed(a, b, tenure)
+        )
+        assert record[
+            "imputed_share_of_growth_beyond_cpi_u_percent"
+        ] == pytest.approx(
+            100 * imputed_share_beyond_inflation(a, b, tenure, ratio)
+        )
+        assert record["stage_change_points"] == pytest.approx(
+            record["band_fixed_effect_points"] + record["rank_shift_points"]
+        )
+        assert record["stage_change_points"] == pytest.approx(
+            np.mean(record["stage_change_by_implicate"]), abs=1e-9
+        )
+
+
+@pytest.mark.parametrize(
+    "run", ("package_bls_definition", "fcsuti_bls_definition")
+)
+def test_receipt_definition_runs_hold_none_of_the_removed_amounts(run):
+    receipt = committed_receipt()
+    for record in receipt["runs"][run]["years"].values():
+        for pieces in record["with_in_kind"]["band_pieces"].values():
+            for piece in (
+                "other_lodging",
+                "rent_as_pay",
+                "vacation_home_principal",
+                "meals_as_pay",
+            ):
+                assert pieces[piece] == 0.0
+
+
+def test_docs_page_holds_the_receipt_tables():
+    page = (ROOT / "docs/ce-inkind-imputation.md").read_text()
+    for name, table in render.render_tables(committed_receipt()).items():
+        assert table in page, name

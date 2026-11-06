@@ -19,9 +19,10 @@ sums shelter and utilities, rearranges to two identities:
 So a share times ``T_h / m`` gives a component's in-band dollars, and the
 "Other" share gives ``0.2 F``. :func:`bls_band_components` checks both
 identities against BLS's published values. They hold to a fraction of a
-cent in every year from 2019 to 2025, which also shows that BLS's published
-tenure distribution is the band's mix: identity (2) has no other way to
-balance, since SU_h differs by thousands of dollars across tenures.
+cent in every year from 2019 to 2025. One equation cannot exclude every
+other mix, but SU_h differs by thousands of dollars across tenures, so a
+distribution from any other sample would miss identity (2) by dollars. This
+module therefore reads BLS's published distribution as the band's mix.
 
 :class:`BandComponents` holds the same quantities for BLS and for the
 replication, so :func:`level_gap` can split the difference between two
