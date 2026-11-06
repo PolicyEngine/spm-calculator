@@ -647,10 +647,10 @@ In-band amounts, 2022 to 2025:
 
 BLS's imputed benefits rise $401 and ours $146 with the package CPI, and BLS's
 rise exceeds all five of our implicates' with either deflator ($52–$287). Across
-all units in the band, rental assistance supplies $169 of that $255 difference
-and school lunch $94. BLS's rental assistance per renter rises 68%, against 9% in
-ours with the package CPI and 13% with BLS's index. BLS has not published its
-rental model, and we have not traced the difference.
+all units in the band, rental assistance supplies $169 of that difference and
+school lunch $94. BLS's rental assistance per renter rises 68%, against 9% in ours
+with the package CPI and 13% with BLS's index. BLS has not published its rental
+model, and we have not traced the difference.
 
 The imputed terms in each threshold, 2022 to 2025. Each cell lists renters /
 owners with mortgages / owners without mortgages. The share of growth beyond
