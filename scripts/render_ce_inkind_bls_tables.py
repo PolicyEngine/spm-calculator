@@ -217,8 +217,8 @@ def _row(cells) -> str:
 
 
 def _table(header, rows) -> str:
-    rule = ["---"] + ["---:"] * (len(header) - 1)
-    return "\n".join([_row(header), _row(rule), *(_row(r) for r in rows)])
+    rule = "|" + "|".join(["---"] + ["---:"] * (len(header) - 1)) + "|"
+    return "\n".join([_row(header), rule, *(_row(r) for r in rows)])
 
 
 def _level_gap_table(receipt: dict, run: str) -> str:
