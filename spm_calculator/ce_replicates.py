@@ -209,7 +209,8 @@ class Combined:
         complete_df: Degrees of freedom of one implicate's variance.
         df: Barnard and Rubin's degrees of freedom.
         df_rubin: Rubin's ``(M - 1) / fraction_missing ** 2``, or None
-            where it is infinite (no between-implicate variance).
+            where it is infinite: no between-implicate variance, or a
+            fraction whose square rounds to zero.
     """
 
     estimate: float
@@ -275,11 +276,14 @@ def combine_implicates(
     nu_obs = (
         complete_df * (complete_df + 1) * (1 - fraction) / (complete_df + 3)
     )
-    if fraction == 0:
+    squared = fraction**2
+    if squared == 0:
+        # Rubin's df is infinite, or too large to hold, so Barnard and
+        # Rubin's df reaches its limit.
         df_rubin = None
         df = nu_obs
     else:
-        df_rubin = (m - 1) / fraction**2
+        df_rubin = (m - 1) / squared
         df = 0.0 if nu_obs == 0 else 1 / (1 / df_rubin + 1 / nu_obs)
     return Combined(
         estimate=q_bar,
