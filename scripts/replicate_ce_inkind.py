@@ -537,6 +537,7 @@ def main():
             "Rental assistance uses a log-normal Tobit on CE unit characteristics and takes reported rents as exact",
             "School lunch donor values for reference years 2014-2017 come from the USDA formula; later years use Census SPM_SCHLUNCH values",
             "The imputation assigns school lunch only to households it imputes as receiving free, reduced-price or universal-free lunch; Census also values paid lunches and, in some years, P-EBT or Summer EBT for other households",
+            "Census's school lunch values for reference years 2020-2023 include P-EBT, which arrived on EBT cards; BLS says it follows Census's COVID-era methods, but by its reasoning for leaving out SNAP, reported food spending may already include those benefits",
             "WIC uses USDA's national fiscal-year average food cost; Census has used state averages since its revised 2019 estimates",
             "Participation models share one covariate set across programs and years; CE and CPS income concepts differ",
             "The replication omits home internet spending, which BLS's FCSUti includes",
