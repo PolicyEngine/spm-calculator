@@ -194,18 +194,18 @@ and $12,439 per assisted unit.
 
 ### Levels: gap to BLS's corrected thresholds
 
-Signed percentage gap from BLS's corrected thresholds, without → with the
+Signed gap from BLS's corrected thresholds in percent, without → with the
 stage:
 
 | Target | Renter | Owner with mortgage | Owner without mortgage |
 |---|---:|---:|---:|
-| 2019 | −1.12% → +1.67% | −1.67% → +0.85% | −1.00% → +2.85% |
-| 2020 | −1.45% → +1.24% | −1.69% → +0.95% | −0.24% → +3.53% |
-| 2021 | −1.36% → +1.75% | −1.55% → +0.81% | +0.78% → +3.06% |
-| 2022 | −1.33% → +2.23% | −1.41% → +1.25% | +1.67% → +3.30% |
-| 2023 | −1.07% → +1.42% | −2.05% → +1.08% | +0.72% → +3.01% |
-| 2024 | −1.40% → +1.67% | −2.25% → +0.74% | +1.14% → +2.23% |
-| 2025 | −2.77% → +0.25% | −1.79% → +0.92% | +0.11% → +2.54% |
+| 2019 | −1.12 → +1.67 | −1.67 → +0.85 | −1.00 → +2.85 |
+| 2020 | −1.45 → +1.24 | −1.69 → +0.95 | −0.24 → +3.53 |
+| 2021 | −1.36 → +1.75 | −1.55 → +0.81 | +0.78 → +3.06 |
+| 2022 | −1.33 → +2.23 | −1.41 → +1.25 | +1.67 → +3.30 |
+| 2023 | −1.07 → +1.42 | −2.05 → +1.08 | +0.72 → +3.01 |
+| 2024 | −1.40 → +1.67 | −2.25 → +0.74 | +1.14 → +2.23 |
+| 2025 | −2.77 → +0.25 | −1.79 → +0.92 | +0.11 → +2.54 |
 
 The without column matches the [September 8 replication](current-ce-replication.md)
 exactly. In-kind lift (percent of the out-of-pocket threshold), with the
@@ -375,18 +375,18 @@ tenure (−0.67, +0.47 and +0.18 points) and reproduces 95%, 104% and 102%
 of BLS's growth above CPI-U. With the stage, renters fall 1.21 points
 short and owners without mortgages run 1.01 points ahead.
 
-Gap from BLS's corrected thresholds with FCSUti deflation, without → with
-the stage:
+Signed gap from BLS's corrected thresholds in percent with FCSUti
+deflation, without → with the stage:
 
 | Target | Renter | Owner with mortgage | Owner without mortgage |
 |---|---:|---:|---:|
-| 2019 | −0.76% → +2.08% | −1.35% → +1.20% | −0.54% → +3.10% |
-| 2020 | −1.16% → +1.53% | −1.31% → +1.37% | +0.23% → +3.81% |
-| 2021 | −1.34% → +1.72% | −1.55% → +0.84% | +0.48% → +2.91% |
-| 2022 | −1.63% → +1.84% | −1.67% → +0.97% | +1.00% → +2.91% |
-| 2023 | −1.10% → +1.47% | −2.10% → +1.05% | +0.65% → +2.58% |
-| 2024 | −0.96% → +2.05% | −1.99% → +1.09% | +1.29% → +2.57% |
-| 2025 | −2.16% → +0.83% | −1.29% → +1.40% | +1.15% → +3.77% |
+| 2019 | −0.76 → +2.08 | −1.35 → +1.20 | −0.54 → +3.10 |
+| 2020 | −1.16 → +1.53 | −1.31 → +1.37 | +0.23 → +3.81 |
+| 2021 | −1.34 → +1.72 | −1.55 → +0.84 | +0.48 → +2.91 |
+| 2022 | −1.63 → +1.84 | −1.67 → +0.97 | +1.00 → +2.91 |
+| 2023 | −1.10 → +1.47 | −2.10 → +1.05 | +0.65 → +2.58 |
+| 2024 | −0.96 → +2.05 | −1.99 → +1.09 | +1.29 → +2.57 |
+| 2025 | −2.16 → +0.83 | −1.29 → +1.40 | +1.15 → +3.77 |
 
 Out-of-pocket levels move by −0.65% to +1.04% against the package-CPI
 run, and the stage still carries every tenure above BLS in every year.
