@@ -84,7 +84,7 @@
   "code_sha256": {
     "scripts/replicate_ce_inkind.py": "dd46d305b6cf4d2b62a55bfd063b93498728663ae00df245a0a332bb3ae33ae9",
     "spm_calculator/ce_decomposition.py": "39be6fc2ceef0764cbf1133a1f4ea39c67a4de6a4e781357f717a7a82d0e00c0",
-    "spm_calculator/ce_inkind.py": "7cccead2f170022083daf2d43963a4e76aa4496663c18ca15bafd76ec79bb887",
+    "spm_calculator/ce_inkind.py": "c23e6f26ef32328ef0952d90edca9b382e7fa6e5e029d530a7a0beb9e1d10724",
     "spm_calculator/ce_inkind_stage.py": "9543b1ce76b6ce1974d1dcfc11e4840202633666da2684201836668f52210986",
     "spm_calculator/ce_threshold.py": "4efbe2b03f6b1f4eb2911ab0f79f5151bd655cc1e5addf42f5c4540ace1f852f",
     "spm_calculator/cps_asec.py": "ac4a1ae3b28d34fa3dfbbe5879c88d0274a0e6e46423694bb48808d4f7cf2cc8",
@@ -2076,7 +2076,7 @@
   },
   "generated_by": "scripts/replicate_ce_inkind.py",
   "generated_on": "2026-11-06",
-  "git_head": "c511766a30f63a5b517883c54511bced9f2306aa",
+  "git_head": "5514c6996bfd71e13adcf4dc720fa47c06814e55",
   "imputation_diagnostics": {
     "broadband": {
       "2014": {
@@ -4886,6 +4886,6 @@
     "python": "3.14.7",
     "scipy": "1.18.1"
   },
-  "runtime_seconds": 59,
+  "runtime_seconds": 54,
   "schema_version": 1
 }
