@@ -186,21 +186,20 @@ All figures come from the committed receipt, five implicates, with CPI
 pinned to the package's `cpi_annual.json` unless a section says
 otherwise. The CE estimation sample is consumer units with children.
 
-In short:
-
 - Imputed benefits lift the replication's thresholds by 1.1–3.8% and
   carry them above BLS's corrected levels for every tenure in every year
-  from 2019 to 2025. Shelter supplies that excess, and BLS's papers define
-  shelter more narrowly than the replication does: under their shelter and
-  food definitions, the replication with the stage lands between 1.5% below
-  and 1.4% above BLS.
+  from 2019 to 2025. Our shelter term more than offsets the omitted home
+  internet term, and our rental assistance adds to the renter gap. BLS's
+  papers define shelter more narrowly than the replication does: under their
+  shelter and food definitions, the replication with the stage lands between
+  1.5% below and 1.4% above BLS.
 - They change 2022–2025 threshold growth by −0.6 to +0.9 points.
 - The price index matters more. Deflating with BLS's FCSUti index instead
   of the package's composite CPI adds 0.9–2.0 points of 2022–2025 growth
   and brings the replication without the stage within 0.7 points of
   BLS's growth for every tenure.
-- By BLS's published components, our in-band imputed total exceeds BLS's
-  through 2024 and trails it in 2025. From 2022 to 2025, BLS's imputed
+- BLS's published shares give its in-band dollars. Our imputed total exceeds
+  BLS's through 2024 and trails it in 2025. From 2022 to 2025, BLS's imputed
   benefits rise $401 and ours $146, and removing imputed terms from both
   narrows the renter growth shortfall from −2.40 to −0.94 points.
 
@@ -291,12 +290,11 @@ BLS in every year: renters by 0.26–2.27% and owners with mortgages by
 0.72–1.26%. Owners without mortgages already sit above BLS in five of
 seven years, and the stage moves them to 2.23–3.53% above.
 
-The imputed benefits therefore exceed the gap they might explain. Three
-cautions limit what the level comparison shows. BLS's FCSUti also
-includes home internet spending, which the replication omits because the
-FMLI file has no internet summary, so the out-of-pocket gap mixes both
-omissions. The replication's shelter holds more than BLS's papers
-describe. Its other approximations (annual CPI, the food allocation, the
+The imputed benefits therefore exceed the gap they might explain. BLS's
+FCSUti also includes home internet spending, which the replication omits
+because the FMLI file has no internet summary, so the out-of-pocket gap
+mixes both omissions. The replication's shelter holds more than BLS's papers
+describe, and its other approximations (annual CPI, the food allocation, the
 percentile convention and sample policies) move levels too. The
 [comparison with BLS components](#comparison-with-bls-components) splits
 the gap by term and reruns the replication under BLS's written definitions.
@@ -522,8 +520,7 @@ Each tenure's share of the band in percent, ours / BLS's:
 | 2024 | 39.3 / 37.2 | 52.8 / 52.7 | 8.0 / 10.0 |
 | 2025 | 38.6 / 38.7 | 53.7 / 51.0 | 7.6 / 10.2 |
 
-Our band holds fewer owners without mortgages than BLS's in every year, by up
-to 2.6 points.
+Our band holds fewer owners without mortgages than BLS's, by 0.1–2.6 points.
 
 ### The level gap, term by term
 
@@ -541,14 +538,15 @@ part of the gap in percentage points of BLS's threshold, lowest to highest over
 | Clothing | −0.81 to −0.23 | −0.81 to −0.23 | −0.96 to −0.28 |
 | Telephone | −0.09 to +0.18 | −0.09 to +0.18 | −0.11 to +0.21 |
 
-Shelter supplies the excess. Its term exceeds the omitted home internet term in
-every tenure and year, by 0.23–4.36 points. Imputed benefits add 0.09–1.36
+Net of home internet, our shelter term adds 0.23–4.36 points in every tenure and
+year, and it supplies most of the owners' excess. Imputed benefits lower owners'
+gaps in every year, because our school lunch trails BLS's, and add 0.09–1.36
 points to the renter gap, because our rental assistance per renter exceeds
-BLS's, and lower owners' gaps in every year, because our school lunch trails
-BLS's. Our clothing term trails BLS's by 0.23–0.96 points, and food, telephone
-and utilities stay within 0.8 points. BLS's home internet here takes the
-workbook's internet row with equal dollars across tenures, the row that balances
-the second identity, less the band's mean broadband subsidy.
+BLS's. From 2019 to 2023, that renter term exceeds renters' shelter net of home
+internet. Our clothing term trails BLS's by 0.23–0.96 points, and food, telephone
+and utilities stay within 0.8 points. For BLS's home internet, we use the
+workbook's internet row with equal dollars across tenures, since that row
+balances the second identity, and subtract the band's mean broadband subsidy.
 
 ### BLS's written shelter and food definitions
 
@@ -632,9 +630,10 @@ these definitions, in percentage points of BLS's threshold:
 | Telephone | −0.14 to +0.28 | −0.14 to +0.28 | −0.17 to +0.33 |
 
 The definitions cut the shelter term by 18–66%, and by 45% on average, and what
-remains roughly offsets the omitted home internet term. The two sum to −1.12 to +0.07 points for
-renters, −0.80 to −0.10 for owners with mortgages and −0.51 to +2.07 for owners
-without mortgages. We have not traced the remaining shelter excess.
+remains roughly offsets the omitted home internet term. The two sum to −1.12 to
++0.07 points for renters, −0.80 to −0.10 for owners with mortgages and −0.51 to
++2.07 for owners without mortgages. We have not traced the remaining shelter
+excess.
 
 ### Imputed amounts and threshold growth
 
@@ -677,7 +676,7 @@ terms kept → removed from both series:
 
 Removing imputed terms from both series narrows the renter shortfall from −2.40
 to −0.94 points with the package CPI and closes it with BLS's index (−1.29 to
-+0.03). Owners' figures move by 0.3–0.5 points. Those renter figures with
++0.03). Owners' figures move by 0.28–0.55 points. Those renter figures with
 imputed terms removed carry between-implicate standard deviations of 0.32–0.53
 points, before any sampling uncertainty.
 

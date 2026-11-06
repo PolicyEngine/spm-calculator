@@ -16,10 +16,12 @@ comes next.
   `spm_calculator/data/current/ce_inkind_bls_components_2019_2025.json`, under
   the package CPI and BLS's FCSUti index, with the replication's definitions and
   with the shelter and food definitions in BLS's papers.
-- Result: shelter supplies the level excess, and BLS's written definitions cut
-  the with-stage gap from +0.26 to +3.53% to −1.51 to +1.44%. From 2022 to 2025,
-  BLS's in-band imputed benefits rise $401 and ours $146. Removing imputed terms
-  from both narrows the renter growth shortfall from −2.40 to −0.94 points.
+- Result: net of home internet, our shelter term exceeds BLS's in every tenure
+  and year, and rental assistance adds to the renter gap. BLS's written
+  definitions cut the with-stage gap from +0.26 to +3.53% to −1.51 to +1.44%.
+  From 2022 to 2025, BLS's in-band imputed benefits rise $401 and ours $146.
+  Removing imputed terms from both narrows the renter growth shortfall from
+  −2.40 to −0.94 points.
 
 ## Next
 
