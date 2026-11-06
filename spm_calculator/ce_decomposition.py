@@ -29,10 +29,35 @@ from typing import Mapping
 
 TENURES = ("renter", "owner_with_mortgage", "owner_without_mortgage")
 
-#: BLS FCSUti index, annual average, 2013 = 100 (2025 interpolates
-#: October 2025). Year-over-year changes match BLS's chart of FCSUti
-#: inflation at https://www.bls.gov/pir/spm/spm_thresholds_2025.htm.
+#: BLS FCSUti index, annual averages, 2013 = 100, from BLS's table
+#: "Year-over-Year Inflation Rate: All Items CPI-U, All Items C-CPI-U and
+#: FCSUti: 2002-2025 (2013=100)" at
+#: https://www.bls.gov/pir/spm/spm_chart_2025data.htm (page last modified
+#: September 24, 2026; read November 5, 2026). BLS imputes October 2025,
+#: which it did not collect, by geometric interpolation between the
+#: September and November item-area indexes
+#: (https://www.bls.gov/pir/spm/spm_thresholds_2025.htm).
+BLS_FCSUTI_SOURCE = "https://www.bls.gov/pir/spm/spm_chart_2025data.htm"
 BLS_FCSUTI_INDEX = {
+    2002: 77.980,
+    2003: 79.757,
+    2004: 81.695,
+    2005: 83.964,
+    2006: 86.716,
+    2007: 89.442,
+    2008: 92.876,
+    2009: 93.967,
+    2010: 94.312,
+    2011: 96.168,
+    2012: 98.093,
+    2013: 100.000,
+    2014: 102.465,
+    2015: 104.269,
+    2016: 106.180,
+    2017: 108.378,
+    2018: 110.888,
+    2019: 113.452,
+    2020: 116.160,
     2021: 119.842,
     2022: 128.478,
     2023: 136.408,
@@ -40,29 +65,13 @@ BLS_FCSUTI_INDEX = {
     2025: 146.712,
 }
 
-#: FCSUti inflation (percent) from the same BLS chart, used to extend the
-#: index back to 2019. These earlier levels are derived from the rounded
-#: published rates, not published levels.
-BLS_FCSUTI_INFLATION_PERCENT = {
-    2020: 2.387,
-    2021: 3.17,
-    2022: 7.206,
-    2023: 6.172,
-    2024: 3.976,
-    2025: 3.441,
-}
-
 
 def bls_fcsuti_index(year: int) -> float:
-    """BLS FCSUti index level, extended back with published inflation."""
-    if year in BLS_FCSUTI_INDEX:
-        return BLS_FCSUTI_INDEX[year]
-    first = min(BLS_FCSUTI_INDEX)
-    if year > first or year + 1 not in BLS_FCSUTI_INFLATION_PERCENT:
-        raise ValueError(f"No BLS FCSUti index for {year}")
-    return bls_fcsuti_index(year + 1) / (
-        1 + BLS_FCSUTI_INFLATION_PERCENT[year + 1] / 100
-    )
+    """BLS's published FCSUti index level for ``year`` (2013 = 100)."""
+    try:
+        return BLS_FCSUTI_INDEX[int(year)]
+    except KeyError:
+        raise ValueError(f"No BLS FCSUti index for {year}") from None
 
 
 def _positive(value: float, name: str) -> float:

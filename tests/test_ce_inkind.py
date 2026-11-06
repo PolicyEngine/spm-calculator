@@ -27,7 +27,6 @@ from hypothesis import strategies as st
 from spm_calculator import ce_inkind
 from spm_calculator.ce_decomposition import (
     BLS_FCSUTI_INDEX,
-    BLS_FCSUTI_INFLATION_PERCENT,
     TENURES,
     bls_fcsuti_index,
     decompose_growth,
@@ -742,9 +741,46 @@ def test_no_in_kind_change_means_unit_in_kind_factor():
 
 
 def test_bls_index_matches_published_inflation():
-    for year, rate in BLS_FCSUTI_INFLATION_PERCENT.items():
-        change = 100 * (
-            bls_fcsuti_index(year) / bls_fcsuti_index(year - 1) - 1
+    """Differential check of BLS's level table against the rates its 2025
+    thresholds page states: "annual FCSUti inflation fell to 3.44 percent
+    in 2025, continuing to decline from a peak of 7.21 percent in 2022"
+    (https://www.bls.gov/pir/spm/spm_thresholds_2025.htm)."""
+    rate = {
+        year: 100 * (bls_fcsuti_index(year) / bls_fcsuti_index(year - 1) - 1)
+        for year in range(min(BLS_FCSUTI_INDEX) + 1, 2026)
+    }
+    assert round(rate[2025], 2) == 3.44
+    assert round(rate[2022], 2) == 7.21
+    assert max(rate, key=rate.get) == 2022
+    assert rate[2022] > rate[2023] > rate[2024] > rate[2025]
+    assert bls_fcsuti_index(2013) == 100.0
+    with pytest.raises(ValueError, match="No BLS FCSUti index"):
+        bls_fcsuti_index(2026)
+
+
+@PROPERTY
+@given(
+    seed=st.integers(0, 10_000),
+    target=st.sampled_from([2023, 2024, 2025]),
+)
+def test_single_index_deflator_scales_thresholds_by_its_ratio(seed, target):
+    """With every CPI component set to BLS's FCSUti index, each unit's
+    price factor is I(T) / I(c), so moving the target year scales every
+    threshold by the index ratio (the FCSUti-deflated sensitivity)."""
+    raw = ce_frame(seed)
+    raw["ce_year"] = np.random.default_rng(seed).integers(2019, 2024, len(raw))
+    index = pd.Series(BLS_FCSUTI_INDEX)
+    cpi = {sid: index for sid in CPI_SERIES.values()}
+    run = prepare_out_of_pocket(raw, target, cpi_series=cpi)
+    factors = run.result["construction"]["inflation_factors"]
+    assert set(factors) == set(raw["ce_year"].unique())
+    for year, factor in factors.items():
+        assert factor == pytest.approx(
+            bls_fcsuti_index(target) / bls_fcsuti_index(year), rel=1e-12
         )
-        assert change == pytest.approx(rate, abs=0.0006)
-    assert bls_fcsuti_index(2022) == BLS_FCSUTI_INDEX[2022]
+    base = prepare_out_of_pocket(raw, 2023, cpi_series=cpi)
+    ratio = bls_fcsuti_index(target) / bls_fcsuti_index(2023)
+    for tenure in TENURES:
+        assert run.result["thresholds"][tenure] == pytest.approx(
+            base.result["thresholds"][tenure] * ratio, rel=1e-9
+        )

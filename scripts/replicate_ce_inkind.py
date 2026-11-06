@@ -14,7 +14,10 @@ and tenure:
 - the stand-alone lift from each component;
 - exact decompositions of 2022->2025 and year-over-year growth into
   FCSUti price, real out-of-pocket spending and in-kind, using the
-  package composite CPI and BLS's FCSUti index.
+  package composite CPI and BLS's FCSUti index;
+- a price-index sensitivity: the same replication, with and without the
+  stage, deflated by BLS's published FCSUti index instead of the package
+  composite CPI.
 
 No network requests are made.
 
@@ -26,6 +29,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import platform
 import subprocess
 import time
@@ -38,7 +42,7 @@ import scipy
 
 from spm_calculator.ce_decomposition import (
     BLS_FCSUTI_INDEX,
-    BLS_FCSUTI_INFLATION_PERCENT,
+    BLS_FCSUTI_SOURCE,
     TENURES,
     bls_fcsuti_index,
     decompose_growth,
@@ -62,6 +66,7 @@ from spm_calculator.ce_threshold import (
     replicate_thresholds,
 )
 from spm_calculator.cps_asec import load_household_donors
+from spm_calculator.fcsuti_cpi import CPI_SERIES
 from spm_calculator.published_thresholds import get_published_thresholds
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -361,6 +366,65 @@ def main():
             flush=True,
         )
 
+    # Price-index sensitivity: every CPI component series replaced by BLS's
+    # published FCSUti index, so each unit's price factor is I(T) / I(c).
+    fcsuti_series = pd.Series(
+        {year: float(level) for year, level in BLS_FCSUTI_INDEX.items()}
+    )
+    fcsuti_options = {
+        "youth_policy": "exclude_unresolved",
+        "cpi_series": {sid: fcsuti_series for sid in CPI_SERIES.values()},
+    }
+    deflated_without, deflated_with, deflated_by_implicate = {}, {}, {}
+    for target in TARGETS:
+        prepared = prepare_out_of_pocket(
+            window(target), target, **fcsuti_options
+        )
+        factors = prepared.result["construction"]["inflation_factors"]
+        for year, factor in factors.items():
+            expected = bls_fcsuti_index(target) / bls_fcsuti_index(year)
+            if not math.isclose(factor, expected, rel_tol=1e-12):
+                raise RuntimeError(
+                    f"{target}: FCSUti factor for {year} is {factor}, "
+                    f"expected {expected}"
+                )
+        runs = [
+            replicate_with_in_kind(prepared, imputation.for_target(m, target))
+            for m in range(config.implicates)
+        ]
+        published = get_published_thresholds(target)
+        ours0 = prepared.result["thresholds"]
+        ours1 = mean_thresholds(runs)
+        deflated_without[target], deflated_with[target] = ours0, ours1
+        deflated_by_implicate[target] = [r["thresholds"] for r in runs]
+        results[str(target)]["fcsuti_deflated"] = {
+            "without_in_kind": ours0,
+            "with_in_kind": ours1,
+            "with_in_kind_by_implicate": deflated_by_implicate[target],
+            "with_in_kind_between_implicate_sd": spread(runs),
+            "gap_percent_without": {
+                t: 100 * (ours0[t] / published[t] - 1) for t in TENURES
+            },
+            "gap_percent_with": {
+                t: 100 * (ours1[t] / published[t] - 1) for t in TENURES
+            },
+            "in_kind_lift_percent": {
+                t: 100 * (ours1[t] / ours0[t] - 1) for t in TENURES
+            },
+            "inflation_factors": {str(y): f for y, f in factors.items()},
+            "methodology_id_without": prepared.result["methodology_id"],
+        }
+        print(
+            json.dumps(
+                {
+                    "target": target,
+                    "fcsuti_deflated_without": ours0,
+                    "fcsuti_deflated_with": ours1,
+                }
+            ),
+            flush=True,
+        )
+
     pairs = [(2022, 2025)] + [(t - 1, t) for t in TARGETS if t > TARGETS[0]]
     decompositions = {}
     for base_year, target_year in pairs:
@@ -414,6 +478,21 @@ def main():
             "growth_percent_with": growth_percent(
                 with_mean[base_year], with_mean[target_year]
             ),
+            "fcsuti_deflated": {
+                "growth_percent_without": growth_percent(
+                    deflated_without[base_year], deflated_without[target_year]
+                ),
+                "growth_percent_with": growth_percent(
+                    deflated_with[base_year], deflated_with[target_year]
+                ),
+                "decomposition": decompose_growth(
+                    base_without=deflated_without[base_year],
+                    base_with=deflated_with[base_year],
+                    target_without=deflated_without[target_year],
+                    target_with=deflated_with[target_year],
+                    price=bls_price,
+                ),
+            },
         }
 
     receipt = {
@@ -437,12 +516,10 @@ def main():
             "sha256": sha256(args.cpi_input),
         },
         "bls_fcsuti_index": {
-            "levels_2013_100": BLS_FCSUTI_INDEX,
-            "inflation_percent": BLS_FCSUTI_INFLATION_PERCENT,
-            "derived_levels": {
-                str(y): bls_fcsuti_index(y) for y in (2019, 2020)
+            "levels_2013_100": {
+                str(y): v for y, v in BLS_FCSUTI_INDEX.items()
             },
-            "source": "https://www.bls.gov/pir/spm/spm_thresholds_2025.htm",
+            "source": BLS_FCSUTI_SOURCE,
         },
         "archived_receipt_check": {
             "path": "spm_calculator/data/current/ce_replication_2019_2025.json",
@@ -456,13 +533,14 @@ def main():
         "decompositions": decompositions,
         "imputation_diagnostics": imputation.diagnostics,
         "limitations": [
-            "BLS's imputation code and covariates are unpublished; models here follow the published method description",
-            "Rental assistance uses a log-normal Tobit on CE unit characteristics; CE top-coded rents are treated as observed",
-            "School lunch values for reference years 2014-2017 use the USDA formula; later years hot-deck Census SPM_SCHLUNCH values",
-            "Paid-lunch subsidies and P-EBT for households without free or reduced-price lunch are not imputed",
-            "WIC uses the national fiscal-year average food cost; Census uses state averages from revised 2019",
+            "BLS has not published its imputation code or covariates; the models follow its method description",
+            "Rental assistance uses a log-normal Tobit on CE unit characteristics and takes reported rents as exact",
+            "School lunch donor values for reference years 2014-2017 come from the USDA formula; later years use Census SPM_SCHLUNCH values",
+            "The imputation assigns school lunch only to households it imputes as receiving free, reduced-price or universal-free lunch; Census also values paid lunches and, in some years, P-EBT or Summer EBT for other households",
+            "WIC uses USDA's national fiscal-year average food cost; Census has used state averages since its revised 2019 estimates",
             "Participation models share one covariate set across programs and years; CE and CPS income concepts differ",
-            "Sampling uncertainty is not estimated; implicate spread reflects imputation uncertainty only",
+            "The replication omits home internet spending, which BLS's FCSUti includes",
+            "The runs estimate imputation uncertainty (implicate spread) but not sampling uncertainty",
         ],
         "runtime_seconds": round(time.time() - started),
     }
