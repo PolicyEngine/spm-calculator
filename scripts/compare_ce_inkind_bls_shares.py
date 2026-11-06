@@ -88,8 +88,8 @@ from spm_calculator.ce_threshold import (
     load_ce_quarter,
 )
 from spm_calculator.cps_asec import load_household_donors
-from spm_calculator.fcsuti_cpi import CPI_SERIES
 from spm_calculator.equivalence_scale import REFERENCE_RAW_SCALE
+from spm_calculator.fcsuti_cpi import CPI_SERIES
 from spm_calculator.published_thresholds import (
     get_published_thresholds,
     get_tenure_shares,
