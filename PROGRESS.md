@@ -1,3 +1,36 @@
+# CE in-kind standard errors — November 6, 2026
+
+## State
+
+Draft PR [#57](https://github.com/PolicyEngine/spm-calculator/pull/57) on
+`max/ce-replicate-se-20261106`, stacked on #56. The branch holds the module,
+script, receipt, table renderer, tests and the page's "Sampling uncertainty"
+section. An independent review comes next, and the PR moves to `main` once #56
+merges.
+
+## Done
+
+- `ce_replicates.py` reads the CE's 44 replicate weights, checks that every
+  quarter carries standard BRR weights, and reruns the replication under each
+  weight with and without the stage, holding each implicate's imputed amounts
+  fixed. It combines implicates by Rubin's rules with Barnard–Rubin degrees of
+  freedom.
+- `scripts/estimate_ce_replicate_uncertainty.py` writes
+  `spm_calculator/data/current/ce_replicate_uncertainty_2019_2025.json` for
+  2019–2025 under the package CPI and BLS's FCSUti index, and
+  `scripts/render_ce_replicate_tables.py` prints the page's tables from it.
+- Result: the stage's change in 2022–2025 growth lies within one standard error
+  of zero in every tenure with either deflator, at most 0.70 standard errors,
+  and no yearly change reaches two. With the stage and the package CPI, our
+  level standard errors run 0.68–1.80 times BLS's published ones.
+
+## Next
+
+- mystmd reads paired dollar signs such as `$626.35/$554.75` in the page's
+  earlier sections as inline math. Escape them with #56's review fixes.
+
+---
+
 # CE in-kind comparison with BLS components — November 6, 2026
 
 ## State

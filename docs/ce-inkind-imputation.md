@@ -161,6 +161,17 @@ alone by 0.05%.
     one.
 11. Applying BLS's written definitions lowers each unit's FCSUti by exactly
     the amounts they remove, and a second application changes nothing.
+12. Replicate variances never fall below zero, vanish when every replicate
+    equals the full sample, and stay the same when the estimate and its
+    replicates shift by a common amount or the replicates change order.
+13. Rubin's total variance never falls below the mean within-implicate
+    variance or below (1 + 1/M) times the between-implicate variance, and the
+    degrees of freedom never exceed the complete-data value.
+14. With every replicate weight set to the full-sample weight, each replicate
+    reproduces the full-sample thresholds exactly.
+15. Band means reproduce every replicate's thresholds, with and without the
+    stage.
+16. Replicate estimates repeat exactly.
 
 `tests/test_ce_bls_shares.py` checks invariants 8–11, with Hypothesis
 property tests on synthetic data and direct checks on BLS's workbook, and
@@ -184,6 +195,14 @@ the values Census assigned in 2018 and 2019 (the formula gives
 and fails when the committed receipt no longer matches the code that
 produced it.
 
+`tests/test_ce_replicates.py` checks invariants 12–15 with Hypothesis
+property tests on synthetic data and invariant 16 on a fixture. It holds each
+replicate to the stage's public functions run on the reweighted sample and
+Rubin's rules to a separate implementation. It recomputes every standard error
+in the [sampling uncertainty](#sampling-uncertainty) receipt from the
+replicates the receipt stores, and it fails when the receipt no longer matches
+its code or the page's tables no longer match the receipt.
+
 ## Results
 
 All figures come from the committed receipt, five implicates, with CPI
@@ -197,7 +216,9 @@ otherwise. The CE estimation sample is consumer units with children.
   papers define shelter, utilities and food more narrowly than the replication
   does, and under those definitions the replication with the stage lands
   between 1.7% below and 1.5% above BLS.
-- They change 2022–2025 threshold growth by −0.6 to +0.9 points.
+- They change 2022–2025 threshold growth by −0.6 to +0.9 points, each
+  within one standard error of zero with sampling and imputation
+  uncertainty combined.
 - The price index matters more. Deflating with BLS's FCSUti index instead
   of the package's composite CPI adds 0.9–2.0 points of 2022–2025 growth
   and brings the replication without the stage within 0.7 points of
@@ -359,8 +380,9 @@ for owners with mortgages and 83% for owners without; with the stage,
 
 In-kind benefits change the replication's 2022–2025 growth by −0.6
 points for renters, +0.1 for owners with mortgages and +0.9 for owners
-without mortgages. Each lies within about one between-implicate standard
-deviation of zero, before any sampling uncertainty. The lift itself
+without mortgages. Each lies within one standard error of zero with sampling
+and imputation uncertainty combined
+([standard errors of growth](#growth-from-2022-to-2025)). The lift itself
 moved little: from 3.65% to 3.12% for renters, 2.71% to 2.76% for owners
 with mortgages and 1.59% to 2.37% for owners without mortgages. Mean
 imputed amounts across the estimation sample rose 20% in threshold-year
@@ -395,9 +417,9 @@ The in-kind term runs from −1.6 to +1.3 points a year. Owners without
 mortgages swing most and carry the largest implicate spread: they make
 up fewer than one in ten units in the estimation band (136 of 1,550 in
 the 2025 out-of-pocket band), so a few units reorder their mean. Each
-window shares four of its five reference years with the next, and
-sampling uncertainty remains unestimated, so single-year movements of
-this size deserve caution.
+window shares four of its five reference years with the next, and none of
+these changes reaches two standard errors with sampling and imputation
+uncertainty combined ([standard errors by year](#yearly-growth)).
 
 ### Deflating with BLS's FCSUti index
 
@@ -438,8 +460,10 @@ points, with the between-implicate standard deviation:
 | Owner with mortgage | +0.06 (0.36) | +0.04 (0.45) |
 | Owner without mortgage | +0.91 (1.03) | +0.87 (0.98) |
 
-With BLS's index, the renter change reaches 1.3 standard deviations, and
-the other two stay within one.
+With BLS's index, the renter change reaches 1.3 between-implicate standard
+deviations, and the other two stay within one. With sampling and imputation
+uncertainty combined, all six changes lie within one standard error of zero
+([standard errors of growth](#growth-from-2022-to-2025)).
 
 Signed gap from BLS's corrected thresholds in percent with FCSUti
 deflation, without → with the stage:
@@ -689,7 +713,9 @@ Removing imputed terms from both series narrows the renter shortfall from −2.4
 to −0.94 points with the package CPI and closes it with BLS's index (−1.29 to
 +0.03). Owners' figures move by 0.28–0.54 points. Those renter figures with
 imputed terms removed carry between-implicate standard deviations of 0.32–0.53
-points, before any sampling uncertainty.
+points. BLS's thresholds draw on the same CE interviews as ours, so the
+[standard errors of growth](#growth-from-2022-to-2025) do not measure how much
+of these gaps sampling could explain.
 
 Holding each band fixed leaves out rank shifts. The stage also reorders
 units, which moves the replication's 2022–2025 growth by a further −0.34 points
@@ -707,6 +733,166 @@ shifts.
 
 Under BLS's written definitions and BLS's index, growth with the stage lands
 within 0.8 points of BLS's for every tenure.
+
+## Sampling uncertainty
+
+The CE Interview Survey's public-use files carry 44 replicate weights,
+`WTREP01`–`WTREP44`, beside the full-sample weight `FINLWT21`. BLS builds them
+by balanced repeated replication: it divides the sampled primary sampling units
+into 43 strata and splits each stratum's consumer units at random into two half
+samples. Each replicate keeps one half sample per stratum, and BLS picks the
+44 combinations with a 44 × 44 Hadamard matrix
+([Handbook of Methods](https://www.bls.gov/opub/hom/cex/calculation.htm)). We
+rerun each estimate `θ` under each replicate weight `r` and estimate its
+variance as
+
+```text
+V = Σ_r (θ_r − θ)² / (44 × (1 − k)²)
+```
+
+BLS used the standard form, `k = 0`, through 2024 CE data and switched to
+Fay's method, `k = 0.5`, with 2025 data
+([CE standard errors](https://www.bls.gov/cex/ce-standarderrors.htm)). Our
+windows draw on the 2014–2024 releases, whose interviews run from 2014Q2
+through 2025Q1, so we set `k = 0`. In each of those quarters, every record
+carries 22 positive and 22 blank replicate weights, and
+`scripts/estimate_ce_replicate_uncertainty.py` stops on any other pattern.
+
+We rerun the whole replication under each replicate's weights. Consumer units
+with a zero weight drop out, and the package deflator's CPI component weights,
+the 47th–53rd percentile band and the band means all follow the replicate's
+weights. With the stage, we add each implicate's imputed amounts to the same
+units before we select the band. Each record keeps its replicate weights in
+every window that holds it, so the standard errors of growth account for the
+quarters two windows share, eight between the 2022 and 2025 windows.
+
+We keep each implicate's imputed amounts from the full-sample run in every
+replicate. We fit the CPS ASEC participation and amount models and the CE rent
+model once, with full-sample weights. For each implicate, we draw the models'
+parameters from their estimated sampling distributions, so the spread across
+implicates carries part of the models' estimation uncertainty. Those distributions treat units as
+independent and leave out the CPS ASEC's and the CE's strata and clusters, and
+the replicates never refit the models. The CE income behind each unit's
+poverty ratio, `FINCBTXM`, averages BLS's five income imputations, so their
+spread stays out as well. In the FCSUti run, we take every price factor from
+BLS's published index, so the factors stay the same in every replicate.
+
+From one quarter to the next, every consumer unit interviewed in both keeps its
+pattern of positive and blank replicate weights, except across two pairs of
+quarters. Of the units interviewed in both 2015Q1 and 2015Q2, 1.9% of 2,644 keep
+it, and of those interviewed in both 2016Q4 and 2017Q1, 3.4% of 3,979 do. A
+changed unit's interviews before and after can then fall in different half
+samples under one replicate number, so the replicates can miss part of the
+correlation between those interviews. The 2019 window spans both changes, the
+2020 and 2021 windows span 2017Q1, and the 2022–2025 windows span neither.
+
+With the stage, we combine the five implicates by Rubin's rules (Rubin 1987):
+the total variance adds the implicates' mean replicate variance to 1.2 times the
+variance of their full-sample estimates. Degrees of freedom follow
+Barnard and Rubin (1999), with the 43 strata as complete-data degrees of
+freedom, and figures without the stage keep 43. Each estimate below comes from
+the mean threshold across implicates, and each growth figure differs from
+Rubin's mean of the implicates' growth by at most 0.01 points.
+
+`scripts/estimate_ce_replicate_uncertainty.py` reruns all 44 replicates for
+2019–2025 under both deflators and writes
+`spm_calculator/data/current/ce_replicate_uncertainty_2019_2025.json`, which
+stores every replicate's estimate. The script stops unless the full-sample run
+reproduces the thresholds and band amounts above.
+
+### Levels
+
+Standard errors of each threshold in dollars with the package CPI, without the
+stage / with the stage / BLS's published standard error:
+
+| Year | Renter | Owner with mortgage | Owner without mortgage |
+|---|---:|---:|---:|
+| 2019 | 208 / 239 / 204 | 198 / 222 / 201 | 347 / 406 / 328 |
+| 2020 | 205 / 260 / 257 | 215 / 249 / 224 | 440 / 380 / 334 |
+| 2021 | 185 / 243 / 242 | 243 / 292 / 286 | 505 / 467 / 259 |
+| 2022 | 291 / 241 / 308 | 322 / 322 / 319 | 542 / 606 / 439 |
+| 2023 | 235 / 236 / 345 | 293 / 329 / 330 | 697 / 693 / 517 |
+| 2024 | 215 / 229 / 325 | 410 / 356 / 303 | 690 / 818 / 682 |
+| 2025 | 327 / 377 / 393 | 400 / 380 / 327 | 569 / 809 / 560 |
+
+With the stage, our standard errors run 0.68–1.17 times BLS's published ones
+for renters, 1.00–1.17 times for owners with mortgages and 1.14–1.80 times for
+owners without mortgages. BLS's index shifts each end of
+those ranges by 0.06 or less. Our standard errors equal 0.57–0.94% of the
+threshold for renters and owners with mortgages and 1.45–2.43% for owners
+without mortgages, who make up fewer than one in ten units in the band. Sampling supplies at least 73% of each level's variance, and
+the degrees of freedom range from 20 to 41. BLS publishes a standard error for
+each threshold in its workbooks without saying how it computes them. Its
+thresholds draw on the same CE interviews as ours, so these standard errors do not measure how much of any gap
+to BLS sampling could explain.
+
+### Growth from 2022 to 2025
+
+2022–2025 growth, with standard errors in parentheses. The degrees of freedom
+belong to the stage's change, and the last column removes the imputed terms from
+both thresholds, as in the
+[comparison with BLS components](#imputed-amounts-and-threshold-growth):
+
+| Tenure | Without the stage | With the stage | Stage's change, points | Degrees of freedom | Imputed terms removed |
+|---|---:|---:|---:|---:|---:|
+| Package composite CPI |  |  |  |  |  |
+| Renter | +20.37% (0.99) | +19.75% (1.20) | −0.62 (1.01) | 10 | +20.03% (1.44) |
+| Owner with mortgage | +21.15% (1.09) | +21.21% (1.03) | +0.06 (0.74) | 18 | +21.14% (1.05) |
+| Owner without mortgage | +18.79% (2.63) | +19.70% (2.89) | +0.91 (2.54) | 25 | +19.60% (2.98) |
+| BLS's FCSUti index |  |  |  |  |  |
+| Renter | +21.48% (1.00) | +20.85% (1.11) | −0.63 (0.89) | 16 | +21.00% (1.42) |
+| Owner with mortgage | +22.08% (1.10) | +22.12% (1.08) | +0.04 (0.77) | 12 | +22.02% (1.12) |
+| Owner without mortgage | +20.81% (2.61) | +21.68% (2.99) | +0.87 (2.59) | 27 | +21.58% (3.08) |
+
+The stage's change in 2022–2025 growth lies within one standard error of zero in
+every tenure with either deflator, and the largest, renters' −0.63 points with
+BLS's index, reaches 0.70 standard errors. With the package CPI, 95% intervals
+for the change run from −2.87 to +1.62 points for renters, −1.49 to +1.61 for
+owners with mortgages and −4.32 to +6.14 for owners without. The
+implicates' spread supplies 17–46% of each change's variance, and the degrees of
+freedom fall to 10–27. Growth with and without the stage carries standard errors
+of 0.99–1.20 points for renters and owners with mortgages and 2.61–2.99 for
+owners without mortgages.
+
+### Yearly growth
+
+The stage's change in each year's growth with the package CPI, in percentage
+points, with standard errors:
+
+| Years | Renter | Owner with mortgage | Owner without mortgage |
+|---|---:|---:|---:|
+| 2019–2020 | −0.11 (0.38) | +0.13 (0.27) | −0.01 (1.59) |
+| 2020–2021 | +0.43 (0.38) | −0.30 (0.34) | −1.56 (1.77) |
+| 2021–2022 | +0.48 (0.65) | +0.24 (0.49) | −0.68 (2.25) |
+| 2022–2023 | −1.13 (0.77) | +0.49 (0.52) | +0.55 (2.52) |
+| 2023–2024 | +0.56 (0.67) | −0.15 (0.50) | −1.09 (2.81) |
+| 2024–2025 | −0.01 (0.52) | −0.28 (0.48) | +1.31 (2.14) |
+
+No yearly change reaches two standard errors with either deflator: the largest,
+renters' change from 2022 to 2023, reaches 1.47 with the package CPI and 1.52
+with BLS's index. With the package CPI, each year's growth carries standard
+errors of 0.36–0.63 points for renters and owners with mortgages and 1.21–2.58
+for owners without mortgages. For example, renter growth from 2024 to 2025 runs
+4.84% with the stage and 4.85% without it, with standard errors of 0.63 and 0.59
+points.
+
+### Rises in imputed amounts
+
+The 2022–2025 rise in mean in-band amounts, BLS's beside ours with standard
+errors:
+
+| Amount | BLS | Package composite CPI | BLS's FCSUti index |
+|---|---:|---:|---:|
+| All imputed benefits | +$401 | +$146 (191) | +$184 (177) |
+| Rental assistance per renter | +$505 | +$115 (444) | +$179 (396) |
+| School lunch | +$242 | +$148 (50) | +$157 (51) |
+
+With the package CPI, our in-band amounts carry standard errors of \$103–\$127 a
+year for all imputed benefits, \$210–\$310 for rental assistance per renter and
+\$15–\$35 for school lunch. The two windows' band amounts barely move together
+across replicates, with correlations from −0.25 to +0.25, so each rise's
+standard error exceeds both years'. With either deflator, the implicates' spread
+supplies 27–49% of each rise's variance.
 
 ## Limitations
 
@@ -737,8 +923,14 @@ within 0.8 points of BLS's for every tenure.
   runs keep those fuels.
 - We hold each band fixed when we compare growth with BLS, and BLS publishes
   no unit-level values that would show its rank shifts.
-- The runs estimate imputation uncertainty (implicate spread) but not
-  sampling uncertainty.
+- We hold each implicate's imputed amounts fixed across the CE replicates and
+  never refit the imputation models, whose parameter draws come from
+  covariances that treat units as independent. The CE income behind each
+  unit's poverty ratio averages BLS's five income imputations, so the standard
+  errors leave out their spread.
+- Most consumer units interviewed across 2015Q1 and 2015Q2, or across 2016Q4
+  and 2017Q1, changed replicate patterns, so the replicates for the 2019–2021
+  windows can miss part of the correlation between a unit's interviews.
 
 ## Forecast windows: a proposed design
 
@@ -789,3 +981,10 @@ Nothing in the canonical forecast uses the stage today.
   `spm_calculator/data/current/ce_inkind_bls_components_2019_2025.json`:
   the comparison and its receipt. `scripts/render_ce_inkind_bls_tables.py`
   prints this page's comparison tables from the receipt.
+- `spm_calculator/ce_replicates.py`: replicate weights, replicate variances,
+  Rubin's rules and the replicate runs.
+- `scripts/estimate_ce_replicate_uncertainty.py` and
+  `spm_calculator/data/current/ce_replicate_uncertainty_2019_2025.json`: the
+  replicate runs and their receipt, which stores every replicate's estimate.
+  `scripts/render_ce_replicate_tables.py` prints this page's standard error
+  tables from the receipt.
