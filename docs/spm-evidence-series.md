@@ -19,6 +19,17 @@ estimates from the 2026 CPS ASEC public-use file. This plan describes steps
   changes the weights.
 - **One swap per step.** A step replaces one set of Census values and holds
   everything else at Census's values, or at the previous step's.
+- **Census's values stay outside the model.** On `policyengine-us` main,
+  read on 7 November 2026, `Simulation.set_input` refuses a dataset that
+  stores an SPM measurement output: the thresholds and their housing
+  portion, `spm_unit_capped_housing_subsidy`, `spm_unit_benefits`,
+  `spm_unit_net_income` and the poverty flags, among others
+  (`REJECTED_DATASET_INPUTS` in `policyengine_us/spm.py`). So the converted
+  dataset carries none of Census's SPM outputs. Each step runs PolicyEngine
+  US on the converted records, takes the components it swaps from that
+  run, puts them in place of Census's in the file's resource identity, and
+  compares the result with the file's `SPM_POVTHRESHOLD`. Thresholds stay Census's in
+  steps 2 to 6, and the threshold track below swaps them separately.
 - **Margins for the change, not only the level.** Each step reports the
   change in each estimate from the previous step with a replicate-weight
   margin of error: the same successive difference formula, applied to the
@@ -26,10 +37,10 @@ estimates from the 2026 CPS ASEC public-use file. This plan describes steps
 - **Unit-level comparisons first.** Before any poverty rate, each step sets
   PolicyEngine's value beside Census's for every record and reports the
   share that agree, the weighted totals and the largest disagreements.
-- **Real runs through `policyengine.py`.** Every number comes from a
-  PolicyEngine US microsimulation run through `policyengine.py`, with the
-  script, input checksums, results file and tests committed in this
-  repository, as in step 1.
+- **Real runs through `policyengine.py`.** Every PolicyEngine value a step
+  uses comes from a PolicyEngine US microsimulation run through
+  `policyengine.py`, with the script, input checksums, results file and
+  tests committed in this repository, as in step 1.
 - **The dataset is Microcosm's.** Steps 2 to 5 build their dataset with
   Microcosm's raw ASEC stage, so that steps 3 and 5 can swap in Microcosm's
   own tax units and imputations.
@@ -58,13 +69,19 @@ Four things need work before step 2 can use that path:
    adds one that reads `TAX_ID` if none does.
 3. **An input census.** List every PolicyEngine US input the converter
    fills from the file, every input it leaves at its default, and the
-   formulas that read the defaults, before any comparison runs.
+   formulas that read the defaults, before any comparison runs. Some
+   defaults change results: `total_unemployment_compensation`, for one,
+   uses the reported amount where it is nonzero and
+   `modeled_state_unemployment_compensation` elsewhere.
 4. **Loading.** Confirm that `PolicyEngineUSDataset` loads the file the
-   converter writes, and record any provenance `policyengine.py` requires of
-   a dataset it has not certified.
+   converter writes and that PolicyEngine US accepts it, which requires
+   that the file store none of the refused SPM outputs. Record any
+   provenance `policyengine.py` requires of a dataset it has not certified.
 
-A gate closes this stage: with every SPM element set to Census's values,
-the converted dataset must reproduce step 1's results exactly.
+A gate closes this stage. The converted dataset must carry the file's
+persons, tax units, SPM units and weights unchanged, and every PolicyEngine
+US output must map back to the file's records one to one. With no component
+swapped, the step calculation must reproduce step 1's results exactly.
 
 ## Step 2: taxes and credits
 
@@ -112,22 +129,49 @@ step 2.
 
 ## Step 4: benefits
 
-**Swap.** Replace Census's benefit values with PolicyEngine US's
-rule-computed ones, one program at a time and then together. On
-`policyengine-us` main, `spm_unit_benefits` includes `snap`, `wic`,
+**Swap.** Replace Census's benefit values with PolicyEngine US's, one
+program at a time and then together. On `policyengine-us` main,
+`spm_unit_benefits` adds, among other items, `snap`, `wic`,
 `free_school_meals`, `reduced_price_school_meals`,
 `spm_unit_energy_subsidy`, `spm_unit_capped_housing_subsidy`, `ssi` and the
 state supplements, and `tanf`. The Census values they replace are
 `SPM_SNAPSUB`, `SPM_WICVAL`, `SPM_SCHLUNCH`, `SPM_ENGVAL`,
-`SPM_CAPHOUSESUB`, `SSI_VAL` and `PAW_VAL`.
+`SPM_CAPHOUSESUB`, `SSI_VAL` and `PAW_VAL`. The same sum adds items such as
+Social Security and child support received, which step 4 leaves at the
+file's values.
+
+**Energy assistance.** `spm_unit_energy_subsidy` has no formula, so
+PolicyEngine US has no energy assistance rule to swap in. Step 4 keeps
+`SPM_ENGVAL` and reports energy assistance as not swapped.
+
+**Housing.** PolicyEngine US builds the housing subsidy in three steps and
+cites Census's SPM technical documentation for the last two.
+`housing_assistance` multiplies HUD's housing assistance payment
+(`hud_hap`) by `takes_up_housing_assistance_if_eligible`, for units with
+`receives_housing_assistance` set and for renters whose HUD income level is
+low or below. `spm_unit_allocated_housing_subsidy` sums that amount over
+the household and divides the total among the household's SPM units by
+their share of its members. `spm_unit_capped_housing_subsidy` then caps
+each assisted unit's amount at the housing portion of its SPM threshold
+less its allocated tenant payment, which PolicyEngine US builds from
+`hud_ttp` the same way. That housing portion comes from spm-calculator's
+bundled forecast, not from Census's threshold, so step 4 reports the
+uncapped allocation beside `SPM_CAPHOUSESUB` as well as the capped amount.
+By default PolicyEngine US locates each unit by its county and has no
+fallback for a missing one, while the file gives no county (`GTCO` = 0) for
+more than half of its households, so step 4 also states the geography it
+selects for the cap.
 
 **Take-up.** Rules give eligibility and amounts; take-up decides who
 receives a benefit. PolicyEngine US reads take-up inputs such as
 `takes_up_snap_if_eligible`, `takes_up_ssi_if_eligible`,
 `takes_up_tanf_if_eligible`, `takes_up_wic_if_eligible` and
-`takes_up_housing_assistance_if_eligible`. Step 4 first sets each one to
-the file's reported receipt, so that it isolates the rules, and then runs a
-sub-step with PolicyEngine's take-up assignment.
+`takes_up_housing_assistance_if_eligible`, and each defaults to true.
+Step 4 first sets each one to the file's reported receipt, so that it
+isolates the rules, and then runs a sub-step with Microcosm's take-up
+values. Microcosm's US stages write SNAP, SSI, WIC and housing take-up (its
+`acs_rent` stage sets housing take-up equal to the receipt it measures from
+`SPM_CAPHOUSESUB`), and none writes `takes_up_tanf_if_eligible`.
 
 **Report.** For each program: eligibility and receipt agreement, amounts
 among units that receive the benefit under both, weighted totals, the
@@ -139,11 +183,12 @@ Table 5 effect and the change in the SPM rate.
 does not give, starting with rent for SNAP's shelter deduction.
 
 **What the code does now.** On `policyengine-us` main,
-`snap_excess_shelter_expense_deduction` reads the unit's `housing_cost` and
-the SNAP utility allowance. `housing_cost` adds `rent`, real estate taxes,
-homeowners association fees, mortgage payments and homeowners insurance,
-and `rent` spreads the unit's pre-subsidy rent, less its housing
-assistance, across members by their share of `pre_subsidy_rent`.
+`snap_excess_shelter_expense_deduction` adds the SNAP utility allowance to
+the counted share (`snap_expense_counted_share`) of the unit's
+`housing_cost`. `housing_cost` adds `rent`, real estate taxes, homeowners
+association fees, mortgage payments and homeowners insurance, and `rent`
+spreads the unit's pre-subsidy rent, less its `housing_assistance` and
+floored at zero, across members by their share of `pre_subsidy_rent`.
 Microcosm's `acs_rent` stage fits a weighted quantile regression forest on
 ACS 2022 rents, with household head status, age, sex, tenure, employment
 and self-employment income, Social Security, pensions, state and household
@@ -179,14 +224,22 @@ bridge to the certified release.
 
 spm-calculator already replicates BLS's SPM thresholds from the
 public Consumer Expenditure Survey Interview files, and records the
-differences it measures ([CE replication](current-ce-replication.md)). A
-threshold step would replace each unit's `SPM_POVTHRESHOLD` with the
-package's threshold for the same unit and year, and report the change in
-the SPM rate. The package's thresholds depend on each unit's tenure,
-composition and location, and step 1 found that the public-use file
-withholds some households' metropolitan status, so the step starts by
-listing the units whose location it cannot fix. It can run at any point,
-since it touches no step above.
+differences it measures ([CE replication](current-ce-replication.md)). It
+also ships the thresholds that PolicyEngine US uses. PolicyEngine US
+registers the package's threshold variables, `spm_unit_spm_threshold` among
+them, and computes them through a `PolicyEngineSPMProvider` that
+`policyengine_us/spm.py` builds from the package's bundled rolling forecast
+(`rolling_forecast_2026_09_09.json` on spm-calculator's main);
+`policyengine-us` requires `spm-calculator>=1.1.0,<1.2`. A
+threshold step would replace each unit's `SPM_POVTHRESHOLD` with
+PolicyEngine US's `spm_unit_spm_threshold` for the same unit and year, and
+report the change in the SPM rate. That threshold depends on each unit's
+tenure, composition and location. The provider's default geography reads
+each unit's county, the public-use file gives no county for more than half
+of its households, and step 1 found that it withholds some households'
+metropolitan status, so the step starts by choosing a geography selection
+and listing the units whose location it cannot fix. It can run at any
+point, since it touches no step above.
 
 ## Deliverables for each step
 
