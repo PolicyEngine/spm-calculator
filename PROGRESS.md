@@ -4,8 +4,10 @@
 
 Draft PR [#56](https://github.com/PolicyEngine/spm-calculator/pull/56) on
 `max/ce-inkind-bls-shares-20261106`. The branch holds the module, script,
-receipt, tests and page section. An independent review that reruns the numbers
-comes next.
+receipt, tests and page section. A first-round audit and a rebuild from raw CE
+data found that the written-definition runs kept vacation-home utilities that
+Garner and Munoz (2021) leave out. The runs now remove them, and a second review
+round comes next.
 
 ## Done
 
@@ -15,13 +17,13 @@ comes next.
 - `scripts/compare_ce_inkind_bls_shares.py` writes
   `spm_calculator/data/current/ce_inkind_bls_components_2019_2025.json`, under
   the package CPI and BLS's FCSUti index, with the replication's definitions and
-  with the shelter and food definitions in BLS's papers.
-- Result: net of home internet, our shelter term exceeds BLS's in every tenure
-  and year, and rental assistance adds to the renter gap. BLS's written
-  definitions cut the with-stage gap from +0.26 to +3.53% to −1.51 to +1.44%.
-  From 2022 to 2025, BLS's in-band imputed benefits rise $401 and ours $146.
-  Removing imputed terms from both narrows the renter growth shortfall from
-  −2.40 to −0.94 points.
+  with the shelter, utilities and food definitions in BLS's papers.
+- We estimate that, net of home internet, our shelter term exceeds BLS's in
+  every tenure and year, and that rental assistance adds to the renter gap.
+  Under BLS's written definitions, the with-stage gap spans −1.71 to +1.47%,
+  against +0.26 to +3.53% under the replication's. From 2022 to 2025, BLS's
+  in-band imputed benefits rise $401 and ours $146. Removing imputed terms from
+  both narrows the renter growth shortfall from −2.40 to −0.94 points.
 
 ## Next
 

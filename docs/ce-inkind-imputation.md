@@ -99,7 +99,7 @@ October 2022 (USDA WIC EBT status, in `data/inkind/`), so WIC adds nothing
 from reference year 2023.
 
 The rental model fits renters per reference year: unassisted units with
-rent of at least $50 a month enter as observed, assisted units as
+rent of at least \$50 a month enter as observed, assisted units as
 censored at their rent paid. Rent paid is the rent file's three-month
 rent (`QRT3MCMX`) summed over the unit's records and divided by three.
 That sum equals the unit's rent-of-dwelling expenditure, UCC 210110,
@@ -165,8 +165,12 @@ alone by 0.05%.
 `tests/test_ce_bls_shares.py` checks invariants 8–11, with Hypothesis
 property tests on synthetic data and direct checks on BLS's workbook, and
 fails when the comparison's receipt no longer matches its code or a table
-below no longer matches the receipt. The comparison script stops unless
-invariants 8 and 11 also hold on every unit of every real CE window.
+below no longer matches the receipt. On every real CE window, the comparison
+script stops unless in-band component means reproduce every threshold, with and
+without the stage. It also deflates every component with BLS's FCSUti index and
+stops unless each unit's shelter, utilities and food fall by the amounts the
+definitions remove, to within a millionth of a dollar. Only the synthetic tests
+apply the definitions twice.
 
 `tests/test_ce_inkind.py` checks invariants 1–7 on synthetic CE and CPS data:
 Hypothesis property tests cover invariants 1, 2, 3, 6 and 7 (the last
@@ -175,8 +179,8 @@ range), and fixture tests cover 4 and 5. It also checks rent paid against
 UCC 210110 in the second quarters of 2015, 2019 and 2024 when those CE
 bundles are cached, compares the USDA lunch formula with
 the values Census assigned in 2018 and 2019 (the formula gives
-$626.35/$554.75 against Census's $627/$555, and $642.71/$571.11 against
-$643/$571), checks that the logit and Tobit recover known parameters,
+\$626.35/\$554.75 against Census's \$627/\$555, and \$642.71/\$571.11 against
+\$643/\$571), checks that the logit and Tobit recover known parameters,
 and fails when the committed receipt no longer matches the code that
 produced it.
 
@@ -186,22 +190,22 @@ All figures come from the committed receipt, five implicates, with CPI
 pinned to the package's `cpi_annual.json` unless a section says
 otherwise. The CE estimation sample is consumer units with children.
 
-- Imputed benefits lift the replication's thresholds by 1.1–3.8% and
-  carry them above BLS's corrected levels for every tenure in every year
-  from 2019 to 2025. Our shelter term more than offsets the omitted home
-  internet term, and our rental assistance adds to the renter gap. BLS's
-  papers define shelter more narrowly than the replication does: under their
-  shelter and food definitions, the replication with the stage lands between
-  1.5% below and 1.4% above BLS.
+- We estimate that imputed benefits raise the replication's thresholds by
+  1.1–3.8% and carry them above BLS's corrected levels for every tenure in
+  every year from 2019 to 2025. Our shelter term more than offsets the omitted
+  home internet term, and our rental assistance adds to the renter gap. BLS's
+  papers define shelter, utilities and food more narrowly than the replication
+  does, and under those definitions the replication with the stage lands
+  between 1.7% below and 1.5% above BLS.
 - They change 2022–2025 threshold growth by −0.6 to +0.9 points.
 - The price index matters more. Deflating with BLS's FCSUti index instead
   of the package's composite CPI adds 0.9–2.0 points of 2022–2025 growth
   and brings the replication without the stage within 0.7 points of
   BLS's growth for every tenure.
-- BLS's published shares give its in-band dollars. Our imputed total exceeds
-  BLS's through 2024 and trails it in 2025. From 2022 to 2025, BLS's imputed
-  benefits rise $401 and ours $146, and removing imputed terms from both
-  narrows the renter growth shortfall from −2.40 to −0.94 points.
+- We compute BLS's in-band dollars from its published shares. Our imputed
+  total exceeds BLS's through 2024 and trails it in 2025. From 2022 to 2025,
+  BLS's imputed benefits rise \$401 and ours \$146, and removing imputed terms
+  from both narrows the renter growth shortfall from −2.40 to −0.94 points.
 
 ### Imputed amounts
 
@@ -219,11 +223,11 @@ dollars:
 | 2025 | 586 | 3 | 26 | 11 | 528 | 1,155 | 41.3% |
 
 School lunch and rental assistance supply over 90% of the total in every
-year. School lunch grows the most, from $321 to $586 a unit. Among CPS
+year. School lunch grows the most, from \$321 to \$586 a unit. Among CPS
 households with school-age children, reported participation rises from
 33% in reference year 2014 to 54% in 2021, then falls back to 49% in
 2024, while the mean donor value per participating household rises from
-$989 (2014, USDA formula) to $1,388 (2024, Census values).
+\$989 (2014, USDA formula) to \$1,388 (2024, Census values).
 
 The CE imputation tracks its CPS donors. Weighted participation, CE
 imputed against CPS donors, by reference year:
@@ -236,8 +240,8 @@ imputed against CPS donors, by reference year:
 | Broadband (all) | — | — | 1.9% / 1.7% | 2.7% / 2.4% |
 
 Rental assistance comes from the CE itself: 12.7% of CE renters report
-assistance in 2014 and 14.0% in 2024, with mean annual benefits of $7,608
-and $12,210 per assisted unit.
+assistance in 2014 and 14.0% in 2024, with mean annual benefits of \$7,608
+and \$12,210 per assisted unit.
 
 ### Levels: gap to BLS's corrected thresholds
 
@@ -290,14 +294,14 @@ BLS in every year: renters by 0.26–2.27% and owners with mortgages by
 0.72–1.26%. Owners without mortgages already sit above BLS in five of
 seven years, and the stage moves them to 2.23–3.53% above.
 
-The imputed benefits therefore exceed the gap they might explain. BLS's
-FCSUti also includes home internet spending, which the replication omits
-because the FMLI file has no internet summary, so the out-of-pocket gap
-mixes both omissions. The replication's shelter holds more than BLS's papers
-describe, and its other approximations (annual CPI, the food allocation, the
-percentile convention and sample policies) move levels too. The
-[comparison with BLS components](#comparison-with-bls-components) splits
-the gap by term and reruns the replication under BLS's written definitions.
+BLS's FCSUti also includes home internet spending, which the replication
+omits because the FMLI file has no dedicated internet summary, so the
+out-of-pocket gap mixes both omissions. The replication's shelter and utilities
+hold more than BLS's papers describe, and its other approximations (annual CPI,
+the food allocation, the percentile convention and sample policies) move levels
+too. In the [comparison with BLS components](#comparison-with-bls-components),
+we split the gap by term and rerun the replication under BLS's written
+definitions.
 
 Component lifts, each component alone, in percent of the out-of-pocket
 threshold:
@@ -360,19 +364,18 @@ deviation of zero, before any sampling uncertainty. The lift itself
 moved little: from 3.65% to 3.12% for renters, 2.71% to 2.76% for owners
 with mortgages and 1.59% to 2.37% for owners without mortgages. Mean
 imputed amounts across the estimation sample rose 20% in threshold-year
-dollars ($960 to $1,155), in line with the 19–21% growth of the
+dollars (\$960 to \$1,155), in line with the 19–21% growth of the
 out-of-pocket thresholds. Within the band that sets the thresholds, they
 rose 14%. Real out-of-pocket spending in the CE, not in-kind benefits,
 carries the replication's growth beyond prices, and the stage widens the
 renter shortfall against BLS's growth from −1.8 points to −2.4. BLS's
-imputed amounts rise faster than ours, which accounts for 1.46 of those
-2.40 points when each band stays as it stands, as the
-[comparison with BLS components](#comparison-with-bls-components) shows.
-The package's composite CPI assigns about one point
-less to prices than BLS's FCSUti index, and the decomposition moves that
-point to real spending. The decomposition attributes fixed thresholds;
-the last results section reruns the replication with BLS's index as the
-deflator, which changes the thresholds themselves.
+imputed amounts rise faster than ours, and with each band held fixed that
+difference accounts for 1.46 of those 2.40 points
+([comparison with BLS components](#comparison-with-bls-components)).
+The package's composite CPI rises about one point less than BLS's FCSUti
+index, so with the package CPI that point moves from prices to real spending.
+We hold thresholds fixed for this decomposition; when we rerun the replication
+with BLS's index as the deflator, the thresholds themselves change.
 
 ### Year over year
 
@@ -477,7 +480,7 @@ F          = C + Σ_h P_h × SU_h
 
 A share times `T_h / 0.82` gives a component's dollars, and BLS's "Other"
 share gives `0.2 × F`. With `P_h` as the tenure's share of the band, BLS's
-published values satisfy both identities within $0.00001 in every year from
+published values satisfy both identities within \$0.00001 in every year from
 2019 to 2025. We compute the same means for the replication's band with
 `spm_calculator/ce_bls_shares.py`, and they reproduce every threshold.
 
@@ -493,18 +496,18 @@ Rental assistance averages over all renters in the band, assisted or not.
 
 | Target | All imputed benefits | Rental assistance per renter | School lunch |
 |---|---:|---:|---:|
-| 2019 | $889 / $705 | $1,113 / $630 | $318 / $371 |
-| 2020 | $881 / $742 | $1,094 / $633 | $331 / $402 |
-| 2021 | $917 / $764 | $1,239 / $712 | $328 / $407 |
-| 2022 | $1,027 / $855 | $1,331 / $738 | $423 / $500 |
-| 2023 | $1,055 / $927 | $1,320 / $772 | $481 / $596 |
-| 2024 | $1,060 / $1,049 | $1,258 / $940 | $522 / $664 |
-| 2025 | $1,173 / $1,257 | $1,446 / $1,243 | $571 / $742 |
+| 2019 | \$889 / \$705 | \$1,113 / \$630 | \$318 / \$371 |
+| 2020 | \$881 / \$742 | \$1,094 / \$633 | \$331 / \$402 |
+| 2021 | \$917 / \$764 | \$1,239 / \$712 | \$328 / \$407 |
+| 2022 | \$1,027 / \$855 | \$1,331 / \$738 | \$423 / \$500 |
+| 2023 | \$1,055 / \$927 | \$1,320 / \$772 | \$481 / \$596 |
+| 2024 | \$1,060 / \$1,049 | \$1,258 / \$940 | \$522 / \$664 |
+| 2025 | \$1,173 / \$1,257 | \$1,446 / \$1,243 | \$571 / \$742 |
 
 Our rental assistance per renter exceeds BLS's by 16–80% and our school lunch
 trails BLS's by 14–23% in every year. Our total exceeds BLS's by 14–26%
 through 2023 and by 1% in 2024, then trails it by 7% in 2025. Between-implicate
-standard deviations reach $173 for rental assistance per renter and $18 for
+standard deviations reach \$172 for rental assistance per renter and \$18 for
 school lunch.
 
 Each tenure's share of the band in percent, ours / BLS's:
@@ -519,13 +522,13 @@ Each tenure's share of the band in percent, ours / BLS's:
 | 2024 | 39.3 / 37.2 | 52.8 / 52.7 | 8.0 / 10.0 |
 | 2025 | 38.6 / 38.7 | 53.7 / 51.0 | 7.6 / 10.2 |
 
-Our band holds fewer owners without mortgages than BLS's, by 0.1–2.6 points.
+Our band's share of owners without mortgages trails BLS's in every year, by up
+to 2.6 points.
 
 ### The level gap, term by term
 
-A threshold sums its terms, so the gap to BLS splits term by term. Each term's
-part of the gap in percentage points of BLS's threshold, lowest to highest over
-2019–2025:
+Each term's part of the gap in percentage points of BLS's threshold, lowest to
+highest over 2019–2025:
 
 | Term | Renter | Owner with mortgage | Owner without mortgage |
 |---|---:|---:|---:|
@@ -547,14 +550,18 @@ and utilities stay within 0.8 points. For BLS's home internet, we use the
 workbook's internet row with equal dollars across tenures, since that row
 balances the second identity, and subtract the band's mean broadband subsidy.
 
-### BLS's written shelter and food definitions
+### BLS's written shelter, utilities and food definitions
 
-BLS's papers define shelter and food more narrowly than the CE summaries the
-replication reads. [Garner and Munoz (2021)](https://www.bls.gov/pir/spm/garner_spm_choices_03_15_21.pdf)
+BLS's papers define shelter, utilities and food more narrowly than the CE
+summaries the replication reads. [Garner and Munoz (2021)](https://www.bls.gov/pir/spm/garner_spm_choices_03_15_21.pdf)
 restrict shelter to the primary residence, and leave rent as pay out of
-renters' shelter and meals as pay out of food. The CE's `SHELT` also holds other
-lodging (vacation homes, housing while attending school and lodging on
-out-of-town trips) and rent as pay, and its `FOOD` holds meals as pay
+renters' shelter and meals as pay out of food. They count owners' utilities for
+the primary residence only and renters' utilities for every property except
+rented vacation homes. The CE's `SHELT` also holds other lodging (vacation
+homes, housing while attending school and lodging on out-of-town trips) and
+rent as pay. Its `UTIL` also holds utilities for owned and rented vacation
+homes, and
+its `FOOD` holds meals as pay
 ([CE glossary](https://www.bls.gov/cex/csxgloss.htm),
 [PUMD dictionary](https://www.bls.gov/cex/pumd/ce-pumd-interview-diary-dictionary.xlsx)).
 The replication adds vacation-home mortgage principal to shelter as well. BLS
@@ -566,73 +573,78 @@ papers leave out in parentheses, beside BLS's in-band home internet:
 
 | Target | Renter | Owner with mortgage | Owner without mortgage | BLS home internet |
 |---|---:|---:|---:|---:|
-| 2019 | $695 ($392) | $851 ($312) | $1,299 ($1,143) | $547 |
-| 2020 | $765 ($451) | $1,054 ($332) | $1,634 ($1,350) | $598 |
-| 2021 | $885 ($471) | $962 ($324) | $1,770 ($1,097) | $656 |
-| 2022 | $868 ($417) | $1,004 ($402) | $1,569 ($954) | $718 |
-| 2023 | $812 ($394) | $1,038 ($498) | $1,705 ($870) | $787 |
-| 2024 | $1,596 ($369) | $1,295 ($501) | $2,090 ($1,308) | $852 |
-| 2025 | $1,015 ($388) | $1,532 ($517) | $2,549 ($1,378) | $878 |
+| 2019 | \$695 (\$392) | \$851 (\$312) | \$1,299 (\$1,143) | \$547 |
+| 2020 | \$765 (\$451) | \$1,054 (\$332) | \$1,634 (\$1,350) | \$598 |
+| 2021 | \$885 (\$471) | \$962 (\$324) | \$1,770 (\$1,097) | \$656 |
+| 2022 | \$868 (\$417) | \$1,004 (\$402) | \$1,569 (\$954) | \$718 |
+| 2023 | \$812 (\$394) | \$1,038 (\$498) | \$1,705 (\$870) | \$787 |
+| 2024 | \$1,596 (\$369) | \$1,295 (\$501) | \$2,090 (\$1,308) | \$852 |
+| 2025 | \$1,015 (\$388) | \$1,532 (\$517) | \$2,549 (\$1,378) | \$878 |
 
 Other lodging, vacation-home principal and rent as pay make up 23–88% of the
-shelter excess, and other lodging alone 15–86%. Meals as pay add $16–$31 to
+shelter excess, and other lodging alone 15–86%. Meals as pay add \$16–\$31 to
 in-band food.
 
-`apply_bls_paper_definition` removes those four amounts from the raw FMLI
-columns before the replication builds its CPI weights, price factors and bands.
-It leaves utilities whole because FMLI has no summary of utilities by property,
-though the same paper limits owners' utilities to the primary residence.
+`apply_bls_paper_definition` removes those four amounts and vacation-home
+utilities from the raw FMLI columns before the replication builds its CPI
+weights, price factors and bands. FMLI summarizes utilities for owned vacation
+homes in `UTILOWN` and for rented ones in `UTILRNT`, so the function removes
+both from owners' utilities and only `UTILRNT` from renters'. Those summaries
+leave out coal, wood and other fuels for vacation homes (UCCs 250913 and
+250914), so those fuels stay in `UTIL`. In our band, the vacation-home utilities the function
+removes average \$15–\$55 per owner without a mortgage, \$5–\$19 per owner
+with one and \$0–\$3 per renter.
 
 Signed gap from BLS's corrected thresholds in percent under these definitions,
 without → with the stage:
 
 | Target | Renter | Owner with mortgage | Owner without mortgage |
 |---|---:|---:|---:|
-| 2019 | −2.84 → −0.10 | −3.53 → −0.87 | −3.62 → +0.29 |
-| 2020 | −3.15 → −0.38 | −3.50 → −1.11 | −3.78 → +1.44 |
-| 2021 | −2.69 → −0.26 | −3.20 → −0.79 | −2.23 → +0.56 |
-| 2022 | −2.59 → +0.61 | −3.13 → −0.24 | −1.21 → +0.51 |
-| 2023 | −3.11 → −0.07 | −3.58 → −0.86 | −1.40 → +1.21 |
-| 2024 | −2.48 → +0.19 | −4.16 → −1.11 | −3.16 → −1.51 |
-| 2025 | −4.22 → −1.02 | −3.94 → −1.20 | −2.04 → −1.03 |
+| 2019 | −2.91 → −0.18 | −3.53 → −0.88 | −3.90 → +0.29 |
+| 2020 | −3.28 → −0.44 | −3.53 → −1.13 | −3.35 → +1.47 |
+| 2021 | −2.74 → −0.32 | −3.26 → −0.82 | −2.35 → +0.35 |
+| 2022 | −2.59 → +0.62 | −3.07 → −0.28 | −2.22 → −0.23 |
+| 2023 | −3.13 → −0.12 | −3.56 → −0.84 | −2.02 → +0.62 |
+| 2024 | −2.46 → +0.19 | −4.20 → −1.15 | −3.59 → −1.71 |
+| 2025 | −4.15 → −1.04 | −4.09 → −1.26 | −1.98 → −1.24 |
 
 With BLS's FCSUti index as the deflator:
 
 | Target | Renter | Owner with mortgage | Owner without mortgage |
 |---|---:|---:|---:|
-| 2019 | −2.31 → +0.32 | −3.15 → −0.48 | −3.25 → +0.90 |
-| 2020 | −2.63 → −0.04 | −3.23 → −0.68 | −2.81 → +2.03 |
-| 2021 | −2.76 → −0.26 | −3.10 → −0.82 | −2.34 → +0.81 |
-| 2022 | −2.99 → +0.30 | −3.41 → −0.65 | −2.25 → +0.16 |
-| 2023 | −3.08 → −0.10 | −3.62 → −0.78 | −1.26 → +1.10 |
-| 2024 | −2.15 → +0.55 | −3.77 → −0.63 | −2.54 → −1.55 |
-| 2025 | −3.57 → −0.35 | −3.43 → −0.64 | −1.72 → −0.14 |
+| 2019 | −2.37 → +0.27 | −3.17 → −0.48 | −3.38 → +0.74 |
+| 2020 | −2.65 → −0.09 | −3.26 → −0.70 | −2.94 → +1.97 |
+| 2021 | −2.85 → −0.31 | −3.13 → −0.87 | −2.53 → +0.64 |
+| 2022 | −3.00 → +0.26 | −3.36 → −0.65 | −2.53 → −0.65 |
+| 2023 | −3.09 → −0.09 | −3.63 → −0.79 | −1.83 → +0.50 |
+| 2024 | −2.14 → +0.54 | −3.75 → −0.69 | −3.15 → −1.74 |
+| 2025 | −3.55 → −0.32 | −3.49 → −0.72 | −2.28 → −0.27 |
 
 Under these definitions, the out-of-pocket replication trails BLS in every
-tenure and year, by 1.21–4.22% with the package CPI. The stage cuts the mean
-absolute gap from 3.03% to 0.73%, and 7 of the 21 cells land above BLS. Under
+tenure and year, by 1.98–4.20% with the package CPI. The stage cuts the mean
+absolute gap from 3.14% to 0.72%, and 6 of the 21 cells land above BLS. Under
 the replication's own definitions, the stage raises the mean absolute gap from
 1.36% to 1.78%, and all 21 land above BLS. With BLS's index and these
-definitions, the stage cuts it from 2.83% to 0.63%.
+definitions, the stage cuts it from 2.96% to 0.63%.
 
-Offsetting terms produce those small gaps. Each term's part of the gap under
-these definitions, in percentage points of BLS's threshold:
+Each term's part of the gap under these definitions, in percentage points of
+BLS's threshold:
 
 | Term | Renter | Owner with mortgage | Owner without mortgage |
 |---|---:|---:|---:|
-| Imputed benefits | −0.06 to +1.42 | −0.39 to −0.01 | −0.59 to −0.01 |
-| Shelter | +0.95 to +2.21 | +1.29 to +1.98 | +2.04 to +4.40 |
+| Imputed benefits | −0.14 to +1.41 | −0.39 to −0.01 | −0.58 to −0.01 |
+| Shelter | +1.01 to +2.26 | +1.33 to +1.97 | +2.10 to +4.63 |
 | Home internet | −2.14 to −1.86 | −2.14 to −1.85 | −2.55 to −2.20 |
-| Utilities | −0.32 to +0.21 | +0.01 to +0.30 | −0.72 to +0.76 |
-| Food | −0.25 to +0.54 | −0.25 to +0.54 | −0.30 to +0.65 |
-| Clothing | −0.92 to −0.19 | −0.91 to −0.19 | −1.08 to −0.23 |
-| Telephone | −0.14 to +0.28 | −0.14 to +0.28 | −0.17 to +0.33 |
+| Utilities | −0.33 to +0.18 | −0.04 to +0.27 | −1.08 to +0.59 |
+| Food | −0.29 to +0.52 | −0.29 to +0.52 | −0.34 to +0.63 |
+| Clothing | −0.93 to −0.18 | −0.92 to −0.18 | −1.09 to −0.21 |
+| Telephone | −0.15 to +0.29 | −0.15 to +0.29 | −0.18 to +0.35 |
 
-The definitions cut the shelter term by 18–66%, and by 45% on average, and what
-remains roughly offsets the omitted home internet term. The two sum to −1.12 to
-+0.07 points for renters, −0.80 to −0.10 for owners with mortgages and −0.51 to
-+2.07 for owners without mortgages. We have not traced the remaining shelter
-excess.
+Under these definitions, the shelter term falls by 17–63%, and by 45% on
+average, and what remains roughly offsets the omitted home internet term. The
+two sum to −1.06 to +0.12 points for renters, −0.76 to −0.05 for owners with
+mortgages and −0.39 to +2.30 for owners without mortgages. We have not traced
+the remaining shelter excess.
 
 ### Imputed amounts and threshold growth
 
@@ -640,23 +652,23 @@ In-band amounts, 2022 to 2025:
 
 | Series | All imputed benefits | Rental assistance per renter | School lunch |
 |---|---:|---:|---:|
-| BLS | $855 → $1,257 (+$401) | $738 → $1,243 (+$505) | $500 → $742 (+$242) |
-| Ours, package CPI | $1,027 → $1,173 (+$146) | $1,331 → $1,446 (+$115) | $423 → $571 (+$148) |
-| Ours, FCSUti index | $1,026 → $1,210 (+$184) | $1,328 → $1,507 (+$179) | $422 → $579 (+$157) |
+| BLS | \$855 → \$1,257 (+\$401) | \$738 → \$1,243 (+\$505) | \$500 → \$742 (+\$242) |
+| Ours, package CPI | \$1,027 → \$1,173 (+\$146) | \$1,331 → \$1,446 (+\$115) | \$423 → \$571 (+\$148) |
+| Ours, FCSUti index | \$1,026 → \$1,210 (+\$184) | \$1,328 → \$1,507 (+\$179) | \$422 → \$579 (+\$157) |
 
-BLS's imputed benefits rise $401 and ours $146 with the package CPI, and BLS's
-rise exceeds all five of our implicates' with either deflator ($52–$287). Across
-all units in the band, rental assistance supplies $169 of that difference and
-school lunch $94. BLS's rental assistance per renter rises 68%, against 9% in ours
-with the package CPI and 13% with BLS's index. BLS has not published its rental
-model, and we have not traced the difference.
+BLS's imputed benefits rise \$401 and ours \$146 with the package CPI, and
+BLS's rise exceeds all five of our implicates' with either deflator
+(\$52–\$287). Across all units in the band, rental assistance supplies \$169 of
+that difference and school lunch \$94. BLS's rental assistance per renter rises
+68%, against 9% in ours with the package CPI and 13% with BLS's index. We have
+not traced the difference.
 
 The imputed terms in each threshold, 2022 to 2025. Each cell lists renters /
 owners with mortgages / owners without mortgages. The share of growth beyond
-CPI-U equals `(C_2025 − π × C_2022) / (T_2025 − π × T_2022)`, where `C` sums the
-imputed terms in threshold `T` and `π` = 1.1001, CPI-U's ratio. The other two
-columns compare threshold growth with and without those terms, holding each band
-as it stands.
+CPI-U equals `(I_2025 − π × I_2022) / (T_2025 − π × T_2022)`, where `I` sums the
+imputed terms in threshold `T` and `π` = 1.1001, CPI-U's ratio. We hold each band
+fixed and compare threshold growth with and without those terms in the other two
+columns.
 
 | Series | Share of growth beyond CPI-U, % | Points of growth | Growth without imputed terms, % |
 |---|---:|---:|---:|
@@ -669,17 +681,17 @@ terms kept → removed from both series:
 
 | Tenure | Replication's definitions, package CPI | Replication's definitions, FCSUti index | BLS's written definitions, package CPI | BLS's written definitions, FCSUti index |
 |---|---:|---:|---:|---:|
-| Renter | −2.40 → −0.94 | −1.29 → +0.03 | −1.97 → −0.37 | −0.79 → +1.02 |
-| Owner with mortgage | −0.40 → −0.09 | +0.51 → +0.79 | −1.16 → −0.81 | +0.02 → +0.38 |
-| Owner without mortgage | −0.93 → −0.43 | +1.05 → +1.54 | −1.86 → −1.33 | −0.36 → +0.20 |
+| Renter | −2.40 → −0.94 | −1.29 → +0.03 | −2.01 → −0.33 | −0.71 → +1.05 |
+| Owner with mortgage | −0.40 → −0.09 | +0.51 → +0.79 | −1.19 → −0.86 | −0.08 → +0.26 |
+| Owner without mortgage | −0.93 → −0.43 | +1.05 → +1.54 | −1.22 → −0.70 | +0.46 → +1.00 |
 
 Removing imputed terms from both series narrows the renter shortfall from −2.40
 to −0.94 points with the package CPI and closes it with BLS's index (−1.29 to
-+0.03). Owners' figures move by 0.28–0.55 points. Those renter figures with
++0.03). Owners' figures move by 0.28–0.54 points. Those renter figures with
 imputed terms removed carry between-implicate standard deviations of 0.32–0.53
 points, before any sampling uncertainty.
 
-Holding each band as it stands leaves out rank shifts. The stage also reorders
+Holding each band fixed leaves out rank shifts. The stage also reorders
 units, which moves the replication's 2022–2025 growth by a further −0.34 points
 for renters, −0.01 for owners with mortgages and +0.82 for owners without
 mortgages. BLS publishes no unit-level values, so we can't measure its rank
@@ -689,9 +701,9 @@ shifts.
 
 | Tenure | BLS corrected | Replication's definitions, package CPI | Replication's definitions, FCSUti index | BLS's written definitions, package CPI | BLS's written definitions, FCSUti index |
 |---|---:|---:|---:|---:|---:|
-| Renter | +22.15% | +19.75% | +20.85% | +20.18% | +21.36% |
-| Owner with mortgage | +21.61% | +21.21% | +22.12% | +20.45% | +21.63% |
-| Owner without mortgage | +20.63% | +19.70% | +21.68% | +18.77% | +20.28% |
+| Renter | +22.15% | +19.75% | +20.85% | +20.14% | +21.43% |
+| Owner with mortgage | +21.61% | +21.21% | +22.12% | +20.42% | +21.53% |
+| Owner without mortgage | +20.63% | +19.70% | +21.68% | +19.41% | +21.09% |
 
 Under BLS's written definitions and BLS's index, growth with the stage lands
 within 0.8 points of BLS's for every tenure.
@@ -718,12 +730,13 @@ within 0.8 points of BLS's for every tenure.
 - All participation models share one covariate set across programs and
   years, and the CE and CPS income concepts differ.
 - The replication still omits home internet spending.
-- BLS's written shelter and food definitions come from Garner and Munoz
-  (2021). BLS's thresholds also carry later refinements and corrections, so
-  its current practice may differ. The definition runs keep utilities for
-  every property.
-- The growth comparison with BLS holds each band as it stands, and BLS
-  publishes no unit-level values that would show its rank shifts.
+- BLS's written shelter, utilities and food definitions come from Garner and
+  Munoz (2021). BLS's thresholds also carry later refinements and corrections,
+  so its current practice may differ. FMLI's vacation-home utility summaries
+  leave out coal, wood and other fuels for vacation homes, so the definition
+  runs keep those fuels.
+- We hold each band fixed when we compare growth with BLS, and BLS publishes
+  no unit-level values that would show its rank shifts.
 - The runs estimate imputation uncertainty (implicate spread) but not
   sampling uncertainty.
 
@@ -769,7 +782,7 @@ Nothing in the canonical forecast uses the stage today.
   `spm_calculator/data/current/ce_inkind_replication_2019_2025.json`: the
   2019–2025 run and its receipt, with code, data and parameter hashes.
 - `spm_calculator/ce_bls_shares.py`: in-band components for BLS and the
-  replication, and BLS's written shelter and food definitions.
+  replication, and BLS's written shelter, utilities and food definitions.
 - `spm_calculator/data/current/bls_spm_shares.xlsx`: BLS's threshold shares
   ([source](https://www.bls.gov/pir/spm/spm_shares.xlsx)).
 - `scripts/compare_ce_inkind_bls_shares.py` and
