@@ -883,16 +883,17 @@ errors:
 
 | Amount | BLS | Package composite CPI | BLS's FCSUti index |
 |---|---:|---:|---:|
-| All imputed benefits | +$401 | +$146 (191) | +$184 (177) |
-| Rental assistance per renter | +$505 | +$115 (444) | +$179 (396) |
-| School lunch | +$242 | +$148 (50) | +$157 (51) |
+| All imputed benefits | +\$401 | +\$146 (191) | +\$184 (177) |
+| Rental assistance per renter | +\$505 | +\$115 (444) | +\$179 (396) |
+| School lunch | +\$242 | +\$148 (50) | +\$157 (51) |
 
 With the package CPI, our in-band amounts carry standard errors of \$103–\$127 a
 year for all imputed benefits, \$210–\$310 for rental assistance per renter and
-\$15–\$35 for school lunch. The two windows' band amounts barely move together
-across replicates, with correlations from −0.25 to +0.25, so each rise's
-standard error exceeds both years'. With either deflator, the implicates' spread
-supplies 27–49% of each rise's variance.
+\$15–\$35 for school lunch. The two windows' band amounts barely move together:
+within each implicate and under either deflator, their replicate deviations
+correlate at −0.25 to +0.22, so each rise's standard error exceeds both years'.
+With either deflator, the implicates' spread supplies 27–49% of each rise's
+variance.
 
 ## Limitations
 

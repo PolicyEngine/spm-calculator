@@ -44,7 +44,8 @@ def _dollars(value: float) -> str:
 
 
 def _signed_dollars(value: float) -> str:
-    return f"{'+' if value >= 0 else '−'}${abs(value):,.0f}"
+    # MyST reads paired dollar signs as math, so escape each one.
+    return f"{'+' if value >= 0 else '−'}\\${abs(value):,.0f}"
 
 
 def _signed(value: float, digits: int = 2) -> str:
