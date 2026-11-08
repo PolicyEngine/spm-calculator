@@ -451,6 +451,75 @@ def geography_block(results: dict) -> str:
     )
 
 
+def _series(values: List[str]) -> str:
+    return ", ".join(values[:-1]) + " and " + values[-1]
+
+
+def credit_interaction_block(results: dict) -> str:
+    ci = results["credit_interaction"]
+    shares = ci["fica_shares"]
+    n12 = ci["units_with_credit"]["one_or_two_children"]
+    n3 = ci["units_with_credit"]["three_or_more_children"]
+    m12 = ci["rule_matches"]["one_or_two_children"]
+    m3 = ci["rule_matches"]["three_or_more_children"]
+    missed_with_eitc = ci["units_without_credit_not_reproduced_with_eitc"]
+    eitc = _row(results, "eitc")
+    ours = eitc["estimate"]
+    response = ci["eitc_with_ctc_response"]["estimate"]
+    census = _series(list(eitc["published_values"]["estimate_text"]))
+    changed = ci["persons_whose_status_changes"]
+    above = ci["three_plus_above_earnings_branch"]
+    if above == 0:
+        payroll_sets = (
+            "No unit with three or more qualifying children has an "
+            "`ACTC_CRD` above 15 percent of its earnings over $2,500, the "
+            "most the earnings branch allows, so the payroll tax "
+            "alternative sets no credit in the file. "
+        )
+    else:
+        payroll_sets = (
+            f"{above:,} of the {n3:,} units with three or more qualifying "
+            "children have an `ACTC_CRD` above 15 percent of their earnings "
+            "over $2,500, the most the earnings branch allows. "
+        )
+    missed = "none" if missed_with_eitc == 0 else _words(missed_with_eitc)
+    text = (
+        f"The file's `FICA` equals {100 * shares['wages']:.2f} percent of "
+        "wages for filers with wages alone and "
+        f"{100 * shares['self_employment']:.2f} percent of self-employment "
+        "income for filers with self-employment income alone, so it "
+        "carries the whole self-employment tax; we count half of that tax, "
+        "as the rule does. With that payroll tax, the rule gives "
+        f"{_count(m12 + m3, n12 + n3)} {n12 + n3:,} tax units with a "
+        "refundable credit their `ACTC_CRD` within a dollar: "
+        f"{m12:,} of {n12:,} with one or two qualifying children and "
+        f"{m3:,} of {n3:,} with three or more. It misses "
+        f"{ci['units_without_credit_not_reproduced']:,} tax units that the "
+        f"file gives no refundable credit, {missed} of them with an EITC. "
+        f"{payroll_sets}Without the EITC, the rule would raise the credit "
+        f"of {ci['units_raised']:,} tax units, by at most "
+        f"${ci['largest_rise_dollars']:,.0f}, in SPM units with "
+        f"{_thousands(ci['persons_in_raised_units_thousands'])} thousand "
+        "people. "
+    )
+    if changed == 0 and all(abs(a - b) < 1e-9 for a, b in zip(response, ours)):
+        text += (
+            "That changes no one's poverty status, so our EITC effect "
+            f"stays at {_series([_pp(x) for x in ours])} points for all "
+            "people, under 18, 18 to 64 and 65 and older, against "
+            f"Census's {census}.\n"
+        )
+    else:
+        text += (
+            f"That changes the poverty status of {changed:,} sample people "
+            f"and moves our EITC effect from {_series([_pp(x) for x in ours])}"
+            f" to {_series([_pp(x) for x in response])} points for all "
+            "people, under 18, 18 to 64 and 65 and older, against "
+            f"Census's {census}.\n"
+        )
+    return text
+
+
 def largest_gaps_block(results: dict) -> str:
     groups = results["table5"]["groups"]
     cells = []
@@ -573,5 +642,6 @@ def render_blocks(results: dict) -> Dict[str, str]:
         "geography": geography_block(results),
         "largest_gaps": largest_gaps_block(results),
         "alternatives": alternatives_block(results),
+        "credit_interaction": credit_interaction_block(results),
         "tolerances": tolerances_block(results),
     }

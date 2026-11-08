@@ -318,6 +318,24 @@ a public-use definition that reproduces each credit alone. The file's
 tax-unit credits (`EIT_CRED`, `ACTC_CRD`) sum exactly to its SPM unit fields,
 so reading either gives the same effects.
 
+**The payroll tax alternative.** For a tax unit with three or more
+qualifying children, the refundable Child Tax Credit is the greater of 15
+percent of earnings over $2,500 and the unit's payroll tax less its EITC,
+within the credit's limits (26 U.S.C. 24(d)(1)(B)). If Census estimated the
+EITC's effect by recomputing taxes without the EITC, the refundable credit
+would rise for some of these units, which would shrink the EITC's effect
+and leave the combined effect unchanged. To test that, we apply the 2025
+rule, with the parameters PolicyEngine US 2.2.1 sets, to the file's own
+credits, earnings and dependents, counting dependents under 17 as
+qualifying children:
+
+<!-- BEGIN GENERATED: credit_interaction -->
+The file's `FICA` equals 7.65 percent of wages for filers with wages alone and 14.13 percent of self-employment income for filers with self-employment income alone, so it carries the whole self-employment tax; we count half of that tax, as the rule does. With that payroll tax, the rule gives all 4,582 tax units with a refundable credit their `ACTC_CRD` within a dollar: 3,222 of 3,222 with one or two qualifying children and 1,360 of 1,360 with three or more. It misses 946 tax units that the file gives no refundable credit, none of them with an EITC. No unit with three or more qualifying children has an `ACTC_CRD` above 15 percent of its earnings over $2,500, the most the earnings branch allows, so the payroll tax alternative sets no credit in the file. Without the EITC, the rule would raise the credit of 33 tax units, by at most $684, in SPM units with 553 thousand people. That changes no one's poverty status, so our EITC effect stays at -1.22, -2.90, -0.98 and -0.09 points for all people, under 18, 18 to 64 and 65 and older, against Census's -1.19, -2.85, -0.95 and -0.08.
+<!-- END GENERATED: credit_interaction -->
+
+So the payroll tax alternative does not explain why each credit's effect
+alone exceeds Census's.
+
 **Federal income tax.** Census's federal income tax row removes tax before
 refundable credits (`SPM_FEDTAXBC`) and shows the credits as their own rows.
 Removing tax after credits (`SPM_FEDTAX`) instead lands far from Census's

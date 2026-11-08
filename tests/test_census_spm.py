@@ -396,6 +396,267 @@ def test_resources_rise_with_additions_and_fall_with_subtractions(
 
 
 # ---------------------------------------------------------------------------
+# The refundable CTC rule and its response to the EITC
+# ---------------------------------------------------------------------------
+
+
+@st.composite
+def credit_units(draw, max_units: int = 12):
+    """Tax units with children, earnings, payroll tax and credits.
+
+    About half the units carry the credit the rule gives them, so that the
+    response to the EITC is not masked.
+    """
+    n = draw(st.integers(1, max_units))
+    rng = np.random.default_rng(draw(st.integers(0, 2**32 - 1)))
+    earnings = rng.choice(
+        [0.0, 1_000.0, 2_500.0, 4_000.0, 8_000.0, 30_000.0, 250_000.0],
+        size=n,
+    ) * rng.uniform(0.5, 1.5, size=n)
+    units = pd.DataFrame(
+        {
+            "SPM_ID": rng.integers(0, max(1, (n + 1) // 2), size=n),
+            "children": rng.integers(0, 6, size=n),
+            "other_dependents": rng.integers(0, 3, size=n),
+            "earnings": earnings,
+            "payroll_tax": earnings
+            * rng.choice([0.0, 0.0765, 0.1413, 0.3], size=n),
+            "eitc": rng.integers(0, 3, size=n) * rng.uniform(0, 4_000, size=n),
+            "nonrefundable_ctc": rng.integers(0, 2, size=n)
+            * rng.uniform(0, 5_000, size=n),
+        },
+        index=pd.Index(np.arange(n) + 100, name="TAX_ID"),
+    )
+    rule = c.refundable_ctc_rule(units, units["eitc"].to_numpy())
+    units["actc"] = np.where(
+        rng.random(n) < 0.5, np.round(rule), rng.uniform(0, 5_000, size=n)
+    )
+    return units
+
+
+@PROPERTY_SETTINGS
+@given(credit_units())
+def test_ctc_response_lies_between_zero_and_eitc_and_payroll_tax(units):
+    response = c.ctc_response_to_eitc(units)
+    assert (response >= 0).all()
+    assert (response <= units["eitc"].to_numpy() + 1e-9).all()
+    assert (response <= units["payroll_tax"].to_numpy() + 1e-9).all()
+
+
+@PROPERTY_SETTINGS
+@given(credit_units())
+def test_ctc_response_needs_three_children_an_eitc_and_a_reproduced_credit(
+    units,
+):
+    response = c.ctc_response_to_eitc(units)
+    excluded = (
+        (units["children"].to_numpy() < 3)
+        | (units["eitc"].to_numpy() == 0)
+        | ~c.rule_reproduces_credit(units)
+    )
+    assert (response[excluded] == 0).all()
+
+
+@PROPERTY_SETTINGS
+@given(credit_units(), st.floats(0, 10_000))
+def test_refundable_ctc_rule_stays_in_its_cap_and_falls_with_the_eitc(
+    units, extra
+):
+    eitc = units["eitc"].to_numpy()
+    rule = c.refundable_ctc_rule(units, eitc)
+    more = c.refundable_ctc_rule(units, eitc + extra)
+    cap = c.CTC_2025["refundable_max_per_child"] * units["children"].to_numpy()
+    assert (rule >= 0).all()
+    assert (rule <= cap + 1e-9).all()
+    assert (more <= rule + 1e-9).all()
+
+
+def test_refundable_ctc_rule_matches_hand_computed_units():
+    units = pd.DataFrame(
+        {
+            "SPM_ID": [1, 1, 2],
+            "children": [3, 2, 3],
+            "other_dependents": [0, 0, 1],
+            "earnings": [3_000.0, 3_000.0, 40_000.0],
+            "payroll_tax": [229.5, 229.5, 3_060.0],
+            "eitc": [1_000.0, 1_000.0, 2_000.0],
+            "nonrefundable_ctc": [0.0, 0.0, 1_000.0],
+            "actc": [75.0, 75.0, 5_100.0],
+        },
+        index=pd.Index([10, 11, 12], name="TAX_ID"),
+    )
+    # 15% of earnings over $2,500 is $75 for the first two units. Without
+    # its EITC, the first unit's payroll tax ($229.50) sets the credit; the
+    # second has two children, and the third stays at its $5,100 cap.
+    np.testing.assert_allclose(
+        c.refundable_ctc_rule(units, units["eitc"].to_numpy()),
+        [75.0, 75.0, 5_100.0],
+    )
+    np.testing.assert_allclose(c.ctc_response_to_eitc(units), [154.5, 0, 0])
+
+
+def test_ctc_payroll_tax_counts_half_of_self_employment_tax():
+    persons = pd.DataFrame(
+        {
+            "FICA": [765.0, 1_413.0, 2_178.0, 0.0],
+            "WSAL_VAL": [10_000.0, 0.0, 10_000.0, 0.0],
+        }
+    )
+    np.testing.assert_allclose(
+        c.ctc_payroll_tax(persons), [765.0, 706.5, 1_471.5, 0.0]
+    )
+
+
+@given(
+    st.lists(
+        st.tuples(st.floats(0, 50_000), st.floats(-10_000, 200_000)),
+        min_size=1,
+        max_size=20,
+    )
+)
+def test_ctc_payroll_tax_lies_between_half_and_all_of_fica(rows):
+    persons = pd.DataFrame(rows, columns=["FICA", "WSAL_VAL"])
+    tax = c.ctc_payroll_tax(persons)
+    fica = persons["FICA"].to_numpy()
+    assert (tax >= 0.5 * fica - 1e-9).all()
+    assert (tax <= fica + 1e-9).all()
+
+
+_ZERO_CREDIT_FIELDS = {
+    "WSAL_VAL": 0.0,
+    "SEMP_VAL": 0.0,
+    "FRSE_VAL": 0.0,
+    "FICA": 0.0,
+    "EIT_CRED": 0.0,
+    "ACTC_CRD": 0.0,
+    "CTC_CRD": 0.0,
+}
+
+
+@st.composite
+def credit_persons(draw, max_units: int = 6):
+    """People in SPM units of one or two tax units, with credit fields.
+
+    Each filer carries the refundable credit the rule gives its unit, and
+    resources sit near the threshold often enough for the EITC to matter.
+    """
+    n_units = draw(st.integers(1, max_units))
+    rng = np.random.default_rng(draw(st.integers(0, 2**32 - 1)))
+    rows = []
+    tax_id = 1
+    for spm in range(n_units):
+        threshold = float(rng.integers(10_000, 40_000))
+        offset = float(rng.integers(-2_000, 9_000))
+        for _ in range(int(rng.integers(1, 3))):
+            wages = float(rng.choice([0, 1_000, 3_000, 6_000, 20_000]))
+            self_employment = float(rng.choice([0, 0, 2_000, -1_000]))
+            rows.append(
+                {
+                    **_ZERO_CREDIT_FIELDS,
+                    "SPM_ID": spm,
+                    "TAX_ID": tax_id,
+                    "DEP_STAT": 0,
+                    "A_AGE": 35,
+                    "WSAL_VAL": wages,
+                    "SEMP_VAL": self_employment,
+                    "FICA": 0.0765 * wages + 0.1413 * max(self_employment, 0),
+                    "EIT_CRED": float(
+                        rng.integers(0, 2) * rng.integers(0, 7_000)
+                    ),
+                    "SPM_POVTHRESHOLD": threshold,
+                    "SPM_RESOURCES": threshold + offset,
+                }
+            )
+            for _ in range(int(rng.integers(0, 6))):
+                rows.append(
+                    {
+                        **_ZERO_CREDIT_FIELDS,
+                        "SPM_ID": spm,
+                        "TAX_ID": tax_id,
+                        "DEP_STAT": 1,
+                        "A_AGE": int(rng.integers(0, 20)),
+                        "SPM_POVTHRESHOLD": threshold,
+                        "SPM_RESOURCES": threshold + offset,
+                    }
+                )
+            tax_id += 1
+    persons = pd.DataFrame(rows)
+    units = c.ctc_tax_units(persons)
+    rule = pd.Series(
+        c.refundable_ctc_rule(units, units["eitc"].to_numpy()),
+        index=units.index,
+    )
+    filer = persons["DEP_STAT"] == 0
+    persons.loc[filer, "ACTC_CRD"] = persons.loc[filer, "TAX_ID"].map(rule)
+    persons["SPM_EITC"] = persons.groupby("SPM_ID")["EIT_CRED"].transform(
+        "sum"
+    )
+    weight = rng.uniform(0.5, 3_000, size=len(persons))
+    replicates = weight[:, None] * rng.uniform(
+        0.0, 2.0, size=(len(persons), c.N_REPLICATES)
+    )
+    weights = pd.DataFrame(
+        replicates, columns=list(c.REPLICATE_COLUMNS), index=persons.index
+    )
+    weights.insert(0, "weight", weight)
+    return pd.concat([persons, weights], axis=1)
+
+
+@PROPERTY_SETTINGS
+@given(credit_persons())
+def test_eitc_with_ctc_response_lies_between_the_eitc_and_zero(persons):
+    net = c.eitc_net_of_ctc_response(persons)
+    eitc = persons["SPM_EITC"].to_numpy()
+    assert (net >= -1e-9).all()
+    assert (net <= eitc + 1e-9).all()
+    by_unit = persons.assign(net=net).groupby("SPM_ID")["net"].nunique()
+    assert by_unit.max() == 1
+    eitc_element = next(e for e in c.ELEMENTS if e.key == "eitc")
+    alone = c.estimate_table5(persons, elements=[eitc_element])["eitc"]
+    with_response = c.credit_interaction(persons)["eitc_with_ctc_response"]
+    for a, b in zip(alone["estimate"], with_response["estimate"]):
+        if math.isnan(a):
+            continue
+        assert a - 1e-9 <= b <= 1e-9
+
+
+def test_ctc_response_can_keep_a_family_out_of_poverty():
+    # A filer with $3,000 of wages, a $1,000 EITC and three children, $900
+    # above the threshold. Removing the EITC alone makes the family poor;
+    # the credit's $154.50 rise keeps it $54.50 above the threshold.
+    filer = {
+        **_ZERO_CREDIT_FIELDS,
+        "DEP_STAT": 0,
+        "A_AGE": 30,
+        "WSAL_VAL": 3_000.0,
+        "FICA": 229.5,
+        "EIT_CRED": 1_000.0,
+        "ACTC_CRD": 75.0,
+    }
+    child = {**_ZERO_CREDIT_FIELDS, "DEP_STAT": 1, "A_AGE": 5}
+    persons = pd.DataFrame([filer, child, child, child]).assign(
+        SPM_ID=1,
+        TAX_ID=7,
+        SPM_EITC=1_000.0,
+        SPM_POVTHRESHOLD=30_000.0,
+        SPM_RESOURCES=30_900.0,
+        weight=1.0,
+    )
+    replicates = pd.DataFrame(
+        1.0, index=persons.index, columns=list(c.REPLICATE_COLUMNS)
+    )
+    persons = pd.concat([persons, replicates], axis=1)
+    eitc_element = next(e for e in c.ELEMENTS if e.key == "eitc")
+    alone = c.estimate_table5(persons, elements=[eitc_element])["eitc"]
+    ci = c.credit_interaction(persons)
+    assert alone["estimate"][0] == pytest.approx(-100.0)
+    assert ci["eitc_with_ctc_response"]["estimate"][0] == pytest.approx(0.0)
+    assert ci["units_raised"] == 1
+    assert ci["largest_rise_dollars"] == pytest.approx(154.5)
+    assert ci["persons_whose_status_changes"] == 4
+
+
+# ---------------------------------------------------------------------------
 # Table 4 definitions
 # ---------------------------------------------------------------------------
 
@@ -849,6 +1110,34 @@ def test_claim_each_credit_alone_exceeds_census_below_65(results):
 def test_claim_credit_fields_sum_to_spm_unit_fields(results):
     assert results["identities"]["spm_eitc_vs_eit_cred_max_gap"] == 0
     assert results["identities"]["spm_actc_vs_actc_crd_max_gap"] == 0
+
+
+def test_claim_fica_carries_the_whole_self_employment_tax(results):
+    shares = results["credit_interaction"]["fica_shares"]
+    assert shares["wages"] == pytest.approx(c.EMPLOYEE_PAYROLL_RATE, abs=5e-5)
+    # Self-employment tax: 15.3 percent of 92.35 percent of net earnings.
+    assert shares["self_employment"] == pytest.approx(0.153 * 0.9235, abs=5e-5)
+
+
+def test_claim_rule_reproduces_every_refundable_credit(results):
+    ci = results["credit_interaction"]
+    assert ci["rule_matches"] == ci["units_with_credit"]
+    assert ci["units_without_credit_not_reproduced_with_eitc"] == 0
+
+
+def test_claim_payroll_alternative_sets_no_credit_in_the_file(results):
+    assert (
+        results["credit_interaction"]["three_plus_above_earnings_branch"] == 0
+    )
+
+
+def test_claim_payroll_alternative_leaves_the_eitc_effect_unchanged(results):
+    ci = results["credit_interaction"]
+    assert ci["units_raised"] > 0
+    assert ci["persons_whose_status_changes"] == 0
+    assert ci["eitc_with_ctc_response"]["estimate"] == pytest.approx(
+        _t5(results, "eitc")["estimate"], abs=1e-6
+    )
 
 
 def test_claim_federal_tax_row_is_tax_before_credits(results):
