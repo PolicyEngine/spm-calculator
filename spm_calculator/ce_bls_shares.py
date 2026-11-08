@@ -19,10 +19,11 @@ sums shelter and utilities, rearranges to two identities:
 So a share times ``T_h / m`` gives a component's in-band dollars, and the
 "Other" share gives ``0.2 F``. :func:`bls_band_components` checks both
 identities against BLS's published values. They hold to a fraction of a
-cent in every year from 2019 to 2025. One equation cannot exclude every
-other mix, but SU_h differs by thousands of dollars across tenures, so a
-distribution from any other sample would miss identity (2) by dollars. This
-module therefore reads BLS's published distribution as the band's mix.
+cent in every year from 2019 to 2025. The identities cannot pin down the
+mix themselves: other mixes that sum to one also satisfy (2). The mix comes
+from footnote 3 of BLS's thresholds workbooks, which defines each tenure's
+percentage as its share of the consumer units with children in the
+47th-53rd percentile band.
 
 :class:`BandComponents` holds the same quantities for BLS and for the
 replication, so :func:`level_gap` can split the difference between two
@@ -119,11 +120,32 @@ _REMOVED_PAIRS = {
     "meals_as_pay": ("FDMAPPQ", "FDMAPCQ"),
     "vacation_home_principal": ("MRTPRNOP", "MRTPRNOC"),
 }
+#: FMLI summaries of vacation-home utilities, which ``UTIL`` holds, as
+#: (owned vacation homes, rented vacation homes) for each ``UTIL`` column.
+_VACATION_UTILITIES = {
+    "UTILPQ": ("UTILOWNP", "UTILRNTP"),
+    "UTILCQ": ("UTILOWNC", "UTILRNTC"),
+}
+#: ``CUTENURE`` codes for owners: with a mortgage, without one, and with
+#: mortgage status not reported.
+OWNER_CODES = (1, 2, 3)
+#: The FMLI columns that hold amounts the definition removes.
+_REMOVED_COLUMNS = tuple(
+    column for pair in _REMOVED_PAIRS.values() for column in pair
+) + tuple(column for pair in _VACATION_UTILITIES.values() for column in pair)
 #: The FMLI columns :func:`band_definition_pieces` and
 #: :func:`apply_bls_paper_definition` read, beyond the replication's own.
-DEFINITION_COLUMNS = tuple(
-    column for pair in _REMOVED_PAIRS.values() for column in pair
-) + ("OWNDWEPQ", "OWNDWECQ", "RNTXRPPQ", "RNTXRPCQ")
+DEFINITION_COLUMNS = _REMOVED_COLUMNS + (
+    "OWNDWEPQ",
+    "OWNDWECQ",
+    "RNTXRPPQ",
+    "RNTXRPCQ",
+)
+#: The columns :func:`apply_bls_paper_definition` and
+#: :func:`removed_by_bls_paper_definition` need.
+_DEFINITION_INPUTS = (
+    ("CUTENURE",) + tuple(_VACATION_UTILITIES) + _REMOVED_COLUMNS
+)
 
 
 def _normal_label(label: str) -> str:
@@ -194,9 +216,19 @@ def band_mask(values: np.ndarray, weights: np.ndarray) -> np.ndarray:
     seals its code identity, so this repeats the selection, and a
     differential test holds the two together. That covers the estimator's
     fallback to the row nearest the median when the band is empty.
+
+    Raises:
+        ValueError: On the inputs the estimator rejects: no rows, a
+            nonfinite value or weight, or a weight that is not positive.
     """
     values = np.asarray(values, dtype=float)
     weights = np.asarray(weights, dtype=float)
+    if values.size == 0 or values.shape != weights.shape:
+        raise ValueError("Band selection needs one weight per value")
+    if not (np.isfinite(values) & np.isfinite(weights) & (weights > 0)).all():
+        raise ValueError(
+            "Estimation values must be finite with positive weights"
+        )
     order = np.argsort(values, kind="stable")
     cumulative = np.cumsum(weights[order])
     cdf = (cumulative - weights[order] / 2) / cumulative[-1]
@@ -228,8 +260,8 @@ def unit_components(frame: pd.DataFrame) -> pd.DataFrame:
             :func:`spm_calculator.ce_inkind_stage.add_in_kind`.
 
     Raises:
-        ValueError: If the components do not sum to the frame's
-            ``fcsuti_2a2c`` and ``su_2a2c``.
+        ValueError: If a component, ``fcsuti_2a2c`` or ``su_2a2c`` is not
+            finite, or the components do not sum to the last two.
     """
     quarterly = _quarterly_factor(frame)
     telephone = _sum_pair(frame, "TELEPHPQ", "TELEPHCQ").to_numpy(dtype=float)
@@ -260,14 +292,19 @@ def unit_components(frame: pd.DataFrame) -> pd.DataFrame:
             if column in frame
             else 0.0
         )
+    fcsuti = frame["fcsuti_2a2c"].to_numpy(dtype=float)
+    su = frame["su_2a2c"].to_numpy(dtype=float)
+    values = out[list(COMPONENTS)].to_numpy(dtype=float)
+    if not (
+        np.isfinite(values).all()
+        and np.isfinite(fcsuti).all()
+        and np.isfinite(su).all()
+    ):
+        raise ValueError("Unit components, FCSUti and SU must be finite")
     fcsuti_error = np.abs(
-        out[list(COMPONENTS)].sum(axis=1).to_numpy()
-        - frame["fcsuti_2a2c"].to_numpy(dtype=float)
+        out[list(COMPONENTS)].sum(axis=1).to_numpy() - fcsuti
     )
-    su_error = np.abs(
-        out[list(SHELTER_UTILITIES)].sum(axis=1).to_numpy()
-        - frame["su_2a2c"].to_numpy(dtype=float)
-    )
+    su_error = np.abs(out[list(SHELTER_UTILITIES)].sum(axis=1).to_numpy() - su)
     if max(fcsuti_error.max(), su_error.max()) > 1e-6:
         raise ValueError(
             "Unit components do not sum to the frame's FCSUti and SU; "
@@ -534,15 +571,44 @@ def _number(frame: pd.DataFrame, column: str) -> pd.Series:
     return pd.to_numeric(frame[column], errors="coerce").fillna(0.0)
 
 
+def _require_definition_inputs(frame: pd.DataFrame) -> None:
+    missing = [column for column in _DEFINITION_INPUTS if column not in frame]
+    if missing:
+        raise ValueError(f"The definition needs FMLI columns {missing}")
+
+
+def _owner(frame: pd.DataFrame) -> pd.Series:
+    """Whether each unit owns its home, by ``CUTENURE``."""
+    return pd.to_numeric(frame["CUTENURE"], errors="coerce").isin(OWNER_CODES)
+
+
+def _vacation_utilities(frame: pd.DataFrame, column: str) -> pd.Series:
+    """The vacation-home utilities BLS's papers leave out of ``column``.
+
+    Owners keep utilities for the primary residence only, so they lose
+    both vacation summaries. Renters keep any utilities they pay except
+    those for rented vacation homes, so they lose that summary alone.
+    """
+    owned, rented = _VACATION_UTILITIES[column]
+    return _number(frame, rented) + _number(frame, owned).where(
+        _owner(frame), 0.0
+    )
+
+
 def removed_by_bls_paper_definition(frame: pd.DataFrame) -> pd.DataFrame:
     """The quarterly dollars each unit holds beyond BLS's written definition."""
-    return pd.DataFrame(
+    _require_definition_inputs(frame)
+    removed = pd.DataFrame(
         {
             name: _number(frame, pq) + _number(frame, cq)
             for name, (pq, cq) in _REMOVED_PAIRS.items()
         },
         index=frame.index,
     )
+    removed["vacation_utilities"] = sum(
+        _vacation_utilities(frame, column) for column in _VACATION_UTILITIES
+    )
+    return removed
 
 
 def apply_bls_paper_definition(frame: pd.DataFrame) -> pd.DataFrame:
@@ -551,33 +617,33 @@ def apply_bls_paper_definition(frame: pd.DataFrame) -> pd.DataFrame:
     Garner and Munoz (2021,
     https://www.bls.gov/pir/spm/garner_spm_choices_03_15_21.pdf) restrict
     shelter to the primary residence and leave out rent as pay and meals as
-    pay. Other lodging holds vacation homes, school housing and lodging on
-    trips, per the CE hierarchy and glossary
-    (https://www.bls.gov/cex/csxgloss.htm). The FMLI summary of each is:
+    pay. They restrict owners' utilities to the primary residence and count
+    renters' utilities for any property but a rented vacation home. Other
+    lodging holds vacation homes, school housing and lodging on trips, per
+    the CE hierarchy and glossary (https://www.bls.gov/cex/csxgloss.htm).
+    The FMLI summary of each amount is:
 
     - ``OTHLOD``, which ``SHELT`` adds;
     - ``RNTAPY``, which ``RENDWE`` and so ``SHELT`` add;
     - ``MRTPRNO``, the vacation-home principal the replication adds to
       shelter;
-    - ``FDMAP``, which ``FDAWAY`` and so ``FOOD`` add.
+    - ``FDMAP``, which ``FDAWAY`` and so ``FOOD`` add;
+    - ``UTILOWN`` and ``UTILRNT``, utilities for owned and rented vacation
+      homes, which ``UTIL`` adds through its electricity, natural gas,
+      fuel oil, other fuels, and water and public services summaries
+      (https://www.bls.gov/cex/pumd/ce-pumd-interview-diary-dictionary.xlsx).
+      Neither holds telephone service.
 
-    FMLI has no summary of utilities by property, so utilities stay whole,
-    though the same paper limits owners' utilities to the primary residence.
+    ``CUTENURE`` codes 1-3 count as owners and every other code as a
+    renter.
 
     Returns:
         A copy of ``frame`` with those amounts removed and their columns
-        set to zero, so a second application changes nothing. Missing
-        values stay missing in the food columns, where the replication
-        reads them row by row.
+        set to zero, except a renter's ``UTILOWN``, which stays, so a
+        second application changes nothing. Missing values stay missing in
+        the food columns, where the replication reads them row by row.
     """
-    missing = [
-        column
-        for pair in _REMOVED_PAIRS.values()
-        for column in pair
-        if column not in frame
-    ]
-    if missing:
-        raise ValueError(f"The definition needs FMLI columns {missing}")
+    _require_definition_inputs(frame)
     out = frame.copy()
     for suffix in ("PQ", "CQ"):
         out[f"SHELT{suffix}"] = (
@@ -592,9 +658,15 @@ def apply_bls_paper_definition(frame: pd.DataFrame) -> pd.DataFrame:
                 out[column] = (_number(out, column) - meals).where(
                     pd.to_numeric(out[column], errors="coerce").notna()
                 )
+    for column in _VACATION_UTILITIES:
+        out[column] = _number(out, column) - _vacation_utilities(out, column)
     for pair in _REMOVED_PAIRS.values():
         for column in pair:
             out[column] = 0.0
+    owner = _owner(out)
+    for owned, rented in _VACATION_UTILITIES.values():
+        out[rented] = 0.0
+        out[owned] = _number(out, owned).where(~owner, 0.0)
     return out
 
 
@@ -643,16 +715,28 @@ def shelter_pieces(frame: pd.DataFrame) -> pd.DataFrame:
 
 
 def band_definition_pieces(frame: pd.DataFrame) -> dict[str, dict[str, float]]:
-    """In-band means of :func:`shelter_pieces` and meals as pay.
+    """In-band means of :func:`shelter_pieces`, meals as pay, and the
+    vacation-home utilities BLS's papers leave out.
 
     Returns:
         ``pooled`` and one entry per tenure, each mapping a piece to its
-        mean in threshold-year 2A2C dollars.
+        mean in threshold-year 2A2C dollars. ``vacation_utilities`` holds
+        owners' utilities for owned and rented vacation homes and renters'
+        for rented ones.
     """
     pieces = shelter_pieces(frame)
-    pieces["meals_as_pay"] = _sum_pair(frame, "FDMAPPQ", "FDMAPCQ").to_numpy(
-        dtype=float
-    ) * _quarterly_factor(frame)
+    quarterly = _quarterly_factor(frame)
+    pieces["meals_as_pay"] = (
+        _sum_pair(frame, "FDMAPPQ", "FDMAPCQ").to_numpy(dtype=float)
+        * quarterly
+    )
+    pieces["vacation_utilities"] = (
+        sum(
+            _vacation_utilities(frame, column)
+            for column in _VACATION_UTILITIES
+        ).to_numpy(dtype=float)
+        * quarterly
+    )
     weights = frame["ce_weight"].to_numpy(dtype=float)
     mask = band_mask(frame["fcsuti_2a2c"].to_numpy(dtype=float), weights)
     tenure = frame["tenure_type"].to_numpy(dtype=object)

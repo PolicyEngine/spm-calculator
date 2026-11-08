@@ -9,7 +9,8 @@ package composite CPI and with BLS's FCSUti index, and records:
 - in-band amounts of each imputed benefit, ours and BLS's;
 - each threshold term's part of the level gap to BLS;
 - 2022-2025 growth of the imputed amounts and their part in threshold growth;
-- the same replication with the shelter and food definitions in BLS's papers.
+- the same replication with the shelter, utilities and food definitions in
+  BLS's papers.
 
 The in-band means must reproduce every threshold. The runs with the
 replication's own definitions must match
@@ -123,11 +124,20 @@ RUNS = {
 LIMITATIONS = [
     "BLS's band means come from its shares of its thresholds; BLS has published neither its code nor unit-level values",
     "BLS's written definitions come from Garner and Munoz (2021); BLS's current code may differ, and its thresholds also carry later refinements and corrections",
-    "FMLI has no summary of utilities by property, so the definition runs keep utilities for every property, though the same paper limits owners' utilities to the primary residence",
+    "FMLI's vacation-home utility summaries leave out coal, wood and other fuels for vacation homes (UCCs 250913 and 250914), so the definition runs keep those fuels",
     "Removing imputed terms holds each band as it stands; the replication's own with-and-without runs show how far rank shifts move that",
     "The replication still omits home internet spending, which BLS's FCSUti includes",
     "The runs estimate imputation uncertainty (implicate spread) but not sampling uncertainty",
 ]
+
+
+def _recorded_path(path: Path) -> str:
+    """``path`` relative to the repository when it lies inside it."""
+    resolved = path.resolve()
+    try:
+        return str(resolved.relative_to(ROOT))
+    except ValueError:
+        return str(resolved)
 
 
 def spread(values) -> float:
@@ -135,11 +145,12 @@ def spread(values) -> float:
 
 
 def largest_difference(ours, expected, what: str, tolerance: float) -> float:
-    """The largest relative difference; raises when one exceeds tolerance."""
+    """The largest relative difference; raises when one exceeds tolerance
+    or is not finite."""
     largest = 0.0
     for tenure in TENURES:
         difference = abs(ours[tenure] / expected[tenure] - 1.0)
-        if difference > tolerance:
+        if not np.isfinite(difference) or difference > tolerance:
             raise RuntimeError(
                 f"{what}: {tenure} {ours[tenure]} != {expected[tenure]}"
             )
@@ -151,8 +162,8 @@ def definition_check(window: pd.DataFrame, target: int, cpi: dict) -> dict:
     """Largest unit errors of BLS's written definitions against what they name.
 
     With one price index for every component, each unit keeps its price
-    factor under both definitions, so its shelter and food must fall by
-    exactly the amounts the definitions remove.
+    factor under both definitions, so its shelter, utilities and food must
+    fall by exactly the amounts the definitions remove.
     """
     options = {"youth_policy": "exclude_unresolved", "cpi_series": cpi}
     before = prepare_out_of_pocket(window, target, **options).expenditures
@@ -174,6 +185,7 @@ def definition_check(window: pd.DataFrame, target: int, cpi: dict) -> dict:
         + removed["vacation_home_principal"]
     ).to_numpy() * factor
     expected_food = removed["meals_as_pay"].to_numpy() * factor
+    expected_utilities = removed["vacation_utilities"].to_numpy() * factor
     errors = {
         "shelter": float(
             np.abs(
@@ -187,8 +199,16 @@ def definition_check(window: pd.DataFrame, target: int, cpi: dict) -> dict:
                 - expected_food
             ).max()
         ),
+        "utilities": float(
+            np.abs(
+                (
+                    units_before["utilities"] - units_after["utilities"]
+                ).to_numpy()
+                - expected_utilities
+            ).max()
+        ),
     }
-    if max(errors.values()) > 1e-6:
+    if not all(np.isfinite(e) and e <= 1e-6 for e in errors.values()):
         raise RuntimeError(f"{target}: definitions miss by {errors}")
     return {
         "largest_unit_error_dollars": errors,
@@ -198,6 +218,10 @@ def definition_check(window: pd.DataFrame, target: int, cpi: dict) -> dict:
         },
         "units_with_negative_amount": {
             piece: int((removed[piece] < 0).sum()) for piece in removed
+        },
+        "units_with_utilities_below_zero": {
+            "before": int((units_before["utilities"] < 0).sum()),
+            "after": int((units_after["utilities"] < 0).sum()),
         },
     }
 
@@ -606,7 +630,7 @@ def main() -> None:
                 "sha256": sha256(REPLICATION_RECEIPT),
             },
             "cpi": {
-                "path": "spm_calculator/data/bls/cpi_annual.json",
+                "path": _recorded_path(args.cpi_input),
                 "sha256": sha256(args.cpi_input),
                 "cpi_u_ratio_2022_2025": price_ratio,
             },

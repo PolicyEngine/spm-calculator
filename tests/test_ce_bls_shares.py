@@ -12,13 +12,16 @@ Invariants (stated in the PR and docs/ce-inkind-imputation.md):
 5. ``level_gap`` terms sum to the difference between two thresholds.
 6. Imputed and non-imputed shares of growth beyond inflation sum to one.
 7. ``apply_bls_paper_definition`` lowers each unit's FCSUti by exactly the
-   amounts it removes, and a second application changes nothing.
+   amounts it removes, takes both vacation-home utility summaries from
+   owners and the rented one from renters, needs no column beyond those
+   the comparison script loads, and changes nothing when applied twice.
 
 The committed receipt must come from this code, reproduce its thresholds and
 growth from its own band means, and supply every table on the docs page.
 """
 
 import json
+import re
 
 import numpy as np
 import pandas as pd
@@ -27,6 +30,7 @@ from hypothesis import given
 from hypothesis import strategies as st
 
 from scripts import render_ce_inkind_bls_tables as render
+from scripts.replicate_ce_inkind import KEEP
 from spm_calculator import ce_bls_shares
 from spm_calculator.ce_bls_shares import (
     COMMODITIES,
@@ -71,6 +75,11 @@ from tests.test_ce_inkind import (
 
 YEARS = range(2019, 2026)
 SHELTER_COLUMNS = ("OWNDWE", "RNTXRP", "RNTAPY", "OTHLOD")
+#: (UTIL suffix, owned vacation homes, rented vacation homes).
+VACATION_UTILITIES = (
+    ("PQ", "UTILOWNP", "UTILRNTP"),
+    ("CQ", "UTILOWNC", "UTILRNTC"),
+)
 CURRENT = ROOT / "spm_calculator/data/current"
 RECEIPT = CURRENT / "ce_inkind_bls_components_2019_2025.json"
 REPLICATION_RECEIPT = CURRENT / "ce_inkind_replication_2019_2025.json"
@@ -104,6 +113,12 @@ def definition_frame(seed: int, n: int = 60) -> pd.DataFrame:
     frame["EMRTPNOC"] = rng.uniform(0, 500, n)
     frame["MRTPRNOP"] = rng.uniform(0, 50, n)
     frame["MRTPRNOC"] = rng.uniform(0, 50, n)
+    for suffix, owned, rented in VACATION_UTILITIES:
+        frame[owned] = rng.uniform(0, 60, n)
+        frame[rented] = rng.uniform(0, 40, n)
+        frame[f"UTIL{suffix}"] = (
+            frame[f"UTIL{suffix}"] + frame[owned] + frame[rented]
+        )
     return frame
 
 
@@ -266,9 +281,9 @@ def test_published_values_satisfy_both_identities(year):
     assert sum(band.tenure_mix.values()) == pytest.approx(1.0, abs=1e-8)
 
 
-def test_published_mix_is_the_band_mix():
+def test_changing_mix_along_one_direction_breaks_identity():
     """Moving one point of the band from owners without mortgages to renters
-    breaks identity (2) by tens of dollars, so no other mix fits."""
+    breaks identity (2) by tens of dollars."""
     year = 2025
     shares = read_threshold_shares()[year]
     thresholds = get_published_thresholds(year)
@@ -278,6 +293,35 @@ def test_published_mix_is_the_band_mix():
     moved["owner_without_mortgage"] -= 0.01
     with pytest.raises(ValueError, match="identity"):
         bls_band_components(shares, thresholds, moved)
+
+
+def test_identity_two_leaves_a_line_of_mixes():
+    """Mixes along the direction that keeps their sum and sum_h P_h SU_h
+    fixed also satisfy identity (2), so the mix comes from BLS's footnote,
+    not from the identity."""
+    year = 2025
+    shares = read_threshold_shares()[year]
+    thresholds = get_published_thresholds(year)
+    mix = get_tenure_shares(year)
+    band, _ = bls_band_components(shares, thresholds, mix)
+    su = {
+        t: sum(band.by_tenure[t][c] for c in SHELTER_UTILITIES)
+        for t in TENURES
+    }
+    renter, mortgage, owner = TENURES
+    direction = {
+        renter: su[mortgage] - su[owner],
+        mortgage: su[owner] - su[renter],
+        owner: su[renter] - su[mortgage],
+    }
+    step = 0.01 / max(abs(v) for v in direction.values())
+    moved = {t: mix[t] + step * direction[t] for t in TENURES}
+    assert max(abs(moved[t] - mix[t]) for t in TENURES) == pytest.approx(0.01)
+    other, _ = bls_band_components(shares, thresholds, moved)
+    for tenure in TENURES:
+        assert other.threshold(tenure) == pytest.approx(
+            band.threshold(tenure), abs=1e-6
+        )
 
 
 def test_workbook_internet_rows_follow_the_tenure_invariant_one():
@@ -510,7 +554,13 @@ def test_definition_removes_exactly_what_it_names(seed):
     su_before = a["su_2a2c"] / a["inflation_factor"] / scale / 4
     su_after = b["su_2a2c"] / b["inflation_factor"] / scale / 4
     su_expected = removed.loc[
-        a.index, ["other_lodging", "rent_as_pay", "vacation_home_principal"]
+        a.index,
+        [
+            "other_lodging",
+            "rent_as_pay",
+            "vacation_home_principal",
+            "vacation_utilities",
+        ],
     ].sum(axis=1)
     np.testing.assert_allclose(su_before - su_after, su_expected, atol=1e-6)
 
@@ -530,6 +580,8 @@ def test_definition_with_nothing_to_remove_reproduces_the_thresholds():
         for suffix in ("PQ", "CQ"):
             raw[f"{stem}{suffix}"] = 0.0
     raw["MRTPRNOP"] = raw["MRTPRNOC"] = 0.0
+    for _, owned, rented in VACATION_UTILITIES:
+        raw[owned] = raw[rented] = 0.0
     for suffix in ("PQ", "CQ"):
         raw[f"SHELT{suffix}"] = raw[f"OWNDWE{suffix}"] + raw[f"RNTXRP{suffix}"]
     before = prepare_out_of_pocket(raw, 2024, cpi_series=flat_cpi())
@@ -554,9 +606,73 @@ def test_definition_needs_its_columns():
         apply_bls_paper_definition(raw)
 
 
-def test_definition_columns_cover_the_pieces():
+def test_definition_removes_vacation_utilities_by_tenure():
+    """Owners lose both vacation-home summaries and renters the rented one,
+    including units with no other lodging."""
+    raw = definition_frame(29)
+    raw["CUTENURE"] = np.resize([1, 2, 3, 4, 5, 6], len(raw))
+    for suffix in ("PQ", "CQ"):
+        raw[f"SHELT{suffix}"] = raw[f"SHELT{suffix}"] - raw[f"OTHLOD{suffix}"]
+        raw[f"OTHLOD{suffix}"] = 0.0
+    owner = raw["CUTENURE"].isin([1, 2, 3])
+    out = apply_bls_paper_definition(raw)
+    removed = 0.0
+    for suffix, owned, rented in VACATION_UTILITIES:
+        taken = raw[rented] + raw[owned].where(owner, 0.0)
+        np.testing.assert_allclose(
+            out[f"UTIL{suffix}"], raw[f"UTIL{suffix}"] - taken
+        )
+        assert (out[rented] == 0).all()
+        assert (out.loc[owner, owned] == 0).all()
+        np.testing.assert_array_equal(
+            out.loc[~owner, owned], raw.loc[~owner, owned]
+        )
+        removed = removed + taken
+    np.testing.assert_allclose(
+        removed_by_bls_paper_definition(raw)["vacation_utilities"], removed
+    )
+    assert (removed > 0).all()
+    pd.testing.assert_frame_equal(apply_bls_paper_definition(out), out)
+
+
+@pytest.mark.parametrize("food", ["legacy", "fallback", "redesigned"])
+def test_declared_columns_suffice(food):
+    """The definition and its pieces run on just the columns the comparison
+    script loads, under each food schema, and remove what they name."""
     raw = definition_frame(19)
-    assert set(DEFINITION_COLUMNS) <= set(raw.columns)
+    if food == "fallback":
+        raw = raw.drop(columns=["FOODPQ", "FOODCQ"])
+    elif food == "redesigned":
+        for suffix in ("PQ", "CQ"):
+            raw[f"GROCER{suffix}"] = raw[f"FDHOME{suffix}"] / 0.8
+        raw = raw.drop(columns=["FOODPQ", "FOODCQ", "FDHOMEPQ", "FDHOMECQ"])
+    raw = raw[[c for c in raw.columns if c in KEEP | set(DEFINITION_COLUMNS)]]
+    removed = removed_by_bls_paper_definition(raw)
+    before = prepare_out_of_pocket(raw, 2024, cpi_series=flat_cpi())
+    after = prepare_out_of_pocket(
+        apply_bls_paper_definition(raw), 2024, cpi_series=flat_cpi()
+    )
+    a, b = before.expenditures, after.expenditures
+    scale = REFERENCE_RAW_SCALE / a["equiv_scale"]
+    nominal = (a["fcsuti_2a2c"] / a["inflation_factor"]) - (
+        b["fcsuti_2a2c"] / b["inflation_factor"]
+    )
+    np.testing.assert_allclose(
+        nominal / scale / 4, removed.loc[a.index].sum(axis=1), atol=1e-6
+    )
+    meals = (
+        (
+            unit_components(a)["food"] / a["inflation_factor"]
+            - unit_components(b)["food"] / b["inflation_factor"]
+        )
+        / scale
+        / 4
+    )
+    np.testing.assert_allclose(
+        meals, removed.loc[a.index, "meals_as_pay"], atol=1e-6
+    )
+    shelter_pieces(a)
+    band_definition_pieces(a)
 
 
 @PROPERTY
@@ -569,7 +685,7 @@ def test_shelter_pieces_sum_to_shelter(seed):
     )
     band = band_definition_pieces(frame)
     components = band_components(frame)
-    shelter_names = [p for p in band["pooled"] if p != "meals_as_pay"]
+    shelter_names = list(pieces.columns)
     assert sum(band["pooled"][p] for p in shelter_names) == pytest.approx(
         components.pooled["shelter"], rel=1e-9
     )
@@ -751,11 +867,69 @@ def test_receipt_definition_runs_hold_none_of_the_removed_amounts(run):
                 "rent_as_pay",
                 "vacation_home_principal",
                 "meals_as_pay",
+                "vacation_utilities",
             ):
                 assert pieces[piece] == 0.0
+
+
+def test_receipt_definition_check_covers_utilities():
+    """Real windows lose exactly the vacation-home utilities, and some units
+    hold them."""
+    for record in committed_receipt()["definition_check"].values():
+        assert record["largest_unit_error_dollars"]["utilities"] <= 1e-6
+        assert record["units_with_amount_removed"]["vacation_utilities"] > 0
+        assert record["units_with_negative_amount"]["vacation_utilities"] == 0
+        below = record["units_with_utilities_below_zero"]
+        assert below["after"] == below["before"]
+
+
+def test_receipt_bls_identities_hold_to_a_thousandth_of_a_cent():
+    """The page says BLS's values satisfy both identities within $0.00001."""
+    for record in committed_receipt()["bls"]["years"].values():
+        checks = record["checks"]
+        assert abs(checks["fcsuti_error_dollars"]) < 1e-5
+        for tenure in TENURES:
+            assert abs(checks["threshold_error_dollars"][tenure]) < 1e-5
 
 
 def test_docs_page_holds_the_receipt_tables():
     page = (ROOT / "docs/ce-inkind-imputation.md").read_text()
     for name, table in render.render_tables(committed_receipt()).items():
         assert table in page, name
+
+
+def test_docs_page_escapes_every_dollar_sign():
+    """MyST reads paired dollar signs as inline math, so prose and tables
+    escape each one; code spans and fenced blocks need no escape."""
+    page = (ROOT / "docs/ce-inkind-imputation.md").read_text()
+    prose = re.sub(r"```.*?```", "", page, flags=re.DOTALL)
+    prose = re.sub(r"`[^`\n]*`", "", prose)
+    bare = [
+        line for line in prose.splitlines() if re.search(r"(?<!\\)\$", line)
+    ]
+    assert bare == []
+
+
+def test_band_mask_rejects_what_the_estimator_rejects():
+    with pytest.raises(ValueError, match="positive weights"):
+        band_mask([1.0, 2.0, 3.0], [1.0, 0.0, 1.0])
+    with pytest.raises(ValueError, match="finite"):
+        band_mask([1.0, np.nan, 3.0], [1.0, 1.0, 1.0])
+    with pytest.raises(ValueError, match="one weight per value"):
+        band_mask([], [])
+
+
+def test_unit_components_reject_a_nonfinite_target():
+    frame = staged(31)
+    frame.loc[frame.index[0], "fcsuti_2a2c"] = np.nan
+    with pytest.raises(ValueError, match="finite"):
+        unit_components(frame)
+
+
+def test_comparison_checks_reject_nan():
+    from scripts.compare_ce_inkind_bls_shares import largest_difference
+
+    same = {t: 2.0 for t in TENURES}
+    assert largest_difference(same, same, "same", 1e-12) == 0.0
+    with pytest.raises(RuntimeError, match="nan"):
+        largest_difference(dict(same, renter=float("nan")), same, "nan", 1e-12)

@@ -174,6 +174,15 @@ def summarize(receipt: dict) -> dict:
             },
         }
         if not record["bls_written_definitions"]:
+            block["vacation_utilities_dollars"] = {
+                t: _range(
+                    data[y]["with_in_kind"]["band_pieces"][t][
+                        "vacation_utilities"
+                    ]
+                    for y in years
+                )
+                for t in TENURES
+            }
             block["other_lodging_dollars"] = _range(
                 data[y]["with_in_kind"]["band_pieces"][t]["other_lodging"]
                 for y, t in cells
@@ -197,11 +206,12 @@ def summarize(receipt: dict) -> dict:
 
 
 def _dollars(value: float) -> str:
-    return f"${value:,.0f}"
+    # MyST reads paired dollar signs as math, so escape each one.
+    return f"\\${value:,.0f}"
 
 
 def _signed_dollars(value: float) -> str:
-    return f"{'+' if value >= 0 else '−'}${abs(value):,.0f}"
+    return f"{'+' if value >= 0 else '−'}\\${abs(value):,.0f}"
 
 
 def _signed(value: float, digits: int = 2) -> str:
