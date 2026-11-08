@@ -139,9 +139,12 @@ children, earnings and tax before credits) more than the rule itself.
 **Line up the definitions first.** The data dictionary defines
 `FEDTAX_AC = FEDTAX_BC - ACTC_CRD - EIT_CRED`, while `income_tax` subtracts
 every listed refundable credit. It describes `SPM_FICA` as "Federal
-Insurance Contributions Act and federal retirement contribution", while
-PolicyEngine US's SPM taxes add self-employment tax and state payroll
-taxes. Step 2 compares like with like: federal tax before credits with
+Insurance Contributions Act and federal retirement contribution". Step 1
+found that the file's `FICA` also carries the whole self-employment tax
+([step 1](census-spm-reproduction.md)), as PolicyEngine US's SPM taxes do
+through `spm_unit_self_employment_tax`. Those taxes also add state payroll
+taxes (`employee_state_payroll_tax`), and only the file's field counts
+federal retirement contributions. Step 2 compares like with like: federal tax before credits with
 `income_tax_before_refundable_credits`, each credit with its own variable,
 and payroll taxes component by component.
 
@@ -293,15 +296,22 @@ that matters gets the same treatment.
 differs from the file's resource identity in definition as well as in
 data. In 2.2.1 it adds `spm_unit_market_income`, `spm_unit_benefits` and
 two broadband subsidies (`acp` and `ebb`), and subtracts `spm_unit_taxes`
-and `spm_unit_spm_expenses`. The broadband subsidies have no line in the
-identity, and neither do the child care subsidies that `spm_unit_benefits`
-adds (Colorado's, Washington's and West Virginia's) or the premium tax
-credit (`assigned_aca_ptc`) that it adds when a contributed reform's flag
+and `spm_unit_spm_expenses`. Several of these items have no line in the
+identity: the broadband subsidies; the child care subsidies that
+`spm_unit_benefits` adds (Colorado's, Washington's and West Virginia's);
+its clean vehicle and home electrification rebates (`ca_cvrp`,
+`ny_drive_clean_rebate`, `high_efficiency_electric_home_rebate` and
+`residential_efficiency_electrification_rebate`); and the premium tax
+credit (`assigned_aca_ptc`), which it adds when a contributed reform's flag
 is on. Cash transfers such as unemployment compensation sit in money income
 (`SPM_TOTVAL`) in the identity and in `spm_unit_benefits` in PolicyEngine
 US, whose market income leaves them out, so they change line but not
-total. The bridge, and any step that compares with `spm_unit_net_income`
-rather than the identity, lists these items.
+total. PolicyEngine US's main branch adds more items to
+`spm_unit_benefits`, among them `co_denver_property_tax_relief` and
+`nj_property_tax_relief`. The bridge, and any step that compares with
+`spm_unit_net_income` rather than the identity, maps every item these
+variables add, at the version the step ran, to a line of the identity or
+to none.
 
 **Report.** Weighted totals against each calibration target, the effective
 sample size, the change in the SPM rate and the Table 4 rows, and the
