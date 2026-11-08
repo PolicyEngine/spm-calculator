@@ -305,12 +305,9 @@ def test_zero_element_has_zero_effect(persons):
 
 @PROPERTY_SETTINGS
 @given(synthetic_persons(allow_negative=True))
-def test_negative_state_tax_can_lower_poverty_when_removed_never_otherwise(
-    persons,
-):
+def test_state_tax_effect_equals_direct_computation(persons):
     """The state tax effect is the rate minus the rate with the tax added
-    back; with negative taxes the effect can be negative. It must equal a
-    direct computation."""
+    back to resources, whatever the tax's sign."""
     weights = c.weight_matrix(persons)
     groups = c.age_groups(persons)
     resources = persons["SPM_RESOURCES"].to_numpy()
@@ -332,6 +329,26 @@ def test_negative_state_tax_can_lower_poverty_when_removed_never_otherwise(
         rtol=1e-12,
         atol=1e-12,
     )
+
+
+def test_negative_state_tax_gives_a_negative_effect():
+    """A unit just above its threshold because of a net state tax credit
+    falls below it when the credit goes: the effect is -100 points."""
+    row = {col: 0.0 for col in UNIT_COLUMNS + PERSON_COLUMNS}
+    row.update(
+        SPM_ID=1,
+        SPM_HEAD=1,
+        A_AGE=40,
+        SPM_RESOURCES=100.0,
+        SPM_POVTHRESHOLD=90.0,
+        SPM_STTAX=-20.0,
+        weight=1.0,
+        **{col: 1.0 for col in c.REPLICATE_COLUMNS},
+    )
+    effects = c.estimate_table5(pd.DataFrame([row]))
+    assert effects["spm_rate"]["estimate"][0] == 0.0
+    assert effects["state_income_tax"]["estimate"][0] == -100.0
+    assert effects["state_income_tax"]["moe"][0] == 0.0
 
 
 @given(
@@ -490,14 +507,8 @@ def test_table4_sections_partition_their_universe(persons):
             _mask(persons, "Total, 18 to 64 years old", "Disability Status"),
             ["With a disability", "With no disability"],
         ),
-        (
-            _mask(persons, "Inside metropolitan statistical areas"),
-            [],  # Principal-city rows may leave people unidentified.
-        ),
     ]
     for universe, labels in partitions:
-        if not labels:
-            continue
         members = np.column_stack([_mask(persons, label) for label in labels])
         assert (members.sum(axis=1) == universe.astype(int)).all(), labels
 

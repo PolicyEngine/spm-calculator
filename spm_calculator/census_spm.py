@@ -16,11 +16,13 @@ weights. This module rebuilds P60-290's SPM estimates from those fields:
 - the number and percentage of people in SPM poverty, with margins of
   error, by the characteristics in Table 4.
 
-Census bases its published margins of error on 160 replicate weights
-(P60-290 Table 4, note 2). We compute standard errors with the successive
+Census bases its published margins of error on standard errors computed
+from replicate weights (P60-290 Table 4, note 2), and the public-use file
+carries 160 of them. We compute standard errors with the successive
 difference replication formula ``SE^2 = (4 / 160) * sum_r (theta_r -
 theta_0)^2`` over those weights and report 90 percent margins of error as
-``1.645 * SE``; the reproduction shows that this matches Census's margins.
+``1.645 * SE``. Our margins differ from Census's Table 5 margins by at most
+0.01 points; ``docs/census-spm-reproduction.md`` reports the comparison.
 
 Variable names and codes follow Census's data dictionary for the release
 (``asec2026_ddl_pub_full.pdf``). The module reads only pandas, numpy and
@@ -182,6 +184,12 @@ def ensure_zip(path: Optional[Path] = None, download: bool = False) -> Path:
         path.parent.mkdir(parents=True, exist_ok=True)
         partial = path.with_suffix(path.suffix + ".part")
         urllib.request.urlretrieve(ZIP_URL, partial)
+        digest = sha256_file(partial)
+        if digest != ZIP_SHA256:
+            raise ValueError(
+                f"The download from {ZIP_URL} has SHA-256 {digest}, expected "
+                f"{ZIP_SHA256}; it stays at {partial} for inspection."
+            )
         partial.replace(path)
     digest = sha256_file(path)
     if digest != ZIP_SHA256:
@@ -235,7 +243,7 @@ def assemble_persons(
         columns={
             "h_seq": "PH_SEQ",
             "pwwgt0": "weight_rep0",
-            **{f"pwwgt{i}": f"repwgt_{i}" for i in range(1, 161)},
+            **{f"pwwgt{i}": f"repwgt_{i}" for i in range(1, N_REPLICATES + 1)},
         }
     )
     out = out.merge(
@@ -997,7 +1005,10 @@ def estimate_table5(
     Returns a mapping from ``"spm_rate"`` and each element key to
     ``{"estimate": [...], "moe": [...]}`` in :data:`TABLE5_GROUPS` order.
     An element's effect is the SPM rate minus the rate without that
-    element, so additions have negative effects and subtractions positive.
+    element. Removing an addition with nonnegative amounts can only raise
+    the rate, so its effect is zero or negative; removing such a
+    subtraction can only lower the rate, so its effect is zero or positive.
+    State income tax, whose amounts can be negative, can go either way.
     """
     weights = weight_matrix(persons) if weights is None else weights
     groups = age_groups(persons)
@@ -1249,6 +1260,8 @@ def published_table4() -> List[Dict[str, object]]:
     Each entry holds the section, label, number in poverty and its margin
     (thousands), and the percentage and its margin. The 2025 columns are
     the workbook's sixth through ninth; the second through fifth hold 2024.
+    The receipt's digest pins the workbook, so those positions cannot shift
+    under the parser.
     """
     sheet = pd.read_excel(verified_table("table_4"), header=None)
     labels = [_clean_label(v) for v in sheet.iloc[:, 0]]
