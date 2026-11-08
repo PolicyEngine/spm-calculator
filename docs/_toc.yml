@@ -19,3 +19,5 @@ chapters:
   - file: policyengine-release-integration
   - file: microcosm-integration
   - file: axiom-integration
+  - file: census-spm-reproduction
+  - file: spm-evidence-series
