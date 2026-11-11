@@ -55,7 +55,7 @@ for reference year r draws donors from the CPS ASEC of survey year r + 1.
 
 | Component | Participation | Value | Enters |
 |---|---|---|---|
-| School lunch (NSLP) | Logit on CPS households with a member aged 5–18 (`HFLUNCH`). The CE universe applies only the age rule, as BLS does. | Hot deck from participating CPS households in the same state, SNAP, below-150%-of-poverty and child-count cell (widening to region, then the nation, when a cell has too few donors), scaled to the CE unit's children aged 5–18. Donor values: Census's `SPM_SCHLUNCH` for reference years 2018 onward; for earlier years, the traditional formula (USDA reimbursement plus donated-food value per lunch, weighted 5/9 spring and 4/9 fall school year, times 179 days, for each child receiving lunch; free below 150% of the official poverty line, otherwise free or reduced with equal probability). | FCSUti |
+| School lunch (NSLP) | Logit on CPS households with a member aged 5–18 (`HFLUNCH`). The CE universe applies only the age rule, as BLS does. | Hot deck from participating CPS households in the same state, SNAP, below-150%-of-poverty and child-count cell (when a cell has fewer than five donors or the CE withholds the unit's state, widening from state to region, then across numbers of children, then across regions, and last to all donors), scaled to the CE unit's children aged 5–18. Donor values: Census's `SPM_SCHLUNCH` for reference years 2018 onward; for earlier years, the traditional formula (USDA reimbursement plus donated-food value per lunch, weighted 5/9 spring and 4/9 fall school year, times 179 days, for each child receiving lunch; free below 150% of the official poverty line, otherwise free or reduced with equal probability). | FCSUti |
 | WIC | Logit on CPS households in the WIC universe | Census's participant rule (all children under 5, plus the mother of a child aged 0–1 when the unit includes a woman 15 or older, otherwise one pregnant woman) × 12 × USDA's national fiscal-year average monthly food cost. Zero where the state finished WIC EBT before the middle of the reference period. | FCSUti |
 | LIHEAP | Logit on all CPS households | Predictive mean matching on household-reported `HENGVAL` | FCSUti and SU |
 | Broadband (EBB, ACP) | Logit on all CPS households, reference years 2021 onward | Predictive mean matching on Census's assigned `SPM_BBSUBVAL` | FCSUti |
@@ -674,9 +674,16 @@ In-band amounts, 2022 to 2025:
 BLS's imputed benefits rise \$401 and ours \$146 with the package CPI, and
 BLS's rise exceeds all five of our implicates' with either deflator
 (\$52–\$287). Across all units in the band, rental assistance supplies \$169 of
-that difference and school lunch \$94. BLS's rental assistance per renter rises
-68%, against 9% in ours with the package CPI and 13% with BLS's index. We have
-not traced the difference.
+that difference and school lunch \$94. From the 2019 to the 2022 thresholds,
+BLS's rental assistance per renter rose 17%, and we estimate that ours rose 20%.
+For the 2019–2023 thresholds, we estimate rental
+assistance per renter 71 to 80% above BLS's, \$1,331 against \$738 in 2022.
+From 2022 to 2025, BLS's amount rose by \$505, and we estimate that ours rose by
+\$115, with a standard error of \$444 ([Rises in imputed
+amounts](#rises-in-imputed-amounts)). BLS draws on many of the same CE
+interviews, so that standard error does not measure the sampling error in the
+gap between the two rises. We have not established what produces the level gap
+or what raised BLS's amount in 2024 and 2025.
 
 The imputed terms in each threshold, 2022 to 2025. Each cell lists renters /
 owners with mortgages / owners without mortgages. The share of growth beyond
