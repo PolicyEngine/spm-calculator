@@ -148,7 +148,7 @@ LIMITATIONS = [
     "Implicates draw model parameters from covariances that ignore the CPS ASEC and CE designs' strata and clusters",
     "In 2015Q2 and 2017Q1, most consumer units interviewed in both that quarter and the one before changed their pattern of positive and zero replicate weights, so under one replicate number a unit's interviews on either side can fall in different half samples; the 2019-2021 windows span one or both quarters, and their replicates can miss part of the correlation between a unit's interviews",
     "The FCSUti-index run deflates every component by BLS's published index, so its price factors do not vary across replicates",
-    "BLS's threshold workbooks do not say how BLS computes its published standard errors",
+    "Garner (2010, BLS Working Paper 436) computed the standard errors of BLS's 2006-2008 experimental thresholds by balanced repeated replication with the CE's 44 replicate weights; BLS's methods page and threshold workbooks do not say how its current replicates treat the percentile band or the imputed benefits",
 ]
 
 
