@@ -18,7 +18,7 @@ SPM fields and replicate weights.
 
 <!-- BEGIN GENERATED: headline -->
 - **SPM rate.** We estimate that 13.11 percent of people lived in SPM poverty in 2025, with a 90 percent margin of error of 0.31 points. Census publishes 13.11 ± 0.31. Across all people and the three age groups, 5 of the 8 published rates and margins match to the published two decimals, and none differs by more than 0.01 points.
-- **Element effects.** 33 of the 76 published effects of single resource elements match to two decimals. The largest gap is 0.06 points, in two cells: Child Tax Credit (refundable portion), under 18 years; Federal income tax, under 18 years. For all 76 effects, the gap is smaller than Census's published margin of error, and no margin of error differs by more than 0.01 points.
+- **Element effects.** 33 of the 76 published effects of single resource elements match to two decimals. The largest gap is 0.06 points, in two cells: Child Tax Credit (refundable portion), under 18 years; Federal income tax, under 18 years. For all 76 effects, the gap is within Census's published margin of error, and no margin of error differs by more than 0.01 points.
 - **Characteristics.** For all 45 Table 4 rows that the public-use file can define, our poverty rate and number in poverty fall within Census's published margins of error, and 31 rates match to the published decimal. The four residence rows need geography that the public-use file withholds for some households.
 <!-- END GENERATED: headline -->
 
@@ -330,7 +330,7 @@ credits, earnings and dependents, counting dependents under 17 as
 qualifying children:
 
 <!-- BEGIN GENERATED: credit_interaction -->
-The file's `FICA` equals 7.65 percent of wages for filers with wages alone and 14.13 percent of self-employment income for filers with self-employment income alone, so it carries the whole self-employment tax; we count half of that tax, as the rule does. With that payroll tax, the rule gives all 4,582 tax units with a refundable credit their `ACTC_CRD` within a dollar: 3,222 of 3,222 with one or two qualifying children and 1,360 of 1,360 with three or more. It misses 946 tax units that the file gives no refundable credit, none of them with an EITC. No unit with three or more qualifying children has an `ACTC_CRD` above 15 percent of its earnings over $2,500, the most the earnings branch allows, so the payroll tax alternative sets no credit in the file. Without the EITC, the rule would raise the credit of 33 tax units, by at most $684, in SPM units with 553 thousand people. That changes no one's poverty status, so our EITC effect stays at -1.22, -2.90, -0.98 and -0.09 points for all people, under 18, 18 to 64 and 65 and older, against Census's -1.19, -2.85, -0.95 and -0.08.
+Among filers with $1,000 to $150,000 of wages and no other earnings (52,455 in the sample), the file's `FICA` has a median of 7.65 percent of wages. Among filers with $1,000 to $150,000 of self-employment income and no other earnings (2,898), its median is 14.13 percent of that income, the whole self-employment tax. For people with self-employment or farm income, we count as self-employment tax the part of `FICA` above the employee's tax on their wages: 6.2 percent Social Security tax on wages up to the 2025 wage base of $176,100, plus 1.45 percent Medicare tax. For everyone else, all of `FICA` is the employee's tax. The rule counts half of the self-employment tax as payroll tax (26 U.S.C. 24(d)(2)(A)) and takes the other half out of earnings, as section 32(c)(2)(A)(ii) does through the section 164(f) deduction. The rule gives 4,447 of the 4,582 tax units with a refundable credit their `ACTC_CRD` within a dollar: 3,142 of 3,222 with one or two qualifying children and 1,305 of 1,360 with three or more. All 135 it misses have self-employment income, and each gets the credit the rule gives when earnings skip the section 164(f) deduction. Without the deduction, the rule reproduces all 4,582 credits. Both versions give a refundable credit to 946 tax units that the file gives none, none of them with an EITC. Of the 1,360 units with three or more qualifying children, 55 have an `ACTC_CRD` above 15 percent of their earned income over $2,500, the most the earnings branch allows. The rule, payroll tax alternative included, reproduces none of their credits. The version without the deduction reproduces all 55 and finds no unit above its earnings branch, so the payroll tax alternative sets no credit in the file. Without the EITC, the rule would raise the credit of 31 tax units, by at most $184, in SPM units with 538 thousand people, and the version without the deduction would raise 33, by at most $684. Neither changes anyone's poverty status, so our EITC effect stays at -1.22, -2.90, -0.98 and -0.09 points for all people, under 18, 18 to 64 and 65 and older, against Census's -1.19, -2.85, -0.95 and -0.08.
 <!-- END GENERATED: credit_interaction -->
 
 So the payroll tax alternative does not explain why each credit's effect
@@ -374,8 +374,9 @@ tests.
 
 The tests hold the committed results to the tolerances below. We set each
 one at the largest gap we found, rounded up to the published precision (to
-the next whole percent for the relative margin), so that any code change
-that widens a gap fails the tests. The tolerances describe this
+the next whole percent for the relative margin). The tests fail when a gap
+exceeds its tolerance, so a change can widen a gap that stays within it
+without failing them. The tolerances describe this
 reproduction; Census sets no such standard. The tests also require our SPM
 rate for all people, and its margin of error, to equal Census's at the
 published two decimals.

@@ -69,7 +69,7 @@ into a `PolicyEngineUSDataset` (which takes a `name`, `description`,
 `filepath` and `year`) and runs one with
 `Simulation(dataset=..., tax_benefit_model_version=pe.us.model)`.
 
-Four things need work before step 2 can use that path:
+Five things need work before step 2 can use that path:
 
 1. **One survey year at Census's weights.** The builder pools years and
    scales each to a population share. Step 2 needs the 2026 file alone, with
@@ -96,6 +96,27 @@ Four things need work before step 2 can use that path:
    converter writes and that PolicyEngine US accepts it, which requires
    that the file store none of the refused SPM outputs. Record any
    provenance `policyengine.py` requires of a dataset it has not certified.
+5. **Run configuration.** At commit `57b5870`, `policyengine.py` computes
+   a fixed set of default outputs on every run, and a caller's extra
+   variables add to that set rather than replace it (`entity_variables`
+   in `tax_benefit_models/us/model.py` and `resolve_entity_variables` in
+   `tax_benefit_models/common/model_version.py`). The defaults include
+   `spm_unit_net_income` and both SPM poverty flags, and in PolicyEngine US
+   2.2.1 `spm_unit_is_in_spm_poverty` reads `spm_unit_spm_threshold`. So
+   every run computes every unit's threshold, even in a step that discards
+   it. Under the default county selection, the threshold provider reads
+   each household's `county_fips` and raises `SPM_GEOGRAPHY_REQUIRED` for
+   a household without one (`calculate_unit` and `policyengine_amount` in
+   spm-calculator 1.0.0's `policyengine_adapter.py`), so a county run over
+   the whole file fails. Steps 2, 3 and 5 therefore run with
+   `spm=SPMSelection(geography_kind="national")` and discard the
+   thresholds. Each checks, on the households the file places in a county,
+   that the components it swaps come out the same under the county
+   selection. Step 4 adds a county run over those households for the
+   housing cap (see step 4's housing geography). The stage's gate runs both
+   configurations on records that include households with no county: the
+   national run must complete, and the county run's records must hold no
+   household without one.
 
 A gate closes this stage. The converted dataset must carry the file's
 persons, tax units, SPM units and weights unchanged, and every PolicyEngine
@@ -130,11 +151,17 @@ from 0.65 to 0.86 by number of children (`spec/take_up.yaml` in
 `microcosm-build`, read at commit `3db6515`).
 
 **The refundable CTC.** Step 1 applied the 2025 refundable CTC rule to the
-file's own credits, earnings and dependents, and it gives every tax unit
-with a refundable credit its `ACTC_CRD` within a dollar
-([step 1](census-spm-reproduction.md)). So step 2's refundable CTC
-comparison tests the inputs PolicyEngine US feeds the rule (qualifying
-children, earnings and tax before credits) more than the rule itself.
+file's own credits, earnings and dependents
+([step 1](census-spm-reproduction.md)). The rule reproduces `ACTC_CRD`
+within a dollar for every tax unit with a refundable credit except some
+with self-employment income, whose credits follow the rule with earnings
+that skip the section 164(f) deduction for half of self-employment tax.
+PolicyEngine US 2.2.1 takes that deduction: `ctc_phase_in_relevant_earnings`
+reads `eitc_earned_income`, which subtracts `self_employment_tax_ald_person`.
+So step 2 reports the refundable CTC separately for tax units with
+self-employment income. For the rest, its comparison tests the inputs
+PolicyEngine US feeds the rule (qualifying children, earnings and tax
+before credits) more than the rule itself.
 
 **Line up the definitions first.** The data dictionary defines
 `FEDTAX_AC = FEDTAX_BC - ACTC_CRD - EIT_CRED`, while `income_tax` subtracts
@@ -227,16 +254,32 @@ households, and a synthetic `county_fips` would reach every rule that reads
 it. So step 4 swaps housing only for households the file places in a
 county, keeps `SPM_CAPHOUSESUB` for the rest, and reports how many of the
 file's housing recipients (units with `SPM_CAPHOUSESUB` above zero) each
-group holds.
+group holds. Because every run also computes every unit's threshold (see
+the run configuration before step 2), step 4 takes the housing subsidy
+from a county run over the households with a county, and every other
+benefit from the national run.
 
 **Take-up.** Rules give eligibility and amounts; take-up decides who
 receives a benefit. PolicyEngine US reads take-up inputs such as
 `takes_up_snap_if_eligible`, `takes_up_ssi_if_eligible`,
 `takes_up_tanf_if_eligible`, `takes_up_wic_if_eligible` and
 `takes_up_housing_assistance_if_eligible`, and each defaults to true.
-Step 4 first sets each one to the file's reported receipt, so that it
+Step 4 first sets each one from the file's reported receipt, so that it
 isolates the rules, and then runs a sub-step with Microcosm's take-up
-values. Microcosm's take-up specification (`spec/take_up.yaml` in
+values. The SNAP, TANF and housing inputs belong to the SPM unit. The
+file reports SNAP and housing for the unit (`SPM_SNAPSUB`,
+`SPM_CAPHOUSESUB`) and cash assistance for each member (`PAW_VAL` with
+`PAW_TYP`), so a unit takes TANF up when a member reports TANF (type 1
+or 3). The SSI input belongs to the person, and the file reports each
+person's `SSI_VAL`. WIC's input also belongs to the
+person, including infants and children, but the data dictionary gives
+`WICYN` the universe "Adult female", and the file values WIC for the unit
+(`SPM_WICVAL`). So step 4 sets WIC take-up for every member of a unit with
+`SPM_WICVAL` above zero and for no one else, which lets every eligible
+member of a receiving unit take WIC up. It compares WIC for the unit, not
+for the person, and reports the units where PolicyEngine US's WIC exceeds
+`SPM_WICVAL`, where that allocation can overstate receipt. Microcosm's
+take-up specification (`spec/take_up.yaml` in
 `microcosm-build`, read at commit `3db6515`) sets the five differently.
 Housing take-up equals the receipt its `acs_rent` stage measures from
 `SPM_CAPHOUSESUB`. SNAP take-up starts from reported receipt
@@ -249,9 +292,11 @@ carry `PAW_VAL`. So the sub-step's TANF result reflects an administrative
 rate rather than the file's reports, and step 4 reports it apart from the
 other programs.
 
-**Report.** For each program: eligibility and receipt agreement, amounts
-among units that receive the benefit under both, weighted totals, the
-Table 5 effect and the change in the SPM rate.
+**Report.** For each program: the share of the file's recipients that
+PolicyEngine US finds eligible (the file reports receipt, not
+eligibility), receipt agreement in the take-up sub-step, amounts among
+units that receive the benefit under both, weighted totals, the Table 5
+effect and the change in the SPM rate.
 
 ## Step 5: imputations the rules need
 

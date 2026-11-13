@@ -496,30 +496,101 @@ def test_refundable_ctc_rule_matches_hand_computed_units():
 
 
 def test_ctc_payroll_tax_counts_half_of_self_employment_tax():
+    # Wages alone; self-employment alone; both; nothing; wages above the
+    # 2025 wage base with self-employment income, whose Social Security
+    # share the base uses up (2.9% Medicare on 92.35% of $10,000 = $267.815);
+    # and wages above $200,000 with the additional Medicare tax, which
+    # counts in full because the person has no self-employment income.
+    employee_300k = 0.062 * 176_100 + 0.0145 * 300_000
+    employee_250k = 0.062 * 176_100 + 0.0145 * 250_000
     persons = pd.DataFrame(
         {
-            "FICA": [765.0, 1_413.0, 2_178.0, 0.0],
-            "WSAL_VAL": [10_000.0, 0.0, 10_000.0, 0.0],
+            "FICA": [
+                765.0,
+                1_413.0,
+                2_178.0,
+                0.0,
+                employee_300k + 267.815,
+                employee_250k + 450.0,
+            ],
+            "WSAL_VAL": [10_000.0, 0.0, 10_000.0, 0.0, 300_000.0, 250_000.0],
+            "SEMP_VAL": [0.0, 10_000.0, 10_000.0, 0.0, 10_000.0, 0.0],
+            "FRSE_VAL": 0.0,
         }
     )
     np.testing.assert_allclose(
-        c.ctc_payroll_tax(persons), [765.0, 706.5, 1_471.5, 0.0]
+        c.self_employment_tax(persons),
+        [0.0, 1_413.0, 1_413.0, 0.0, 267.815, 0.0],
+    )
+    np.testing.assert_allclose(
+        c.ctc_payroll_tax(persons),
+        [
+            765.0,
+            706.5,
+            1_471.5,
+            0.0,
+            employee_300k + 133.9075,
+            employee_250k + 450.0,
+        ],
     )
 
 
+@PROPERTY_SETTINGS
 @given(
     st.lists(
-        st.tuples(st.floats(0, 50_000), st.floats(-10_000, 200_000)),
+        st.tuples(
+            st.floats(0, 50_000),
+            st.floats(-10_000, 300_000),
+            st.floats(-20_000, 100_000),
+            st.floats(-20_000, 20_000),
+        ),
         min_size=1,
         max_size=20,
     )
 )
 def test_ctc_payroll_tax_lies_between_half_and_all_of_fica(rows):
-    persons = pd.DataFrame(rows, columns=["FICA", "WSAL_VAL"])
+    persons = pd.DataFrame(
+        rows, columns=["FICA", "WSAL_VAL", "SEMP_VAL", "FRSE_VAL"]
+    )
     tax = c.ctc_payroll_tax(persons)
+    se_tax = c.self_employment_tax(persons)
     fica = persons["FICA"].to_numpy()
     assert (tax >= 0.5 * fica - 1e-9).all()
     assert (tax <= fica + 1e-9).all()
+    assert (se_tax >= 0).all() and (se_tax <= fica + 1e-9).all()
+    np.testing.assert_allclose(tax, fica - 0.5 * se_tax)
+    no_self_employment = (persons["SEMP_VAL"] + persons["FRSE_VAL"]) <= 0
+    assert (se_tax[no_self_employment.to_numpy()] == 0).all()
+
+
+def test_ctc_tax_units_take_half_of_self_employment_tax_out_of_earnings():
+    # A filer with $50,000 of self-employment income, $7,065 of FICA (the
+    # whole self-employment tax) and eight qualifying children. Earned
+    # income takes out half the tax: $46,467.50, so the earnings branch
+    # gives 15% x ($46,467.50 - $2,500) = $6,595.125. Before the
+    # deduction it gives 15% x ($50,000 - $2,500) = $7,125.
+    filer = {
+        **_ZERO_CREDIT_FIELDS,
+        "DEP_STAT": 0,
+        "A_AGE": 40,
+        "SEMP_VAL": 50_000.0,
+        "FICA": 7_065.0,
+        "EIT_CRED": 0.0,
+        "ACTC_CRD": 7_125.0,
+        "CTC_CRD": 10_000.0,
+    }
+    child = {**_ZERO_CREDIT_FIELDS, "DEP_STAT": 1, "A_AGE": 6}
+    persons = pd.DataFrame([filer] + [child] * 8).assign(SPM_ID=1, TAX_ID=9)
+    units = c.ctc_tax_units(persons)
+    assert units.loc[9, c.EARNINGS] == pytest.approx(46_467.5)
+    assert units.loc[9, c.EARNINGS_BEFORE_DEDUCTION] == pytest.approx(50_000)
+    assert units.loc[9, "payroll_tax"] == pytest.approx(3_532.5)
+    assert units.loc[9, "self_employed_filers"] == 1
+    assert c.refundable_ctc_rule(units, 0.0)[0] == pytest.approx(6_595.125)
+    before = c.refundable_ctc_rule(units, 0.0, c.EARNINGS_BEFORE_DEDUCTION)
+    assert before[0] == pytest.approx(7_125.0)
+    assert not c.rule_reproduces_credit(units)[0]
+    assert c.rule_reproduces_credit(units, c.EARNINGS_BEFORE_DEDUCTION)[0]
 
 
 _ZERO_CREDIT_FIELDS = {
@@ -604,6 +675,26 @@ def credit_persons(draw, max_units: int = 6):
 
 @PROPERTY_SETTINGS
 @given(credit_persons())
+def test_the_deduction_never_raises_earnings_or_the_credit(persons):
+    units = c.ctc_tax_units(persons)
+    statute = units[c.EARNINGS].to_numpy()
+    before = units[c.EARNINGS_BEFORE_DEDUCTION].to_numpy()
+    assert (statute >= 0).all()
+    assert (statute <= before + 1e-9).all()
+    eitc = units["eitc"].to_numpy()
+    assert (
+        c.refundable_ctc_rule(units, eitc)
+        <= c.refundable_ctc_rule(units, eitc, c.EARNINGS_BEFORE_DEDUCTION)
+        + 1e-9
+    ).all()
+    no_self_employment = units["self_employed_filers"].to_numpy() == 0
+    np.testing.assert_allclose(
+        statute[no_self_employment], before[no_self_employment]
+    )
+
+
+@PROPERTY_SETTINGS
+@given(credit_persons())
 def test_eitc_with_ctc_response_lies_between_the_eitc_and_zero(persons):
     net = c.eitc_net_of_ctc_response(persons)
     eitc = persons["SPM_EITC"].to_numpy()
@@ -613,11 +704,13 @@ def test_eitc_with_ctc_response_lies_between_the_eitc_and_zero(persons):
     assert by_unit.max() == 1
     eitc_element = next(e for e in c.ELEMENTS if e.key == "eitc")
     alone = c.estimate_table5(persons, elements=[eitc_element])["eitc"]
-    with_response = c.credit_interaction(persons)["eitc_with_ctc_response"]
-    for a, b in zip(alone["estimate"], with_response["estimate"]):
-        if math.isnan(a):
-            continue
-        assert a - 1e-9 <= b <= 1e-9
+    ci = c.credit_interaction(persons)
+    for version in c.RULE_EARNINGS:
+        with_response = ci[version]["eitc_with_ctc_response"]
+        for a, b in zip(alone["estimate"], with_response["estimate"]):
+            if math.isnan(a):
+                continue
+            assert a - 1e-9 <= b <= 1e-9
 
 
 def test_ctc_response_can_keep_a_family_out_of_poverty():
@@ -650,10 +743,16 @@ def test_ctc_response_can_keep_a_family_out_of_poverty():
     alone = c.estimate_table5(persons, elements=[eitc_element])["eitc"]
     ci = c.credit_interaction(persons)
     assert alone["estimate"][0] == pytest.approx(-100.0)
-    assert ci["eitc_with_ctc_response"]["estimate"][0] == pytest.approx(0.0)
-    assert ci["units_raised"] == 1
-    assert ci["largest_rise_dollars"] == pytest.approx(154.5)
-    assert ci["persons_whose_status_changes"] == 4
+    # The family has no self-employment income, so both versions agree.
+    for version in c.RULE_EARNINGS:
+        check = ci[version]
+        assert check["eitc_with_ctc_response"]["estimate"][0] == pytest.approx(
+            0.0
+        )
+        assert check["units_raised"] == 1
+        assert check["largest_rise_dollars"] == pytest.approx(154.5)
+        assert check["persons_whose_status_changes"] == 4
+    assert ci["statute_misses"]["units"] == 0
 
 
 # ---------------------------------------------------------------------------
@@ -1114,30 +1213,53 @@ def test_claim_credit_fields_sum_to_spm_unit_fields(results):
 
 def test_claim_fica_carries_the_whole_self_employment_tax(results):
     shares = results["credit_interaction"]["fica_shares"]
-    assert shares["wages"] == pytest.approx(c.EMPLOYEE_PAYROLL_RATE, abs=5e-5)
+    employee = c.EMPLOYEE_SOCIAL_SECURITY_RATE + c.EMPLOYEE_MEDICARE_RATE
+    assert shares["wages"] == pytest.approx(employee, abs=5e-5)
     # Self-employment tax: 15.3 percent of 92.35 percent of net earnings.
     assert shares["self_employment"] == pytest.approx(0.153 * 0.9235, abs=5e-5)
+    assert shares["wage_filers"] > 0 and shares["self_employment_filers"] > 0
 
 
-def test_claim_rule_reproduces_every_refundable_credit(results):
+def test_claim_statute_misses_only_self_employed_units(results):
     ci = results["credit_interaction"]
-    assert ci["rule_matches"] == ci["units_with_credit"]
-    assert ci["units_without_credit_not_reproduced_with_eitc"] == 0
+    misses = ci["statute_misses"]
+    assert misses["units"] > 0
+    assert misses["with_self_employment"] == misses["units"]
+    assert misses["reproduced_before_deduction"] == misses["units"]
+    assert sum(ci["statute"]["rule_matches"].values()) + misses[
+        "units"
+    ] == sum(ci["units_with_credit"].values())
+
+
+def test_claim_version_without_the_deduction_reproduces_every_credit(results):
+    ci = results["credit_interaction"]
+    assert ci["before_deduction"]["rule_matches"] == ci["units_with_credit"]
+    for version in c.RULE_EARNINGS:
+        check = ci[version]
+        assert check["units_without_credit_not_reproduced_with_eitc"] == 0
 
 
 def test_claim_payroll_alternative_sets_no_credit_in_the_file(results):
+    ci = results["credit_interaction"]
+    statute = ci["statute"]
+    assert statute["three_plus_above_earnings_branch"] > 0
+    assert statute["three_plus_above_earnings_branch_reproduced"] == 0
     assert (
-        results["credit_interaction"]["three_plus_above_earnings_branch"] == 0
+        ci["statute_above_branch_reproduced_before_deduction"]
+        == statute["three_plus_above_earnings_branch"]
     )
+    assert ci["before_deduction"]["three_plus_above_earnings_branch"] == 0
 
 
 def test_claim_payroll_alternative_leaves_the_eitc_effect_unchanged(results):
     ci = results["credit_interaction"]
-    assert ci["units_raised"] > 0
-    assert ci["persons_whose_status_changes"] == 0
-    assert ci["eitc_with_ctc_response"]["estimate"] == pytest.approx(
-        _t5(results, "eitc")["estimate"], abs=1e-6
-    )
+    for version in c.RULE_EARNINGS:
+        check = ci[version]
+        assert check["units_raised"] > 0
+        assert check["persons_whose_status_changes"] == 0
+        assert check["eitc_with_ctc_response"]["estimate"] == pytest.approx(
+            _t5(results, "eitc")["estimate"], abs=1e-6
+        )
 
 
 def test_claim_federal_tax_row_is_tax_before_credits(results):

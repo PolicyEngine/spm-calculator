@@ -2586,37 +2586,79 @@
   "credit_interaction": {
     "fica_shares": {
       "wages": 0.0765,
-      "self_employment": 0.1413
+      "self_employment": 0.1413,
+      "wage_filers": 52455,
+      "self_employment_filers": 2898
     },
-    "units_without_credit_not_reproduced": 946,
-    "units_without_credit_not_reproduced_with_eitc": 0,
+    "social_security_wage_base": 176100.0,
+    "employee_social_security_rate": 0.062,
+    "employee_medicare_rate": 0.0145,
     "units_with_credit": {
       "one_or_two_children": 3222,
       "three_or_more_children": 1360
     },
-    "rule_matches": {
-      "one_or_two_children": 3222,
-      "three_or_more_children": 1360
+    "statute": {
+      "rule_matches": {
+        "one_or_two_children": 3142,
+        "three_or_more_children": 1305
+      },
+      "units_without_credit_not_reproduced": 946,
+      "units_without_credit_not_reproduced_with_eitc": 0,
+      "three_plus_above_earnings_branch": 55,
+      "three_plus_above_earnings_branch_reproduced": 0,
+      "units_raised": 31,
+      "persons_in_raised_units_thousands": 538.41933,
+      "largest_rise_dollars": 184.0,
+      "persons_whose_status_changes": 0,
+      "eitc_with_ctc_response": {
+        "estimate": [
+          -1.218052,
+          -2.901011,
+          -0.980421,
+          -0.091106
+        ],
+        "moe": [
+          0.128391,
+          0.312729,
+          0.113849,
+          0.035034
+        ]
+      }
     },
-    "three_plus_above_earnings_branch": 0,
-    "units_raised": 33,
-    "persons_in_raised_units_thousands": 552.89527,
-    "largest_rise_dollars": 684.35,
-    "persons_whose_status_changes": 0,
-    "eitc_with_ctc_response": {
-      "estimate": [
-        -1.218052,
-        -2.901011,
-        -0.980421,
-        -0.091106
-      ],
-      "moe": [
-        0.128391,
-        0.312729,
-        0.113849,
-        0.035034
-      ]
-    }
+    "before_deduction": {
+      "rule_matches": {
+        "one_or_two_children": 3222,
+        "three_or_more_children": 1360
+      },
+      "units_without_credit_not_reproduced": 946,
+      "units_without_credit_not_reproduced_with_eitc": 0,
+      "three_plus_above_earnings_branch": 0,
+      "three_plus_above_earnings_branch_reproduced": 0,
+      "units_raised": 33,
+      "persons_in_raised_units_thousands": 552.89527,
+      "largest_rise_dollars": 684.35,
+      "persons_whose_status_changes": 0,
+      "eitc_with_ctc_response": {
+        "estimate": [
+          -1.218052,
+          -2.901011,
+          -0.980421,
+          -0.091106
+        ],
+        "moe": [
+          0.128391,
+          0.312729,
+          0.113849,
+          0.035034
+        ]
+      }
+    },
+    "statute_misses": {
+      "units": 135,
+      "with_self_employment": 135,
+      "reproduced_before_deduction": 135
+    },
+    "statute_above_branch_reproduced_before_deduction": 55
   },
   "tolerances": {
     "table5_spm_rate": 0.01,

@@ -1152,29 +1152,82 @@ CTC_2025: Dict[str, float] = {
 }
 #: Age below which a dependent counts as a qualifying child.
 CTC_CHILD_AGE_LIMIT = 17
-#: The employee's Social Security and Medicare tax rate, 6.2 plus 1.45
-#: percent of wages.
-EMPLOYEE_PAYROLL_RATE = 0.0765
+#: The employee's Social Security tax rate, the 2025 wage base it applies
+#: to and the employee's Medicare tax rate, as PolicyEngine US 2.2.1 sets
+#: them (``gov.irs.payroll.social_security.rate.employee``,
+#: ``gov.irs.payroll.social_security.cap`` and
+#: ``gov.irs.payroll.medicare.rate.employee``).
+EMPLOYEE_SOCIAL_SECURITY_RATE = 0.062
+SOCIAL_SECURITY_WAGE_BASE_2025 = 176_100.0
+EMPLOYEE_MEDICARE_RATE = 0.0145
+#: The share of self-employment tax that 26 U.S.C. 164(f) deducts
+#: (``gov.irs.ald.self_employment_tax.percent_deductible``).
+SELF_EMPLOYMENT_TAX_DEDUCTIBLE_SHARE = 0.5
 #: The file records credits in whole dollars, so comparisons allow a dollar.
 CREDIT_TOLERANCE = 1.0
+#: The tax-unit columns that hold earned income as 26 U.S.C. 32(c)(2)
+#: defines it, after the section 164(f) deduction, and earnings before it.
+EARNINGS = "earnings"
+EARNINGS_BEFORE_DEDUCTION = "earnings_before_deduction"
+#: The two versions of the rule that :func:`credit_interaction` reports:
+#: the statute's, and one whose earnings skip the section 164(f) deduction.
+RULE_EARNINGS = {
+    "statute": EARNINGS,
+    "before_deduction": EARNINGS_BEFORE_DEDUCTION,
+}
+
+
+def employee_payroll_tax(wages) -> np.ndarray:
+    """The employee's Social Security and Medicare tax on ``wages``.
+
+    Social Security tax applies to wages up to the 2025 wage base and
+    Medicare tax to all wages; negative wages count as zero. It leaves out
+    the additional Medicare tax.
+    """
+    wages = np.maximum(np.asarray(wages, dtype=float), 0.0)
+    social_security = EMPLOYEE_SOCIAL_SECURITY_RATE * np.minimum(
+        wages, SOCIAL_SECURITY_WAGE_BASE_2025
+    )
+    return social_security + EMPLOYEE_MEDICARE_RATE * wages
+
+
+def self_employment_tax(persons: pd.DataFrame) -> np.ndarray:
+    """Each person's self-employment tax, as the file's ``FICA`` carries it.
+
+    Among filers with one source of earnings, ``FICA`` has a median of 7.65
+    percent of wages and of about 14.13 percent of self-employment income
+    (:func:`fica_shares`), the whole self-employment tax. For people whose
+    self-employment and farm income sum above zero, this returns ``FICA``
+    beyond :func:`employee_payroll_tax` on their wages; for everyone else
+    it returns zero, and all of ``FICA`` counts as the employee's tax. The
+    split approximates: any additional Medicare tax or federal retirement
+    contribution that ``FICA`` holds for a self-employed person counts as
+    self-employment tax.
+    """
+    fica = persons["FICA"].to_numpy(dtype=float)
+    wages = persons["WSAL_VAL"].to_numpy(dtype=float)
+    employee = np.minimum(fica, employee_payroll_tax(wages))
+    self_employed = (
+        persons["SEMP_VAL"].to_numpy(dtype=float)
+        + persons["FRSE_VAL"].to_numpy(dtype=float)
+    ) > 0
+    return np.where(self_employed, fica - employee, 0.0)
 
 
 def ctc_payroll_tax(persons: pd.DataFrame) -> np.ndarray:
     """Each person's payroll tax as the refundable CTC rule counts it.
 
-    The file's ``FICA`` equals 7.65 percent of wages for people with wages
-    alone and about 14.13 percent of self-employment income for people with
-    self-employment income alone (:func:`fica_shares`), so it carries the
-    whole self-employment tax. The rule counts the employee's tax in full
-    and half of self-employment tax (26 U.S.C. 24(d)(2)(A); the
+    The rule counts the employee's tax in full and half of
+    self-employment tax (26 U.S.C. 24(d)(2)(A); the
     ``self_employment_tax_ald`` in PolicyEngine US 2.2.1's
-    ``ctc_social_security_tax``). This keeps ``FICA`` up to 7.65 percent of
-    wages and counts half of the rest.
+    ``ctc_social_security_tax``), so this returns ``FICA`` less half of
+    :func:`self_employment_tax`.
     """
     fica = persons["FICA"].to_numpy(dtype=float)
-    wages = np.maximum(persons["WSAL_VAL"].to_numpy(dtype=float), 0.0)
-    employee = np.minimum(fica, EMPLOYEE_PAYROLL_RATE * wages)
-    return employee + 0.5 * (fica - employee)
+    deduction = SELF_EMPLOYMENT_TAX_DEDUCTIBLE_SHARE * self_employment_tax(
+        persons
+    )
+    return fica - deduction
 
 
 def fica_shares(persons: pd.DataFrame) -> Dict[str, float]:
@@ -1182,7 +1235,9 @@ def fica_shares(persons: pd.DataFrame) -> Dict[str, float]:
 
     Covers filers (``DEP_STAT`` = 0) with $1,000 to $150,000 of wages and
     no self-employment or farm income, and filers with $1,000 to $150,000
-    of self-employment income and no wages or farm income.
+    of self-employment income and no wages or farm income, and counts
+    each group. The shares are medians over those groups: individual
+    filers' shares differ.
     """
     p = persons.loc[persons["DEP_STAT"] == 0]
     in_range = lambda s: (s > 1000) & (s < 150_000)  # noqa: E731
@@ -1197,6 +1252,8 @@ def fica_shares(persons: pd.DataFrame) -> Dict[str, float]:
         "self_employment": float(
             (self_employed["FICA"] / self_employed["SEMP_VAL"]).median()
         ),
+        "wage_filers": int(len(wages)),
+        "self_employment_filers": int(len(self_employed)),
     }
 
 
@@ -1205,29 +1262,39 @@ def ctc_tax_units(persons: pd.DataFrame) -> pd.DataFrame:
 
     Dependents are people whose ``DEP_STAT`` exceeds zero; qualifying
     children are dependents younger than :data:`CTC_CHILD_AGE_LIMIT` at the
-    interview, and other dependents are the rest. Earnings are the
-    filers' wages, self-employment and farm income, floored at zero for
-    the unit, and payroll tax is the filers' :func:`ctc_payroll_tax`. The
-    credits are the file's own: ``EIT_CRED``, ``ACTC_CRD`` and ``CTC_CRD``
-    (the nonrefundable credit for children and other dependents).
+    interview, and other dependents are the rest. Earned income
+    (:data:`EARNINGS`) is the filers' wages, self-employment and farm
+    income less the section 164(f) deduction, half of
+    :func:`self_employment_tax`, as 26 U.S.C. 32(c)(2)(A)(ii) and
+    PolicyEngine US 2.2.1's ``eitc_earned_income`` define it;
+    :data:`EARNINGS_BEFORE_DEDUCTION` skips the deduction. Both are
+    floored at zero for the unit. Payroll tax is the filers'
+    :func:`ctc_payroll_tax`, and ``self_employed_filers`` counts filers
+    whose self-employment and farm income sum above zero. The credits are
+    the file's own: ``EIT_CRED``, ``ACTC_CRD`` and ``CTC_CRD`` (the
+    nonrefundable credit for children and other dependents).
     """
     p = persons
     dependent = p["DEP_STAT"].to_numpy() > 0
     filer = ~dependent
     child = dependent & (p["A_AGE"].to_numpy() < CTC_CHILD_AGE_LIMIT)
-    earned = (
-        p["WSAL_VAL"].to_numpy(dtype=float)
-        + p["SEMP_VAL"].to_numpy(dtype=float)
-        + p["FRSE_VAL"].to_numpy(dtype=float)
-    )
+    self_employment = p["SEMP_VAL"].to_numpy(dtype=float) + p[
+        "FRSE_VAL"
+    ].to_numpy(dtype=float)
+    gross = p["WSAL_VAL"].to_numpy(dtype=float) + self_employment
+    deduction = SELF_EMPLOYMENT_TAX_DEDUCTIBLE_SHARE * self_employment_tax(p)
     frame = pd.DataFrame(
         {
             "TAX_ID": p["TAX_ID"].to_numpy(),
             "SPM_ID": p["SPM_ID"].to_numpy(),
             "children": child.astype(int),
             "other_dependents": (dependent & ~child).astype(int),
-            "earnings": np.where(filer, earned, 0.0),
+            EARNINGS: np.where(filer, gross - deduction, 0.0),
+            EARNINGS_BEFORE_DEDUCTION: np.where(filer, gross, 0.0),
             "payroll_tax": np.where(filer, ctc_payroll_tax(p), 0.0),
+            "self_employed_filers": (filer & (self_employment > 0)).astype(
+                int
+            ),
             "eitc": p["EIT_CRED"].to_numpy(dtype=float),
             "actc": p["ACTC_CRD"].to_numpy(dtype=float),
             "nonrefundable_ctc": p["CTC_CRD"].to_numpy(dtype=float),
@@ -1237,26 +1304,34 @@ def ctc_tax_units(persons: pd.DataFrame) -> pd.DataFrame:
         SPM_ID=("SPM_ID", "first"),
         children=("children", "sum"),
         other_dependents=("other_dependents", "sum"),
-        earnings=("earnings", "sum"),
+        **{
+            EARNINGS: (EARNINGS, "sum"),
+            EARNINGS_BEFORE_DEDUCTION: (EARNINGS_BEFORE_DEDUCTION, "sum"),
+        },
         payroll_tax=("payroll_tax", "sum"),
+        self_employed_filers=("self_employed_filers", "sum"),
         eitc=("eitc", "sum"),
         actc=("actc", "sum"),
         nonrefundable_ctc=("nonrefundable_ctc", "sum"),
     )
-    units["earnings"] = units["earnings"].clip(lower=0.0)
+    for column in (EARNINGS, EARNINGS_BEFORE_DEDUCTION):
+        units[column] = units[column].clip(lower=0.0)
     return units
 
 
-def ctc_earnings_branch(units: pd.DataFrame) -> np.ndarray:
-    """Fifteen percent of each tax unit's earnings over $2,500."""
+def ctc_earnings_branch(
+    units: pd.DataFrame, earnings: str = EARNINGS
+) -> np.ndarray:
+    """Fifteen percent of each tax unit's ``earnings`` over $2,500."""
     excess = (
-        units["earnings"].to_numpy(dtype=float)
-        - CTC_2025["phase_in_threshold"]
+        units[earnings].to_numpy(dtype=float) - CTC_2025["phase_in_threshold"]
     )
     return CTC_2025["phase_in_rate"] * np.maximum(excess, 0.0)
 
 
-def refundable_ctc_rule(units: pd.DataFrame, eitc) -> np.ndarray:
+def refundable_ctc_rule(
+    units: pd.DataFrame, eitc, earnings: str = EARNINGS
+) -> np.ndarray:
     """Each tax unit's refundable CTC under the 2025 rule, given its EITC.
 
     The credit is the smallest of the refundable maximum per child, the
@@ -1264,7 +1339,8 @@ def refundable_ctc_rule(units: pd.DataFrame, eitc) -> np.ndarray:
     of the earnings branch and, for units with at least three qualifying
     children, payroll tax less the EITC (26 U.S.C. 24(d)(1)(B);
     ``refundable_ctc`` and ``ctc_phase_in`` in PolicyEngine US 2.2.1).
-    ``eitc`` is an array aligned with ``units`` or a scalar.
+    ``eitc`` is an array aligned with ``units`` or a scalar, and
+    ``earnings`` names the column the earnings branch reads.
     """
     children = units["children"].to_numpy(dtype=float)
     total = CTC_2025["amount_per_child"] * children + CTC_2025[
@@ -1280,17 +1356,23 @@ def refundable_ctc_rule(units: pd.DataFrame, eitc) -> np.ndarray:
         np.maximum(units["payroll_tax"].to_numpy(dtype=float) - eitc, 0.0),
         0.0,
     )
-    return np.minimum(cap, np.maximum(ctc_earnings_branch(units), payroll))
+    branch = ctc_earnings_branch(units, earnings)
+    return np.minimum(cap, np.maximum(branch, payroll))
 
 
-def rule_reproduces_credit(units: pd.DataFrame) -> np.ndarray:
+def rule_reproduces_credit(
+    units: pd.DataFrame, earnings: str = EARNINGS
+) -> np.ndarray:
     """Whether the rule gives each tax unit its ``ACTC_CRD``, within a dollar."""
-    rule = refundable_ctc_rule(units, units["eitc"].to_numpy(dtype=float))
+    eitc = units["eitc"].to_numpy(dtype=float)
+    rule = refundable_ctc_rule(units, eitc, earnings)
     actc = units["actc"].to_numpy(dtype=float)
     return np.abs(actc - rule) <= CREDIT_TOLERANCE
 
 
-def ctc_response_to_eitc(units: pd.DataFrame) -> np.ndarray:
+def ctc_response_to_eitc(
+    units: pd.DataFrame, earnings: str = EARNINGS
+) -> np.ndarray:
     """How much each tax unit's refundable CTC would rise without its EITC.
 
     The rule with the EITC set to zero less the rule with the file's EITC,
@@ -1299,19 +1381,24 @@ def ctc_response_to_eitc(units: pd.DataFrame) -> np.ndarray:
     negative and never exceeds the unit's EITC or its payroll tax, and it
     is zero for units with fewer than three qualifying children.
     """
-    with_eitc = refundable_ctc_rule(units, units["eitc"].to_numpy(float))
-    rise = refundable_ctc_rule(units, 0.0) - with_eitc
-    return np.where(rule_reproduces_credit(units), rise, 0.0)
+    eitc = units["eitc"].to_numpy(dtype=float)
+    with_eitc = refundable_ctc_rule(units, eitc, earnings)
+    rise = refundable_ctc_rule(units, 0.0, earnings) - with_eitc
+    return np.where(rule_reproduces_credit(units, earnings), rise, 0.0)
 
 
-def eitc_net_of_ctc_response(persons: pd.DataFrame) -> np.ndarray:
+def eitc_net_of_ctc_response(
+    persons: pd.DataFrame, earnings: str = EARNINGS
+) -> np.ndarray:
     """Each person's SPM-unit EITC less the refundable CTC it would free.
 
     Removing this amount instead of ``SPM_EITC`` removes the EITC and lets
     each tax unit's refundable CTC rise as the rule allows.
     """
     units = ctc_tax_units(persons)
-    response = pd.Series(ctc_response_to_eitc(units), index=units.index)
+    response = pd.Series(
+        ctc_response_to_eitc(units, earnings), index=units.index
+    )
     by_unit = response.groupby(units["SPM_ID"]).sum()
     freed = persons["SPM_ID"].map(by_unit).fillna(0.0).to_numpy(dtype=float)
     return persons["SPM_EITC"].to_numpy(dtype=float) - freed
@@ -1329,31 +1416,31 @@ EITC_WITH_CTC_RESPONSE = Element(
 )
 
 
-def credit_interaction(
-    persons: pd.DataFrame, weights: Optional[np.ndarray] = None
-) -> dict:
-    """How the refundable CTC's payroll tax alternative bears on the EITC.
+def _rule_check(
+    persons: pd.DataFrame,
+    units: pd.DataFrame,
+    weights: np.ndarray,
+    earnings: str,
+) -> Tuple[dict, np.ndarray, np.ndarray]:
+    """One version of the rule, checked against the file's credits.
 
-    Counts the tax units with a refundable CTC whose ``ACTC_CRD`` the 2025
-    rule reproduces within :data:`CREDIT_TOLERANCE`, by number of
-    qualifying children; the units with three or more children whose
-    ``ACTC_CRD`` exceeds the earnings branch, which only the payroll tax
-    alternative allows; and the units whose credit would rise without the
-    EITC. It then estimates the EITC's Table 5 effect with that rise.
+    Returns the summary :func:`credit_interaction` reports for it, whether
+    the rule reproduces each unit's ``ACTC_CRD``, and which units with
+    three or more qualifying children have an ``ACTC_CRD`` above the
+    earnings branch.
     """
-    weights = weight_matrix(persons) if weights is None else weights
-    units = ctc_tax_units(persons)
     actc = units["actc"].to_numpy(dtype=float)
     with_credit = actc > 0
     children = units["children"].to_numpy()
-    matches = rule_reproduces_credit(units)
     three_plus = children >= CTC_2025["min_children_for_payroll_alternative"]
     one_or_two = (children >= 1) & ~three_plus
-    above_earnings = actc > ctc_earnings_branch(units) + CREDIT_TOLERANCE
-    response = ctc_response_to_eitc(units)
+    matches = rule_reproduces_credit(units, earnings)
+    branch = ctc_earnings_branch(units, earnings)
+    above = with_credit & three_plus & (actc > branch + CREDIT_TOLERANCE)
+    response = ctc_response_to_eitc(units, earnings)
     raised = units.loc[response > 0, "SPM_ID"].unique()
     in_raised = persons["SPM_ID"].isin(raised).to_numpy()
-    net_eitc = eitc_net_of_ctc_response(persons)
+    net_eitc = eitc_net_of_ctc_response(persons, earnings)
     resources = persons["SPM_RESOURCES"].to_numpy(dtype=float)
     thresholds = persons["SPM_POVTHRESHOLD"].to_numpy(dtype=float)
     eitc_alone = poverty_flags(
@@ -1362,18 +1449,8 @@ def credit_interaction(
     with_response = poverty_flags(resources - net_eitc, thresholds)
     with_column = persons.assign(EITC_NET_OF_CTC_RESPONSE=net_eitc)
     effect = estimate_table5(with_column, weights, [EITC_WITH_CTC_RESPONSE])
-    return {
-        "fica_shares": fica_shares(persons),
-        "units_without_credit_not_reproduced": int(
-            (~with_credit & ~matches).sum()
-        ),
-        "units_without_credit_not_reproduced_with_eitc": int(
-            (~with_credit & ~matches & (units["eitc"].to_numpy() > 0)).sum()
-        ),
-        "units_with_credit": {
-            "one_or_two_children": int((with_credit & one_or_two).sum()),
-            "three_or_more_children": int((with_credit & three_plus).sum()),
-        },
+    with_eitc = units["eitc"].to_numpy() > 0
+    summary = {
         "rule_matches": {
             "one_or_two_children": int(
                 (with_credit & one_or_two & matches).sum()
@@ -1382,8 +1459,15 @@ def credit_interaction(
                 (with_credit & three_plus & matches).sum()
             ),
         },
-        "three_plus_above_earnings_branch": int(
-            (with_credit & three_plus & above_earnings).sum()
+        "units_without_credit_not_reproduced": int(
+            (~with_credit & ~matches).sum()
+        ),
+        "units_without_credit_not_reproduced_with_eitc": int(
+            (~with_credit & ~matches & with_eitc).sum()
+        ),
+        "three_plus_above_earnings_branch": int(above.sum()),
+        "three_plus_above_earnings_branch_reproduced": int(
+            (above & matches).sum()
         ),
         "units_raised": int((response > 0).sum()),
         "persons_in_raised_units_thousands": float(
@@ -1394,6 +1478,61 @@ def credit_interaction(
             (eitc_alone != with_response).sum()
         ),
         "eitc_with_ctc_response": effect[EITC_WITH_CTC_RESPONSE.key],
+    }
+    return summary, matches, above
+
+
+def credit_interaction(
+    persons: pd.DataFrame, weights: Optional[np.ndarray] = None
+) -> dict:
+    """How the refundable CTC's payroll tax alternative bears on the EITC.
+
+    Checks two versions of the 2025 rule against the file's credits
+    (:data:`RULE_EARNINGS`): the statute's, whose earned income takes out
+    the section 164(f) deduction, and one whose earnings skip it. For each
+    it counts the tax units with a refundable CTC whose ``ACTC_CRD`` it
+    reproduces within :data:`CREDIT_TOLERANCE`, by number of qualifying
+    children; the units with three or more children whose ``ACTC_CRD``
+    exceeds the earnings branch, which only the payroll tax alternative
+    allows, and how many of them the rule reproduces; and the units whose
+    credit would rise without the EITC. It then estimates the EITC's Table
+    5 effect with that rise. It also describes the units with a credit
+    that the statute's version misses.
+    """
+    weights = weight_matrix(persons) if weights is None else weights
+    units = ctc_tax_units(persons)
+    with_credit = units["actc"].to_numpy(dtype=float) > 0
+    children = units["children"].to_numpy()
+    three_plus = children >= CTC_2025["min_children_for_payroll_alternative"]
+    one_or_two = (children >= 1) & ~three_plus
+    checks = {
+        name: _rule_check(persons, units, weights, column)
+        for name, column in RULE_EARNINGS.items()
+    }
+    _, statute_matches, statute_above = checks["statute"]
+    _, before_matches, _ = checks["before_deduction"]
+    missed = with_credit & ~statute_matches
+    self_employed = units["self_employed_filers"].to_numpy() > 0
+    return {
+        "fica_shares": fica_shares(persons),
+        "social_security_wage_base": SOCIAL_SECURITY_WAGE_BASE_2025,
+        "employee_social_security_rate": EMPLOYEE_SOCIAL_SECURITY_RATE,
+        "employee_medicare_rate": EMPLOYEE_MEDICARE_RATE,
+        "units_with_credit": {
+            "one_or_two_children": int((with_credit & one_or_two).sum()),
+            "three_or_more_children": int((with_credit & three_plus).sum()),
+        },
+        **{name: check[0] for name, check in checks.items()},
+        "statute_misses": {
+            "units": int(missed.sum()),
+            "with_self_employment": int((missed & self_employed).sum()),
+            "reproduced_before_deduction": int(
+                (missed & before_matches).sum()
+            ),
+        },
+        "statute_above_branch_reproduced_before_deduction": int(
+            (statute_above & before_matches).sum()
+        ),
     }
 
 
