@@ -37,7 +37,7 @@ selected area's rent input can be modeled.
 
 ## Install
 
-Python 3.9 or newer:
+Python 3.11 or newer:
 
 ```sh
 pip install spm-calculator==1.1.0
