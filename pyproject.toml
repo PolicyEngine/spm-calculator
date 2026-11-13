@@ -74,6 +74,9 @@ spm_calculator = [
     "data/current/*.xlsx",
     "data/inkind/*.csv",
     "data/inkind/*.json",
+    "data/census_spm/*.json",
+    "data/census_spm/p60_290/*.json",
+    "data/census_spm/p60_290/*.xlsx",
     "data/provenance/ast-portability-2026-09-09/*",
     "data/provenance/horizon-2036-extension/*",
 ]

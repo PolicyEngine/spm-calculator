@@ -1,0 +1,2701 @@
+{
+  "schema_version": 1,
+  "survey_year": 2026,
+  "reference_year": 2025,
+  "inputs": {
+    "microdata": {
+      "file": "asecpub26csv.zip",
+      "url": "https://www2.census.gov/programs-surveys/cps/datasets/2026/march/asecpub26csv.zip",
+      "bytes": 139103894,
+      "sha256": "fe819d0d2fc4470c282e76c247b8aa8b6054811619730307e9f2fe6186707d93"
+    },
+    "published_tables": {
+      "source": "U.S. Census Bureau, Poverty in the United States: 2025 (P60-290), September 2026",
+      "report_url": "https://www.census.gov/library/publications/2026/demo/p60-290.html",
+      "accessed": "2026-11-05",
+      "tables": {
+        "table_4": {
+          "file": "table_4_spm_person.xlsx",
+          "url": "https://www2.census.gov/programs-surveys/demo/tables/p60/290/table_4_spm_person.xlsx",
+          "sha256": "1ad73ba7a35e9d113d7eae0612b1ca23bc90eac2412fa215833c68a67b2620fe"
+        },
+        "table_5": {
+          "file": "table_5_spm_program_effect_rates.xlsx",
+          "url": "https://www2.census.gov/programs-surveys/demo/tables/p60/290/table_5_spm_program_effect_rates.xlsx",
+          "sha256": "e8cc547cf980f277e9143389447223cc7139509922bd5ad924ee304c9b32ea7a"
+        }
+      }
+    },
+    "software": {
+      "python": "3.13.13",
+      "numpy": "2.5.4",
+      "pandas": "3.1.1",
+      "spm_calculator": "1.1.0"
+    }
+  },
+  "sample": {
+    "persons": 134729,
+    "spm_units": 55401,
+    "households": 53344,
+    "tax_units": 72979
+  },
+  "population_thousands": 338554.89354,
+  "identities": {
+    "resources_identity_max_gap": 0.0,
+    "poor_flag_mismatches": 0,
+    "federal_tax_identity_max_gap": 0.0,
+    "cash_income_identity_max_gap": 0.0,
+    "units_with_varying_spm_fields": 0,
+    "units_with_varying_famtype": 116,
+    "persons_in_units_with_varying_famtype": 490,
+    "persons_with_negative_published_element": 0,
+    "persons_with_negative_state_tax": 7368,
+    "units_without_one_head": 0,
+    "tax_units_spanning_spm_units": 0,
+    "persons_without_replicate_weights": 0,
+    "negative_weights": 0,
+    "weight_rep0_max_gap": 0.00505,
+    "spm_eitc_vs_eit_cred_max_gap": 0.0,
+    "spm_actc_vs_actc_crd_max_gap": 0.0,
+    "spm_fedtaxbc_vs_fedtax_bc_max_gap": 0.0,
+    "spm_fedtax_vs_fedtax_ac_max_gap": 0.0,
+    "spm_sttax_vs_statetax_a_max_gap": 0.0,
+    "spm_fica_vs_fica_max_gap": 0.0
+  },
+  "unidentified_geography": {
+    "metro_status_persons": 1526,
+    "metro_status_thousands": 2710.27943,
+    "principal_city_persons": 22574,
+    "principal_city_thousands": 46169.9362
+  },
+  "table5": {
+    "groups": [
+      "All people",
+      "Under 18 years",
+      "18 to 64 years",
+      "65 years and older"
+    ],
+    "rows": [
+      {
+        "key": "spm_rate",
+        "label": "SPM rate for all people",
+        "kind": "rate",
+        "estimate": [
+          13.111675,
+          13.391315,
+          12.277289,
+          15.377904
+        ],
+        "moe": [
+          0.305785,
+          0.563388,
+          0.336732,
+          0.524973
+        ],
+        "published_values": {
+          "estimate": [
+            13.11,
+            13.4,
+            12.28,
+            15.37
+          ],
+          "moe": [
+            0.31,
+            0.56,
+            0.34,
+            0.53
+          ],
+          "estimate_text": [
+            "13.11",
+            "13.40",
+            "12.28",
+            "15.37"
+          ],
+          "moe_text": [
+            "0.31",
+            "0.56",
+            "0.34",
+            "0.53"
+          ]
+        },
+        "estimate_gap": [
+          0.0,
+          0.01,
+          0.0,
+          0.01
+        ],
+        "moe_gap": [
+          0.0,
+          0.0,
+          0.0,
+          0.01
+        ]
+      },
+      {
+        "key": "social_security",
+        "label": "Social Security",
+        "kind": "addition",
+        "estimate": [
+          -8.502441,
+          -1.810282,
+          -3.254084,
+          -32.099366
+        ],
+        "moe": [
+          0.180302,
+          0.206416,
+          0.155046,
+          0.716918
+        ],
+        "published_values": {
+          "estimate": [
+            -8.52,
+            -1.82,
+            -3.26,
+            -32.13
+          ],
+          "moe": [
+            0.18,
+            0.21,
+            0.16,
+            0.71
+          ],
+          "estimate_text": [
+            "-8.52",
+            "-1.82",
+            "-3.26",
+            "-32.13"
+          ],
+          "moe_text": [
+            "0.18",
+            "0.21",
+            "0.16",
+            "0.71"
+          ]
+        },
+        "unit_columns": [],
+        "person_columns": [
+          "SS_VAL"
+        ],
+        "estimate_gap": [
+          0.02,
+          0.01,
+          0.01,
+          0.03
+        ],
+        "moe_gap": [
+          0.0,
+          0.0,
+          0.0,
+          0.01
+        ]
+      },
+      {
+        "key": "refundable_tax_credits",
+        "label": "Refundable tax credits",
+        "kind": "addition",
+        "estimate": [
+          -1.814123,
+          -4.508471,
+          -1.396136,
+          -0.125827
+        ],
+        "moe": [
+          0.152574,
+          0.385692,
+          0.129555,
+          0.044053
+        ],
+        "published_values": {
+          "estimate": [
+            -1.81,
+            -4.51,
+            -1.39,
+            -0.12
+          ],
+          "moe": [
+            0.15,
+            0.38,
+            0.13,
+            0.04
+          ],
+          "estimate_text": [
+            "-1.81",
+            "-4.51",
+            "-1.39",
+            "-0.12"
+          ],
+          "moe_text": [
+            "0.15",
+            "0.38",
+            "0.13",
+            "0.04"
+          ]
+        },
+        "unit_columns": [
+          "SPM_EITC",
+          "SPM_ACTC"
+        ],
+        "person_columns": [],
+        "estimate_gap": [
+          0.0,
+          0.0,
+          0.01,
+          0.01
+        ],
+        "moe_gap": [
+          0.0,
+          0.01,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "key": "eitc",
+        "label": "Earned Income Tax Credit (EITC)",
+        "kind": "addition",
+        "estimate": [
+          -1.218052,
+          -2.901011,
+          -0.980421,
+          -0.091106
+        ],
+        "moe": [
+          0.128391,
+          0.312729,
+          0.113849,
+          0.035034
+        ],
+        "published_values": {
+          "estimate": [
+            -1.19,
+            -2.85,
+            -0.95,
+            -0.08
+          ],
+          "moe": [
+            0.13,
+            0.31,
+            0.11,
+            0.03
+          ],
+          "estimate_text": [
+            "-1.19",
+            "-2.85",
+            "-0.95",
+            "-0.08"
+          ],
+          "moe_text": [
+            "0.13",
+            "0.31",
+            "0.11",
+            "0.03"
+          ]
+        },
+        "unit_columns": [
+          "SPM_EITC"
+        ],
+        "person_columns": [],
+        "estimate_gap": [
+          0.03,
+          0.05,
+          0.03,
+          0.01
+        ],
+        "moe_gap": [
+          0.0,
+          0.0,
+          0.0,
+          0.01
+        ]
+      },
+      {
+        "key": "snap",
+        "label": "SNAP",
+        "kind": "addition",
+        "estimate": [
+          -0.924001,
+          -1.627254,
+          -0.680759,
+          -0.897373
+        ],
+        "moe": [
+          0.095827,
+          0.245684,
+          0.081749,
+          0.11415
+        ],
+        "published_values": {
+          "estimate": [
+            -0.92,
+            -1.64,
+            -0.68,
+            -0.87
+          ],
+          "moe": [
+            0.1,
+            0.26,
+            0.08,
+            0.11
+          ],
+          "estimate_text": [
+            "-0.92",
+            "-1.64",
+            "-0.68",
+            "-0.87"
+          ],
+          "moe_text": [
+            "0.10",
+            "0.26",
+            "0.08",
+            "0.11"
+          ]
+        },
+        "unit_columns": [
+          "SPM_SNAPSUB"
+        ],
+        "person_columns": [],
+        "estimate_gap": [
+          0.0,
+          0.01,
+          0.0,
+          0.03
+        ],
+        "moe_gap": [
+          0.0,
+          0.01,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "key": "refundable_ctc",
+        "label": "Child Tax Credit (refundable portion)",
+        "kind": "addition",
+        "estimate": [
+          -0.709947,
+          -1.892348,
+          -0.507493,
+          -0.027761
+        ],
+        "moe": [
+          0.097531,
+          0.263624,
+          0.076118,
+          0.020696
+        ],
+        "published_values": {
+          "estimate": [
+            -0.69,
+            -1.83,
+            -0.49,
+            -0.03
+          ],
+          "moe": [
+            0.09,
+            0.25,
+            0.07,
+            0.02
+          ],
+          "estimate_text": [
+            "-0.69",
+            "-1.83",
+            "-0.49",
+            "-0.03"
+          ],
+          "moe_text": [
+            "0.09",
+            "0.25",
+            "0.07",
+            "0.02"
+          ]
+        },
+        "unit_columns": [
+          "SPM_ACTC"
+        ],
+        "person_columns": [],
+        "estimate_gap": [
+          0.02,
+          0.06,
+          0.02,
+          0.0
+        ],
+        "moe_gap": [
+          0.01,
+          0.01,
+          0.01,
+          0.0
+        ]
+      },
+      {
+        "key": "ssi",
+        "label": "SSI",
+        "kind": "addition",
+        "estimate": [
+          -0.649982,
+          -0.400003,
+          -0.631859,
+          -0.982254
+        ],
+        "moe": [
+          0.063275,
+          0.113727,
+          0.06536,
+          0.15004
+        ],
+        "published_values": {
+          "estimate": [
+            -0.65,
+            -0.39,
+            -0.64,
+            -0.99
+          ],
+          "moe": [
+            0.06,
+            0.11,
+            0.07,
+            0.15
+          ],
+          "estimate_text": [
+            "-0.65",
+            "-0.39",
+            "-0.64",
+            "-0.99"
+          ],
+          "moe_text": [
+            "0.06",
+            "0.11",
+            "0.07",
+            "0.15"
+          ]
+        },
+        "unit_columns": [],
+        "person_columns": [
+          "SSI_VAL"
+        ],
+        "estimate_gap": [
+          0.0,
+          0.01,
+          0.01,
+          0.01
+        ],
+        "moe_gap": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "key": "housing_subsidies",
+        "label": "Housing subsidies",
+        "kind": "addition",
+        "estimate": [
+          -0.611419,
+          -0.795486,
+          -0.429175,
+          -0.970445
+        ],
+        "moe": [
+          0.065458,
+          0.146318,
+          0.060024,
+          0.134386
+        ],
+        "published_values": {
+          "estimate": [
+            -0.61,
+            -0.79,
+            -0.43,
+            -1.0
+          ],
+          "moe": [
+            0.06,
+            0.15,
+            0.06,
+            0.14
+          ],
+          "estimate_text": [
+            "-0.61",
+            "-0.79",
+            "-0.43",
+            "-1.00"
+          ],
+          "moe_text": [
+            "0.06",
+            "0.15",
+            "0.06",
+            "0.14"
+          ]
+        },
+        "unit_columns": [
+          "SPM_CAPHOUSESUB"
+        ],
+        "person_columns": [],
+        "estimate_gap": [
+          0.0,
+          0.01,
+          0.0,
+          0.03
+        ],
+        "moe_gap": [
+          0.01,
+          0.0,
+          0.0,
+          0.01
+        ]
+      },
+      {
+        "key": "school_lunch",
+        "label": "School lunch",
+        "kind": "addition",
+        "estimate": [
+          -0.349936,
+          -0.896327,
+          -0.261347,
+          -0.019372
+        ],
+        "moe": [
+          0.063749,
+          0.172286,
+          0.051595,
+          0.016413
+        ],
+        "published_values": {
+          "estimate": [
+            -0.35,
+            -0.91,
+            -0.26,
+            -0.02
+          ],
+          "moe": [
+            0.07,
+            0.18,
+            0.05,
+            0.02
+          ],
+          "estimate_text": [
+            "-0.35",
+            "-0.91",
+            "-0.26",
+            "-0.02"
+          ],
+          "moe_text": [
+            "0.07",
+            "0.18",
+            "0.05",
+            "0.02"
+          ]
+        },
+        "unit_columns": [
+          "SPM_SCHLUNCH"
+        ],
+        "person_columns": [],
+        "estimate_gap": [
+          0.0,
+          0.01,
+          0.0,
+          0.0
+        ],
+        "moe_gap": [
+          0.01,
+          0.01,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "key": "child_support_received",
+        "label": "Child support received",
+        "kind": "addition",
+        "estimate": [
+          -0.150578,
+          -0.400301,
+          -0.106175,
+          -0.011575
+        ],
+        "moe": [
+          0.038928,
+          0.122405,
+          0.026382,
+          0.009393
+        ],
+        "published_values": {
+          "estimate": [
+            -0.14,
+            -0.39,
+            -0.1,
+            -0.01
+          ],
+          "moe": [
+            0.04,
+            0.12,
+            0.03,
+            0.01
+          ],
+          "estimate_text": [
+            "-0.14",
+            "-0.39",
+            "-0.10",
+            "-0.01"
+          ],
+          "moe_text": [
+            "0.04",
+            "0.12",
+            "0.03",
+            "0.01"
+          ]
+        },
+        "unit_columns": [],
+        "person_columns": [
+          "CSP_VAL"
+        ],
+        "estimate_gap": [
+          0.01,
+          0.01,
+          0.01,
+          0.0
+        ],
+        "moe_gap": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "key": "tanf",
+        "label": "TANF/general assistance",
+        "kind": "addition",
+        "estimate": [
+          -0.110966,
+          -0.218443,
+          -0.094436,
+          -0.043176
+        ],
+        "moe": [
+          0.032573,
+          0.081018,
+          0.031447,
+          0.0216
+        ],
+        "published_values": {
+          "estimate": [
+            -0.11,
+            -0.21,
+            -0.09,
+            -0.04
+          ],
+          "moe": [
+            0.03,
+            0.08,
+            0.03,
+            0.02
+          ],
+          "estimate_text": [
+            "-0.11",
+            "-0.21",
+            "-0.09",
+            "-0.04"
+          ],
+          "moe_text": [
+            "0.03",
+            "0.08",
+            "0.03",
+            "0.02"
+          ]
+        },
+        "unit_columns": [],
+        "person_columns": [
+          "PAW_VAL"
+        ],
+        "estimate_gap": [
+          0.0,
+          0.01,
+          0.0,
+          0.0
+        ],
+        "moe_gap": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "key": "unemployment_insurance",
+        "label": "Unemployment insurance",
+        "kind": "addition",
+        "estimate": [
+          -0.103253,
+          -0.129023,
+          -0.117365,
+          -0.031206
+        ],
+        "moe": [
+          0.030239,
+          0.05658,
+          0.037443,
+          0.018944
+        ],
+        "published_values": {
+          "estimate": [
+            -0.1,
+            -0.13,
+            -0.12,
+            -0.03
+          ],
+          "moe": [
+            0.03,
+            0.06,
+            0.04,
+            0.02
+          ],
+          "estimate_text": [
+            "-0.10",
+            "-0.13",
+            "-0.12",
+            "-0.03"
+          ],
+          "moe_text": [
+            "0.03",
+            "0.06",
+            "0.04",
+            "0.02"
+          ]
+        },
+        "unit_columns": [],
+        "person_columns": [
+          "UC_VAL"
+        ],
+        "estimate_gap": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "moe_gap": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "key": "energy_assistance",
+        "label": "Energy assistance",
+        "kind": "addition",
+        "estimate": [
+          -0.070357,
+          -0.056601,
+          -0.056948,
+          -0.126952
+        ],
+        "moe": [
+          0.022318,
+          0.034062,
+          0.02273,
+          0.052744
+        ],
+        "published_values": {
+          "estimate": [
+            -0.07,
+            -0.06,
+            -0.06,
+            -0.11
+          ],
+          "moe": [
+            0.02,
+            0.03,
+            0.02,
+            0.05
+          ],
+          "estimate_text": [
+            "-0.07",
+            "-0.06",
+            "-0.06",
+            "-0.11"
+          ],
+          "moe_text": [
+            "0.02",
+            "0.03",
+            "0.02",
+            "0.05"
+          ]
+        },
+        "unit_columns": [
+          "SPM_ENGVAL"
+        ],
+        "person_columns": [],
+        "estimate_gap": [
+          0.0,
+          0.0,
+          0.0,
+          0.02
+        ],
+        "moe_gap": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "key": "wic",
+        "label": "WIC",
+        "kind": "addition",
+        "estimate": [
+          -0.053624,
+          -0.137491,
+          -0.040798,
+          -0.000503
+        ],
+        "moe": [
+          0.021096,
+          0.054879,
+          0.016894,
+          0.000821
+        ],
+        "published_values": {
+          "estimate": [
+            -0.05,
+            -0.13,
+            -0.04,
+            0.0
+          ],
+          "moe": [
+            0.02,
+            0.06,
+            0.02,
+            0.0
+          ],
+          "estimate_text": [
+            "-0.05",
+            "-0.13",
+            "-0.04",
+            "Z"
+          ],
+          "moe_text": [
+            "0.02",
+            "0.06",
+            "0.02",
+            "Z"
+          ]
+        },
+        "unit_columns": [
+          "SPM_WICVAL"
+        ],
+        "person_columns": [],
+        "estimate_gap": [
+          0.0,
+          0.01,
+          0.0,
+          0.0
+        ],
+        "moe_gap": [
+          0.0,
+          0.01,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "key": "workers_compensation",
+        "label": "Workers' compensation",
+        "kind": "addition",
+        "estimate": [
+          -0.037088,
+          -0.020166,
+          -0.039128,
+          -0.049497
+        ],
+        "moe": [
+          0.016134,
+          0.020764,
+          0.019558,
+          0.028111
+        ],
+        "published_values": {
+          "estimate": [
+            -0.04,
+            -0.02,
+            -0.04,
+            -0.05
+          ],
+          "moe": [
+            0.02,
+            0.02,
+            0.02,
+            0.03
+          ],
+          "estimate_text": [
+            "-0.04",
+            "-0.02",
+            "-0.04",
+            "-0.05"
+          ],
+          "moe_text": [
+            "0.02",
+            "0.02",
+            "0.02",
+            "0.03"
+          ]
+        },
+        "unit_columns": [],
+        "person_columns": [
+          "WC_VAL"
+        ],
+        "estimate_gap": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "moe_gap": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "key": "child_support_paid",
+        "label": "Child support paid",
+        "kind": "subtraction",
+        "estimate": [
+          0.045235,
+          0.041042,
+          0.054389,
+          0.021614
+        ],
+        "moe": [
+          0.017164,
+          0.029642,
+          0.019974,
+          0.018005
+        ],
+        "published_values": {
+          "estimate": [
+            0.04,
+            0.03,
+            0.05,
+            0.02
+          ],
+          "moe": [
+            0.02,
+            0.03,
+            0.02,
+            0.02
+          ],
+          "estimate_text": [
+            "0.04",
+            "0.03",
+            "0.05",
+            "0.02"
+          ],
+          "moe_text": [
+            "0.02",
+            "0.03",
+            "0.02",
+            "0.02"
+          ]
+        },
+        "unit_columns": [
+          "SPM_CHILDSUPPD"
+        ],
+        "person_columns": [],
+        "estimate_gap": [
+          0.01,
+          0.01,
+          0.0,
+          0.0
+        ],
+        "moe_gap": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "key": "federal_income_tax",
+        "label": "Federal income tax",
+        "kind": "subtraction",
+        "estimate": [
+          0.419322,
+          0.36028,
+          0.506929,
+          0.21419
+        ],
+        "moe": [
+          0.059449,
+          0.101098,
+          0.072965,
+          0.056897
+        ],
+        "published_values": {
+          "estimate": [
+            0.4,
+            0.3,
+            0.5,
+            0.2
+          ],
+          "moe": [
+            0.06,
+            0.09,
+            0.08,
+            0.06
+          ],
+          "estimate_text": [
+            "0.40",
+            "0.30",
+            "0.50",
+            "0.20"
+          ],
+          "moe_text": [
+            "0.06",
+            "0.09",
+            "0.08",
+            "0.06"
+          ]
+        },
+        "unit_columns": [
+          "SPM_FEDTAXBC"
+        ],
+        "person_columns": [],
+        "estimate_gap": [
+          0.02,
+          0.06,
+          0.01,
+          0.01
+        ],
+        "moe_gap": [
+          0.0,
+          0.01,
+          0.01,
+          0.0
+        ]
+      },
+      {
+        "key": "work_expenses",
+        "label": "Work expenses",
+        "kind": "subtraction",
+        "estimate": [
+          1.181898,
+          1.755124,
+          1.262782,
+          0.298584
+        ],
+        "moe": [
+          0.119779,
+          0.238466,
+          0.125606,
+          0.070727
+        ],
+        "published_values": {
+          "estimate": [
+            1.18,
+            1.71,
+            1.27,
+            0.29
+          ],
+          "moe": [
+            0.12,
+            0.23,
+            0.13,
+            0.07
+          ],
+          "estimate_text": [
+            "1.18",
+            "1.71",
+            "1.27",
+            "0.29"
+          ],
+          "moe_text": [
+            "0.12",
+            "0.23",
+            "0.13",
+            "0.07"
+          ]
+        },
+        "unit_columns": [
+          "SPM_CAPWKCCXPNS"
+        ],
+        "person_columns": [],
+        "estimate_gap": [
+          0.0,
+          0.05,
+          0.01,
+          0.01
+        ],
+        "moe_gap": [
+          0.0,
+          0.01,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "key": "fica",
+        "label": "FICA",
+        "kind": "subtraction",
+        "estimate": [
+          1.322304,
+          1.800934,
+          1.456534,
+          0.378908
+        ],
+        "moe": [
+          0.115858,
+          0.211187,
+          0.128605,
+          0.077509
+        ],
+        "published_values": {
+          "estimate": [
+            1.34,
+            1.82,
+            1.48,
+            0.38
+          ],
+          "moe": [
+            0.12,
+            0.21,
+            0.14,
+            0.08
+          ],
+          "estimate_text": [
+            "1.34",
+            "1.82",
+            "1.48",
+            "0.38"
+          ],
+          "moe_text": [
+            "0.12",
+            "0.21",
+            "0.14",
+            "0.08"
+          ]
+        },
+        "unit_columns": [
+          "SPM_FICA"
+        ],
+        "person_columns": [],
+        "estimate_gap": [
+          0.02,
+          0.02,
+          0.02,
+          0.0
+        ],
+        "moe_gap": [
+          0.0,
+          0.0,
+          0.01,
+          0.0
+        ]
+      },
+      {
+        "key": "medical_expenses",
+        "label": "Medical expenses",
+        "kind": "subtraction",
+        "estimate": [
+          2.251989,
+          1.957834,
+          1.856505,
+          3.797829
+        ],
+        "moe": [
+          0.129068,
+          0.20955,
+          0.136309,
+          0.260435
+        ],
+        "published_values": {
+          "estimate": [
+            2.28,
+            1.99,
+            1.88,
+            3.83
+          ],
+          "moe": [
+            0.13,
+            0.21,
+            0.14,
+            0.26
+          ],
+          "estimate_text": [
+            "2.28",
+            "1.99",
+            "1.88",
+            "3.83"
+          ],
+          "moe_text": [
+            "0.13",
+            "0.21",
+            "0.14",
+            "0.26"
+          ]
+        },
+        "unit_columns": [
+          "SPM_MEDXPNS"
+        ],
+        "person_columns": [],
+        "estimate_gap": [
+          0.03,
+          0.03,
+          0.02,
+          0.03
+        ],
+        "moe_gap": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "key": "state_income_tax",
+        "label": "State income tax",
+        "kind": "subtraction",
+        "estimate": [
+          0.107735,
+          -0.042373,
+          0.172177,
+          0.074769
+        ],
+        "moe": [
+          0.063267,
+          0.147684,
+          0.06364,
+          0.03817
+        ],
+        "published_values": null,
+        "unit_columns": [
+          "SPM_STTAX"
+        ],
+        "person_columns": []
+      }
+    ]
+  },
+  "table4": {
+    "rows": [
+      {
+        "section": "",
+        "label": "All people",
+        "definition": "Everyone",
+        "identifiable": true,
+        "number_thousands": 44390.21671,
+        "number_moe": 1034.67267,
+        "percent": 13.111675,
+        "percent_moe": 0.305785,
+        "population_thousands": 338554.89354,
+        "persons": 134729,
+        "published_values": {
+          "number_thousands": 44390.0,
+          "number_moe": 1042.0,
+          "percent": 13.1,
+          "percent_moe": 0.3
+        },
+        "percent_gap": 0.0,
+        "percent_within_moe": true,
+        "percent_moe_gap": 0.0,
+        "number_gap": 0.0,
+        "number_within_moe": true,
+        "number_moe_relative_gap": 0.007032
+      },
+      {
+        "section": "Sex",
+        "label": "Male",
+        "definition": "A_SEX = 1",
+        "identifiable": true,
+        "number_thousands": 20547.64081,
+        "number_moe": 557.174789,
+        "percent": 12.41588,
+        "percent_moe": 0.337099,
+        "population_thousands": 165494.835,
+        "persons": 65914,
+        "published_values": {
+          "number_thousands": 20580.0,
+          "number_moe": 563.0,
+          "percent": 12.4,
+          "percent_moe": 0.3
+        },
+        "percent_gap": 0.0,
+        "percent_within_moe": true,
+        "percent_moe_gap": 0.0,
+        "number_gap": 30.0,
+        "number_within_moe": true,
+        "number_moe_relative_gap": 0.010347
+      },
+      {
+        "section": "Sex",
+        "label": "Female",
+        "definition": "A_SEX = 2",
+        "identifiable": true,
+        "number_thousands": 23842.5759,
+        "number_moe": 616.364586,
+        "percent": 13.777053,
+        "percent_moe": 0.356103,
+        "population_thousands": 173060.05854,
+        "persons": 68815,
+        "published_values": {
+          "number_thousands": 23810.0,
+          "number_moe": 614.0,
+          "percent": 13.8,
+          "percent_moe": 0.4
+        },
+        "percent_gap": 0.0,
+        "percent_within_moe": true,
+        "percent_moe_gap": 0.0,
+        "number_gap": 30.0,
+        "number_within_moe": true,
+        "number_moe_relative_gap": 0.003851
+      },
+      {
+        "section": "Age",
+        "label": "Under 18 years",
+        "definition": "A_AGE < 18",
+        "identifiable": true,
+        "number_thousands": 9652.8065,
+        "number_moe": 402.601961,
+        "percent": 13.391315,
+        "percent_moe": 0.563388,
+        "population_thousands": 72082.58985,
+        "persons": 31444,
+        "published_values": {
+          "number_thousands": 9657.0,
+          "number_moe": 399.0,
+          "percent": 13.4,
+          "percent_moe": 0.6
+        },
+        "percent_gap": 0.0,
+        "percent_within_moe": true,
+        "percent_moe_gap": 0.0,
+        "number_gap": 4.0,
+        "number_within_moe": true,
+        "number_moe_relative_gap": 0.009027
+      },
+      {
+        "section": "Age",
+        "label": "18 to 64 years",
+        "definition": "18 <= A_AGE < 65",
+        "identifiable": true,
+        "number_thousands": 24709.85672,
+        "number_moe": 675.794043,
+        "percent": 12.277289,
+        "percent_moe": 0.336732,
+        "population_thousands": 201264.75816,
+        "persons": 77083,
+        "published_values": {
+          "number_thousands": 24710.0,
+          "number_moe": 678.0,
+          "percent": 12.3,
+          "percent_moe": 0.3
+        },
+        "percent_gap": 0.0,
+        "percent_within_moe": true,
+        "percent_moe_gap": 0.0,
+        "number_gap": 0.0,
+        "number_within_moe": true,
+        "number_moe_relative_gap": 0.003254
+      },
+      {
+        "section": "Age",
+        "label": "65 years and older",
+        "definition": "A_AGE >= 65",
+        "identifiable": true,
+        "number_thousands": 10027.55349,
+        "number_moe": 341.835597,
+        "percent": 15.377904,
+        "percent_moe": 0.524973,
+        "population_thousands": 65207.54553,
+        "persons": 26202,
+        "published_values": {
+          "number_thousands": 10020.0,
+          "number_moe": 348.0,
+          "percent": 15.4,
+          "percent_moe": 0.5
+        },
+        "percent_gap": 0.0,
+        "percent_within_moe": true,
+        "percent_moe_gap": 0.0,
+        "number_gap": 10.0,
+        "number_within_moe": true,
+        "number_moe_relative_gap": 0.017714
+      },
+      {
+        "section": "Type of Unit",
+        "label": "Married couple",
+        "definition": "SPM_FAMTYPE = 1",
+        "identifiable": true,
+        "number_thousands": 15721.9475,
+        "number_moe": 660.55407,
+        "percent": 7.768728,
+        "percent_moe": 0.319861,
+        "population_thousands": 202374.79141,
+        "persons": 83211,
+        "published_values": {
+          "number_thousands": 15710.0,
+          "number_moe": 649.0,
+          "percent": 7.8,
+          "percent_moe": 0.3
+        },
+        "percent_gap": 0.0,
+        "percent_within_moe": true,
+        "percent_moe_gap": 0.0,
+        "number_gap": 10.0,
+        "number_within_moe": true,
+        "number_moe_relative_gap": 0.017803
+      },
+      {
+        "section": "Type of Unit",
+        "label": "Cohabiting partners",
+        "definition": "SPM_FAMTYPE = 2",
+        "identifiable": true,
+        "number_thousands": 3535.2625,
+        "number_moe": 336.758877,
+        "percent": 12.859146,
+        "percent_moe": 1.143122,
+        "population_thousands": 27492.20186,
+        "persons": 10804,
+        "published_values": {
+          "number_thousands": 3592.0,
+          "number_moe": 344.0,
+          "percent": 13.1,
+          "percent_moe": 1.2
+        },
+        "percent_gap": 0.2,
+        "percent_within_moe": true,
+        "percent_moe_gap": 0.1,
+        "number_gap": 57.0,
+        "number_within_moe": true,
+        "number_moe_relative_gap": 0.02105
+      },
+      {
+        "section": "Type of Unit",
+        "label": "Female reference person",
+        "definition": "SPM_FAMTYPE = 3",
+        "identifiable": true,
+        "number_thousands": 10709.74516,
+        "number_moe": 594.526419,
+        "percent": 25.022133,
+        "percent_moe": 1.200363,
+        "population_thousands": 42801.08765,
+        "persons": 16560,
+        "published_values": {
+          "number_thousands": 10690.0,
+          "number_moe": 592.0,
+          "percent": 25.0,
+          "percent_moe": 1.2
+        },
+        "percent_gap": 0.0,
+        "percent_within_moe": true,
+        "percent_moe_gap": 0.0,
+        "number_gap": 20.0,
+        "number_within_moe": true,
+        "number_moe_relative_gap": 0.004268
+      },
+      {
+        "section": "Type of Unit",
+        "label": "Male reference person",
+        "definition": "SPM_FAMTYPE = 4",
+        "identifiable": true,
+        "number_thousands": 3020.64206,
+        "number_moe": 325.315063,
+        "percent": 17.889498,
+        "percent_moe": 1.794751,
+        "population_thousands": 16885.00145,
+        "persons": 6677,
+        "published_values": {
+          "number_thousands": 3024.0,
+          "number_moe": 326.0,
+          "percent": 17.9,
+          "percent_moe": 1.8
+        },
+        "percent_gap": 0.0,
+        "percent_within_moe": true,
+        "percent_moe_gap": 0.0,
+        "number_gap": 3.0,
+        "number_within_moe": true,
+        "number_moe_relative_gap": 0.002101
+      },
+      {
+        "section": "Type of Unit",
+        "label": "Unrelated individuals",
+        "definition": "SPM_FAMTYPE = 5",
+        "identifiable": true,
+        "number_thousands": 11402.61949,
+        "number_moe": 435.017819,
+        "percent": 23.269792,
+        "percent_moe": 0.754917,
+        "population_thousands": 49001.81117,
+        "persons": 17477,
+        "published_values": {
+          "number_thousands": 11370.0,
+          "number_moe": 439.0,
+          "percent": 23.2,
+          "percent_moe": 0.8
+        },
+        "percent_gap": 0.1,
+        "percent_within_moe": true,
+        "percent_moe_gap": 0.0,
+        "number_gap": 30.0,
+        "number_within_moe": true,
+        "number_moe_relative_gap": 0.009071
+      },
+      {
+        "section": "Race and Hispanic Origin",
+        "label": "White",
+        "definition": "PRDTRACE = 1",
+        "identifiable": true,
+        "number_thousands": 28988.27255,
+        "number_moe": 856.966676,
+        "percent": 11.802826,
+        "percent_moe": 0.351405,
+        "population_thousands": 245604.51661,
+        "persons": 102425,
+        "published_values": {
+          "number_thousands": 28910.0,
+          "number_moe": 855.0,
+          "percent": 11.8,
+          "percent_moe": 0.4
+        },
+        "percent_gap": 0.0,
+        "percent_within_moe": true,
+        "percent_moe_gap": 0.0,
+        "number_gap": 80.0,
+        "number_within_moe": true,
+        "number_moe_relative_gap": 0.0023
+      },
+      {
+        "section": "Race and Hispanic Origin",
+        "label": "White, not Hispanic",
+        "definition": "PRDTRACE = 1 and PEHSPNON = 2",
+        "identifiable": true,
+        "number_thousands": 17499.16792,
+        "number_moe": 666.542434,
+        "percent": 9.247397,
+        "percent_moe": 0.352487,
+        "population_thousands": 189233.44285,
+        "persons": 76956,
+        "published_values": {
+          "number_thousands": 17430.0,
+          "number_moe": 673.0,
+          "percent": 9.2,
+          "percent_moe": 0.4
+        },
+        "percent_gap": 0.0,
+        "percent_within_moe": true,
+        "percent_moe_gap": 0.0,
+        "number_gap": 70.0,
+        "number_within_moe": true,
+        "number_moe_relative_gap": 0.009595
+      },
+      {
+        "section": "Race and Hispanic Origin",
+        "label": "Black",
+        "definition": "PRDTRACE = 2",
+        "identifiable": true,
+        "number_thousands": 9155.16939,
+        "number_moe": 472.941193,
+        "percent": 20.146469,
+        "percent_moe": 1.041073,
+        "population_thousands": 45443.04659,
+        "persons": 15309,
+        "published_values": {
+          "number_thousands": 9219.0,
+          "number_moe": 476.0,
+          "percent": 20.3,
+          "percent_moe": 1.0
+        },
+        "percent_gap": 0.2,
+        "percent_within_moe": true,
+        "percent_moe_gap": 0.0,
+        "number_gap": 64.0,
+        "number_within_moe": true,
+        "number_moe_relative_gap": 0.006426
+      },
+      {
+        "section": "Race and Hispanic Origin",
+        "label": "Asian",
+        "definition": "PRDTRACE = 4",
+        "identifiable": true,
+        "number_thousands": 3209.32271,
+        "number_moe": 304.461528,
+        "percent": 12.666434,
+        "percent_moe": 1.200468,
+        "population_thousands": 25337.22381,
+        "persons": 9516,
+        "published_values": {
+          "number_thousands": 3254.0,
+          "number_moe": 306.0,
+          "percent": 12.8,
+          "percent_moe": 1.2
+        },
+        "percent_gap": 0.1,
+        "percent_within_moe": true,
+        "percent_moe_gap": 0.0,
+        "number_gap": 45.0,
+        "number_within_moe": true,
+        "number_moe_relative_gap": 0.005028
+      },
+      {
+        "section": "Race and Hispanic Origin",
+        "label": "American Indian and Alaska Native",
+        "definition": "PRDTRACE = 3",
+        "identifiable": true,
+        "number_thousands": 935.87676,
+        "number_moe": 151.803773,
+        "percent": 18.476528,
+        "percent_moe": 2.629345,
+        "population_thousands": 5065.21976,
+        "persons": 1962,
+        "published_values": {
+          "number_thousands": 918.0,
+          "number_moe": 149.0,
+          "percent": 18.1,
+          "percent_moe": 2.6
+        },
+        "percent_gap": 0.4,
+        "percent_within_moe": true,
+        "percent_moe_gap": 0.0,
+        "number_gap": 17.9,
+        "number_within_moe": true,
+        "number_moe_relative_gap": 0.018817
+      },
+      {
+        "section": "Race and Hispanic Origin",
+        "label": "Two or More Races",
+        "definition": "PRDTRACE >= 6",
+        "identifiable": true,
+        "number_thousands": 1928.94453,
+        "number_moe": 247.703552,
+        "percent": 12.566573,
+        "percent_moe": 1.569207,
+        "population_thousands": 15349.80595,
+        "persons": 4779,
+        "published_values": {
+          "number_thousands": 1913.0,
+          "number_moe": 241.0,
+          "percent": 12.5,
+          "percent_moe": 1.5
+        },
+        "percent_gap": 0.1,
+        "percent_within_moe": true,
+        "percent_moe_gap": 0.1,
+        "number_gap": 16.0,
+        "number_within_moe": true,
+        "number_moe_relative_gap": 0.027816
+      },
+      {
+        "section": "Race and Hispanic Origin",
+        "label": "Hispanic (any race)",
+        "definition": "PEHSPNON = 1",
+        "identifiable": true,
+        "number_thousands": 14035.46927,
+        "number_moe": 672.786345,
+        "percent": 20.032697,
+        "percent_moe": 0.960002,
+        "population_thousands": 70062.80444,
+        "persons": 28414,
+        "published_values": {
+          "number_thousands": 14000.0,
+          "number_moe": 664.0,
+          "percent": 20.0,
+          "percent_moe": 0.9
+        },
+        "percent_gap": 0.0,
+        "percent_within_moe": true,
+        "percent_moe_gap": 0.1,
+        "number_gap": 40.0,
+        "number_within_moe": true,
+        "number_moe_relative_gap": 0.013232
+      },
+      {
+        "section": "Nativity",
+        "label": "Native-born",
+        "definition": "PRCITSHP in 1-3",
+        "identifiable": true,
+        "number_thousands": 34269.85032,
+        "number_moe": 864.510333,
+        "percent": 11.972837,
+        "percent_moe": 0.296601,
+        "population_thousands": 286230.00293,
+        "persons": 114702,
+        "published_values": {
+          "number_thousands": 34170.0,
+          "number_moe": 868.0,
+          "percent": 11.9,
+          "percent_moe": 0.3
+        },
+        "percent_gap": 0.1,
+        "percent_within_moe": true,
+        "percent_moe_gap": 0.0,
+        "number_gap": 100.0,
+        "number_within_moe": true,
+        "number_moe_relative_gap": 0.00402
+      },
+      {
+        "section": "Nativity",
+        "label": "Foreign-born",
+        "definition": "PRCITSHP in 4-5",
+        "identifiable": true,
+        "number_thousands": 10120.36639,
+        "number_moe": 467.76969,
+        "percent": 19.3414,
+        "percent_moe": 0.848454,
+        "population_thousands": 52324.89061,
+        "persons": 20027,
+        "published_values": {
+          "number_thousands": 10220.0,
+          "number_moe": 470.0,
+          "percent": 19.5,
+          "percent_moe": 0.8
+        },
+        "percent_gap": 0.2,
+        "percent_within_moe": true,
+        "percent_moe_gap": 0.0,
+        "number_gap": 100.0,
+        "number_within_moe": true,
+        "number_moe_relative_gap": 0.004745
+      },
+      {
+        "section": "Nativity",
+        "label": "Naturalized citizen",
+        "definition": "PRCITSHP = 4",
+        "identifiable": true,
+        "number_thousands": 4122.83118,
+        "number_moe": 249.679081,
+        "percent": 15.14922,
+        "percent_moe": 0.860315,
+        "population_thousands": 27214.80909,
+        "persons": 10351,
+        "published_values": {
+          "number_thousands": 4131.0,
+          "number_moe": 248.0,
+          "percent": 15.2,
+          "percent_moe": 0.9
+        },
+        "percent_gap": 0.1,
+        "percent_within_moe": true,
+        "percent_moe_gap": 0.0,
+        "number_gap": 8.0,
+        "number_within_moe": true,
+        "number_moe_relative_gap": 0.00677
+      },
+      {
+        "section": "Nativity",
+        "label": "Not a citizen",
+        "definition": "PRCITSHP = 5",
+        "identifiable": true,
+        "number_thousands": 5997.53521,
+        "number_moe": 359.129643,
+        "percent": 23.884969,
+        "percent_moe": 1.335148,
+        "population_thousands": 25110.08152,
+        "persons": 9676,
+        "published_values": {
+          "number_thousands": 6093.0,
+          "number_moe": 363.0,
+          "percent": 24.3,
+          "percent_moe": 1.3
+        },
+        "percent_gap": 0.4,
+        "percent_within_moe": true,
+        "percent_moe_gap": 0.0,
+        "number_gap": 95.0,
+        "number_within_moe": true,
+        "number_moe_relative_gap": 0.010662
+      },
+      {
+        "section": "Educational Attainment",
+        "label": "Total, 25 years old and older",
+        "definition": "A_AGE >= 25",
+        "identifiable": true,
+        "number_thousands": 29240.62674,
+        "number_moe": 673.520259,
+        "percent": 12.397992,
+        "percent_moe": 0.285576,
+        "population_thousands": 235849.70268,
+        "persons": 92942,
+        "published_values": {
+          "number_thousands": 29270.0,
+          "number_moe": 678.0,
+          "percent": 12.4,
+          "percent_moe": 0.3
+        },
+        "percent_gap": 0.0,
+        "percent_within_moe": true,
+        "percent_moe_gap": 0.0,
+        "number_gap": 30.0,
+        "number_within_moe": true,
+        "number_moe_relative_gap": 0.006607
+      },
+      {
+        "section": "Educational Attainment",
+        "label": "No high school diploma",
+        "definition": "A_AGE >= 25 and A_HGA <= 38",
+        "identifiable": true,
+        "number_thousands": 5888.4364,
+        "number_moe": 272.967001,
+        "percent": 32.527124,
+        "percent_moe": 1.257425,
+        "population_thousands": 18103.1575,
+        "persons": 7579,
+        "published_values": {
+          "number_thousands": 5870.0,
+          "number_moe": 274.0,
+          "percent": 32.4,
+          "percent_moe": 1.3
+        },
+        "percent_gap": 0.1,
+        "percent_within_moe": true,
+        "percent_moe_gap": 0.0,
+        "number_gap": 18.0,
+        "number_within_moe": true,
+        "number_moe_relative_gap": 0.00377
+      },
+      {
+        "section": "Educational Attainment",
+        "label": "High school, no college",
+        "definition": "A_AGE >= 25 and A_HGA = 39",
+        "identifiable": true,
+        "number_thousands": 10899.25753,
+        "number_moe": 374.2957,
+        "percent": 16.948468,
+        "percent_moe": 0.535564,
+        "population_thousands": 64308.21743,
+        "persons": 25980,
+        "published_values": {
+          "number_thousands": 10890.0,
+          "number_moe": 376.0,
+          "percent": 16.9,
+          "percent_moe": 0.5
+        },
+        "percent_gap": 0.0,
+        "percent_within_moe": true,
+        "percent_moe_gap": 0.0,
+        "number_gap": 10.0,
+        "number_within_moe": true,
+        "number_moe_relative_gap": 0.004533
+      },
+      {
+        "section": "Educational Attainment",
+        "label": "Some college",
+        "definition": "A_AGE >= 25 and A_HGA in 40-42",
+        "identifiable": true,
+        "number_thousands": 6416.84688,
+        "number_moe": 269.35002,
+        "percent": 10.963692,
+        "percent_moe": 0.446504,
+        "population_thousands": 58528.15879,
+        "persons": 23119,
+        "published_values": {
+          "number_thousands": 6448.0,
+          "number_moe": 274.0,
+          "percent": 11.0,
+          "percent_moe": 0.5
+        },
+        "percent_gap": 0.0,
+        "percent_within_moe": true,
+        "percent_moe_gap": 0.1,
+        "number_gap": 31.0,
+        "number_within_moe": true,
+        "number_moe_relative_gap": 0.016971
+      },
+      {
+        "section": "Educational Attainment",
+        "label": "Bachelor's degree or higher",
+        "definition": "A_AGE >= 25 and A_HGA >= 43",
+        "identifiable": true,
+        "number_thousands": 6036.08593,
+        "number_moe": 280.335652,
+        "percent": 6.359788,
+        "percent_moe": 0.291856,
+        "population_thousands": 94910.16896,
+        "persons": 36264,
+        "published_values": {
+          "number_thousands": 6058.0,
+          "number_moe": 285.0,
+          "percent": 6.4,
+          "percent_moe": 0.3
+        },
+        "percent_gap": 0.0,
+        "percent_within_moe": true,
+        "percent_moe_gap": 0.0,
+        "number_gap": 22.0,
+        "number_within_moe": true,
+        "number_moe_relative_gap": 0.016366
+      },
+      {
+        "section": "Tenure",
+        "label": "Owner/mortgage",
+        "definition": "SPM_TENMORTSTATUS = 1",
+        "identifiable": true,
+        "number_thousands": 8475.75465,
+        "number_moe": 521.80583,
+        "percent": 5.999099,
+        "percent_moe": 0.364753,
+        "population_thousands": 141283.79874,
+        "persons": 58683,
+        "published_values": {
+          "number_thousands": 8476.0,
+          "number_moe": 523.0,
+          "percent": 6.0,
+          "percent_moe": 0.4
+        },
+        "percent_gap": 0.0,
+        "percent_within_moe": true,
+        "percent_moe_gap": 0.0,
+        "number_gap": 0.0,
+        "number_within_moe": true,
+        "number_moe_relative_gap": 0.002283
+      },
+      {
+        "section": "Tenure",
+        "label": "Owner/no mortgage/rent free",
+        "definition": "SPM_TENMORTSTATUS = 2",
+        "identifiable": true,
+        "number_thousands": 11175.37811,
+        "number_moe": 500.162685,
+        "percent": 11.88716,
+        "percent_moe": 0.488274,
+        "population_thousands": 94012.17669,
+        "persons": 38207,
+        "published_values": {
+          "number_thousands": 11150.0,
+          "number_moe": 503.0,
+          "percent": 11.9,
+          "percent_moe": 0.5
+        },
+        "percent_gap": 0.0,
+        "percent_within_moe": true,
+        "percent_moe_gap": 0.0,
+        "number_gap": 30.0,
+        "number_within_moe": true,
+        "number_moe_relative_gap": 0.005641
+      },
+      {
+        "section": "Tenure",
+        "label": "Renter",
+        "definition": "SPM_TENMORTSTATUS = 3",
+        "identifiable": true,
+        "number_thousands": 24739.08395,
+        "number_moe": 944.399712,
+        "percent": 23.958302,
+        "percent_moe": 0.770281,
+        "population_thousands": 103258.91811,
+        "persons": 37839,
+        "published_values": {
+          "number_thousands": 24760.0,
+          "number_moe": 934.0,
+          "percent": 24.0,
+          "percent_moe": 0.8
+        },
+        "percent_gap": 0.0,
+        "percent_within_moe": true,
+        "percent_moe_gap": 0.0,
+        "number_gap": 20.0,
+        "number_within_moe": true,
+        "number_moe_relative_gap": 0.011135
+      },
+      {
+        "section": "Residence",
+        "label": "Inside metropolitan statistical areas",
+        "definition": "GTMETSTA = 1",
+        "identifiable": false,
+        "number_thousands": 38548.13529,
+        "number_moe": 976.851443,
+        "percent": 13.29677,
+        "percent_moe": 0.336833,
+        "population_thousands": 289906.00063,
+        "persons": 107649,
+        "published_values": {
+          "number_thousands": 38820.0,
+          "number_moe": 1052.0,
+          "percent": 13.2,
+          "percent_moe": 0.3
+        },
+        "percent_gap": 0.1,
+        "percent_within_moe": true,
+        "percent_moe_gap": 0.0,
+        "number_gap": 270.0,
+        "number_within_moe": true,
+        "number_moe_relative_gap": 0.071434
+      },
+      {
+        "section": "Residence",
+        "label": "Inside principal cities",
+        "definition": "GTMETSTA = 1 and GTCBSAST = 1",
+        "identifiable": false,
+        "number_thousands": 15795.85959,
+        "number_moe": 720.945308,
+        "percent": 17.146157,
+        "percent_moe": 0.733285,
+        "population_thousands": 92124.78209,
+        "persons": 32551,
+        "published_values": {
+          "number_thousands": 18450.0,
+          "number_moe": 886.0,
+          "percent": 16.8,
+          "percent_moe": 0.7
+        },
+        "percent_gap": 0.3,
+        "percent_within_moe": true,
+        "percent_moe_gap": 0.0,
+        "number_gap": 2650.0,
+        "number_within_moe": false,
+        "number_moe_relative_gap": 0.186292
+      },
+      {
+        "section": "Residence",
+        "label": "Outside principal cities",
+        "definition": "GTMETSTA = 1 and GTCBSAST = 2",
+        "identifiable": false,
+        "number_thousands": 17464.33262,
+        "number_moe": 680.05522,
+        "percent": 11.316845,
+        "percent_moe": 0.420875,
+        "population_thousands": 154321.56177,
+        "persons": 54050,
+        "published_values": {
+          "number_thousands": 20370.0,
+          "number_moe": 723.0,
+          "percent": 11.0,
+          "percent_moe": 0.4
+        },
+        "percent_gap": 0.3,
+        "percent_within_moe": true,
+        "percent_moe_gap": 0.0,
+        "number_gap": 2910.0,
+        "number_within_moe": false,
+        "number_moe_relative_gap": 0.059398
+      },
+      {
+        "section": "Residence",
+        "label": "Outside metropolitan statistical areas",
+        "definition": "GTMETSTA = 2",
+        "identifiable": false,
+        "number_thousands": 5567.15719,
+        "number_moe": 439.927205,
+        "percent": 12.118688,
+        "percent_moe": 0.754716,
+        "population_thousands": 45938.61348,
+        "persons": 25554,
+        "published_values": {
+          "number_thousands": 5570.0,
+          "number_moe": 525.0,
+          "percent": 12.8,
+          "percent_moe": 0.9
+        },
+        "percent_gap": 0.7,
+        "percent_within_moe": true,
+        "percent_moe_gap": 0.1,
+        "number_gap": 3.0,
+        "number_within_moe": true,
+        "number_moe_relative_gap": 0.162043
+      },
+      {
+        "section": "Region",
+        "label": "Northeast",
+        "definition": "GEREG = 1",
+        "identifiable": true,
+        "number_thousands": 7276.69914,
+        "number_moe": 462.254566,
+        "percent": 12.698097,
+        "percent_moe": 0.805973,
+        "population_thousands": 57305.43041,
+        "persons": 20788,
+        "published_values": {
+          "number_thousands": 7382.0,
+          "number_moe": 467.0,
+          "percent": 12.9,
+          "percent_moe": 0.8
+        },
+        "percent_gap": 0.2,
+        "percent_within_moe": true,
+        "percent_moe_gap": 0.0,
+        "number_gap": 105.0,
+        "number_within_moe": true,
+        "number_moe_relative_gap": 0.010162
+      },
+      {
+        "section": "Region",
+        "label": "Midwest",
+        "definition": "GEREG = 2",
+        "identifiable": true,
+        "number_thousands": 6809.96834,
+        "number_moe": 468.454221,
+        "percent": 9.821493,
+        "percent_moe": 0.672083,
+        "population_thousands": 69337.40187,
+        "persons": 24880,
+        "published_values": {
+          "number_thousands": 6839.0,
+          "number_moe": 474.0,
+          "percent": 9.9,
+          "percent_moe": 0.7
+        },
+        "percent_gap": 0.1,
+        "percent_within_moe": true,
+        "percent_moe_gap": 0.0,
+        "number_gap": 29.0,
+        "number_within_moe": true,
+        "number_moe_relative_gap": 0.0117
+      },
+      {
+        "section": "Region",
+        "label": "South",
+        "definition": "GEREG = 3",
+        "identifiable": true,
+        "number_thousands": 18759.59897,
+        "number_moe": 623.53095,
+        "percent": 14.164158,
+        "percent_moe": 0.471791,
+        "population_thousands": 132444.15033,
+        "persons": 48940,
+        "published_values": {
+          "number_thousands": 18620.0,
+          "number_moe": 631.0,
+          "percent": 14.1,
+          "percent_moe": 0.5
+        },
+        "percent_gap": 0.1,
+        "percent_within_moe": true,
+        "percent_moe_gap": 0.0,
+        "number_gap": 140.0,
+        "number_within_moe": true,
+        "number_moe_relative_gap": 0.011837
+      },
+      {
+        "section": "Region",
+        "label": "West",
+        "definition": "GEREG = 4",
+        "identifiable": true,
+        "number_thousands": 11543.95026,
+        "number_moe": 526.267701,
+        "percent": 14.526556,
+        "percent_moe": 0.659623,
+        "population_thousands": 79467.91093,
+        "persons": 40121,
+        "published_values": {
+          "number_thousands": 11540.0,
+          "number_moe": 519.0,
+          "percent": 14.5,
+          "percent_moe": 0.7
+        },
+        "percent_gap": 0.0,
+        "percent_within_moe": true,
+        "percent_moe_gap": 0.0,
+        "number_gap": 0.0,
+        "number_within_moe": true,
+        "number_moe_relative_gap": 0.014003
+      },
+      {
+        "section": "Health Insurance Coverage",
+        "label": "With private insurance",
+        "definition": "PRIV = 1",
+        "identifiable": true,
+        "number_thousands": 13440.35909,
+        "number_moe": 548.610262,
+        "percent": 6.054471,
+        "percent_moe": 0.245485,
+        "population_thousands": 221990.64118,
+        "persons": 88682,
+        "published_values": {
+          "number_thousands": 13450.0,
+          "number_moe": 541.0,
+          "percent": 6.1,
+          "percent_moe": 0.2
+        },
+        "percent_gap": 0.0,
+        "percent_within_moe": true,
+        "percent_moe_gap": 0.0,
+        "number_gap": 10.0,
+        "number_within_moe": true,
+        "number_moe_relative_gap": 0.014067
+      },
+      {
+        "section": "Health Insurance Coverage",
+        "label": "With public, no private insurance",
+        "definition": "PUB = 1 and PRIV != 1",
+        "identifiable": true,
+        "number_thousands": 23760.95962,
+        "number_moe": 757.66791,
+        "percent": 26.620653,
+        "percent_moe": 0.741083,
+        "population_thousands": 89257.61227,
+        "persons": 35561,
+        "published_values": {
+          "number_thousands": 23750.0,
+          "number_moe": 768.0,
+          "percent": 26.6,
+          "percent_moe": 0.8
+        },
+        "percent_gap": 0.0,
+        "percent_within_moe": true,
+        "percent_moe_gap": 0.1,
+        "number_gap": 10.0,
+        "number_within_moe": true,
+        "number_moe_relative_gap": 0.013453
+      },
+      {
+        "section": "Health Insurance Coverage",
+        "label": "Not insured",
+        "definition": "COV in {0, 2}",
+        "identifiable": true,
+        "number_thousands": 7188.898,
+        "number_moe": 391.836798,
+        "percent": 26.326556,
+        "percent_moe": 1.123924,
+        "population_thousands": 27306.64009,
+        "persons": 10486,
+        "published_values": {
+          "number_thousands": 7191.0,
+          "number_moe": 390.0,
+          "percent": 26.3,
+          "percent_moe": 1.1
+        },
+        "percent_gap": 0.0,
+        "percent_within_moe": true,
+        "percent_moe_gap": 0.0,
+        "number_gap": 2.0,
+        "number_within_moe": true,
+        "number_moe_relative_gap": 0.00471
+      },
+      {
+        "section": "Work Experience",
+        "label": "Total, 18 to 64 years old",
+        "definition": "18 <= A_AGE < 65",
+        "identifiable": true,
+        "number_thousands": 24709.85672,
+        "number_moe": 675.794043,
+        "percent": 12.277289,
+        "percent_moe": 0.336732,
+        "population_thousands": 201264.75816,
+        "persons": 77083,
+        "published_values": {
+          "number_thousands": 24710.0,
+          "number_moe": 678.0,
+          "percent": 12.3,
+          "percent_moe": 0.3
+        },
+        "percent_gap": 0.0,
+        "percent_within_moe": true,
+        "percent_moe_gap": 0.0,
+        "number_gap": 0.0,
+        "number_within_moe": true,
+        "number_moe_relative_gap": 0.003254
+      },
+      {
+        "section": "Work Experience",
+        "label": "All workers",
+        "definition": "18 <= A_AGE < 65 and WEXP in 1-12",
+        "identifiable": true,
+        "number_thousands": 11257.2823,
+        "number_moe": 438.023748,
+        "percent": 7.109545,
+        "percent_moe": 0.281389,
+        "population_thousands": 158340.40639,
+        "persons": 60858,
+        "published_values": {
+          "number_thousands": 11290.0,
+          "number_moe": 442.0,
+          "percent": 7.1,
+          "percent_moe": 0.3
+        },
+        "percent_gap": 0.0,
+        "percent_within_moe": true,
+        "percent_moe_gap": 0.0,
+        "number_gap": 30.0,
+        "number_within_moe": true,
+        "number_moe_relative_gap": 0.008996
+      },
+      {
+        "section": "Work Experience",
+        "label": "Worked full-time, year-round",
+        "definition": "18 <= A_AGE < 65 and WEXP = 1",
+        "identifiable": true,
+        "number_thousands": 4815.79604,
+        "number_moe": 261.724104,
+        "percent": 4.12729,
+        "percent_moe": 0.227645,
+        "population_thousands": 116681.80139,
+        "persons": 45101,
+        "published_values": {
+          "number_thousands": 4822.0,
+          "number_moe": 266.0,
+          "percent": 4.1,
+          "percent_moe": 0.2
+        },
+        "percent_gap": 0.0,
+        "percent_within_moe": true,
+        "percent_moe_gap": 0.0,
+        "number_gap": 6.0,
+        "number_within_moe": true,
+        "number_moe_relative_gap": 0.016075
+      },
+      {
+        "section": "Work Experience",
+        "label": "Less than full-time, year-round",
+        "definition": "18 <= A_AGE < 65 and WEXP in 2-12",
+        "identifiable": true,
+        "number_thousands": 6441.48626,
+        "number_moe": 323.352908,
+        "percent": 15.462559,
+        "percent_moe": 0.721883,
+        "population_thousands": 41658.605,
+        "persons": 15757,
+        "published_values": {
+          "number_thousands": 6470.0,
+          "number_moe": 332.0,
+          "percent": 15.5,
+          "percent_moe": 0.7
+        },
+        "percent_gap": 0.0,
+        "percent_within_moe": true,
+        "percent_moe_gap": 0.0,
+        "number_gap": 29.0,
+        "number_within_moe": true,
+        "number_moe_relative_gap": 0.026045
+      },
+      {
+        "section": "Work Experience",
+        "label": "Did not work",
+        "definition": "18 <= A_AGE < 65 and WEXP = 13",
+        "identifiable": true,
+        "number_thousands": 13452.57442,
+        "number_moe": 432.064091,
+        "percent": 31.340192,
+        "percent_moe": 0.824644,
+        "population_thousands": 42924.35177,
+        "persons": 16225,
+        "published_values": {
+          "number_thousands": 13420.0,
+          "number_moe": 431.0,
+          "percent": 31.3,
+          "percent_moe": 0.8
+        },
+        "percent_gap": 0.0,
+        "percent_within_moe": true,
+        "percent_moe_gap": 0.0,
+        "number_gap": 30.0,
+        "number_within_moe": true,
+        "number_moe_relative_gap": 0.002469
+      },
+      {
+        "section": "Disability Status",
+        "label": "Total, 18 to 64 years old",
+        "definition": "18 <= A_AGE < 65",
+        "identifiable": true,
+        "number_thousands": 24709.85672,
+        "number_moe": 675.794043,
+        "percent": 12.277289,
+        "percent_moe": 0.336732,
+        "population_thousands": 201264.75816,
+        "persons": 77083,
+        "published_values": {
+          "number_thousands": 24710.0,
+          "number_moe": 678.0,
+          "percent": 12.3,
+          "percent_moe": 0.3
+        },
+        "percent_gap": 0.0,
+        "percent_within_moe": true,
+        "percent_moe_gap": 0.0,
+        "number_gap": 0.0,
+        "number_within_moe": true,
+        "number_moe_relative_gap": 0.003254
+      },
+      {
+        "section": "Disability Status",
+        "label": "With a disability",
+        "definition": "18 <= A_AGE < 65 and PRDISFLG = 1",
+        "identifiable": true,
+        "number_thousands": 4145.56,
+        "number_moe": 227.120478,
+        "percent": 24.982135,
+        "percent_moe": 1.211159,
+        "population_thousands": 16594.09808,
+        "persons": 6349,
+        "published_values": {
+          "number_thousands": 4147.0,
+          "number_moe": 228.0,
+          "percent": 25.0,
+          "percent_moe": 1.2
+        },
+        "percent_gap": 0.0,
+        "percent_within_moe": true,
+        "percent_moe_gap": 0.0,
+        "number_gap": 1.0,
+        "number_within_moe": true,
+        "number_moe_relative_gap": 0.003858
+      },
+      {
+        "section": "Disability Status",
+        "label": "With no disability",
+        "definition": "18 <= A_AGE < 65 and PRDISFLG = 2",
+        "identifiable": true,
+        "number_thousands": 20506.08469,
+        "number_moe": 622.067584,
+        "percent": 11.159716,
+        "percent_moe": 0.33913,
+        "population_thousands": 183750.95505,
+        "persons": 70324,
+        "published_values": {
+          "number_thousands": 20510.0,
+          "number_moe": 623.0,
+          "percent": 11.2,
+          "percent_moe": 0.3
+        },
+        "percent_gap": 0.0,
+        "percent_within_moe": true,
+        "percent_moe_gap": 0.0,
+        "number_gap": 0.0,
+        "number_within_moe": true,
+        "number_moe_relative_gap": 0.001497
+      }
+    ]
+  },
+  "alternatives": {
+    "table5": {
+      "groups": [
+        "All people",
+        "Under 18 years",
+        "18 to 64 years",
+        "65 years and older"
+      ],
+      "rows": [
+        {
+          "key": "federal_income_tax_after_credits",
+          "label": "Federal income tax after refundable credits",
+          "kind": "subtraction",
+          "estimate": [
+            -1.385577,
+            -4.135546,
+            -0.881853,
+            0.099572
+          ],
+          "moe": [
+            0.153497,
+            0.378429,
+            0.138441,
+            0.06512
+          ],
+          "published_values": {
+            "estimate": [
+              0.4,
+              0.3,
+              0.5,
+              0.2
+            ],
+            "moe": [
+              0.06,
+              0.09,
+              0.08,
+              0.06
+            ],
+            "estimate_text": [
+              "0.40",
+              "0.30",
+              "0.50",
+              "0.20"
+            ],
+            "moe_text": [
+              "0.06",
+              "0.09",
+              "0.08",
+              "0.06"
+            ]
+          },
+          "unit_columns": [
+            "SPM_FEDTAX"
+          ],
+          "person_columns": [],
+          "compares_with": "federal_income_tax",
+          "estimate_gap": [
+            1.79,
+            4.44,
+            1.38,
+            0.1
+          ],
+          "moe_gap": [
+            0.09,
+            0.29,
+            0.06,
+            0.01
+          ]
+        }
+      ]
+    },
+    "table4": {
+      "rows": [
+        {
+          "section": "Type of Unit",
+          "label": "Cohabiting partners, by the unit head's code",
+          "definition": "SPM_FAMTYPE of the unit's SPM_HEAD = 2",
+          "identifiable": true,
+          "number_thousands": 3535.2625,
+          "number_moe": 336.758877,
+          "percent": 12.859146,
+          "percent_moe": 1.143122,
+          "population_thousands": 27492.20186,
+          "persons": 10804,
+          "compares_with": "Cohabiting partners",
+          "published_values": {
+            "number_thousands": 3592.0,
+            "number_moe": 344.0,
+            "percent": 13.1,
+            "percent_moe": 1.2
+          },
+          "percent_gap": 0.2,
+          "percent_within_moe": true,
+          "percent_moe_gap": 0.1,
+          "number_gap": 57.0,
+          "number_within_moe": true,
+          "number_moe_relative_gap": 0.02105
+        },
+        {
+          "section": "Health Insurance Coverage",
+          "label": "Not insured, without infants born after the calendar year",
+          "definition": "COV = 2",
+          "identifiable": true,
+          "number_thousands": 7089.17834,
+          "number_moe": 391.66564,
+          "percent": 26.576681,
+          "percent_moe": 1.146781,
+          "population_thousands": 26674.43099,
+          "persons": 10308,
+          "compares_with": "Not insured",
+          "published_values": {
+            "number_thousands": 7191.0,
+            "number_moe": 390.0,
+            "percent": 26.3,
+            "percent_moe": 1.1
+          },
+          "percent_gap": 0.3,
+          "percent_within_moe": true,
+          "percent_moe_gap": 0.0,
+          "number_gap": 102.0,
+          "number_within_moe": true,
+          "number_moe_relative_gap": 0.004271
+        }
+      ]
+    }
+  },
+  "credit_interaction": {
+    "fica_shares": {
+      "wages": 0.0765,
+      "self_employment": 0.1413,
+      "wage_filers": 52455,
+      "self_employment_filers": 2898
+    },
+    "social_security_wage_base": 176100.0,
+    "employee_social_security_rate": 0.062,
+    "employee_medicare_rate": 0.0145,
+    "units_with_credit": {
+      "one_or_two_children": 3222,
+      "three_or_more_children": 1360
+    },
+    "statute": {
+      "rule_matches": {
+        "one_or_two_children": 3142,
+        "three_or_more_children": 1305
+      },
+      "units_without_credit_not_reproduced": 946,
+      "units_without_credit_not_reproduced_with_eitc": 0,
+      "three_plus_above_earnings_branch": 55,
+      "three_plus_above_earnings_branch_reproduced": 0,
+      "units_raised": 31,
+      "persons_in_raised_units_thousands": 538.41933,
+      "largest_rise_dollars": 184.0,
+      "persons_whose_status_changes": 0,
+      "eitc_with_ctc_response": {
+        "estimate": [
+          -1.218052,
+          -2.901011,
+          -0.980421,
+          -0.091106
+        ],
+        "moe": [
+          0.128391,
+          0.312729,
+          0.113849,
+          0.035034
+        ]
+      }
+    },
+    "before_deduction": {
+      "rule_matches": {
+        "one_or_two_children": 3222,
+        "three_or_more_children": 1360
+      },
+      "units_without_credit_not_reproduced": 946,
+      "units_without_credit_not_reproduced_with_eitc": 0,
+      "three_plus_above_earnings_branch": 0,
+      "three_plus_above_earnings_branch_reproduced": 0,
+      "units_raised": 33,
+      "persons_in_raised_units_thousands": 552.89527,
+      "largest_rise_dollars": 684.35,
+      "persons_whose_status_changes": 0,
+      "eitc_with_ctc_response": {
+        "estimate": [
+          -1.218052,
+          -2.901011,
+          -0.980421,
+          -0.091106
+        ],
+        "moe": [
+          0.128391,
+          0.312729,
+          0.113849,
+          0.035034
+        ]
+      }
+    },
+    "statute_misses": {
+      "units": 135,
+      "with_self_employment": 135,
+      "reproduced_before_deduction": 135
+    },
+    "statute_above_branch_reproduced_before_deduction": 55
+  },
+  "tolerances": {
+    "table5_spm_rate": 0.01,
+    "table5_spm_rate_moe": 0.01,
+    "table5_effect": 0.06,
+    "table5_effect_moe": 0.01,
+    "table4_percent_moe": 0.1,
+    "table4_number_moe_relative": 0.03
+  },
+  "comparison": {
+    "table5_spm_rate_max_gap": 0.01,
+    "table5_spm_rate_moe_max_gap": 0.01,
+    "table5_spm_rate_cells": 8,
+    "table5_spm_rate_cells_exact": 5,
+    "table5_effect_max_gap": 0.06,
+    "table5_effect_max_gap_cells": [
+      {
+        "element": "refundable_ctc",
+        "group": "Under 18 years"
+      },
+      {
+        "element": "federal_income_tax",
+        "group": "Under 18 years"
+      }
+    ],
+    "table5_effect_moe_max_gap": 0.01,
+    "table5_cells": 160,
+    "table5_cells_exact": 98,
+    "table5_effects_within_published_moe": 76,
+    "table5_effect_cells": 76,
+    "table4_rows": 49,
+    "table4_rows_identifiable": 45,
+    "table4_percent_exact": 31,
+    "table4_percent_within_moe": 45,
+    "table4_number_within_moe": 45,
+    "table4_percent_max_gap": 0.4,
+    "table4_percent_moe_max_gap": 0.1,
+    "table4_number_moe_relative_max_gap": 0.027816
+  }
+}
