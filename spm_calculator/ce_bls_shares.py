@@ -43,7 +43,10 @@ in 2025 the reverse holds. Identity (2) balances with the row that holds
 equal dollars, and the leaf rows sum to one except in 2023 and 2024, when
 they exceed it by exactly the broadband row. So the tenure-invariant row
 already includes broadband, and :func:`bls_band_components` takes home
-internet spending as that row less the band's mean broadband subsidy.
+internet spending as that row less the band's mean broadband subsidy. On
+the replication's side, home internet is CE UCC 690114, which
+:func:`spm_calculator.ce_internet.add_home_internet` adds to FCSUti; a frame
+without that step has none.
 
 Invariants, tested in ``tests/test_ce_bls_shares.py``:
 
@@ -73,6 +76,7 @@ from typing import Mapping, Optional, Sequence
 import numpy as np
 import pandas as pd
 
+from spm_calculator.ce_internet import INTERNET_COLUMN
 from spm_calculator.ce_threshold import (
     MEDIAN_SHARE,
     _food_expenditure,
@@ -271,9 +275,12 @@ def unit_components(frame: pd.DataFrame) -> pd.DataFrame:
     Args:
         frame: Normalized expenditures from
             :func:`spm_calculator.ce_inkind_stage.prepare_out_of_pocket`,
-            built with its default principal and annualization options, or
+            built with its default principal and annualization options,
             that frame after
-            :func:`spm_calculator.ce_inkind_stage.add_in_kind`.
+            :func:`spm_calculator.ce_internet.add_home_internet`, or either
+            after :func:`spm_calculator.ce_inkind_stage.add_in_kind`. Home
+            internet comes from its three-month cost column, and is zero
+            when the frame has none.
 
     Raises:
         ValueError: If a component, ``fcsuti_2a2c`` or ``su_2a2c`` is not
@@ -294,7 +301,11 @@ def unit_components(frame: pd.DataFrame) -> pd.DataFrame:
             )
             * quarterly,
             "telephone": telephone * quarterly,
-            "internet": 0.0,
+            "internet": (
+                frame[INTERNET_COLUMN].to_numpy(dtype=float) * quarterly
+                if INTERNET_COLUMN in frame
+                else 0.0
+            ),
             "shelter": shelter * quarterly,
             "utilities": (utilities - telephone) * quarterly,
         },

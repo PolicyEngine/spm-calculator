@@ -1,7 +1,8 @@
 """Replicate-weight standard errors for the 2019-2025 CE replication.
 
-Reruns the out-of-pocket replication and the replication with the in-kind
-stage under each of the CE's 44 replicate weights, for every target year
+Reruns the replication with home internet (``spm_calculator.ce_internet``),
+with and without the in-kind stage, under each of the CE's 44 replicate
+weights, for every target year
 from 2019 to 2025, with the package's composite CPI and with BLS's
 published FCSUti index (``spm_calculator.ce_replicates``). Each implicate's
 imputed amounts stay as the full-sample imputation drew them. The receipt
@@ -50,6 +51,13 @@ from spm_calculator.ce_inkind import (
     impute_in_kind,
     load_ce_unit_inputs,
 )
+from spm_calculator.ce_internet import (
+    INTERNET_COLUMN,
+    INTERNET_CPI_RECEIPT,
+    INTERNET_CPI_SERIES,
+    read_internet_costs,
+    with_internet_cpi,
+)
 from spm_calculator.ce_replicates import (
     IDENTITY_TOLERANCE,
     REPLICATES,
@@ -97,6 +105,7 @@ CODE_PATHS = (
     "spm_calculator/ce_threshold.py",
     "spm_calculator/ce_inkind.py",
     "spm_calculator/ce_inkind_stage.py",
+    "spm_calculator/ce_internet.py",
     "spm_calculator/ce_bls_shares.py",
     "spm_calculator/ce_decomposition.py",
     "spm_calculator/cps_asec.py",
@@ -148,6 +157,7 @@ LIMITATIONS = [
     "Implicates draw model parameters from covariances that ignore the CPS ASEC and CE designs' strata and clusters",
     "In 2015Q2 and 2017Q1, most consumer units interviewed in both that quarter and the one before changed their pattern of positive and zero replicate weights, so under one replicate number a unit's interviews on either side can fall in different half samples; the 2019-2021 windows span one or both quarters, and their replicates can miss part of the correlation between a unit's interviews",
     "The FCSUti-index run deflates every component by BLS's published index, so its price factors do not vary across replicates",
+    "Each unit's home internet cost (CE UCC 690114) stays fixed across replicates, and its CPI weight follows each replicate's spending, as the other components' weights do",
     "Garner (2010, BLS Working Paper 436) computed the standard errors of BLS's 2006-2008 experimental thresholds by balanced repeated replication with the CE's 44 replicate weights; BLS's methods page and threshold workbooks do not say how its current replicates treat the percentile band or the imputed benefits",
 ]
 
@@ -452,16 +462,21 @@ def main() -> None:
         parser.error("A partial run cannot overwrite the committed receipt")
     started = time.time()
     cpi_document = json.loads(args.cpi_input.read_text())
-    cpi_series = {
-        sid: pd.Series({int(y): v for y, v in values.items()})
-        for sid, values in cpi_document["series"].items()
-    }
+    cpi_series = with_internet_cpi(
+        {
+            sid: pd.Series({int(y): v for y, v in values.items()})
+            for sid, values in cpi_document["series"].items()
+        }
+    )
     fcsuti_series = pd.Series(
         {year: float(level) for year, level in BLS_FCSUTI_INDEX.items()}
     )
     deflators = {
         "package": cpi_series,
-        "fcsuti": {sid: fcsuti_series for sid in CPI_SERIES.values()},
+        "fcsuti": {
+            sid: fcsuti_series
+            for sid in (*CPI_SERIES.values(), INTERNET_CPI_SERIES)
+        },
     }
     replication = json.loads(REPLICATION_RECEIPT.read_text())
     components = json.loads(COMPONENTS_RECEIPT.read_text())
@@ -499,6 +514,7 @@ def main() -> None:
         )
         columns = [c for c in frame.columns if c in KEEP | IN_KIND_COLUMNS]
         raw[quarter] = frame[columns].copy()
+        raw[quarter][INTERNET_COLUMN] = read_internet_costs(frame)
         raw[quarter].attrs = {}
         weights[quarter] = matrix
     records = sum(len(m) for m in weights.values())
@@ -642,6 +658,11 @@ def main() -> None:
             "cpi": {
                 "path": str(args.cpi_input.relative_to(ROOT)),
                 "sha256": sha256(args.cpi_input),
+            },
+            "internet_cpi": {
+                "path": str(INTERNET_CPI_RECEIPT.relative_to(ROOT)),
+                "sha256": sha256(INTERNET_CPI_RECEIPT),
+                "series_id": INTERNET_CPI_SERIES,
             },
             "replication_receipt": {
                 "path": str(REPLICATION_RECEIPT.relative_to(ROOT)),
