@@ -38,8 +38,9 @@ stage as an explicit, optional step:
     mother of a child aged 0-1, otherwise one pregnant woman) times 12
     times the USDA fiscal-year average monthly food cost. BLS adds WIC
     only where the state had not finished WIC EBT, so units in states
-    whose statewide EBT date precedes the reference period receive none,
-    and no unit receives WIC from reference year 2020.
+    whose statewide EBT date precedes the middle of the reference period
+    receive none. From reference year 2020, the year of the statutory
+    deadline for statewide WIC EBT, no unit receives WIC.
 
 Every random draw is a deterministic function of the unit's identifier,
 the seed, the component and the implicate, so results do not depend on

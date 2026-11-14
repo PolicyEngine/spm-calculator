@@ -107,16 +107,16 @@ Agriculture granted an exemption ([42 U.S.C.
 1786(h)(12)(B)](https://www.law.cornell.edu/uscode/text/42/1786)). For
 reference years before 2020, we compare each state's statewide date, from
 FNS's December 2022 WIC EBT status report (in `data/inkind/`), with the
-middle of the unit's reference period. Where the CE withholds the state, a
-unit counts as finished with probability equal to the weighted share of
-finished units in its region and collection quarter. From reference year
-2020, the year of the statutory deadline, we add no WIC in any state. The
-cutoff also drops WIC where the middle of the reference period falls
-before the deadline, including in the six states that finished during
-2020 before October 1, from Hawaii in June to Illinois in September. FNS
-dates six other states and DC after the deadline, from Utah in November
-2020 to Georgia in October 2022. In both groups, a strict state-by-state
-reading of BLS's rule would still add WIC where our cutoff adds none.
+middle of the unit's reference period. Where the CE withholds the state, we
+count the unit's state as finished with probability equal to the weighted
+share of known-state units in its region and collection quarter whose state
+had finished. From reference year 2020, the year of the statutory deadline,
+we add no WIC in any state, even where the middle of a unit's reference
+period falls before the deadline. Six states finished during 2020 before
+October 1, from Hawaii in June to Illinois in September. FNS dates six other
+states and DC after the deadline, from Utah in November 2020 to Georgia in
+October 2022. In both groups, we would add WIC to some units if we applied
+BLS's rule strictly, state by state.
 With each state's own date in every year, we estimate that mean WIC per
 unit rises by \$1.94–\$3.21 for the 2021–2025 targets. Those thresholds move
 by −\$20 to +\$40 (−0.06% to +0.12%) as the added WIC reorders units in the
@@ -161,9 +161,9 @@ component weights of out-of-pocket spending.
 
 The stage never lowers any unit's FCSUti or SU, yet a single component
 can still lower a tenure's threshold: added benefits reorder units and
-change which of them land in the 47th–53rd percentile band. In 2024,
-rental assistance alone lowers the threshold for owners without mortgages
-by 0.67%, and school lunch alone lowers it by 0.57%.
+change which of them land in the 47th–53rd percentile band. In 2024, we
+estimate that rental assistance alone lowers the threshold for owners
+without mortgages by 0.67%, and school lunch alone lowers it by 0.57%.
 
 ## Invariants
 
@@ -296,9 +296,9 @@ stage:
 | 2025 | −2.77 → +0.25 | −1.79 → +0.90 | +0.11 → +2.45 |
 
 The without column matches the [September 8 replication](current-ce-replication.md)
-exactly. In-kind lift (percent of the out-of-pocket threshold), with the
-between-implicate standard deviation of the threshold with the stage, in
-percent of that threshold:
+exactly. In-kind lift in percent of the out-of-pocket threshold, and in
+parentheses the between-implicate standard deviation of the threshold with
+the stage, in percent of that threshold:
 
 | Target | Renter | Owner with mortgage | Owner without mortgage |
 |---|---:|---:|---:|
@@ -611,10 +611,10 @@ That home internet term supplies 1.85–2.55% of BLS's thresholds with Other
 spread and 1.54–2.12% with Other separate.
 
 With Other separate, the food, clothing, telephone, school lunch and WIC
-terms, and home internet together with broadband, fall by a sixth. The
-shelter, utilities, rental assistance and LIHEAP terms lose their parts of
-`0.2 × F`, and the other term gathers all those parts, adding 0.19–0.36
-points to the gap:
+terms fall by a sixth, as does the sum of the home internet and broadband
+terms. The shelter, utilities, rental assistance and LIHEAP terms lose their
+parts of `0.2 × F`, and the Other term gathers all those parts, adding
+0.19–0.36 points to the gap:
 
 | Term | Renter | Owner with mortgage | Owner without mortgage |
 |---|---:|---:|---:|
@@ -1009,8 +1009,10 @@ variance.
 - All participation models share one covariate set across programs and
   years, and the CE and CPS income concepts differ.
 - The replication still omits home internet spending.
-- From reference year 2020, we add no WIC in any state, though FNS dates six
-  states and DC after the statutory deadline. With each state's own date, we
+- From reference year 2020, the year of the statutory deadline, we add no
+  WIC in any state, even where the middle of a unit's reference period falls
+  before the deadline. Six states finished during 2020 before the deadline,
+  and FNS dates six others and DC after it. With each state's own date, we
   estimate that the 2021–2025 thresholds move by −\$20 to +\$40.
 - BLS's written shelter, utilities and food definitions come from Garner and
   Munoz (2021). BLS's thresholds also carry later refinements and corrections,
@@ -1072,10 +1074,10 @@ scaling monetary columns, then anchor national levels as
 `published_2025 × replication_T / replication_2025`. A follow-up could
 carry the stage into those windows:
 
-1. Impute the window's observed quarters with the latest CPS ASEC donors
-   and give each projected copy its donor's amounts. Projected copies keep
-   their donor's `NEWID`, and the stage requires each `NEWID` to appear
-   once.
+1. Impute the window's observed quarters with the latest CPS ASEC
+   donors. Projected copies keep their donor's `NEWID`, which the
+   imputation requires to be unique, and the stage gives every row that
+   shares a `NEWID` that unit's amounts.
 2. Revalue projected quarters with each target year's program rules:
    school lunch with the reimbursement rates USDA publishes each July
    (adjusted with the CPI-U Food Away From Home series, per the Federal

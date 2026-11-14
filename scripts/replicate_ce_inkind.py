@@ -611,7 +611,7 @@ def main():
             "WIC uses USDA's national fiscal-year average food cost; Census has used state averages since its revised 2019 estimates",
             "Participation models share one covariate set across programs and years; CE and CPS income concepts differ",
             "The replication omits home internet spending, which BLS's FCSUti includes",
-            "The stage adds no WIC in any state from reference year 2020, the year of the statutory deadline for statewide WIC EBT, October 1, 2020 (42 U.S.C. 1786(h)(12)(B)(i)); the cutoff also drops WIC where the middle of the reference period falls before the deadline, including in six states that finished during 2020, and FNS dates six other states and DC after it, so the cutoff departs from a strict state-by-state reading of BLS's published rule, and wic_ebt_by_state_sensitivity uses each state's own date instead",
+            "The stage adds no WIC in any state from reference year 2020, the year of the statutory deadline for statewide WIC EBT, October 1, 2020 (42 U.S.C. 1786(h)(12)(B)(i)); the cutoff also drops WIC where the middle of the reference period falls before the deadline, including in six states that finished during 2020 before the deadline, and FNS dates six other states and DC after it, so the cutoff departs from a strict state-by-state reading of BLS's published rule, and wic_ebt_by_state_sensitivity uses each state's own date instead",
             "The runs estimate imputation uncertainty (implicate spread) but not sampling uncertainty",
         ],
         "runtime_seconds": round(time.time() - started),

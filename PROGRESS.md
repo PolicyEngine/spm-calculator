@@ -4,17 +4,18 @@
 
 Draft PR [#60](https://github.com/PolicyEngine/spm-calculator/pull/60) on
 `max/ce-inkind-bls-alignment-20261114`, stacked on #57. The branch starts
-broadband with BLS's first year, stops WIC at the statutory EBT deadline, and
-adds a second accounting to the BLS-components decomposition. An independent
+broadband with BLS's first year, adds no WIC from reference year 2020, the
+year of the statutory EBT deadline, and adds a second accounting to the
+BLS-components decomposition. An independent
 review comes next, and the PR moves to `main` once #57 merges.
 
 ## Done
 
 - `ce_inkind.py` imputes broadband subsidies from reference year 2022, as BLS
-  does (footnote 3 of its thresholds workbook). From reference year 2020, the
-  year of the October 1, 2020 deadline for statewide WIC EBT (42 U.S.C.
-  1786(h)(12)(B)(i)), it adds no WIC in any state, which also drops WIC where
-  the middle of the reference period falls before the deadline. Before 2020, a unit still
+  does (footnote 3 of its thresholds workbook). From reference year 2020 it
+  adds no WIC in any state, even where the middle of a unit's reference
+  period falls before the October 1, 2020 deadline for statewide WIC EBT
+  (42 U.S.C. 1786(h)(12)(B)(i)). Before 2020, a unit still
   loses WIC when FNS dates its state's statewide WIC EBT before the middle of
   its reference period. `scripts/replicate_ce_inkind.py` records a
   sensitivity that uses each state's own date in every year.
