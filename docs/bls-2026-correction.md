@@ -105,12 +105,12 @@ Reproduction uses a tracked snapshot of the 2024 and 2025 CE-replication levels 
 
 The CE replication retains the following expenditure and price approximations:
 
-- It deflates each interview with an annual-average FCSUti CPI keyed to collection year rather than BLS's quarterly treatment of the terminal Q1.
+- It prices each interview with the annual-average FCSUti CPI of its collection year. BLS also applies an annual-average FCSUti CPI-U to quarterly CE expenditures (https://www.bls.gov/pir/spmhome.htm), but its methods page does not say which year's average each quarter gets. `ce_threshold.py` and the archived receipts still record this approximation as "annual CPI by collection year instead of BLS quarterly treatment", and the module stays unchanged until we next rebuild the canonical forecast.
 - It applies the 80% food allocation to the combined FMLI `GROCER` summary rather than UCC 790210 alone.
-- It omits home-internet expenditures because FMLI has no matching summary.
-- It omits BLS's in-kind imputations for broadband, LIHEAP, NSLP, WIC, and rental assistance.
+- It omits home-internet expenditures because FMLI has no matching summary. The [in-kind research runs](ce-inkind-imputation.md) add home internet from the MTBI file (UCC 690114); the canonical forecast, nowcast and projections still exclude it until we next rebuild the forecast.
+- It omits BLS's in-kind imputations for broadband, LIHEAP, NSLP, WIC, and rental assistance, which the in-kind research runs impute.
 
-The rebuilt estimator also names unresolved minor-only-unit and tenure-3/5/6 sample policies, and documents its unverified midpoint-CDF convention. The [current experiment](current-ce-replication.md) measures youth-policy sensitivity up to 0.0411% and tenure-5/6 sensitivity up to 1.7372%; other approximation effects remain unmeasured. These results do not establish that all approximations are negligible. Separately, the current canonical calculation combines year-specific published or modeled rent indices with corrected BLS national thresholds and housing shares. This source-vintage combination does not reproduce the superseded Census local dollar thresholds. Per-area provenance identifies the geographic component and its limits.
+The rebuilt estimator also names unresolved minor-only-unit and tenure-3/5/6 sample policies, and documents its unverified midpoint-CDF convention. The [current experiment](current-ce-replication.md) measures youth-policy sensitivity up to 0.0411% and tenure-5/6 sensitivity up to 1.7372%, and the [in-kind research runs](ce-inkind-imputation.md) measure the home-internet and in-kind omissions; we have not measured the effects of the collection-year price convention, the `GROCER` food allocation or the midpoint-CDF convention. These results do not establish that all approximations are negligible. Separately, the current canonical calculation combines year-specific published or modeled rent indices with corrected BLS national thresholds and housing shares. This source-vintage combination does not reproduce the superseded Census local dollar thresholds. Per-area provenance identifies the geographic component and its limits.
 
 ## Projecting thresholds past the published years
 

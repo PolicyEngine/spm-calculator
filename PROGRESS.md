@@ -1,3 +1,50 @@
+# CE in-kind replication with home internet — November 14, 2026
+
+## State
+
+Draft PR [#61](https://github.com/PolicyEngine/spm-calculator/pull/61) on
+`max/ce-inkind-internet-20261114`, stacked on #60. The branch adds home
+internet spending to the in-kind runs. An independent review comes next, and
+the PR moves to `main` once #57 and #60 merge.
+
+## Done
+
+- `ce_internet.py` adds each unit's three-month MTBI cost for UCC 690114,
+  times four, to FCSUti (not SU) and prices it with CPI-U CUUR0000SEEE03,
+  which `scripts/fetch_internet_cpi.py` pins with BLS's API responses. UCC
+  690116 stays out: BLS counts home internet, and 690114 alone comes within 1%
+  of BLS's 2019 in-band amount. `ce_threshold.py`, `fcsuti_cpi.py`,
+  `cpi_annual.json` and the September 8 receipt stay byte-identical.
+- We count home internet as out-of-pocket spending in its own component, and
+  no imputed total, share or contribution includes it. The comparison no
+  longer nets BLS's internet against our shelter: each side carries its own.
+- We regenerated all three receipts at 8b0ddac. The replication and components
+  receipts record thresholds by tenure and year without home internet or
+  benefits (which the script checks against the September 8 replication
+  exactly), with home internet, and with both; the uncertainty receipt records
+  the last two.
+- With the package CPI, we estimate that home internet raises thresholds by
+  1.5–2.4% for renters, 1.7–2.1% for owners with mortgages and 0.3–4.0% for
+  owners without, and benefits then add 0.5–3.5%, leaving every tenure
+  2.2–7.1% above BLS's corrected thresholds. Home internet changes 2022–2025
+  growth by −0.54 points for renters, +0.01 for owners with mortgages and
+  +4.33 for owners without, and benefits by −0.27, −0.17 and −1.63.
+- With sampling and imputation uncertainty combined, each benefit change in
+  2022–2025 growth lies within one standard error of zero, and no benefit
+  change in one-year growth reaches two.
+- BLS's methods page says BLS applies an annual-average FCSUti CPI-U to
+  quarterly CE data. The docs now say so and no longer describe BLS's
+  treatment as quarterly; the sealed module's docstring and the archived
+  receipts keep the old wording until we next rebuild the canonical forecast.
+
+## Next
+
+- The canonical forecast, nowcast and projections exclude home internet until
+  we next rebuild the forecast, in a separate change.
+- The four questions to BLS and Census staff from #60 stay open.
+
+---
+
 # CE in-kind alignment with BLS — November 13, 2026
 
 ## State

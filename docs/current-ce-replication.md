@@ -110,15 +110,18 @@ Signed percentage differences from the corrected published thresholds:
 | 2024 | −1.40% | −2.25% | +1.14% |
 | 2025 | −2.77% | −1.79% | +0.11% |
 
-Annual CPI rather than quarterly treatment, the food-summary allocation,
-omitted internet expenditures, omitted BLS in-kind benefit imputations,
-and the percentile convention remain separately unmeasured approximations.
-The youth result does not establish that these other approximations are
-negligible. No sampling or imputation uncertainty interval is estimated.
+The experiment prices each interview with the annual-average FCSUti CPI of
+its collection year. BLS applies an annual-average FCSUti CPI-U to quarterly
+CE expenditures (https://www.bls.gov/pir/spmhome.htm) and does not say which
+year's average each quarter gets. That price convention, the food-summary allocation and the percentile
+convention remain separately unmeasured approximations, and the youth result
+does not establish that they are negligible. The experiment estimates no
+sampling or imputation uncertainty interval.
 
-In [CE in-kind benefit imputation](ce-inkind-imputation.md), we measure the
-in-kind omission and the effect of the shelter, utilities and food definitions
-in BLS's papers, without changing this receipt.
+The experiment also omits home internet spending and BLS's in-kind benefit
+imputations. In [CE in-kind benefit imputation](ce-inkind-imputation.md), we
+measure both omissions and the effect of the shelter, utilities and food
+definitions in BLS's papers, without changing this receipt.
 
 ## Archived projection evaluation
 

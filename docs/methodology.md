@@ -135,10 +135,13 @@ percentiles. Population calibration weights must not replace them.
 FMLI expenditures cover food, clothing, shelter, utilities and telephone.
 `UTIL` already includes telephone. Shelter includes observed mortgage
 principal outlays. Food construction handles the 2024 redesign using an
-explicit `GROCER` allocation approximation. There is no matching FMLI
-internet summary. The estimator omits BLS in-kind benefit imputations by
-default; an optional [in-kind stage](ce-inkind-imputation.md) imputes
-them for research runs.
+explicit `GROCER` allocation approximation. FMLI has no internet summary,
+so the estimator omits home internet, and it omits BLS in-kind benefit
+imputations by default. The [in-kind research runs](ce-inkind-imputation.md)
+add both: home internet from the MTBI file (UCC 690114, priced with CPI-U
+series CUUR0000SEEE03) and imputed benefits from an optional in-kind stage.
+The canonical forecast, nowcast and projections still exclude home internet
+until we next rebuild the forecast.
 
 The pipeline annualizes each quarterly recall window by four, converts to
 target-year prices using explicit annual CPI, and normalizes to the
@@ -151,11 +154,14 @@ that band E and tenure h, it computes:
 ```
 
 SU excludes telephone. The [2026 BLS correction](bls-2026-correction.md)
-changed the anchor from 83% to 82%. Unlike BLS, the replication treats
-prices annually rather than quarterly and uses its own percentile
-implementation, food allocation and selected sample policies. It also uses
-broader shelter, utilities and food definitions than BLS's papers describe, and
-omits internet spending and in-kind benefits. The [September 8 CE experiment](current-ce-replication.md)
+changed the anchor from 83% to 82%. Like BLS, the replication applies an
+annual-average FCSUti CPI to quarterly CE data; it uses each interview's
+collection-year average, and BLS's methods page does not say which year's
+average each quarter gets (https://www.bls.gov/pir/spmhome.htm). Unlike BLS,
+the replication uses its own percentile implementation, food allocation and
+selected sample policies. It also uses broader shelter, utilities and food
+definitions than BLS's papers describe, and by default omits internet
+spending and in-kind benefits. The [September 8 CE experiment](current-ce-replication.md)
 quantifies selected sample-policy sensitivities, while preserving its
 original receipt and tables.
 

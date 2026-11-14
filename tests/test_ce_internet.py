@@ -2,7 +2,8 @@
 
 Invariants:
 
-1. Zero internet spending reproduces the out-of-pocket run exactly.
+1. Zero internet spending reproduces the out-of-pocket run exactly, and an
+   all-zero in-kind table reproduces the run with home internet exactly.
 2. Without an internet weight, the composite price factor equals
    ``get_fcsuti_inflation_factor`` exactly; when every series is the same
    index, the factor is that index's ratio whatever the weights.
@@ -12,6 +13,9 @@ Invariants:
    SU's spending alone.
 5. Unit costs equal the sum of their MTBI UCC 690114 records, in the same
    bundle and quarter as the FMLI file.
+6. The committed receipts keep three stages apart: the archived
+   out-of-pocket thresholds, those with home internet, and those with home
+   internet and in-kind benefits. No imputed total includes internet.
 """
 
 from __future__ import annotations
@@ -27,9 +31,15 @@ from hypothesis import given
 from hypothesis import strategies as st
 
 from spm_calculator import ce_threshold
-from spm_calculator.ce_bls_shares import band_components
+from spm_calculator.ce_bls_shares import (
+    ACCOUNTINGS,
+    IMPUTED,
+    band_components,
+    unit_components,
+)
 from spm_calculator.ce_decomposition import BLS_FCSUTI_INDEX, TENURES
 from spm_calculator.ce_inkind_stage import (
+    add_in_kind,
     prepare_out_of_pocket,
     replicate_with_in_kind,
     zero_in_kind,
@@ -58,10 +68,14 @@ from spm_calculator.fcsuti_cpi import (
     compute_fcsuti_weights_from_ce,
     get_fcsuti_inflation_factor,
 )
-from tests.test_ce_inkind import PROPERTY, ce_frame, flat_cpi
+from tests.test_ce_inkind import PROPERTY, STAGE_COLUMNS, ce_frame, flat_cpi
 
 ROOT = Path(__file__).resolve().parent.parent
 CPI_STORE = ROOT / "spm_calculator/data/bls/cpi_annual.json"
+CURRENT = ROOT / "spm_calculator/data/current"
+ARCHIVED_RECEIPT = CURRENT / "ce_replication_2019_2025.json"
+REPLICATION_RECEIPT = CURRENT / "ce_inkind_replication_2019_2025.json"
+COMPONENTS_RECEIPT = CURRENT / "ce_inkind_bls_components_2019_2025.json"
 
 
 def pinned_cpi():
@@ -147,6 +161,25 @@ def test_runs_with_internet_have_their_own_identity():
         in (staged["construction"]["approximations"])
     )
     assert "home_internet" in staged["methodology_config"]
+
+
+@PROPERTY
+@given(seed=st.integers(0, 10_000))
+def test_zero_in_kind_reproduces_the_internet_run_exactly(seed):
+    raw = with_internet(ce_frame(seed, year=2021), seed)
+    raw.loc[raw.index[: len(raw) // 2], "ce_year"] = 2022
+    cpi = pinned_cpi()
+    expanded = add_home_internet(
+        prepare_out_of_pocket(raw, 2024, cpi_series=cpi), cpi
+    )
+    zero = replicate_with_in_kind(expanded, zero_in_kind(raw["NEWID"]))
+    assert zero["thresholds"] == expanded.result["thresholds"]
+    assert zero["estimation"] == expanded.result["estimation"]
+    frame, _ = add_in_kind(expanded.expenditures, zero_in_kind(raw["NEWID"]))
+    for column in STAGE_COLUMNS:
+        np.testing.assert_array_equal(
+            frame[column], expanded.expenditures[column]
+        )
 
 
 def test_expenditures_must_carry_internet():
@@ -420,3 +453,115 @@ def test_replicates_add_internet_as_the_public_run_does(seed):
         assert band.threshold("renter") == pytest.approx(
             run.result["thresholds"]["renter"], rel=IDENTITY_TOLERANCE
         )
+
+
+@PROPERTY
+@given(seed=st.integers(0, 10_000))
+def test_unit_components_carry_internet_at_four_times_its_cost(seed):
+    """Internet is its own component, outside every imputed term, and the
+    components still sum to FCSUti."""
+    frame = with_internet(ce_frame(seed, n=80, year=2021), seed)
+    cpi = pinned_cpi()
+    expanded = add_home_internet(
+        prepare_out_of_pocket(frame, 2023, cpi_series=cpi), cpi
+    ).expenditures
+    components = unit_components(expanded)
+    np.testing.assert_allclose(
+        components["internet"],
+        4
+        * expanded[INTERNET_COLUMN]
+        * expanded["inflation_factor"]
+        * (ce_threshold.REFERENCE_RAW_SCALE / expanded["equiv_scale"]),
+        rtol=1e-12,
+    )
+    assert "internet" not in IMPUTED
+    assert (components[list(IMPUTED)] == 0).all().all()
+
+
+# Invariant 6: the committed receipts
+
+
+def test_replication_receipt_separates_internet_from_benefits():
+    """The first stage is the archived replication; each stage's effect
+    follows from the recorded thresholds."""
+    receipt = json.loads(REPLICATION_RECEIPT.read_text())
+    archived = json.loads(ARCHIVED_RECEIPT.read_text())
+    for target, result in receipt["results"].items():
+        expected = archived["results"][target]["variants"][
+            "exclude_unresolved"
+        ]
+        assert result["without_home_internet"] == expected["thresholds"]
+        assert (
+            result["methodology_id_without_home_internet"]
+            == expected["methodology_id"]
+        )
+        assert result["methodology_id_without"].startswith(METHODOLOGY_PREFIX)
+        effects = result["stage_effects"]
+        for tenure in TENURES:
+            base = result["without_home_internet"][tenure]
+            internet = result["without_in_kind"][tenure]
+            both = result["with_in_kind"][tenure]
+            assert effects["home_internet_dollars"][tenure] == internet - base
+            assert effects["home_internet_percent"][tenure] == pytest.approx(
+                100 * (internet / base - 1), rel=1e-12
+            )
+            assert effects["in_kind_dollars"][tenure] == both - internet
+            assert (
+                effects["in_kind_percent"][tenure]
+                == result["in_kind_lift_percent"][tenure]
+            )
+        home = result["home_internet"]
+        assert home["ucc"] == INTERNET_UCC
+        assert home["cpi_series"] == INTERNET_CPI_SERIES
+        assert home["units_with_negative_cost"] == 0
+        assert 0 < home["weighted_share_reporting"] < 1
+        weights = result["cpi_component_weights"]
+        assert weights["internet"] == home["cpi_weight"] > 0
+        assert sum(weights.values()) == pytest.approx(1, abs=1e-12)
+        deflated = result["fcsuti_deflated"]
+        assert set(deflated["without_home_internet"]) == set(TENURES)
+
+
+def test_components_receipt_keeps_internet_out_of_imputed_totals():
+    """Every imputed total is the five benefits alone; the internet record
+    sets ours beside BLS's in both accountings; and each run's first stage
+    matches the replication receipt."""
+    receipt = json.loads(COMPONENTS_RECEIPT.read_text())
+    replication = json.loads(REPLICATION_RECEIPT.read_text())["results"]
+    for year in receipt["bls"]["years"].values():
+        pooled = year["band"]["pooled"]
+        assert year["imputed_total"] == pytest.approx(
+            sum(pooled[c] for c in IMPUTED), rel=1e-12
+        )
+    first_stage = {
+        "package": lambda r: r["without_home_internet"],
+        "fcsuti": lambda r: r["fcsuti_deflated"]["without_home_internet"],
+    }
+    for name, run in receipt["runs"].items():
+        for target, year in run["years"].items():
+            if name in first_stage:
+                assert year["without_home_internet"]["thresholds"] == (
+                    first_stage[name](replication[target])
+                )
+            stage = year["with_in_kind"]
+            pooled = stage["band"]["pooled"]
+            assert pooled["internet"] > 0
+            assert stage["imputed_total"] == pytest.approx(
+                sum(pooled[c] for c in IMPUTED), rel=1e-12
+            )
+            published = receipt["bls"]["years"][target]["published_thresholds"]
+            record = year["home_internet"]
+            assert sorted(record) == sorted(ACCOUNTINGS)
+            for accounting in ACCOUNTINGS:
+                assert sorted(record[accounting]) == sorted(TENURES)
+                for tenure, entry in record[accounting].items():
+                    assert entry["ours_percent_of_threshold"] == pytest.approx(
+                        100
+                        * entry["ours_dollars"]
+                        / stage["thresholds"][tenure],
+                        rel=1e-12,
+                    )
+                    assert entry["bls_percent_of_threshold"] == pytest.approx(
+                        100 * entry["bls_dollars"] / published[tenure],
+                        rel=1e-12,
+                    )
