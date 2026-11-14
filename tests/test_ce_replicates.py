@@ -661,11 +661,14 @@ def test_receipt_growth_recomputes_from_its_replicates():
             ]
             removed = span["growth_without_imputed_terms"][tenure]
             rubin_check(removed, net)
+            # Removing a term also removes its part of 0.2 x FCSUti, so the
+            # components receipt records this growth under Other spread.
+            spread = recorded[tenure]["other_spread"]
             assert removed["from_mean_thresholds"] == pytest.approx(
-                recorded[tenure]["growth_without_imputed_terms"], rel=1e-9
+                spread["growth_without_imputed_terms"], rel=1e-9
             )
             assert removed["by_implicate"] == pytest.approx(
-                recorded[tenure]["growth_without_imputed_terms_by_implicate"],
+                spread["growth_without_imputed_terms_by_implicate"],
                 rel=1e-9,
             )
         rises = receipt["runs"][run]["amount_rise_2022_2025"]

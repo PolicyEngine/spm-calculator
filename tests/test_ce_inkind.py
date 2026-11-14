@@ -8,7 +8,9 @@ Invariants (stated in the PR and docs/ce-inkind-imputation.md):
    the stage leaves ``spm_calculator.ce_threshold`` and its results as
    they were.
 4. Imputation is order invariant and deterministic.
-5. Units outside a component's universe receive zero.
+5. Units outside a component's universe receive zero: no broadband before
+   ``broadband_first_reference_year`` and no WIC from
+   ``wic_ebt_all_states_from_reference_year``.
 6. Growth decomposes exactly: total = price x real x in-kind, and the
    additive contributions sum to total growth.
 7. Every predictive-mean-matching pool holds min(k, n) distinct donors,
@@ -397,6 +399,56 @@ def test_committed_receipt_comes_from_this_code():
             )
 
 
+def test_receipt_wic_sensitivity_follows_the_main_run():
+    """The WIC sensitivity gives each state its own statewide EBT date in
+    every reference year. The 2019 and 2020 windows end with 2020Q1
+    interviews, whose reference year is 2019, so their thresholds match the
+    main run's; later windows hold more WIC, and each change follows from
+    the recorded thresholds."""
+    receipt = json.loads(RECEIPT.read_text())
+    block = receipt["wic_ebt_by_state_sensitivity"]
+    assert block["wic_ebt_all_states_from_reference_year"] is None
+    assert sorted(block["by_target"]) == sorted(receipt["results"])
+    for target, record in block["by_target"].items():
+        main = receipt["results"][target]
+        for tenure in TENURES:
+            ours = record["with_in_kind"][tenure]
+            assert ours == pytest.approx(
+                np.mean(
+                    [r[tenure] for r in record["with_in_kind_by_implicate"]]
+                ),
+                rel=1e-12,
+            )
+            assert record["change_dollars"][tenure] == pytest.approx(
+                ours - main["with_in_kind"][tenure], abs=1e-9
+            )
+            assert record["change_percent"][tenure] == pytest.approx(
+                100 * (ours / main["with_in_kind"][tenure] - 1), abs=1e-12
+            )
+        main_wic = main["sample_mean_in_kind_threshold_year_dollars"]["wic"]
+        wic = record["sample_mean_wic_threshold_year_dollars"]
+        if int(target) <= 2020:
+            assert (
+                record["with_in_kind_by_implicate"]
+                == main["with_in_kind_by_implicate"]
+            )
+            assert wic == pytest.approx(main_wic, rel=1e-12)
+        else:
+            assert wic > main_wic
+    first, last = block["by_target"]["2022"], block["by_target"]["2025"]
+    main_growth = receipt["decompositions"]["2022-2025"]["growth_percent_with"]
+    for tenure in TENURES:
+        growth = 100 * (
+            last["with_in_kind"][tenure] / first["with_in_kind"][tenure] - 1
+        )
+        assert block["growth_2022_2025_percent_with"][tenure] == (
+            pytest.approx(growth, rel=1e-12)
+        )
+        assert block["growth_2022_2025_change_points"][tenure] == (
+            pytest.approx(growth - main_growth[tenure], abs=1e-9)
+        )
+
+
 def test_in_kind_shifts_thresholds_by_known_amounts():
     """Identical families: the lift is analytic.
 
@@ -495,7 +547,7 @@ def test_order_invariance_and_determinism(imputed):
 
 
 def test_universes(imputed):
-    units, _, _, result = imputed
+    units, _, config, result = imputed
     by_key = units.set_index("key")
     ebt = ce_inkind._wic_ebt_complete(
         ce_inkind._with_poverty_ratio(units), InKindConfig()
@@ -509,10 +561,109 @@ def test_universes(imputed):
         assert (~ebt.loc[f.index][wic]).all()
         broad = (u["n_women_15_45"] >= 1) | (u["n_lt5"] >= 1)
         assert broad[wic].all()
-        assert (u.loc[f["broadband"] > 0, "reference_year"] >= 2021).all()
+        assert (
+            u.loc[f["broadband"] > 0, "reference_year"]
+            >= config.broadband_first_reference_year
+        ).all()
+        assert (
+            u.loc[wic, "reference_year"]
+            < config.wic_ebt_all_states_from_reference_year
+        ).all()
         rent = f["rental_assistance"] > 0
         assert (u.loc[rent, "cutenure"] == 4).all()
         assert u.loc[rent, "housing_assistance"].all()
+
+
+def test_reference_year_defaults():
+    """Broadband starts with 2022 data, as BLS's does; WIC stops with 2020
+    data, the year of the statutory EBT deadline."""
+    config = InKindConfig()
+    assert config.broadband_first_reference_year == 2022
+    assert config.wic_ebt_all_states_from_reference_year == 2020
+    methodology = config.methodology()
+    assert methodology["broadband_first_reference_year"] == 2022
+    assert methodology["wic_ebt_all_states_from_reference_year"] == 2020
+
+
+@pytest.mark.parametrize(
+    "settings, message",
+    [
+        ({"broadband_first_reference_year": True}, "reference-year"),
+        ({"broadband_first_reference_year": 2021.5}, "reference-year"),
+        ({"wic_ebt_all_states_from_reference_year": False}, "reference-year"),
+        ({"wic_ebt_all_states_from_reference_year": 2020.5}, "reference-year"),
+    ],
+)
+def test_reference_year_settings_must_be_integers(settings, message):
+    with pytest.raises(ValueError, match=message):
+        InKindConfig(**settings)
+
+
+@PROPERTY
+@given(seed=st.integers(0, 10_000), cutoff=st.integers(2016, 2024))
+def test_wic_ebt_cutoff_only_adds_later_reference_years(seed, cutoff):
+    """The all-states cutoff marks every unit from its reference year on and
+    leaves earlier units, including suppressed-state draws, as the state
+    dates set them."""
+    units = ce_inkind._with_poverty_ratio(
+        ce_units(seed, (2017, 2019, 2020, 2021, 2022), n=80)
+    )
+    by_state = ce_inkind._wic_ebt_complete(
+        units, InKindConfig(wic_ebt_all_states_from_reference_year=None)
+    )
+    with_cutoff = ce_inkind._wic_ebt_complete(
+        units, InKindConfig(wic_ebt_all_states_from_reference_year=cutoff)
+    )
+    later = units["reference_year"].to_numpy() >= cutoff
+    np.testing.assert_array_equal(with_cutoff, by_state | later)
+
+
+def impute_pair(units, donors, **settings):
+    """Imputations under the default rules and under ``settings``."""
+    base = InKindConfig(implicates=1)
+    other = InKindConfig(implicates=1, **settings)
+    return (
+        impute_in_kind(units, donors, base).implicates[0].set_index("NEWID"),
+        impute_in_kind(units, donors, other).implicates[0].set_index("NEWID"),
+    )
+
+
+def test_broadband_start_changes_only_earlier_broadband():
+    """Moving broadband's first year from 2021 to 2022 removes 2021's
+    subsidies and leaves every other amount as it was."""
+    units = ce_units(23, (2021, 2022), n=300)
+    donors = cps_donors(23, (2021, 2022), n=800)
+    ours, earlier = impute_pair(
+        units, donors, broadband_first_reference_year=2021
+    )
+    year = units.set_index("key").loc[ours.index, "reference_year"]
+    in_2021 = (year == 2021).to_numpy()
+    assert (ours.loc[in_2021, "broadband"] == 0).all()
+    assert (earlier.loc[in_2021, "broadband"] > 0).any()
+    pd.testing.assert_frame_equal(ours.loc[~in_2021], earlier.loc[~in_2021])
+    pd.testing.assert_frame_equal(
+        ours.drop(columns="broadband"), earlier.drop(columns="broadband")
+    )
+
+
+def test_wic_cutoff_changes_only_later_wic():
+    """Dropping WIC for every state from 2020 removes it in Georgia, which
+    finished EBT in October 2022, and leaves every other amount as it
+    was."""
+    units = ce_units(29, (2019, 2021), n=300)
+    units["state"] = 13.0
+    donors = cps_donors(29, (2019, 2021), n=800)
+    ours, by_state = impute_pair(
+        units, donors, wic_ebt_all_states_from_reference_year=None
+    )
+    year = units.set_index("key").loc[ours.index, "reference_year"]
+    in_2021 = (year == 2021).to_numpy()
+    assert (ours.loc[in_2021, "wic"] == 0).all()
+    assert (by_state.loc[in_2021, "wic"] > 0).any()
+    pd.testing.assert_frame_equal(ours.loc[~in_2021], by_state.loc[~in_2021])
+    pd.testing.assert_frame_equal(
+        ours.drop(columns="wic"), by_state.drop(columns="wic")
+    )
 
 
 def test_wic_universe_vintage_rule(imputed):

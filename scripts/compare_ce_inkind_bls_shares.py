@@ -9,6 +9,9 @@ package composite CPI and with BLS's FCSUti index, and records:
 - in-band amounts of each imputed benefit, ours and BLS's;
 - each threshold term's part of the level gap to BLS;
 - 2022-2025 growth of the imputed amounts and their part in threshold growth;
+- the threshold terms under both accountings of ``0.2 F`` (``other_spread``
+  and ``other_separate``; see ``spm_calculator.ce_bls_shares``), each figure
+  under its accounting's key;
 - the same replication with the shelter, utilities and food definitions in
   BLS's papers.
 
@@ -53,7 +56,7 @@ from scripts.replicate_ce_inkind import (
     sha256,
 )
 from spm_calculator.ce_bls_shares import (
-    COMPONENTS,
+    ACCOUNTINGS,
     DEFINITION_COLUMNS,
     IMPUTED,
     TENURES,
@@ -114,6 +117,11 @@ CPI_U = "CUUR0000SA0"
 COMPONENT_TOLERANCE = 1e-9
 #: Relative disagreement accepted with the in-kind replication receipt.
 REPLICATION_TOLERANCE = 1e-12
+#: What each accounting key in the receipt means.
+ACCOUNTING_NOTES = {
+    "other_spread": "Each term carries its component's part of the 1.2 multiplier, spreading 0.2 FCSUti in proportion to size, so a term gives what the threshold would lose without the component, with the band held fixed",
+    "other_separate": "0.2 FCSUti forms its own 'other' term, as in the 'Other Share' row of BLS's shares workbook, and broadband takes each tenure's own mean, so each term over the threshold gives the component's share as BLS publishes it",
+}
 #: Run name -> (deflator, BLS's written definitions applied).
 RUNS = {
     "package": ("package", False),
@@ -229,17 +237,42 @@ def definition_check(window: pd.DataFrame, target: int, cpi: dict) -> dict:
 def gap_record(
     band: BandComponents, bls: BandComponents, published: dict
 ) -> dict:
-    """Each term's part of the level gap, in percent of BLS's threshold."""
+    """Each term's part of the level gap, in percent of BLS's threshold,
+    under each accounting."""
     out = {}
-    for tenure in TENURES:
-        terms = level_gap(band, bls, tenure)
-        percent = {c: 100 * terms[c] / published[tenure] for c in COMPONENTS}
-        out[tenure] = {
-            "terms": percent,
-            "imputed": sum(percent[c] for c in IMPUTED),
-            "total": sum(percent.values()),
-        }
+    for accounting in ACCOUNTINGS:
+        out[accounting] = {}
+        for tenure in TENURES:
+            terms = level_gap(band, bls, tenure, accounting)
+            percent = {
+                c: 100 * v / published[tenure] for c, v in terms.items()
+            }
+            out[accounting][tenure] = {
+                "terms": percent,
+                "imputed": sum(percent[c] for c in IMPUTED),
+                "total": sum(percent.values()),
+            }
     return out
+
+
+def share_record(
+    base: BandComponents,
+    target: BandComponents,
+    tenure: str,
+    price_ratio: float,
+    accounting: str,
+) -> dict:
+    """The imputed terms' dollars and share of growth beyond CPI-U."""
+    return {
+        "imputed_share_of_growth_beyond_cpi_u_percent": 100
+        * imputed_share_beyond_inflation(
+            base, target, tenure, price_ratio, accounting
+        ),
+        "imputed_term_dollars": {
+            str(BASE_YEAR): base.imputed_term(tenure, accounting),
+            str(TARGET_YEAR): target.imputed_term(tenure, accounting),
+        },
+    }
 
 
 def year_record(
@@ -380,25 +413,25 @@ def growth_record(
             "stage_change_between_implicate_sd": spread(change_by_implicate),
             "stage_change_by_implicate": change_by_implicate,
             "growth_less_bls_points": growth_with - bls_growth,
-            "band_fixed_effect_points": band_fixed,
-            "band_fixed_effect_between_implicate_sd": spread(
-                [band_fixed_growth_effect(a, b, tenure) for a, b in pairs]
-            ),
-            "rank_shift_points": change - band_fixed,
-            "growth_without_imputed_terms": without_imputed,
-            "growth_without_imputed_terms_by_implicate": [
-                growth_without_imputed(a, b, tenure) for a, b in pairs
-            ],
-            "growth_without_imputed_terms_less_bls_points": without_imputed
-            - growth_without_imputed(a_bls, b_bls, tenure),
-            "imputed_share_of_growth_beyond_cpi_u_percent": 100
-            * imputed_share_beyond_inflation(
-                base_mean, target_mean, tenure, price_ratio
-            ),
-            "imputed_term_dollars": {
-                str(BASE_YEAR): base_mean.imputed_term(tenure),
-                str(TARGET_YEAR): target_mean.imputed_term(tenure),
+            "other_spread": {
+                "band_fixed_effect_points": band_fixed,
+                "band_fixed_effect_between_implicate_sd": spread(
+                    [band_fixed_growth_effect(a, b, tenure) for a, b in pairs]
+                ),
+                "rank_shift_points": change - band_fixed,
+                "growth_without_imputed_terms": without_imputed,
+                "growth_without_imputed_terms_by_implicate": [
+                    growth_without_imputed(a, b, tenure) for a, b in pairs
+                ],
+                "growth_without_imputed_terms_less_bls_points": without_imputed
+                - growth_without_imputed(a_bls, b_bls, tenure),
+                **share_record(
+                    base_mean, target_mean, tenure, price_ratio, "other_spread"
+                ),
             },
+            "other_separate": share_record(
+                base_mean, target_mean, tenure, price_ratio, "other_separate"
+            ),
         }
     return {
         "imputed_total": {
@@ -450,16 +483,18 @@ def bls_growth_record(
         "by_tenure": {
             t: {
                 "growth": growth_percent(a.threshold(t), b.threshold(t)),
-                "band_fixed_effect_points": band_fixed_growth_effect(a, b, t),
-                "growth_without_imputed_terms": growth_without_imputed(
-                    a, b, t
-                ),
-                "imputed_share_of_growth_beyond_cpi_u_percent": 100
-                * imputed_share_beyond_inflation(a, b, t, price_ratio),
-                "imputed_term_dollars": {
-                    str(BASE_YEAR): a.imputed_term(t),
-                    str(TARGET_YEAR): b.imputed_term(t),
+                "other_spread": {
+                    "band_fixed_effect_points": band_fixed_growth_effect(
+                        a, b, t
+                    ),
+                    "growth_without_imputed_terms": growth_without_imputed(
+                        a, b, t
+                    ),
+                    **share_record(a, b, t, price_ratio, "other_spread"),
                 },
+                "other_separate": share_record(
+                    a, b, t, price_ratio, "other_separate"
+                ),
             }
             for t in TENURES
         },
@@ -602,7 +637,7 @@ def main() -> None:
     }
 
     receipt = {
-        "schema_version": 1,
+        "schema_version": 2,
         "generated_by": "scripts/compare_ce_inkind_bls_shares.py",
         "generated_on": datetime.now(timezone.utc).date().isoformat(),
         "classification": "current_retrospective_research",
@@ -647,6 +682,7 @@ def main() -> None:
             for run in ("package", "fcsuti")
         },
         "definition_check": definition_checks,
+        "accountings": ACCOUNTING_NOTES,
         "bls": {
             "years": {
                 str(t): {

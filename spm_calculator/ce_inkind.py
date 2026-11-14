@@ -18,8 +18,8 @@ stage as an explicit, optional step:
 ``liheap`` and ``broadband``
     Participation from logistic regressions fit on pooled CPS ASEC
     households; amounts by predictive mean matching on the values CPS
-    households report (LIHEAP) or Census assigns from FCC rules (EBB/ACP,
-    reference years 2021 onward).
+    households report (LIHEAP) or Census assigns from FCC rules (EBB/ACP).
+    Broadband starts with reference year 2022, as BLS's does.
 ``nslp``
     Participation from a logistic regression on CPS households with a
     member aged 5-18 (the CE universe applies only that age rule). Values
@@ -38,7 +38,9 @@ stage as an explicit, optional step:
     mother of a child aged 0-1, otherwise one pregnant woman) times 12
     times the USDA fiscal-year average monthly food cost. BLS adds WIC
     only where the state had not finished WIC EBT, so units in states
-    whose statewide EBT date precedes the reference period receive none.
+    whose statewide EBT date precedes the middle of the reference period
+    receive none. From reference year 2020, the year of the statutory
+    deadline for statewide WIC EBT, no unit receives WIC.
 
 Every random draw is a deterministic function of the unit's identifier,
 the seed, the component and the implicate, so results do not depend on
@@ -70,7 +72,7 @@ from spm_calculator.ce_inkind_stage import (
 )
 from spm_calculator.ce_threshold import _read_bundle_member, download_ce_bundle
 
-IMPLEMENTATION = "ce-inkind-cps-asec-v1"
+IMPLEMENTATION = "ce-inkind-cps-asec-v2"
 
 __all__ = [
     "IN_KIND_COMPONENTS",
@@ -95,8 +97,20 @@ NSLP_SPRING_SHARE = 5 / 9
 #: (BLS spmhome; Census uses the same 150 percent rule).
 FREE_LUNCH_POVERTY_RATIO = 1.5
 
-#: EBB began in May 2021; Census values broadband from reference 2021.
-BROADBAND_FIRST_REFERENCE_YEAR = 2021
+#: BLS adds broadband subsidies from the 2023 thresholds, with underlying
+#: data from 2022 (footnote 3 of its thresholds workbook). EBB began in May
+#: 2021, and Census values broadband from reference year 2021.
+BROADBAND_FIRST_REFERENCE_YEAR = 2022
+
+#: From reference year 2020, the year of the deadline the Healthy,
+#: Hunger-Free Kids Act of 2010 set for each WIC state agency to implement
+#: EBT statewide (October 1, 2020; 42 U.S.C. 1786(h)(12)(B)(i)), we add no
+#: WIC in any state. The cutoff also drops WIC where the middle of the
+#: reference period falls before the deadline, and FNS dates six states and
+#: DC after it, so the cutoff departs from a strict state-by-state reading
+#: of BLS's published rule. Earlier reference years use each state's
+#: statewide date.
+WIC_EBT_ALL_STATES_FROM_REFERENCE_YEAR = 2020
 
 #: BLS drops the woman requirement for children under 5 from the 2025
 #: thresholds onward.
@@ -164,6 +178,11 @@ class InKindConfig:
         parameter_draws: Draw model parameters per implicate. ``False``
             uses point estimates (improper imputation; diagnostics only).
         components: Components to impute; the rest are zero.
+        broadband_first_reference_year: First reference year that gets
+            broadband subsidies.
+        wic_ebt_all_states_from_reference_year: First reference year in
+            which every state counts as having finished WIC EBT, so no unit
+            gets WIC. ``None`` uses each state's statewide date throughout.
     """
 
     implicates: int = 5
@@ -173,6 +192,10 @@ class InKindConfig:
     min_cell_donors: int = 5
     parameter_draws: bool = True
     components: tuple = IN_KIND_COMPONENTS
+    broadband_first_reference_year: int = BROADBAND_FIRST_REFERENCE_YEAR
+    wic_ebt_all_states_from_reference_year: Optional[int] = (
+        WIC_EBT_ALL_STATES_FROM_REFERENCE_YEAR
+    )
 
     def __post_init__(self):
         if int(self.implicates) != self.implicates or self.implicates < 1:
@@ -184,6 +207,11 @@ class InKindConfig:
         unknown = set(self.components) - set(IN_KIND_COMPONENTS)
         if unknown:
             raise ValueError(f"Unknown in-kind components {sorted(unknown)}")
+        years = [self.broadband_first_reference_year]
+        if self.wic_ebt_all_states_from_reference_year is not None:
+            years.append(self.wic_ebt_all_states_from_reference_year)
+        if any(isinstance(y, bool) or int(y) != y for y in years):
+            raise ValueError("reference-year settings must be integers")
 
     def methodology(self) -> dict:
         settings = asdict(self)
@@ -972,8 +1000,13 @@ def _wic_participants(ce: pd.DataFrame) -> np.ndarray:
 
 
 def _wic_ebt_complete(ce: pd.DataFrame, config: InKindConfig) -> np.ndarray:
-    """Whether the unit's state had finished WIC EBT before its reference
-    period midpoint (1.5 months before the interview month)."""
+    """Whether the unit counts as having finished WIC EBT.
+
+    Before ``config.wic_ebt_all_states_from_reference_year``, a unit counts
+    when its state had finished before the midpoint of its reference period
+    (1.5 months before the interview month). From that reference year on,
+    every unit counts.
+    """
     dates = wic_ebt_statewide_dates()
     year = ce["interview_year"].fillna(ce["ce_year"]).to_numpy(dtype=float)
     month = (
@@ -1024,6 +1057,9 @@ def _wic_ebt_complete(ce: pd.DataFrame, config: InKindConfig) -> np.ndarray:
             implicate=0,
         )
         complete[unknown] = u < prob[unknown]
+    cutoff = config.wic_ebt_all_states_from_reference_year
+    if cutoff is not None:
+        complete |= ce["reference_year"].to_numpy(dtype=float) >= cutoff
     return complete
 
 
@@ -1516,7 +1552,7 @@ def impute_in_kind(
                 "broadband",
                 None,
                 "spm_bbsubval",
-                BROADBAND_FIRST_REFERENCE_YEAR,
+                config.broadband_first_reference_year,
             ),
         ):
             if component not in config.components:

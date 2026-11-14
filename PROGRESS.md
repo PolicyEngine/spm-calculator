@@ -1,3 +1,42 @@
+# CE in-kind alignment with BLS — November 13, 2026
+
+## State
+
+Draft PR [#60](https://github.com/PolicyEngine/spm-calculator/pull/60) on
+`max/ce-inkind-bls-alignment-20261114`, stacked on #57. The branch starts
+broadband with BLS's first year, adds no WIC from reference year 2020, the
+year of the statutory EBT deadline, and adds a second accounting to the
+BLS-components decomposition. An independent
+review comes next, and the PR moves to `main` once #57 merges.
+
+## Done
+
+- `ce_inkind.py` imputes broadband subsidies from reference year 2022, as BLS
+  does (footnote 3 of its thresholds workbook). From reference year 2020 it
+  adds no WIC in any state, even where the middle of a unit's reference
+  period falls before the October 1, 2020 deadline for statewide WIC EBT
+  (42 U.S.C. 1786(h)(12)(B)(i)). Before 2020, a unit still
+  loses WIC when FNS dates its state's statewide WIC EBT before the middle of
+  its reference period. `scripts/replicate_ce_inkind.py` records a
+  sensitivity that uses each state's own date in every year.
+- `ce_bls_shares.py` and `scripts/compare_ce_inkind_bls_shares.py` split each
+  threshold two ways. Other spread gives each term its part of `0.2 × F`, and
+  Other separate keeps `0.82 × 0.2 × F` as its own term, as BLS's shares
+  workbook does, so BLS's separate terms reproduce its published shares. The
+  receipt and the page label each figure with its accounting.
+- All three receipts regenerate. We estimate that the stage lifts thresholds
+  0.9–3.8% and changes 2022–2025 growth by −0.63, +0.06 and +1.04 points with
+  the package CPI, each within one standard error of zero.
+
+## Next
+
+- Four questions wait on BLS and Census staff: QLIM market rent, the
+  published school lunch and WIC averages, a school lunch model screened on
+  `HHOTLUN`, and whether to price each year with the collection year's index
+  or the previous year's.
+
+---
+
 # CE in-kind standard errors — November 6, 2026
 
 ## State
