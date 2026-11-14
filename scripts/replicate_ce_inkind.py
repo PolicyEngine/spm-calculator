@@ -17,7 +17,9 @@ and tenure:
   package composite CPI and BLS's FCSUti index;
 - a price-index sensitivity: the same replication, with and without the
   stage, deflated by BLS's published FCSUti index instead of the package
-  composite CPI.
+  composite CPI;
+- a WIC sensitivity: the stage with each state's own statewide WIC EBT
+  date in every reference year, in place of the 2020 cutoff.
 
 No network requests are made.
 
@@ -27,6 +29,7 @@ Run: uv run --no-sync python scripts/replicate_ce_inkind.py
 from __future__ import annotations
 
 import argparse
+import dataclasses
 import hashlib
 import json
 import math
@@ -245,9 +248,11 @@ def main():
 
     results, detail = {}, {}
     without, with_mean, with_by_implicate = {}, {}, {}
+    prepared_by_target = {}
     for target in TARGETS:
         frame = window(target)
         prepared = prepare_out_of_pocket(frame, target, **options)
+        prepared_by_target[target] = prepared
         base = prepared.result
 
         def run(in_kind, prepared=prepared):
@@ -425,6 +430,69 @@ def main():
             flush=True,
         )
 
+    # WIC sensitivity: each state's own statewide EBT date in every
+    # reference year, with no all-states cutoff. Each component keys its
+    # own draws, so only the WIC amounts may differ from the main run.
+    by_state = impute_in_kind(
+        ce_units,
+        donors,
+        dataclasses.replace(
+            config, wic_ebt_all_states_from_reference_year=None
+        ),
+    )
+    by_state_with = {}
+    wic_by_state = {}
+    for target in TARGETS:
+        tables = []
+        for m in range(config.implicates):
+            table = by_state.for_target(m, target)
+            main_table = imputation.for_target(m, target)
+            others = [c for c in table.columns if c != "wic"]
+            if not table[others].equals(main_table[others]):
+                raise RuntimeError(
+                    f"{target}: the WIC sensitivity moved another component"
+                )
+            tables.append(table)
+        runs = [
+            replicate_with_in_kind(prepared_by_target[target], table)
+            for table in tables
+        ]
+        ours = mean_thresholds(runs)
+        main = with_mean[target]
+        by_state_with[target] = ours
+        wic_by_state[str(target)] = {
+            "with_in_kind": ours,
+            "with_in_kind_by_implicate": [r["thresholds"] for r in runs],
+            "change_dollars": {t: ours[t] - main[t] for t in TENURES},
+            "change_percent": {
+                t: 100 * (ours[t] / main[t] - 1) for t in TENURES
+            },
+            "sample_mean_wic_threshold_year_dollars": float(
+                np.mean(
+                    [
+                        r["construction"]["in_kind"][
+                            "weighted_mean_threshold_year_dollars"
+                        ]["wic"]
+                        for r in runs
+                    ]
+                )
+            ),
+        }
+        print(
+            json.dumps({"target": target, "wic_by_state_with": ours}),
+            flush=True,
+        )
+    by_state_growth = growth_percent(by_state_with[2022], by_state_with[2025])
+    main_growth = growth_percent(with_mean[2022], with_mean[2025])
+    wic_ebt_by_state_sensitivity = {
+        "wic_ebt_all_states_from_reference_year": None,
+        "by_target": wic_by_state,
+        "growth_2022_2025_percent_with": by_state_growth,
+        "growth_2022_2025_change_points": {
+            t: by_state_growth[t] - main_growth[t] for t in TENURES
+        },
+    }
+
     pairs = [(2022, 2025)] + [(t - 1, t) for t in TARGETS if t > TARGETS[0]]
     decompositions = {}
     for base_year, target_year in pairs:
@@ -531,6 +599,7 @@ def main():
         "cps_asec_files": cps_provenance,
         "results": results,
         "decompositions": decompositions,
+        "wic_ebt_by_state_sensitivity": wic_ebt_by_state_sensitivity,
         "imputation_diagnostics": imputation.diagnostics,
         "limitations": [
             "BLS has not published its imputation code; the models follow its methods page, and their covariates differ from the set Garner and Gudrais (2018, BLS Working Paper 510) list for BLS's earlier models",
@@ -542,7 +611,7 @@ def main():
             "WIC uses USDA's national fiscal-year average food cost; Census has used state averages since its revised 2019 estimates",
             "Participation models share one covariate set across programs and years; CE and CPS income concepts differ",
             "The replication omits home internet spending, which BLS's FCSUti includes",
-            "BLS adds broadband subsidies from the 2023 thresholds, with underlying data from 2022; the stage imputes them from reference year 2021, so they also enter the 2022 thresholds",
+            "The stage adds no WIC in any state from reference year 2020, matching the statutory deadline for statewide WIC EBT (42 U.S.C. 1786(h)(12)(B)(i)); FNS dates six states and DC after October 1, 2020, so the cutoff departs from a strict state-by-state reading of BLS's published rule, and wic_ebt_by_state_sensitivity uses each state's own date instead",
             "The runs estimate imputation uncertainty (implicate spread) but not sampling uncertainty",
         ],
         "runtime_seconds": round(time.time() - started),

@@ -29,6 +29,14 @@ percentage as its share of the consumer units with children in the
 replication, so :func:`level_gap` can split the difference between two
 thresholds term by term, with no assumption about either band.
 
+A threshold's terms can treat ``0.2 F`` in two ways (:data:`ACCOUNTINGS`).
+``"other_spread"`` gives each component its part of the 1.2 multiplier, so
+a component's term is what the threshold would lose without it, with the
+band held fixed. ``"other_separate"`` keeps ``0.2 F`` as an ``"other"`` term
+of its own, as BLS's workbook does in its "Other Share" row, so each
+component's term is its share of the threshold as BLS publishes it. Both
+sum to the threshold.
+
 The internet term needs care. Through 2024 the workbook's "OOP Internet"
 row holds equal dollars across tenures and "Total Internet Share" does not;
 in 2025 the reverse holds. Identity (2) balances with the row that holds
@@ -45,7 +53,10 @@ Invariants, tested in ``tests/test_ce_bls_shares.py``:
   and rental assistance to its SU;
 - :meth:`BandComponents.threshold` reproduces ``estimate_thresholds``, and
   the same mean over implicates reproduces the mean threshold;
-- :func:`level_gap`'s terms sum to the difference between two thresholds;
+- under either accounting, a threshold's terms sum to the threshold, and
+  :func:`level_gap`'s terms sum to the difference between two thresholds;
+- under ``"other_separate"``, BLS's terms over its thresholds reproduce its
+  published shares (:func:`separate_share_errors`);
 - imputed and non-imputed shares of growth beyond inflation sum to one;
 - :func:`apply_bls_paper_definition` lowers each unit's FCSUti by exactly
   the amounts it removes, and a second application changes nothing.
@@ -87,6 +98,11 @@ COMPONENTS = COMMODITIES + SHELTER_UTILITIES
 IMPUTED = ("nslp", "wic", "liheap", "broadband", "rental_assistance")
 #: Components BLS reports separately by tenure.
 TENURE_COMPONENTS = SHELTER_UTILITIES + ("broadband",)
+#: How threshold terms treat ``0.2 F``: spread across the components in
+#: proportion to their size, or kept as its own :data:`OTHER` term.
+ACCOUNTINGS = ("other_spread", "other_separate")
+#: The term that holds ``0.2 F`` under ``"other_separate"``.
+OTHER = "other"
 
 SHARES_WORKBOOK = "data/current/bls_spm_shares.xlsx"
 #: Dollars of disagreement the published-value checks accept.
@@ -338,9 +354,27 @@ class BandComponents:
         """Mean imputed benefits per consumer unit in the band."""
         return float(sum(self.pooled[c] for c in IMPUTED))
 
-    def threshold_terms(self, tenure: str) -> dict[str, float]:
-        """Each component's dollars in the tenure's threshold."""
+    def threshold_terms(
+        self, tenure: str, accounting: str = "other_spread"
+    ) -> dict[str, float]:
+        """Each component's dollars in the tenure's threshold.
+
+        Under ``"other_separate"`` the terms also hold :data:`OTHER`, and
+        broadband takes the tenure's own mean, as BLS's workbook rows do.
+        Home internet takes the rest of the two's shared total, so the
+        terms still sum to the threshold.
+        """
         share = self.median_share
+        _check_accounting(accounting)
+        if accounting == "other_separate":
+            terms = {c: share * self.pooled[c] for c in COMMODITIES}
+            for component in SHELTER_UTILITIES:
+                terms[component] = share * self.by_tenure[tenure][component]
+            own = self.by_tenure[tenure]["broadband"]
+            terms["internet"] += share * (self.pooled["broadband"] - own)
+            terms["broadband"] = share * own
+            terms[OTHER] = share * 0.2 * self.fcsuti
+            return terms
         terms = {c: share * 1.2 * self.pooled[c] for c in COMMODITIES}
         for component in SHELTER_UTILITIES:
             terms[component] = share * (
@@ -352,9 +386,11 @@ class BandComponents:
     def threshold(self, tenure: str) -> float:
         return float(sum(self.threshold_terms(tenure).values()))
 
-    def imputed_term(self, tenure: str) -> float:
+    def imputed_term(
+        self, tenure: str, accounting: str = "other_spread"
+    ) -> float:
         """The imputed benefits' dollars in the tenure's threshold."""
-        terms = self.threshold_terms(tenure)
+        terms = self.threshold_terms(tenure, accounting)
         return float(sum(terms[c] for c in IMPUTED))
 
     def to_dict(self) -> dict:
@@ -437,8 +473,10 @@ def bls_band_components(
 
     Raises:
         ValueError: If components every tenure shares differ by more than
-            ``tolerance`` dollars across tenures, or either identity in
-            this module's docstring misses by more than that.
+            ``tolerance`` dollars across tenures, either identity in this
+            module's docstring misses by more than that, or the
+            ``"other_separate"`` terms miss a published share by more than
+            that many dollars of in-band value.
     """
 
     def dollars(tenure: str, row: str) -> float:
@@ -483,6 +521,16 @@ def bls_band_components(
             "BLS's components miss a published identity: "
             f"FCSUti by {fcsuti_error:.4f}, thresholds by {threshold_errors}"
         )
+    share_errors = separate_share_errors(
+        band, shares, thresholds, internet_row
+    )
+    if (
+        max(share_errors.values()) * max(thresholds.values()) / median_share
+        > tolerance
+    ):
+        raise ValueError(
+            f"BLS's other_separate terms miss its shares by {share_errors}"
+        )
     leaf_rows = (
         "food",
         "nslp",
@@ -503,6 +551,7 @@ def bls_band_components(
         "threshold_error_dollars": threshold_errors,
         "fcsuti_error_dollars": fcsuti_error,
         "fcsuti_from_other_share": fcsuti,
+        "other_separate_share_error": share_errors,
         "leaf_rows_above_threshold_dollars": {
             t: (sum(shares[t][row] for row in leaf_rows) - 1.0)
             * thresholds[t]
@@ -516,12 +565,61 @@ def bls_band_components(
     }
 
 
+def _check_accounting(accounting: str) -> None:
+    if accounting not in ACCOUNTINGS:
+        raise ValueError(
+            f"accounting must be one of {ACCOUNTINGS}, not {accounting!r}"
+        )
+
+
 def level_gap(
-    ours: BandComponents, theirs: BandComponents, tenure: str
+    ours: BandComponents,
+    theirs: BandComponents,
+    tenure: str,
+    accounting: str = "other_spread",
 ) -> dict[str, float]:
-    """Each component's dollars in ours less theirs, for one threshold."""
-    a, b = ours.threshold_terms(tenure), theirs.threshold_terms(tenure)
-    return {c: a[c] - b[c] for c in COMPONENTS}
+    """Each term's dollars in ours less theirs, for one threshold."""
+    a = ours.threshold_terms(tenure, accounting)
+    b = theirs.threshold_terms(tenure, accounting)
+    return {c: a[c] - b[c] for c in a}
+
+
+def separate_share_errors(
+    band: BandComponents,
+    shares: Mapping[str, Mapping[str, float]],
+    thresholds: Mapping[str, float],
+    internet_row: str,
+) -> dict[str, float]:
+    """The largest gap between each published share and its
+    ``"other_separate"`` term over the threshold, across tenures.
+
+    Home internet counts against the internet row
+    :func:`bls_band_components` chose, which holds equal dollars in every
+    tenure and includes broadband, less the tenure's broadband row.
+    """
+    rows = (
+        "food",
+        "clothing",
+        "telephone",
+        "nslp",
+        "wic",
+        "broadband",
+        *SHELTER_UTILITIES,
+        OTHER,
+    )
+    worst = {row: 0.0 for row in (*rows, "internet")}
+    for tenure in TENURES:
+        terms = band.threshold_terms(tenure, "other_separate")
+        total = thresholds[tenure]
+        published = dict(shares[tenure])
+        published["internet"] = (
+            published[internet_row] - published["broadband"]
+        )
+        for row in worst:
+            worst[row] = max(
+                worst[row], abs(published[row] - terms[row] / total)
+            )
+    return worst
 
 
 def growth_percent(base: float, target: float) -> float:
@@ -534,7 +632,8 @@ def growth_without_imputed(
     """Growth of a threshold after removing its imputed terms.
 
     This holds each band as it stands, so it leaves out any effect of the
-    benefits on which units fall in the band.
+    benefits on which units fall in the band. Removing a benefit also
+    removes its part of ``0.2 F``, so this uses ``"other_spread"`` terms.
     """
     return growth_percent(
         base.threshold(tenure) - base.imputed_term(tenure),
@@ -555,6 +654,7 @@ def imputed_share_beyond_inflation(
     target: BandComponents,
     tenure: str,
     price_ratio: float,
+    accounting: str = "other_spread",
 ) -> float:
     """The imputed terms' share of threshold growth beyond a price index.
 
@@ -563,7 +663,8 @@ def imputed_share_beyond_inflation(
     zero and one.
     """
     return (
-        target.imputed_term(tenure) - price_ratio * base.imputed_term(tenure)
+        target.imputed_term(tenure, accounting)
+        - price_ratio * base.imputed_term(tenure, accounting)
     ) / (target.threshold(tenure) - price_ratio * base.threshold(tenure))
 
 

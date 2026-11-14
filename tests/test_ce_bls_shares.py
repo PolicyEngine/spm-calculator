@@ -9,8 +9,12 @@ Invariants (stated in the PR and docs/ce-inkind-imputation.md):
    mean over implicates reproduces the mean threshold.
 4. BLS's published shares, thresholds and tenure distribution satisfy
    T_h / 0.82 = C + SU_h + 0.2 F and F = C + sum_h P_h SU_h in every year.
-5. ``level_gap`` terms sum to the difference between two thresholds.
-6. Imputed and non-imputed shares of growth beyond inflation sum to one.
+5. Under either accounting, a threshold's terms sum to the threshold and
+   ``level_gap`` terms sum to the difference between two thresholds. Under
+   ``"other_separate"``, BLS's terms over its thresholds reproduce its
+   published shares.
+6. Under either accounting, imputed and non-imputed shares of growth beyond
+   inflation sum to one.
 7. ``apply_bls_paper_definition`` lowers each unit's FCSUti by exactly the
    amounts it removes, takes both vacation-home utility summaries from
    owners and the rented one from renters, needs no column beyond those
@@ -33,10 +37,12 @@ from scripts import render_ce_inkind_bls_tables as render
 from scripts.replicate_ce_inkind import KEEP
 from spm_calculator import ce_bls_shares
 from spm_calculator.ce_bls_shares import (
+    ACCOUNTINGS,
     COMMODITIES,
     COMPONENTS,
     DEFINITION_COLUMNS,
     IMPUTED,
+    OTHER,
     SHELTER_UTILITIES,
     TENURE_COMPONENTS,
     TENURES,
@@ -54,6 +60,7 @@ from spm_calculator.ce_bls_shares import (
     mean_components,
     read_threshold_shares,
     removed_by_bls_paper_definition,
+    separate_share_errors,
     shelter_pieces,
     unit_components,
 )
@@ -231,7 +238,9 @@ def test_mean_components_reproduce_the_mean_threshold(seeds):
 )
 def test_imputed_term_adds_imputed_pieces(pooled, tenure_values):
     """A threshold holds each commodity at 1.2 and each shelter or utility
-    component at its tenure's mean plus a fifth of the pooled mean."""
+    component at its tenure's mean plus a fifth of the pooled mean. Kept
+    separate, the fifth of FCSUti forms its own term and broadband takes the
+    tenure's mean."""
     pooled = dict(zip(COMPONENTS, pooled))
     values = iter(tenure_values)
     by_tenure = {
@@ -253,6 +262,27 @@ def test_imputed_term_adds_imputed_pieces(pooled, tenure_values):
                 + 0.2 * pooled["rental_assistance"]
                 + h["liheap"]
                 + 0.2 * pooled["liheap"]
+            ),
+            abs=1e-6,
+        )
+        separate = band.threshold_terms(tenure, "other_separate")
+        assert separate[OTHER] == pytest.approx(
+            0.82 * 0.2 * sum(pooled.values()), abs=1e-6
+        )
+        assert sum(separate.values()) == pytest.approx(
+            band.threshold(tenure), abs=1e-6
+        )
+        assert separate["internet"] + separate["broadband"] == pytest.approx(
+            0.82 * (pooled["internet"] + pooled["broadband"]), abs=1e-6
+        )
+        assert band.imputed_term(tenure, "other_separate") == pytest.approx(
+            0.82
+            * (
+                pooled["nslp"]
+                + pooled["wic"]
+                + h["broadband"]
+                + h["rental_assistance"]
+                + h["liheap"]
             ),
             abs=1e-6,
         )
@@ -427,6 +457,53 @@ def test_bls_components_reject_shares_that_differ_across_tenures():
         )
 
 
+@pytest.mark.parametrize("year", YEARS)
+def test_separate_terms_reproduce_published_shares(year):
+    """Invariant 5: BLS's ``"other_separate"`` terms over its thresholds
+    give the shares it publishes, including the "Other Share" row."""
+    _, checks = bls_band_components(
+        read_threshold_shares()[year],
+        get_published_thresholds(year),
+        get_tenure_shares(year),
+    )
+    errors = checks["other_separate_share_error"]
+    assert set(errors) >= {OTHER, "internet", "broadband", "food"}
+    assert max(errors.values()) < 1e-9
+
+
+def test_separate_check_catches_pooled_broadband():
+    """BLS's broadband row differs by tenure in 2023, so giving every tenure
+    the pooled mean misses the published rows."""
+    year = 2023
+    shares = read_threshold_shares()[year]
+    thresholds = get_published_thresholds(year)
+    band, checks = bls_band_components(
+        shares, thresholds, get_tenure_shares(year)
+    )
+    pooled_broadband = BandComponents(
+        band.pooled,
+        {
+            t: dict(band.by_tenure[t], broadband=band.pooled["broadband"])
+            for t in TENURES
+        },
+        band.tenure_mix,
+    )
+    errors = separate_share_errors(
+        pooled_broadband, shares, thresholds, checks["internet_row"]
+    )
+    # About $3 of a threshold, and 10,000 times the test above's bound.
+    assert errors["broadband"] > 1e-5
+    assert errors["internet"] > 1e-5
+
+
+def test_threshold_terms_reject_an_unknown_accounting():
+    band = band_components(staged(3))
+    with pytest.raises(ValueError, match="accounting"):
+        band.threshold_terms("renter", "other_shared")
+    with pytest.raises(ValueError, match="accounting"):
+        level_gap(band, band, "renter", "spread")
+
+
 def test_read_rejects_a_workbook_without_the_rows(tmp_path):
     import openpyxl
 
@@ -448,11 +525,12 @@ def test_read_rejects_a_workbook_without_the_rows(tmp_path):
 def test_level_gap_terms_sum_to_the_threshold_gap(a, b):
     """Invariant 5."""
     ours, theirs = band_components(staged(a)), band_components(staged(b))
-    for tenure in TENURES:
-        gap = level_gap(ours, theirs, tenure)
-        assert sum(gap.values()) == pytest.approx(
-            ours.threshold(tenure) - theirs.threshold(tenure), abs=1e-6
-        )
+    for accounting in ACCOUNTINGS:
+        for tenure in TENURES:
+            gap = level_gap(ours, theirs, tenure, accounting)
+            assert sum(gap.values()) == pytest.approx(
+                ours.threshold(tenure) - theirs.threshold(tenure), abs=1e-6
+            )
 
 
 @PROPERTY
@@ -466,16 +544,26 @@ def test_shares_of_growth_beyond_inflation_sum_to_one(a, b, price):
     it. Random windows can have growth beyond prices near zero, where the
     ratio has no meaning."""
     base, target = band_components(staged(a)), band_components(staged(b))
-    for tenure in TENURES:
-        beyond = target.threshold(tenure) - price * base.threshold(tenure)
-        if abs(beyond) < 1.0:
-            continue
-        imputed = imputed_share_beyond_inflation(base, target, tenure, price)
-        rest = (
-            (target.threshold(tenure) - target.imputed_term(tenure))
-            - price * (base.threshold(tenure) - base.imputed_term(tenure))
-        ) / beyond
-        assert imputed + rest == pytest.approx(1.0, rel=1e-9)
+    for accounting in ACCOUNTINGS:
+        for tenure in TENURES:
+            beyond = target.threshold(tenure) - price * base.threshold(tenure)
+            if abs(beyond) < 1.0:
+                continue
+            imputed = imputed_share_beyond_inflation(
+                base, target, tenure, price, accounting
+            )
+            rest = (
+                (
+                    target.threshold(tenure)
+                    - target.imputed_term(tenure, accounting)
+                )
+                - price
+                * (
+                    base.threshold(tenure)
+                    - base.imputed_term(tenure, accounting)
+                )
+            ) / beyond
+            assert imputed + rest == pytest.approx(1.0, rel=1e-9)
 
 
 def scaled_band(band: BandComponents, factor: float) -> BandComponents:
@@ -505,11 +593,13 @@ def test_uniform_growth_leaves_no_band_fixed_effect(seed, factor):
             growth_percent(base.threshold(tenure), target.threshold(tenure)),
             abs=1e-9,
         )
-        assert imputed_share_beyond_inflation(
-            base, target, tenure, 1.0
-        ) == pytest.approx(
-            base.imputed_term(tenure) / base.threshold(tenure), rel=1e-9
-        )
+        for accounting in ACCOUNTINGS:
+            assert imputed_share_beyond_inflation(
+                base, target, tenure, 1.0, accounting
+            ) == pytest.approx(
+                base.imputed_term(tenure, accounting) / base.threshold(tenure),
+                rel=1e-9,
+            )
 
 
 def test_growth_with_no_imputed_amounts_has_no_band_fixed_effect():
@@ -806,12 +896,15 @@ def test_receipt_bands_reproduce_thresholds_and_gaps(run):
                 ),
                 rel=1e-9,
             )
-            gap = record["level_gap_percent_of_bls"][tenure]
-            assert sum(gap["terms"].values()) == pytest.approx(gap["total"])
-            # BLS's published identities hold within a cent of dollars.
-            assert gap["total"] == pytest.approx(
-                with_stage["gap_percent"][tenure], abs=1e-4
-            )
+            for accounting in ACCOUNTINGS:
+                gap = record["level_gap_percent_of_bls"][accounting][tenure]
+                assert sum(gap["terms"].values()) == pytest.approx(
+                    gap["total"]
+                )
+                # BLS's published identities hold within a cent of dollars.
+                assert gap["total"] == pytest.approx(
+                    with_stage["gap_percent"][tenure], abs=1e-4
+                )
             assert with_stage["gap_percent"][tenure] == pytest.approx(
                 100
                 * (with_stage["thresholds"][tenure] / published[tenure] - 1)
@@ -832,27 +925,58 @@ def test_receipt_growth_follows_from_its_bands(run):
     )
     for tenure in TENURES:
         record = growth["by_tenure"][tenure]
+        spread = record["other_spread"]
         assert record["growth_with_stage"] == pytest.approx(
             growth_percent(a.threshold(tenure), b.threshold(tenure))
         )
-        assert record["band_fixed_effect_points"] == pytest.approx(
+        assert spread["band_fixed_effect_points"] == pytest.approx(
             band_fixed_growth_effect(a, b, tenure)
         )
-        assert record["growth_without_imputed_terms"] == pytest.approx(
+        assert spread["growth_without_imputed_terms"] == pytest.approx(
             growth_without_imputed(a, b, tenure)
         )
-        assert record[
-            "imputed_share_of_growth_beyond_cpi_u_percent"
-        ] == pytest.approx(
-            100 * imputed_share_beyond_inflation(a, b, tenure, ratio)
-        )
+        for accounting in ACCOUNTINGS:
+            assert record[accounting][
+                "imputed_share_of_growth_beyond_cpi_u_percent"
+            ] == pytest.approx(
+                100
+                * imputed_share_beyond_inflation(
+                    a, b, tenure, ratio, accounting
+                )
+            )
         assert record["stage_change_points"] == pytest.approx(
-            record["band_fixed_effect_points"] + record["rank_shift_points"]
+            spread["band_fixed_effect_points"] + spread["rank_shift_points"]
         )
         # Growth of mean thresholds, against the mean of each implicate's.
         assert record["stage_change_points"] == pytest.approx(
             np.mean(record["stage_change_by_implicate"]), abs=0.01
         )
+
+
+def test_receipt_bls_growth_follows_from_its_bands():
+    receipt = committed_receipt()
+    years = receipt["bls"]["years"]
+    a = band_from(years["2022"]["band"])
+    b = band_from(years["2025"]["band"])
+    ratio = receipt["inputs"]["cpi"]["cpi_u_ratio_2022_2025"]
+    for tenure in TENURES:
+        record = receipt["bls"]["growth_2022_2025"]["by_tenure"][tenure]
+        assert record["growth"] == pytest.approx(
+            growth_percent(a.threshold(tenure), b.threshold(tenure))
+        )
+        for accounting in ACCOUNTINGS:
+            block = record[accounting]
+            assert block["imputed_term_dollars"]["2025"] == pytest.approx(
+                b.imputed_term(tenure, accounting)
+            )
+            assert block[
+                "imputed_share_of_growth_beyond_cpi_u_percent"
+            ] == pytest.approx(
+                100
+                * imputed_share_beyond_inflation(
+                    a, b, tenure, ratio, accounting
+                )
+            )
 
 
 @pytest.mark.parametrize(
