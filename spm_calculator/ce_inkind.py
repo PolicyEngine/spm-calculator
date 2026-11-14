@@ -101,12 +101,14 @@ FREE_LUNCH_POVERTY_RATIO = 1.5
 #: 2021, and Census values broadband from reference year 2021.
 BROADBAND_FIRST_REFERENCE_YEAR = 2022
 
-#: From reference year 2020 we add no WIC in any state, matching the
-#: deadline the Healthy, Hunger-Free Kids Act of 2010 set for each WIC state
-#: agency to implement EBT statewide, October 1, 2020 (42 U.S.C.
-#: 1786(h)(12)(B)(i)). FNS dates six states and DC later, so the cutoff
-#: departs from a strict state-by-state reading of BLS's published rule.
-#: Earlier reference years use each state's statewide date.
+#: From reference year 2020, the year of the deadline the Healthy,
+#: Hunger-Free Kids Act of 2010 set for each WIC state agency to implement
+#: EBT statewide (October 1, 2020; 42 U.S.C. 1786(h)(12)(B)(i)), we add no
+#: WIC in any state. The cutoff also drops WIC where the middle of the
+#: reference period falls before the deadline, and FNS dates six states and
+#: DC after it, so the cutoff departs from a strict state-by-state reading
+#: of BLS's published rule. Earlier reference years use each state's
+#: statewide date.
 WIC_EBT_ALL_STATES_FROM_REFERENCE_YEAR = 2020
 
 #: BLS drops the woman requirement for children under 5 from the 2025

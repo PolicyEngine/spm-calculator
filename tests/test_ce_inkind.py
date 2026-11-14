@@ -574,8 +574,9 @@ def test_universes(imputed):
         assert u.loc[rent, "housing_assistance"].all()
 
 
-def test_reference_year_rules_follow_bls():
-    """BLS adds broadband from 2022 data and no WIC from 2020 data."""
+def test_reference_year_defaults():
+    """Broadband starts with 2022 data, as BLS's does; WIC stops with 2020
+    data, the year of the statutory EBT deadline."""
     config = InKindConfig()
     assert config.broadband_first_reference_year == 2022
     assert config.wic_ebt_all_states_from_reference_year == 2020

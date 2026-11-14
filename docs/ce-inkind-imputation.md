@@ -107,10 +107,16 @@ Agriculture granted an exemption ([42 U.S.C.
 1786(h)(12)(B)](https://www.law.cornell.edu/uscode/text/42/1786)). For
 reference years before 2020, we compare each state's statewide date, from
 FNS's December 2022 WIC EBT status report (in `data/inkind/`), with the
-middle of the unit's reference period. From reference year 2020, we add no
-WIC in any state, matching the statutory deadline. FNS dates six states and
-DC after the deadline, from Utah in November 2020 to Georgia in October 2022,
-so this cutoff departs from a strict state-by-state reading of BLS's rule.
+middle of the unit's reference period. Where the CE withholds the state, a
+unit counts as finished with probability equal to the weighted share of
+finished units in its region and collection quarter. From reference year
+2020, the year of the statutory deadline, we add no WIC in any state. The
+cutoff also drops WIC where the middle of the reference period falls
+before the deadline, including in the six states that finished during
+2020 before October 1, from Hawaii in June to Illinois in September. FNS
+dates six other states and DC after the deadline, from Utah in November
+2020 to Georgia in October 2022. In both groups, a strict state-by-state
+reading of BLS's rule would still add WIC where our cutoff adds none.
 With each state's own date in every year, we estimate that mean WIC per
 unit rises by \$1.94–\$3.21 for the 2021–2025 targets. Those thresholds move
 by −\$20 to +\$40 (−0.06% to +0.12%) as the added WIC reorders units in the
@@ -154,10 +160,10 @@ applies to the same unit's out-of-pocket spending, and keeps the CPI
 component weights of out-of-pocket spending.
 
 The stage never lowers any unit's FCSUti or SU, yet a single component
-can still lower a tenure's threshold slightly: added benefits reorder
-units and change which of them land in the 47th–53rd percentile band.
-In 2024, WIC alone lowers the renter threshold by 0.03%, and in 2025
-broadband alone lowers it by 0.04%.
+can still lower a tenure's threshold: added benefits reorder units and
+change which of them land in the 47th–53rd percentile band. In 2024,
+rental assistance alone lowers the threshold for owners without mortgages
+by 0.67%, and school lunch alone lowers it by 0.57%.
 
 ## Invariants
 
@@ -262,7 +268,7 @@ imputed against CPS donors, by reference year:
 | Component | 2014 | 2018 | 2021 | 2024 |
 |---|---|---|---|---|
 | School lunch (households with a member 5–18) | 34.3% / 33.2% | 38.3% / 37.2% | 54.8% / 53.7% | 47.9% / 48.6% |
-| WIC (WIC universe) | 7.5% / 7.5% | 6.1% / 5.5% | 5.0% / 4.8% | 5.6% / 5.4% |
+| WIC (CPS: WIC universe; CE: also units with a child under 5) | 7.5% / 7.5% | 6.1% / 5.5% | 5.0% / 4.8% | 5.6% / 5.4% |
 | LIHEAP (all) | 3.6% / 3.5% | 3.5% / 3.2% | 3.4% / 3.2% | 3.6% / 3.3% |
 | Broadband (all) | — | — | — | 2.7% / 2.4% |
 
@@ -291,7 +297,8 @@ stage:
 
 The without column matches the [September 8 replication](current-ce-replication.md)
 exactly. In-kind lift (percent of the out-of-pocket threshold), with the
-between-implicate standard deviation in percent of the threshold:
+between-implicate standard deviation of the threshold with the stage, in
+percent of that threshold:
 
 | Target | Renter | Owner with mortgage | Owner without mortgage |
 |---|---:|---:|---:|
@@ -345,9 +352,11 @@ threshold:
 | Broadband | +0.00 | +0.00 | +0.00 | −0.04 | −0.00 | +0.39 |
 | Rental assistance | +2.48 | +1.30 | +0.71 | +1.97 | +1.19 | +1.23 |
 
-School lunch and rental assistance account for nearly all of the lift.
-The components interact through band composition, so they do not sum to
-the total.
+For renters and owners with mortgages, school lunch and rental
+assistance alone add 91–108% of the stage's lift in both years. The
+components interact through band composition, so they do not sum to the
+total: for owners without mortgages, the two add 57% of the lift in 2022
+and 135% in 2025.
 
 ### Growth, 2022 to 2025
 
@@ -386,7 +395,7 @@ CPI-U rose 10.01% over the same span (`cpi_annual.json`, 292.655 to
 321.943). BLS's thresholds rose 10.6–12.1 points more than CPI-U. Without
 the stage the replication reproduces 85% of that excess for renters, 96%
 for owners with mortgages and 83% for owners without; with the stage,
-80%, 96% and 92%.
+80%, 97% and 92%.
 
 In-kind benefits change the replication's 2022–2025 growth by −0.6
 points for renters, +0.1 for owners with mortgages and +1.0 for owners
@@ -601,10 +610,11 @@ balances the second identity, and subtract the band's mean broadband subsidy.
 That home internet term supplies 1.85–2.55% of BLS's thresholds with Other
 spread and 1.54–2.12% with Other separate.
 
-With Other separate, the food, clothing, telephone, school lunch and WIC terms
-fall by a sixth, the shelter and utilities terms lose their parts of
-`0.2 × F`, and the other term gathers those parts, adding 0.19–0.36 points to
-the gap:
+With Other separate, the food, clothing, telephone, school lunch and WIC
+terms, and home internet together with broadband, fall by a sixth. The
+shelter, utilities, rental assistance and LIHEAP terms lose their parts of
+`0.2 × F`, and the other term gathers all those parts, adding 0.19–0.36
+points to the gap:
 
 | Term | Renter | Owner with mortgage | Owner without mortgage |
 |---|---:|---:|---:|
@@ -1062,9 +1072,10 @@ scaling monetary columns, then anchor national levels as
 `published_2025 × replication_T / replication_2025`. A follow-up could
 carry the stage into those windows:
 
-1. Impute on the projected window with the latest CPS ASEC donors. Draws
-   key on `NEWID`, which projected copies keep, so a projected unit
-   reuses its donor's random draws.
+1. Impute the window's observed quarters with the latest CPS ASEC donors
+   and give each projected copy its donor's amounts. Projected copies keep
+   their donor's `NEWID`, and the stage requires each `NEWID` to appear
+   once.
 2. Revalue projected quarters with each target year's program rules:
    school lunch with the reimbursement rates USDA publishes each July
    (adjusted with the CPI-U Food Away From Home series, per the Federal

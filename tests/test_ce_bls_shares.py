@@ -491,7 +491,7 @@ def test_separate_check_catches_pooled_broadband():
     errors = separate_share_errors(
         pooled_broadband, shares, thresholds, checks["internet_row"]
     )
-    # About $3 of a threshold, and 10,000 times the test above's bound.
+    # Up to $2.52 of a threshold, and 10,000 times the test above's bound.
     assert errors["broadband"] > 1e-5
     assert errors["internet"] > 1e-5
 

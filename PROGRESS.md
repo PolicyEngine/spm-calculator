@@ -11,9 +11,10 @@ review comes next, and the PR moves to `main` once #57 merges.
 ## Done
 
 - `ce_inkind.py` imputes broadband subsidies from reference year 2022, as BLS
-  does (footnote 3 of its thresholds workbook). From reference year 2020 it
-  adds no WIC in any state, matching the October 1, 2020 deadline for
-  statewide WIC EBT (42 U.S.C. 1786(h)(12)(B)(i)). Before 2020, a unit still
+  does (footnote 3 of its thresholds workbook). From reference year 2020, the
+  year of the October 1, 2020 deadline for statewide WIC EBT (42 U.S.C.
+  1786(h)(12)(B)(i)), it adds no WIC in any state, which also drops WIC where
+  the middle of the reference period falls before the deadline. Before 2020, a unit still
   loses WIC when FNS dates its state's statewide WIC EBT before the middle of
   its reference period. `scripts/replicate_ce_inkind.py` records a
   sensitivity that uses each state's own date in every year.
