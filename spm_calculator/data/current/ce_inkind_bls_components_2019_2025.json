@@ -744,10 +744,10 @@
   "classification": "current_retrospective_research",
   "code_sha256": {
     "scripts/compare_ce_inkind_bls_shares.py": "5de87707d0db345bfe106704ec6f07adf6c37c163c2f251d60540a8d3da9df22",
-    "scripts/replicate_ce_inkind.py": "7ef41ed3055932440285d1355f9fb3423c22de4a11b2d0c14e7b998191390b71",
+    "scripts/replicate_ce_inkind.py": "2fd128516cdd5fb7c211f271dcd55afc0423b90e46150de836cfeb81b28b0e4f",
     "spm_calculator/ce_bls_shares.py": "44c9de8cbff5b323978cfbaabf95215e07dfdbc14924ffaee7a0b9c32c6ed938",
     "spm_calculator/ce_decomposition.py": "39be6fc2ceef0764cbf1133a1f4ea39c67a4de6a4e781357f717a7a82d0e00c0",
-    "spm_calculator/ce_inkind.py": "6891e07348ef45f009a8d2ed3621c3497b29b31eebd32b7a896b3a428b5aabbc",
+    "spm_calculator/ce_inkind.py": "25f93fb8b996b5e623ab564d70e2eedfbc4daa11ff96850f06e76ef229aef0b8",
     "spm_calculator/ce_inkind_stage.py": "9543b1ce76b6ce1974d1dcfc11e4840202633666da2684201836668f52210986",
     "spm_calculator/ce_threshold.py": "4efbe2b03f6b1f4eb2911ab0f79f5151bd655cc1e5addf42f5c4540ace1f852f",
     "spm_calculator/cps_asec.py": "ac4a1ae3b28d34fa3dfbbe5879c88d0274a0e6e46423694bb48808d4f7cf2cc8",
@@ -941,7 +941,7 @@
   },
   "generated_by": "scripts/compare_ce_inkind_bls_shares.py",
   "generated_on": "2026-11-14",
-  "git_head": "dcf03631643269c857d71360dbe03d95e5ac9e67",
+  "git_head": "fce882190f0bfaa9720f30a57a86997ab276a67b",
   "inputs": {
     "bls_shares_workbook": {
       "path": "spm_calculator/data/current/bls_spm_shares.xlsx",
@@ -955,7 +955,7 @@
     },
     "replication_receipt": {
       "path": "spm_calculator/data/current/ce_inkind_replication_2019_2025.json",
-      "sha256": "a8d028b125c82f666c951363e145100c7717da8ee9348756f3590c424f07d36c"
+      "sha256": "221e79fa439509a574a020ccc155a0971f74d230c686046a0de6f69b7d492173"
     },
     "threshold_series": {
       "path": "spm_calculator/data/bls/threshold_series.json",
@@ -1134,7 +1134,7 @@
       },
       "years": {
         "2019": {
-          "largest_relative_difference_from_receipt": 2.220446049250313e-16,
+          "largest_relative_difference_from_receipt": 4.440892098500626e-16,
           "level_gap_percent_of_bls": {
             "other_separate": {
               "owner_with_mortgage": {
@@ -1460,7 +1460,7 @@
           }
         },
         "2020": {
-          "largest_relative_difference_from_receipt": 2.220446049250313e-16,
+          "largest_relative_difference_from_receipt": 4.440892098500626e-16,
           "level_gap_percent_of_bls": {
             "other_separate": {
               "owner_with_mortgage": {
@@ -1786,7 +1786,7 @@
           }
         },
         "2021": {
-          "largest_relative_difference_from_receipt": 4.440892098500626e-16,
+          "largest_relative_difference_from_receipt": 2.220446049250313e-16,
           "level_gap_percent_of_bls": {
             "other_separate": {
               "owner_with_mortgage": {
@@ -6328,7 +6328,7 @@
           }
         },
         "2020": {
-          "largest_relative_difference_from_receipt": 4.440892098500626e-16,
+          "largest_relative_difference_from_receipt": 2.220446049250313e-16,
           "level_gap_percent_of_bls": {
             "other_separate": {
               "owner_with_mortgage": {
@@ -6654,7 +6654,7 @@
           }
         },
         "2021": {
-          "largest_relative_difference_from_receipt": 4.440892098500626e-16,
+          "largest_relative_difference_from_receipt": 1.1102230246251565e-16,
           "level_gap_percent_of_bls": {
             "other_separate": {
               "owner_with_mortgage": {
@@ -6980,7 +6980,7 @@
           }
         },
         "2022": {
-          "largest_relative_difference_from_receipt": 4.440892098500626e-16,
+          "largest_relative_difference_from_receipt": 2.220446049250313e-16,
           "level_gap_percent_of_bls": {
             "other_separate": {
               "owner_with_mortgage": {
@@ -7958,7 +7958,7 @@
           }
         },
         "2025": {
-          "largest_relative_difference_from_receipt": 0.0,
+          "largest_relative_difference_from_receipt": 2.220446049250313e-16,
           "level_gap_percent_of_bls": {
             "other_separate": {
               "owner_with_mortgage": {
@@ -10725,6 +10725,6 @@
     "pandas": "3.0.0",
     "python": "3.13.13"
   },
-  "runtime_seconds": 142,
+  "runtime_seconds": 96,
   "schema_version": 2
 }
