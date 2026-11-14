@@ -6,7 +6,10 @@ Invariants:
    all-zero in-kind table reproduces the run with home internet exactly.
 2. Without an internet weight, the composite price factor equals
    ``get_fcsuti_inflation_factor`` exactly; when every series is the same
-   index, the factor is that index's ratio whatever the weights.
+   index, the factor is that index's ratio whatever the weights. With every
+   other series flat, the factor is ``1 - w + w * r``, where ``w`` is
+   internet's weight and ``r`` the ratio of CUUR0000SEEE03 between the
+   two years.
 3. Internet's CPI weight is its spending share among units with children,
    as ``compute_fcsuti_weights_from_ce`` would give it.
 4. Internet enters FCSUti at four times its three-month cost and leaves
@@ -46,6 +49,7 @@ from spm_calculator.ce_inkind_stage import (
 )
 from spm_calculator.ce_internet import (
     INTERNET_COLUMN,
+    INTERNET_COMPONENT,
     INTERNET_CPI_RECEIPT,
     INTERNET_CPI_SERIES,
     INTERNET_UCC,
@@ -65,6 +69,7 @@ from spm_calculator.ce_replicates import (
 )
 from spm_calculator.fcsuti_cpi import (
     CPI_SERIES,
+    FCSUTI_WEIGHTS,
     compute_fcsuti_weights_from_ce,
     get_fcsuti_inflation_factor,
 )
@@ -216,6 +221,60 @@ def test_one_index_for_every_series_gives_its_ratio(seed):
         assert composite_inflation_factor(
             year, 2025, weights, cpi
         ) == pytest.approx(index[2025] / index[year], rel=1e-12)
+
+
+def rising_internet():
+    return pd.Series(
+        {year: 100.0 * 1.05 ** (year - 2014) for year in range(2014, 2027)}
+    )
+
+
+def test_internet_is_priced_with_seee03():
+    assert INTERNET_CPI_SERIES == "CUUR0000SEEE03"
+    assert pinned_cpi()[INTERNET_CPI_SERIES].equals(load_internet_cpi())
+
+
+@PROPERTY
+@given(
+    weight=st.floats(0.001, 0.2),
+    from_year=st.integers(2014, 2025),
+    to_year=st.integers(2014, 2025),
+)
+def test_internet_series_alone_moves_a_flat_composite(
+    weight, from_year, to_year
+):
+    internet = rising_internet()
+    cpi = with_internet_cpi(flat_cpi(), internet)
+    weights = {c: w * (1 - weight) for c, w in FCSUTI_WEIGHTS.items()}
+    weights[INTERNET_COMPONENT] = weight
+    expected = (1 - weight) + weight * internet[to_year] / internet[from_year]
+    assert composite_inflation_factor(
+        from_year, to_year, weights, cpi
+    ) == pytest.approx(expected, rel=1e-12)
+
+
+def test_internet_series_reaches_every_unit_price_factor():
+    raw = with_internet(ce_frame(5, year=2021), 5)
+    raw.loc[raw.index[: len(raw) // 2], "ce_year"] = 2022
+    internet = rising_internet()
+    cpi = with_internet_cpi(flat_cpi(), internet)
+    expanded = add_home_internet(
+        prepare_out_of_pocket(raw, 2024, cpi_series=cpi), cpi
+    )
+    construction = expanded.result["construction"]
+    weight = construction["cpi_component_weights"][INTERNET_COMPONENT]
+    assert weight > 0
+    factors = construction["inflation_factors"]
+    assert sorted(factors) == [2021, 2022]
+    for year, factor in factors.items():
+        assert factor == pytest.approx(
+            (1 - weight) + weight * internet[2024] / internet[year],
+            rel=1e-12,
+        )
+    np.testing.assert_array_equal(
+        expanded.expenditures["inflation_factor"],
+        expanded.expenditures["ce_year"].map(factors),
+    )
 
 
 # Invariant 3

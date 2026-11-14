@@ -34,13 +34,20 @@ the PR moves to `main` once #57 and #60 merge.
   change in one-year growth reaches two.
 - BLS's methods page says BLS applies an annual-average FCSUti CPI-U to
   quarterly CE data. The docs now say so and no longer describe BLS's
-  treatment as quarterly; the sealed module's docstring and the archived
-  receipts keep the old wording until we next rebuild the canonical forecast.
+  treatment as quarterly; the sealed module, the archived receipts,
+  `ce_forecast.py` and the forecast artifacts keep the old wording until we
+  next rebuild the canonical forecast.
 
 ## Next
 
 - The canonical forecast, nowcast and projections exclude home internet until
   we next rebuild the forecast, in a separate change.
+- That rebuild also rewords "Annual instead of quarterly CPI by collection
+  year" in `spm_calculator/ce_forecast.py` and its five artifacts
+  (`ce_rolling_forecast.json` and `rolling_forecast_2026_09_09.json` in
+  `spm_calculator/data/current/`, and the three
+  `web/public/data/canonical/rolling-forecast-*.json` files), along with
+  `ce_threshold.py`'s "BLS quarterly treatment".
 - The four questions to BLS and Census staff from #60 stay open.
 
 ---

@@ -19,8 +19,8 @@ replication's gap to BLS's corrected thresholds and for threshold growth.
 
 - We estimate that home internet raises the replication's thresholds by
   1.5–2.4% for renters, 1.7–2.1% for owners with mortgages and 0.3–4.0% for
-  owners without mortgages, and our in-band home internet comes within 3.1% of
-  BLS's in every year. With home internet and without benefits, renters and
+  owners without mortgages. With home internet and without benefits, our
+  in-band home internet comes within 4.1% of BLS's in every year, renters and
   owners with mortgages land within about 1% of BLS's corrected levels, and
   owners without mortgages 2.0–4.5% above.
 - Imputed benefits then raise thresholds by 0.5–3.5% and carry them 2.2–7.1%
@@ -131,7 +131,7 @@ BLS's rule strictly, state by state.
 With each state's own date in every year, we estimate that mean WIC per
 unit rises by \$1.94–\$3.20 for the 2021–2025 targets. Those thresholds move
 by −\$5 to +\$18 (−0.01% to +0.05%) as the added WIC reorders units in the
-band, and 2022–2025 growth changes by 0.02 points or less. For its 2025
+band, and 2022–2025 growth changes by 0.03 points or less. For its 2025
 thresholds, BLS counts \$1.80 of WIC per unit in the band.
 
 BLS fits a limited dependent variable model that treats assisted renters'
@@ -193,9 +193,15 @@ Interview quarters, so its series carries both. In 2017Q2 the share of units
 reporting the UCC drops for one quarter and recovers in 2017Q3, while the
 mean among reporters steps up and stays higher; the share reporting cable
 and satellite TV falls in the same quarter. BLS's list of CE [improvements
-and protocol changes](https://www.bls.gov/cex/ce-improvements.htm) names no
-2017 change to these questions, and the 2019 thresholds, whose window runs
-from 2014Q2 to 2019Q1, include the break. In 2024 BLS revised the Interview
+and protocol changes](https://www.bls.gov/cex/ce-improvements.htm) shows no
+2017 change to these questions, but its [2017 data quality
+profile](https://www.bls.gov/cex/dqreport2017.pdf) (p. 12) reports a change in
+processing: beginning in 2017, BLS splits combined bills for telephone,
+internet and cable or satellite TV service across those services by
+proportions from a pool of donors, where it previously imputed them. That
+change likely causes the break, though we have not confirmed it. The 2019
+thresholds, whose window runs from 2014Q2 to 2019Q1, include the break. In
+2024 BLS revised the Interview
 questions on cable, internet, residential and cellular phone service and
 dropped the follow-up questions on bundled amounts (same page); the share
 reporting 690114 changes little through 2024.
@@ -257,7 +263,9 @@ without mortgages by 1.25%.
 16. Replicate estimates repeat exactly.
 17. Zero home internet spending reproduces the package's out-of-pocket run
     exactly, and with no internet weight the composite price factor equals
-    the package's.
+    the package's. With every other series flat, the factor equals
+    1 − w + w × r, where w is internet's CPI weight and r the ratio of
+    CPI-U series CUUR0000SEEE03 between the two years.
 18. Each unit's home internet cost equals the sum of its MTBI records for
     UCC 690114, and internet's CPI weight equals its spending share among
     units with children.
@@ -672,7 +680,7 @@ year and supplies at least 60% of each gap. Imputed benefits lower owners' gaps
 in every year, because our school lunch trails BLS's, and add 0.05–1.58 points to
 the renter gap, because our rental assistance per renter exceeds BLS's. Our
 clothing term trails BLS's by 0.23–1.05 points, and food, telephone and
-utilities stay within 0.71 points. For BLS's home internet, we use the
+utilities stay within 0.72 points. For BLS's home internet, we use the
 workbook's internet row with equal dollars across tenures, since that row
 balances the second identity, and subtract the band's mean broadband subsidy.
 Ours is the band's mean UCC 690114 spending, 0.99–1.03 times BLS's, so the home
@@ -734,7 +742,8 @@ BLS's:
 
 Other lodging, vacation-home principal and rent as pay make up 26–88% of the
 shelter excess, and other lodging alone 16–86%. Meals as pay add \$17–\$31 to
-in-band food. Our in-band home internet runs within 3.1% of BLS's in every year.
+in-band food. In the band with home internet and benefits, our home internet
+runs within 3.2% of BLS's in every year.
 
 `apply_bls_paper_definition` removes those four amounts and vacation-home
 utilities from the raw FMLI columns before the replication adds home internet
@@ -1162,6 +1171,27 @@ reads home internet from the MTBI files in the same bundles and makes no
 network requests. It stops with an error unless the out-of-pocket run
 without home internet matches the archived receipt exactly and an all-zero
 in-kind table reproduces the run with home internet exactly.
+
+### Receipt keys
+
+The replication and components receipts name the three stages with these keys:
+
+| Stage | Year record | Gap and growth |
+|---|---|---|
+| Without home internet or benefits | `without_home_internet` | `gap_percent_without_home_internet`, `growth_percent_without_home_internet` |
+| With home internet | `without_in_kind` | `gap_percent_without`, `growth_percent_without` |
+| With home internet and benefits | `with_in_kind` | `gap_percent_with`, `growth_percent_with` |
+
+`stage_effects` holds each step's effect: `home_internet_dollars` and
+`home_internet_percent` from the first stage to the second, and
+`in_kind_dollars` and `in_kind_percent` from the second to the third. The
+components receipt's `home_internet` record sets our home internet term
+beside BLS's under each accounting, in the band with home internet and
+benefits. The replicate
+receipt reports `without_in_kind` and `with_in_kind` only, both with home
+internet. In the receipts at commit 28740b5, `without_in_kind` holds the
+thresholds without home internet and `with_in_kind` holds benefits without
+home internet; no later receipt carries that stage.
 
 ## Forecast windows: a proposed design
 
