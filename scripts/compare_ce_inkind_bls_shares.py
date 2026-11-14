@@ -145,7 +145,7 @@ LIMITATIONS = [
     "Removing imputed terms holds each band as it stands; the replication's own with-and-without runs show how far rank shifts move that",
     "Home internet is CE UCC 690114 alone, priced with CPI-U CUUR0000SEEE03; BLS has not published the UCCs behind its home internet term",
     "Home internet is out-of-pocket spending in its own component; no in-kind total, share or contribution includes it",
-    "The archived replication and the canonical forecast, nowcast and projections still exclude home internet until the forecast is next rebuilt, which is a separate change",
+    "The archived replication excludes home internet, and the canonical forecast, nowcast and projections exclude it until the forecast is next rebuilt, which is a separate change",
     "The runs estimate imputation uncertainty (implicate spread) but not sampling uncertainty",
 ]
 

@@ -698,7 +698,7 @@ def main():
             "Participation models share one covariate set across programs and years; CE and CPS income concepts differ",
             "Home internet is CE UCC 690114 alone, priced with CPI-U CUUR0000SEEE03; BLS has not published the UCCs behind its home internet term",
             "Home internet is out-of-pocket spending in its own component; no in-kind total, share or contribution includes it",
-            "The archived replication and the canonical forecast, nowcast and projections still exclude home internet until the forecast is next rebuilt, which is a separate change",
+            "The archived replication excludes home internet, and the canonical forecast, nowcast and projections exclude it until the forecast is next rebuilt, which is a separate change",
             "BLS applies an annual-average FCSUti CPI-U to quarterly CE data and does not say which year's average each quarter gets; the runs use the annual average of each interview's collection year",
             "The stage adds no WIC in any state from reference year 2020, the year of the statutory deadline for statewide WIC EBT, October 1, 2020 (42 U.S.C. 1786(h)(12)(B)(i)); the cutoff also drops WIC where the middle of the reference period falls before the deadline, including in six states that finished during 2020 before the deadline, and FNS dates six other states and DC after it, so the cutoff departs from a strict state-by-state reading of BLS's published rule, and wic_ebt_by_state_sensitivity uses each state's own date instead",
             "The runs estimate imputation uncertainty (implicate spread) but not sampling uncertainty",
