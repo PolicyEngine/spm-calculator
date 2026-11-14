@@ -151,10 +151,11 @@ that band E and tenure h, it computes:
 ```
 
 SU excludes telephone. The [2026 BLS correction](bls-2026-correction.md)
-changed the anchor from 83% to 82%. Annual rather than quarterly price
-treatment, the percentile implementation, food allocation, omitted
-internet/in-kind amounts and selected sample policies prevent a claim of
-exact BLS reproduction. The [September 8 CE experiment](current-ce-replication.md)
+changed the anchor from 83% to 82%. Unlike BLS, the replication treats
+prices annually rather than quarterly and uses its own percentile
+implementation, food allocation and selected sample policies. It also uses
+broader shelter, utilities and food definitions than BLS's papers describe, and
+omits internet spending and in-kind benefits. The [September 8 CE experiment](current-ce-replication.md)
 quantifies selected sample-policy sensitivities, while preserving its
 original receipt and tables.
 
