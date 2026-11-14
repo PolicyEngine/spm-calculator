@@ -33,7 +33,7 @@
   },
   "classification": "current_retrospective_research",
   "code_sha256": {
-    "scripts/estimate_ce_replicate_uncertainty.py": "5f665442f4dfd1dc3035f721b54b978509f7beb004c24a3935a3f84db2c6c434",
+    "scripts/estimate_ce_replicate_uncertainty.py": "7c548190be5638ace95797f19342251e40db9eb26e09cfdfb774e0d3721048ed",
     "scripts/replicate_ce_inkind.py": "28502e7c1d457be48e4d70013f7d5d3c36dfe601265ed3019c57ed422288215e",
     "spm_calculator/ce_bls_shares.py": "832a658cb3c7e8706d60ad96355fc17192ad82722d29958101524ffcc608e64b",
     "spm_calculator/ce_decomposition.py": "39be6fc2ceef0764cbf1133a1f4ea39c67a4de6a4e781357f717a7a82d0e00c0",
@@ -50,7 +50,7 @@
   "complete": true,
   "generated_by": "scripts/estimate_ce_replicate_uncertainty.py",
   "generated_on": "2026-11-14",
-  "git_head": "8b0ddaca9208d231e48ca208fd8e4457abcdefcd",
+  "git_head": "9235a5139e55ea6e48055afe755448a845e92ecc",
   "inputs": {
     "ce_bundles": {
       "intrvw14.zip": {
@@ -5906,7 +5906,7 @@
     "python": "3.13.13",
     "scipy": "1.18.1"
   },
-  "runtime_seconds": 355,
-  "schema_version": 1,
+  "runtime_seconds": 378,
+  "schema_version": 2,
   "targets": [2019, 2020, 2021, 2022, 2023, 2024, 2025]
 }

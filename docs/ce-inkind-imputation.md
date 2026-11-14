@@ -194,17 +194,18 @@ reporting the UCC drops for one quarter and recovers in 2017Q3, while the
 mean among reporters steps up and stays higher; the share reporting cable
 and satellite TV falls in the same quarter. BLS's list of CE [improvements
 and protocol changes](https://www.bls.gov/cex/ce-improvements.htm) shows no
-2017 change to these questions, but its [2017 data quality
-profile](https://www.bls.gov/cex/dqreport2017.pdf) (p. 12) reports a change in
-processing: beginning in 2017, BLS splits combined bills for telephone,
-internet and cable or satellite TV service across those services by
-proportions from a pool of donors, where it previously imputed them. That
-change likely causes the break, though we have not confirmed it. The 2019
-thresholds, whose window runs from 2014Q2 to 2019Q1, include the break. In
-2024 BLS revised the Interview
-questions on cable, internet, residential and cellular phone service and
-dropped the follow-up questions on bundled amounts (same page); the share
-reporting 690114 changes little through 2024.
+2017 change to the Interview's telephone, internet and cable or satellite TV
+questions. But BLS's [2017 data quality
+profile](https://www.bls.gov/cex/dqreport2017.pdf) (p. 12) reports a change
+in processing. Beginning in 2017, BLS allocates combined bills for these
+services across them by proportions from a pool of donors, where it
+previously imputed them. That change likely causes the break, though we have
+not confirmed it. The 2019 thresholds, whose window runs from 2014Q2 to
+2019Q1, include the break. In 2024 BLS revised the Interview questions on
+cable, internet, residential and cellular phone service and dropped the
+follow-up questions on bundled amounts ([improvements
+list](https://www.bls.gov/cex/ce-improvements.htm)); the share reporting
+690114 changes little through 2024.
 
 ### Where the amounts enter
 
@@ -1174,24 +1175,36 @@ in-kind table reproduces the run with home internet exactly.
 
 ### Receipt keys
 
-The replication and components receipts name the three stages with these keys:
+In the replication and components receipts, each target year holds one
+record per stage. The replication receipt also records each stage's gap to
+BLS's corrected thresholds in each year's `results` entry, and its growth in
+each year pair's `decompositions` entry (such as `2022-2025`) and that
+entry's `fcsuti_deflated`:
 
-| Stage | Year record | Gap and growth |
-|---|---|---|
-| Without home internet or benefits | `without_home_internet` | `gap_percent_without_home_internet`, `growth_percent_without_home_internet` |
-| With home internet | `without_in_kind` | `gap_percent_without`, `growth_percent_without` |
-| With home internet and benefits | `with_in_kind` | `gap_percent_with`, `growth_percent_with` |
+| Stage | Year record | Gap | Growth |
+|---|---|---|---|
+| Without home internet or benefits | `without_home_internet` | `gap_percent_without_home_internet` | `growth_percent_without_home_internet` |
+| With home internet | `without_in_kind` | `gap_percent_without` | `growth_percent_without` |
+| With home internet and benefits | `with_in_kind` | `gap_percent_with` | `growth_percent_with` |
 
-`stage_effects` holds each step's effect: `home_internet_dollars` and
-`home_internet_percent` from the first stage to the second, and
-`in_kind_dollars` and `in_kind_percent` from the second to the third. The
-components receipt's `home_internet` record sets our home internet term
-beside BLS's under each accounting, in the band with home internet and
-benefits. The replicate
-receipt reports `without_in_kind` and `with_in_kind` only, both with home
-internet. In the receipts at commit 28740b5, `without_in_kind` holds the
-thresholds without home internet and `with_in_kind` holds benefits without
-home internet; no later receipt carries that stage.
+The replication receipt's `stage_effects` holds each step's effect:
+`home_internet_dollars` and `home_internet_percent` from the first stage to
+the second, and `in_kind_dollars` and `in_kind_percent` from the second to
+the third. The components receipt's `home_internet` record sets our home
+internet term beside BLS's under each accounting, in the band with home
+internet and benefits. The replicate receipt reports `without_in_kind` and
+`with_in_kind` only, both with home internet.
+
+Keys that compare the run with benefits to the run before it measure
+benefits against the stage with home internet: `in_kind_lift_percent`
+(equal to `stage_effects.in_kind_percent`), `component_lift_percent` and
+`share_of_gap_closed` in the replication receipt; `growth_without_stage`,
+`growth_with_stage` and `stage_change_points` under the components
+receipt's `growth_2022_2025`; and `in_kind_lift_percent` and
+`stage_change_points` in the replicate receipt. In the receipts at commit
+28740b5, `without_in_kind` is the stage without home internet or benefits,
+`with_in_kind` the stage with benefits and without home internet, and those
+keys compare the two; no later receipt carries the second stage.
 
 ## Forecast windows: a proposed design
 

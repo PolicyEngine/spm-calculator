@@ -225,7 +225,7 @@ def test_one_index_for_every_series_gives_its_ratio(seed):
 
 def rising_internet():
     return pd.Series(
-        {year: 100.0 * 1.05 ** (year - 2014) for year in range(2014, 2027)}
+        {year: 100.0 + (year - 2014) ** 2 for year in range(2014, 2027)}
     )
 
 

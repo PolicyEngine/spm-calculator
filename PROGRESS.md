@@ -34,9 +34,9 @@ the PR moves to `main` once #57 and #60 merge.
   change in one-year growth reaches two.
 - BLS's methods page says BLS applies an annual-average FCSUti CPI-U to
   quarterly CE data. The docs now say so and no longer describe BLS's
-  treatment as quarterly; the sealed module, the archived receipts,
-  `ce_forecast.py` and the forecast artifacts keep the old wording until we
-  next rebuild the canonical forecast.
+  treatment as quarterly. The sealed module, `ce_forecast.py` and the five
+  forecast artifacts keep the old wording until we next rebuild the
+  canonical forecast; the archived receipts never change.
 
 ## Next
 
