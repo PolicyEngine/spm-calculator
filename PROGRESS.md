@@ -10,8 +10,13 @@ deadline, and adds a second accounting to the BLS-components decomposition.
 The independent review's first round raised one P1, one P2 and several P3s.
 The P1 sits in the branch's history, not at head: a test docstring in
 4dd4353 and a clause in c1ce29e's message. We fixed the P2 and P3s, and a
-squash merge with a hand-written message keeps both off `main`. A second
-round comes next.
+squash merge with a hand-written message keeps both off `main`. The second
+round, on 3c43971, found no P0 or P1 and raised two P2s and two P3s. c60d0e0
+records broadband's first reference year in the diagnostics of earlier years
+and checks the BLS block's stored 2022 dollars, 3b1c6c3 regenerates the
+receipts, and 408fce0 and the commit after it give our modeled figures on the
+page "we estimate". The commit after it also tests every run's stored
+imputed-term dollars and the replication receipt's published thresholds.
 
 ## Done
 
@@ -41,6 +46,9 @@ round comes next.
   published school lunch and WIC averages, a school lunch model screened on
   `HHOTLUN`, and whether to price each year with the collection year's index
   or the previous year's.
+- The replication receipt hashes neither `spm_calculator/published_thresholds.py`
+  nor the threshold series behind its published thresholds and gaps. #61, which
+  regenerates every receipt after #60 merges, adds both.
 
 ---
 

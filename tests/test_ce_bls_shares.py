@@ -960,6 +960,10 @@ def test_receipt_growth_follows_from_its_bands(run):
             growth_without_imputed(a, b, tenure)
         )
         for accounting in ACCOUNTINGS:
+            for year, band in (("2022", a), ("2025", b)):
+                assert record[accounting]["imputed_term_dollars"][
+                    year
+                ] == pytest.approx(band.imputed_term(tenure, accounting))
             assert record[accounting][
                 "imputed_share_of_growth_beyond_cpi_u_percent"
             ] == pytest.approx(
