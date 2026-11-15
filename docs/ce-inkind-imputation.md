@@ -5,15 +5,12 @@ FCSUti before it estimates SPM thresholds: school lunch (NSLP), WIC, LIHEAP,
 broadband subsidies and rental assistance. It leaves SNAP out because it
 assumes households spend SNAP's EBT benefits like cash, so reported food
 spending already includes them ([BLS SPM thresholds
-page](https://www.bls.gov/pir/spmhome.htm)). BLS describes its current
-imputation models briefly on that page, and [Garner and Gudrais
-(2018)](https://www.bls.gov/osmr/research-papers/2018/pdf/ec180100.pdf)
-document an earlier version in more detail, but BLS has not published its
-code. We implement the page's description as an optional stage of the
-package's [CE replication](current-ce-replication.md), which omits all five
-benefits by default, and rerun the 2019–2025 thresholds with and without
-them to measure how much the benefits explain of the replication's gap to
-BLS's corrected thresholds and of threshold growth.
+page](https://www.bls.gov/pir/spmhome.htm)). We implement BLS's description
+of its imputation as an optional stage of the package's [CE
+replication](current-ce-replication.md), which omits all five benefits by
+default. We rerun the 2019–2025 thresholds with and without them and measure
+how much they explain of the replication's gap to BLS's corrected thresholds
+and of threshold growth.
 
 - We estimate that imputed benefits raise the replication's thresholds by
   0.9–3.8% and carry them above BLS's corrected levels for every tenure in
@@ -25,19 +22,14 @@ BLS's corrected thresholds and of threshold growth.
 - We estimate that they change 2022–2025 threshold growth by −0.6 to +1.0
   points, each within one standard error of zero with sampling and
   imputation uncertainty combined.
-- Deflating with BLS's FCSUti index instead of the package's composite CPI
-  adds 0.9–2.0 points of 2022–2025 growth, more in every tenure than the
-  stage moves it, and brings the replication without the stage within 0.7
-  points of BLS's growth for every tenure.
+- When we deflate with BLS's FCSUti index instead of the package's composite
+  CPI, we estimate 0.9–2.0 more points of 2022–2025 growth, more in every
+  tenure than the stage moves it. With that index, the replication without the
+  stage lands within 0.7 points of BLS's growth for every tenure.
 - We compute BLS's in-band dollars from its published shares. Our imputed
   total exceeds BLS's through 2024 and trails it in 2025. From 2022 to 2025,
   BLS's imputed benefits rise \$401 and ours \$151, and removing imputed terms
   from both narrows the renter growth shortfall from −2.41 to −0.97 points.
-
-Sections: [method](#method), [results](#results), [comparison with BLS
-components](#comparison-with-bls-components), [sampling
-uncertainty](#sampling-uncertainty), [limitations](#limitations) and [how to
-run it](#run-it).
 
 ## Method
 
@@ -126,11 +118,11 @@ thresholds, BLS counts \$1.80 of WIC per unit in the band.
 BLS fits a limited dependent variable model that treats assisted renters'
 rents as censored from above, and values the benefit as imputed market rent
 less rent paid. Garner and Gudrais (2018) document an earlier two-step
-model: a logistic regression for paying market rent, then, among the renters
-who do, a regression of log rent on building characteristics and the first
-step's Mills ratio, with state and year effects; they predict a market rent
-for each assisted unit. The rental model here fits renters per reference
-year: unassisted units with rent of at least \$50 a month enter as observed,
+model. They fit a logistic regression for paying market rent, regress log
+rent on building characteristics and that regression's Mills ratio among the
+renters who pay it, with state and year effects, and predict a market rent
+for each assisted unit. We fit our rental model to renters in each
+reference year: unassisted units with rent of at least \$50 a month enter as observed,
 and assisted units that report rent enter as censored at their rent paid. Rent paid is the rent file's three-month
 rent (`QRT3MCMX`) summed over the unit's records and divided by three.
 That sum equals the unit's rent-of-dwelling expenditure, UCC 210110,
@@ -223,8 +215,8 @@ bundles are cached, compares the USDA lunch formula with
 the values Census assigned in 2018 and 2019 (the formula gives
 \$626.35/\$554.75 against Census's \$627/\$555, and \$642.71/\$571.11 against
 \$643/\$571), checks that the logit and Tobit recover known parameters,
-and fails when the committed receipt no longer matches the code that
-produced it.
+and fails when `ce_inkind_replication_2019_2025.json` no longer matches the
+code that produced it.
 
 `tests/test_ce_replicates.py` checks invariants 12–15 with Hypothesis
 property tests on synthetic data and invariant 16 on a fixture. It holds each
@@ -236,7 +228,8 @@ its code or the page's tables no longer match the receipt.
 
 ## Results
 
-All figures come from the committed receipt, five implicates, with CPI
+All figures come from `ce_inkind_replication_2019_2025.json`, five
+implicates, with CPI
 pinned to the package's `cpi_annual.json` unless a section says
 otherwise. We estimate thresholds on consumer units with children.
 
@@ -435,8 +428,7 @@ the between-implicate standard deviation:
 The in-kind term runs from −1.6 to +1.4 points a year. Owners without
 mortgages swing most and carry the largest implicate spread: they make
 up fewer than one in ten units in the estimation band (136 of 1,550 in
-the 2025 out-of-pocket band), so a few units reorder their mean. Each
-window shares four of its five reference years with the next, and none of
+the 2025 out-of-pocket band), so a few units reorder their mean. None of
 these changes reaches two standard errors with sampling and imputation
 uncertainty combined ([standard errors by year](#yearly-growth)).
 
@@ -753,14 +745,14 @@ BLS's imputed benefits rise \$401 and ours \$151 with the package CPI, and
 BLS's rise exceeds all five of our implicates' with either deflator
 (\$34–\$303). Across all units in the band, rental assistance supplies \$162 of
 that difference and school lunch \$97. From the 2019 to the 2022 thresholds,
-BLS's rental assistance per renter rose 17%, and we estimate that ours rose 20%.
-For the 2019–2023 thresholds, we estimate rental
-assistance per renter 70 to 81% above BLS's, \$1,335 against \$738 in 2022.
-From 2022 to 2025, BLS's amount rose by \$505, and we estimate that ours rose by
-\$129, with a standard error of \$438 ([Rises in imputed
-amounts](#rises-in-imputed-amounts)). BLS draws on many of the same CE
-interviews, so that standard error does not measure the sampling error in the
-gap between the two rises. We have not established what produces the level gap
+BLS's rental assistance per renter rises 17%, and we estimate that ours rises
+20%. For the 2019–2023 thresholds, we estimate that ours exceeds BLS's by
+70–81% (\$1,335 against \$738 in 2022). From 2022 to 2025, BLS's amount rises
+\$505, and we estimate that ours rises \$129, with a standard error of \$438
+([rises in imputed amounts](#rises-in-imputed-amounts)). That standard error
+covers our rise alone: BLS's rise carries sampling error of its own from many
+of the same CE interviews, and BLS publishes no replicate estimates that would
+show how the two move together. We have not established what produces the level gap
 or what raised BLS's amount in 2024 and 2025.
 
 The imputed terms in each threshold, 2022 to 2025. Each cell lists renters /
@@ -789,7 +781,8 @@ Removing imputed terms from both series narrows the renter shortfall from −2.4
 to −0.97 points with the package CPI and closes it with BLS's index (−1.26 to
 +0.02). Owners' figures move by 0.27–0.54 points. Those renter figures with
 imputed terms removed carry between-implicate standard deviations of 0.40–0.63
-points. BLS's thresholds draw on the same CE interviews as ours, so the
+points. BLS's thresholds draw on many of the same CE interviews as ours, so
+the
 [standard errors of growth](#growth-from-2022-to-2025) do not measure how much
 of these gaps sampling could explain.
 
@@ -845,10 +838,14 @@ quarters two windows share, eight between the 2022 and 2025 windows.
 We keep each implicate's imputed amounts from the full-sample run in every
 replicate. We fit the CPS ASEC participation and amount models and the CE rent
 model once, with full-sample weights. For each implicate, we draw the models'
-parameters from their estimated sampling distributions, so the spread across
-implicates carries part of the models' estimation uncertainty. Those distributions treat units as
-independent and leave out the CPS ASEC's and the CE's strata and clusters, and
-the replicates never refit the models. The CE income behind each unit's
+parameters from normal distributions centered on their estimates, so the
+spread across implicates carries part of the models' estimation uncertainty.
+We scale each model's weights to mean one and take the inverse of its
+ridge-penalized information as the draws' covariance. The penalty narrows
+those draws, and the covariances treat units as independent and leave out the
+CPS ASEC's and the CE's strata and clusters. The replicates never refit the models, and they
+leave out the sampling error of the CPS ASEC donor pools behind the school
+lunch hot deck and predictive mean matching. The CE income behind each unit's
 poverty ratio, `FINCBTXM`, averages BLS's five income imputations, so their
 spread stays out as well. In the FCSUti run, we take every price factor from
 BLS's published index, so the factors stay the same in every replicate.
@@ -897,16 +894,15 @@ owners without mortgages. BLS's index shifts each end of
 those ranges by 0.06 or less. Our standard errors equal 0.59–0.94% of the
 threshold for renters and owners with mortgages and 1.45–2.47% for owners
 without mortgages, who make up fewer than one in ten units in the band. Sampling supplies at least 78% of each level's variance, and
-the degrees of freedom range from 23 to 41. BLS publishes a standard error for
-each threshold in its workbooks. Garner (2010) computed the standard errors
-of BLS's 2006–2008 experimental thresholds by balanced repeated replication
-with the CE's 44 replicate weights
-([BLS Working Paper 436](https://www.bls.gov/osmr/research-papers/2010/pdf/ec100040.pdf)),
-as we do, and Garner and Gudrais (2018) base theirs on the same 44
-replicates. BLS's methods page and workbooks do not say how its current
-replicates treat the percentile band or the imputed benefits. Its
-thresholds draw on the same CE interviews as ours, so these standard errors do not measure how much of any gap
-to BLS sampling could explain.
+the degrees of freedom range from 23 to 41. Garner (2010) computed the
+standard errors of BLS's 2006–2008 experimental thresholds by balanced
+repeated replication with the CE's 44 replicate weights, as we do ([BLS
+Working Paper 436](https://www.bls.gov/osmr/research-papers/2010/pdf/ec100040.pdf)).
+Garner and Gudrais (2018) base theirs on the same 44 replicates. BLS's methods
+page and workbooks do not say how its current replicates treat the percentile
+band or the imputed benefits. Its thresholds draw on many of the same CE
+interviews as ours, so these standard errors do not measure how much of any
+gap to BLS sampling could explain.
 
 ### Growth from 2022 to 2025
 
@@ -969,22 +965,23 @@ errors:
 | Rental assistance per renter | +\$505 | +\$129 (438) | +\$195 (402) |
 | School lunch | +\$242 | +\$146 (50) | +\$157 (51) |
 
-With the package CPI, our in-band amounts carry standard errors of \$103–\$127 a
-year for all imputed benefits, \$210–\$303 for rental assistance per renter and
-\$15–\$35 for school lunch. The two windows' band amounts barely move together:
-within each implicate and under either deflator, their replicate deviations
-correlate at −0.26 to +0.22, so each rise's standard error exceeds both years'.
-With either deflator, the implicates' spread supplies 30–47% of each rise's
-variance.
+With the package CPI, our in-band amounts carry standard errors of
+\$103–\$127 in each threshold year for all imputed benefits, \$210–\$303 for
+rental assistance per renter and \$15–\$35 for school lunch. Within each
+implicate and under either deflator, the two windows' replicate deviations from
+the full sample correlate at −0.26 to +0.22, and the implicates' full-sample
+amounts covary negatively across the windows, so each rise's standard error
+exceeds both years'. With either deflator, the implicates' spread supplies
+30–47% of each rise's variance.
 
 ## Limitations
 
-- BLS has not published its imputation code. The models here follow its
+- BLS has not published its imputation code. Our models follow its
   methods page, and their covariates differ from the set Garner and Gudrais
   (2018) list for BLS's earlier models.
 - The rental model is a log-normal Tobit on CE unit characteristics and
-  takes reported rents as exact. It fits each reference year separately and
-  draws each market rent, where Garner and Gudrais (2018) pool the window's
+  takes reported rents as exact. We fit it to each reference year separately
+  and draw each market rent; Garner and Gudrais (2018) pool the window's
   years and assign each assisted unit its predicted rent. The public files
   do not identify rent-controlled units, and the market-rent fit keeps
   renters who receive reduced rent as pay.
@@ -1000,10 +997,11 @@ variance.
   values paid lunches and, in some years, P-EBT or Summer EBT for
   households without free or reduced-price lunch.
 - Census accounts for P-EBT in its school lunch values for reference years
-  2020 and 2021, and states paid P-EBT on EBT cards. BLS says it follows
-  Census's COVID-era methods, so the stage does too, but by BLS's reasoning
-  for leaving out SNAP, reported food spending may already include those
-  benefits.
+  2020 and 2021, and for 2022 it adds summer EBT benefits, which states paid
+  that summer as P-EBT. States paid both on EBT cards. BLS says it
+  follows Census's COVID-era methods, so the stage does too, but by BLS's
+  reasoning for leaving out SNAP, reported food spending may already include
+  those benefits.
 - WIC uses USDA's national fiscal-year average food cost; Census has used
   state averages since its revised 2019 estimates.
 - All participation models share one covariate set across programs and
@@ -1023,18 +1021,20 @@ variance.
   no unit-level values that would show its rank shifts.
 - We hold each implicate's imputed amounts fixed across the CE replicates and
   never refit the imputation models, whose parameter draws come from
-  covariances that treat units as independent. The CE income behind each
-  unit's poverty ratio averages BLS's five income imputations, so the standard
-  errors leave out their spread.
+  ridge-penalized covariances that treat units as independent. The standard
+  errors leave out the sampling error of the CPS ASEC donor pools. The CE
+  income behind each unit's poverty ratio averages BLS's five income
+  imputations, so their spread stays out as well.
 - Most consumer units interviewed across 2015Q1 and 2015Q2, or across 2016Q4
   and 2017Q1, changed replicate patterns, so the replicates for the 2019–2021
   windows can miss part of the correlation between a unit's interviews.
 
 ## Run it
 
-The imputation runs as an optional stage. It composes the public functions
-of `spm_calculator.ce_threshold` and leaves the default replication
-unchanged.
+The imputation runs as an optional stage that composes the public functions
+of `spm_calculator.ce_threshold` and leaves the default replication, its
+September 8 receipt and the code identities that seal the [canonical
+forecasts](rolling-forecasts.md) unchanged.
 
 The imputation needs SciPy, which the `inkind` extra installs:
 `uv pip install "spm-calculator[inkind]"`, or `uv sync --extra inkind`
@@ -1062,8 +1062,8 @@ cached CE Interview bundles (2014–2024) and CPS ASEC public-use files
 BLS's FCSUti index as the deflator, and writes
 `spm_calculator/data/current/ce_inkind_replication_2019_2025.json`. It
 makes no network requests. It stops with an error unless the
-out-of-pocket run matches the archived receipt exactly and an all-zero
-in-kind table reproduces that run exactly.
+out-of-pocket run matches the September 8 replication's archived receipt
+exactly and an all-zero in-kind table reproduces that run exactly.
 
 ## Forecast windows: a proposed design
 
@@ -1089,7 +1089,7 @@ carry the stage into those windows:
    R_in_kind(2025)`, and keep any direct forecast of the in-kind ratio as
    a cross-check only.
 
-Nothing in the canonical forecast uses the stage today.
+Nothing in the canonical forecasts uses the stage today.
 
 ## Files
 

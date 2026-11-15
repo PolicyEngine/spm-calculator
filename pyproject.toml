@@ -15,15 +15,14 @@ classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Science/Research",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
     "Topic :: Scientific/Engineering",
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 dependencies = [
     "pandas>=2.0",
     "numpy>=1.24",
@@ -74,6 +73,9 @@ spm_calculator = [
     "data/current/*.xlsx",
     "data/inkind/*.csv",
     "data/inkind/*.json",
+    "data/census_spm/*.json",
+    "data/census_spm/p60_290/*.json",
+    "data/census_spm/p60_290/*.xlsx",
     "data/provenance/ast-portability-2026-09-09/*",
     "data/provenance/horizon-2036-extension/*",
 ]

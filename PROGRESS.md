@@ -41,11 +41,12 @@ review comes next, and the PR moves to `main` once #57 merges.
 
 ## State
 
-Draft PR [#57](https://github.com/PolicyEngine/spm-calculator/pull/57) on
-`max/ce-replicate-se-20261106`, stacked on #56. The branch holds the module,
-script, receipt, table renderer, tests and the page's "Sampling uncertainty"
-section. An independent review comes next, and the PR moves to `main` once #56
-merges.
+PR [#57](https://github.com/PolicyEngine/spm-calculator/pull/57) on
+`max/ce-replicate-se-20261106`, based on `main` with #56, #58 and #59 merged
+in. The branch holds the module, script, receipt, table renderer, tests and the
+page's "Sampling uncertainty" section. The independent review's third round
+found no P0 or P1 issues; we fixed its P2 and the page's P3s and deferred the
+P3s that would change the receipts' code hashes.
 
 ## Done
 
@@ -62,11 +63,23 @@ merges.
   of zero in every tenure with either deflator, at most 0.70 standard errors,
   and no yearly change reaches two. With the stage and the package CPI, our
   level standard errors run 0.68–1.80 times BLS's published ones.
+- `tests/test_ce_replicates.py` checks the replicate runs against the public
+  stage functions under CPI series that rise at different rates and random
+  half samples whose factors vary by unit. It also checks that the identity
+  guard rejects band means off the thresholds, with and without the stage.
 
 ## Next
 
-- mystmd reads paired dollar signs such as `$626.35/$554.75` in the page's
-  earlier sections as inline math. Escape them with #56's review fixes.
+- We fix round 3's remaining P3s in #61, which regenerates these receipts
+  next:
+  - `scripts/replicate_ce_inkind.py`'s P-EBT limitation adds Census's 2022
+    summer EBT benefits, as the page now says. #60 starts broadband in
+    reference year 2022 and drops the broadband limitation, so its merge of
+    this branch keeps its own broadband sentences on the page.
+  - `ce_replicates.combine_implicates` returns `None` for `df_rubin` when
+    `(m - 1) / squared` overflows to infinity.
+  - `METHOD["held_fixed"]` in `scripts/estimate_ce_replicate_uncertainty.py`
+    names the inverse of the ridge-penalized weighted information matrix.
 
 ---
 
