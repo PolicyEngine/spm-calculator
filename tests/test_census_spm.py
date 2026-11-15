@@ -129,6 +129,7 @@ def test_poor_exactly_when_unit_resources_fall_below_threshold(persons):
         assert bool(unit_flags[0]) == (resources < threshold)
 
 
+@PROPERTY_SETTINGS
 @given(
     st.floats(-1e6, 1e6, allow_nan=False),
     st.floats(0, 1e6, allow_nan=False),
@@ -199,6 +200,7 @@ def test_totals_sum_poor_weights(persons):
     )
 
 
+@PROPERTY_SETTINGS
 @given(
     st.lists(st.floats(-100, 100, allow_nan=False), min_size=2, max_size=40),
     st.floats(-10, 10, allow_nan=False),
@@ -230,6 +232,7 @@ def test_replicate_se_uses_census_factor_for_160_replicates():
     assert c.REPLICATE_FACTOR == pytest.approx(4.0 / 160)
 
 
+@PROPERTY_SETTINGS
 @given(
     st.lists(st.floats(-1e6, 1e6, allow_nan=False), min_size=1, max_size=20),
     st.data(),
@@ -547,7 +550,7 @@ def test_ctc_phase_out_removes_the_credit_of_a_high_income_unit():
     ]
     # A dependent who files their own return keeps their AGI out of the
     # unit's.
-    filing_child = dict(children[0], AGI=12_000.0)
+    filing_child = dict(children[0], AGI=12_000.0, FILESTAT=5)
     persons = pd.DataFrame([head, spouse, filing_child, children[1]]).assign(
         SPM_ID=1, TAX_ID=6385701
     )
