@@ -191,9 +191,16 @@ and the other weights scale down in proportion. We recompute each unit's
 price factor from that composite and reprice its unchanged SU spending at
 the same factor.
 
-Two CE changes reach UCC 690114. BLS's thresholds draw on the same Interview
-quarters, so if its home internet term draws on this UCC, as the close match
-in every year suggests, its series carries both. In 2017Q2 the share of units
+BLS's thresholds draw on the same Interview quarters as ours, so if its home
+internet term draws on UCC 690114, as the close match in every year suggests,
+its series carries every shift in how the CE records that UCC. The share of
+UCC 690114 records with cost flag F ("imputed or adjusted in some other way",
+[PUMD Getting Started
+Guide](https://www.bls.gov/cex/pumd-getting-started-guide.htm), Table 2)
+rises from 25% in 2014Q4 to 41% in 2015Q1, and the share of units with
+children reporting the UCC rises from 68–70% in 2014Q2–2015Q1 to 72–76% from
+2015Q2 through 2017Q1. The 2019 thresholds' window spans both rises, and the
+2020 window starts at the rise in reporting. In 2017Q2 the share of units
 reporting the UCC drops for one quarter and recovers in 2017Q3, while the
 mean among reporters steps up and stays higher; the share reporting cable
 and satellite TV falls in the same quarter. BLS's list of CE [improvements
@@ -203,13 +210,11 @@ questions. But BLS's [2017 data quality
 profile](https://www.bls.gov/cex/dqreport2017.pdf) (p. 12) reports a change
 in processing. Beginning in 2017, BLS allocates combined bills for these
 services across them by proportions from a pool of donors, where it
-previously imputed them. The CE's cost flags ([PUMD Getting Started
-Guide](https://www.bls.gov/cex/pumd-getting-started-guide.htm), Table 2)
-date the change to 2017Q2: among UCC 690114 records, the share flagged as
-imputed or otherwise adjusted falls from 44% in 2017Q1 to none, and the
-share flagged as allocated rises from 25% to 65%. That change likely causes
-the break, though we have not confirmed it. The 2019–2021 thresholds, whose
-windows run from 2014Q2–2019Q1 to 2016Q2–2021Q1, span the break, and the 2022
+previously imputed them. The cost flags date the change to 2017Q2: among
+UCC 690114 records, the share with flag F falls from 44% in 2017Q1 to none,
+and the share with flag E, "allocated", rises from 25% to 65%. That change
+likely causes the 2017Q2 break. The 2019–2021 thresholds, whose windows run
+from 2014Q2–2019Q1 to 2016Q2–2021Q1, span that break, and the 2022
 thresholds' window, 2017Q2–2022Q1, starts at it. In 2024 BLS revised the
 Interview questions on cable, internet, residential and cellular phone
 service and dropped the follow-up questions on bundled amounts ([improvements
@@ -1203,6 +1208,10 @@ year pair's `decompositions` entry (such as `2022-2025`) and that entry's
 | With home internet | `without_in_kind` | `gap_percent_without` | `growth_percent_without` |
 | With home internet and benefits | `with_in_kind` | `gap_percent_with` | `growth_percent_with` |
 
+Each year's `fcsuti_deflated` entry holds the three year records,
+`gap_percent_without`, `gap_percent_with` and `home_internet_percent` for the
+runs with BLS's FCSUti index as the deflator.
+
 The replication receipt's `stage_effects` holds each step's effect:
 `home_internet_dollars` and `home_internet_percent` from the first run to the
 second, and `in_kind_dollars` and `in_kind_percent` from the second to the
@@ -1218,18 +1227,36 @@ against the run with home internet. In the replication receipt, these are
 `component_lift_percent`, `share_of_gap_closed` and
 `in_kind_percentage_points_by_implicate`, plus the `in_kind` entries of
 `package_cpi`, `bls_fcsuti_index` and `fcsuti_deflated.decomposition` in each
-`decompositions` pair; that pair's `out_of_pocket_total` and
-`real_out_of_pocket` include home internet. In the components receipt's
+`decompositions` pair. In the components receipt's
 `growth_2022_2025`, they are `growth_without_stage`, `growth_with_stage`,
 `stage_change_points`, `stage_change_by_implicate`,
 `stage_change_between_implicate_sd` and `other_spread.rank_shift_points`. In
 the replicate receipt, they are `in_kind_lift_percent` and
-`stage_change_points`. Replication receipts at
-schema version 1, components receipts at schema versions 1 and 2, and
-replicate receipts at schema version 1 whose `inputs` have no `internet_cpi`
-use `without_in_kind` for the run without home internet or benefits and
-`with_in_kind` for the run with benefits and without home internet, and the
-same keys compare those two runs.
+`stage_change_points`, and its
+`checks.full_sample.out_of_pocket_matches_replication_receipt` checks the run
+with home internet.
+
+In the replication receipt, home internet also enters each `decompositions`
+pair's `counterfactual_base_window_in_target_prices`, the `total`,
+`out_of_pocket_total` and `real_out_of_pocket` entries of its decompositions,
+and every threshold and growth figure in `wic_ebt_by_state_sensitivity`. It
+enters `package_cpi`'s `price` entries too, because the package CPI weights
+home internet.
+
+Replication receipts at schema version 1, components receipts at schema
+versions 1 and 2, and replicate receipts at schema version 1 whose `inputs`
+have no `internet_cpi` hold no run with home internet. In them, the keys for
+the run with home internet (`without_in_kind`, `gap_percent_without`,
+`growth_percent_without`, `band.without` and `methodology_id_without`) hold
+the run without home internet or benefits, the keys for the run with home
+internet and benefits hold the run with benefits and without home internet,
+and the same keys compare those two runs. In those components receipts, our
+`band.pooled.internet` holds zero, so under Other spread `terms.internet`
+equals minus BLS's whole home internet term. Under Other separate at schema
+version 2, our home internet term keeps the tenure's broadband difference
+from the band mean, which moves `terms.internet` by up to 0.012 points in
+2023–2025. At schema version 1, `rank_shift_points` sits directly under each
+tenure.
 
 ## Forecast windows: a proposed design
 

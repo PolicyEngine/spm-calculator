@@ -390,6 +390,7 @@ def test_committed_receipt_comes_from_this_code():
         assert sha256(ROOT / record["path"]) == record["sha256"], record[
             "path"
         ]
+    assert receipt["home_internet"]["cpi_series"] == "CUUR0000SEEE03"
     archived = ROOT / receipt["archived_receipt_check"]["path"]
     assert sha256(archived) == receipt["archived_receipt_check"]["sha256"]
     assert receipt["archived_receipt_check"][

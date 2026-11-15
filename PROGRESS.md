@@ -4,10 +4,13 @@
 
 Draft PR [#61](https://github.com/PolicyEngine/spm-calculator/pull/61) on
 `max/ce-inkind-internet-20261114`, stacked on #60. The branch adds home
-internet spending to the in-kind runs. Review round 2's doc and test fixes
-are made; its code and receipt-string fixes wait for the next receipt
-regeneration, listed under Next. Round 3 comes next, and the PR moves to
-`main` once #57 and #60 merge.
+internet spending to the in-kind runs. Review round 3 approved it with
+minor findings only. We made round 2's doc and test fixes, and round 3's
+fixes to the receipt-keys note, the UCC 690114 recording shifts, the list of
+files with the old CPI wording, this file's deferral notes and the tests. The
+rest wait for the next receipt regeneration and its doc pass, the next
+forecast rebuild or the next render of the methods paper, as listed under
+Next. The PR moves to `main` once #57 and #60 merge.
 
 ## Done
 
@@ -36,30 +39,70 @@ regeneration, listed under Next. Round 3 comes next, and the PR moves to
   2022–2025 growth lies within one standard error of zero, and no benefit
   change in one-year growth reaches two.
 - BLS's methods page says BLS applies an annual-average FCSUti CPI-U to
-  quarterly CE data. The docs now say so and no longer describe BLS's
-  treatment as quarterly. The sealed module, `ce_forecast.py` and the five
-  forecast artifacts keep the old wording until we next rebuild the
-  canonical forecast; the archived receipts never change.
+  quarterly CE data. The pages under `docs/` now say so and no longer
+  describe BLS's treatment as quarterly. The sealed module, `ce_forecast.py`,
+  `ce_rolling_forecast.json` and `rolling_forecast_2026_09_09.json` keep the
+  old wording until we next rebuild the canonical forecast, and the methods
+  paper until we render it after spm-threshold-paper #12 merges; the archived
+  receipt and the three content-addressed downloads in
+  `web/public/data/canonical/` never change.
 
 ## Next
 
 - The canonical forecast, nowcast and projections exclude home internet until
   we next rebuild the forecast, in a separate change.
-- That rebuild also rewords "Annual instead of quarterly CPI by collection
-  year" in `spm_calculator/ce_forecast.py` and its five artifacts
-  (`ce_rolling_forecast.json` and `rolling_forecast_2026_09_09.json` in
-  `spm_calculator/data/current/`, and the three
-  `web/public/data/canonical/rolling-forecast-*.json` files), along with
-  `ce_threshold.py`'s "BLS quarterly treatment".
-- At the next receipt regeneration, which the code changes below force:
-  align the receipts' home internet limitation with the page ("the UCCs or
-  the price series"), and drop "but not sampling uncertainty" from their
-  uncertainty limitation, since the replicate receipt now estimates it; reword
-  `ce_internet.py`'s 690116 note to "comes within 1% of"; note in
-  `internet_record`'s docstring that, under Other separate, each internet term
-  takes the tenure's broadband difference from the band mean; and have
-  `expenditures_with_internet` raise a clear `ValueError` when its CPI series
-  lack CUUR0000SEEE03.
+- In that rebuild we also reword "Annual instead of quarterly CPI by
+  collection year" in `spm_calculator/ce_forecast.py`,
+  `ce_rolling_forecast.json` and `rolling_forecast_2026_09_09.json`, and
+  publish a new content-addressed download; the three existing
+  `web/public/data/canonical/rolling-forecast-*.json` downloads keep the old
+  wording. We also reword `ce_threshold.py`'s "BLS quarterly treatment" and
+  the quarterly treatment its module and `calculate_base_thresholds`
+  docstrings ascribe to BLS.
+- Once spm-threshold-paper #12, which rewords "BLS adjusts them quarterly" in
+  `paper/index.qmd`, merges, we render the methods paper
+  (`web/public/paper/web/index.html` and `index.pdf`) again.
+- At the next receipt regeneration, we land #60's pending fix to its "every
+  published share" claim, which changes `ce_bls_shares.py` and
+  `scripts/compare_ce_inkind_bls_shares.py`, and make these changes from this
+  PR's reviews, which also change files the receipts fingerprint:
+  - align the receipts' home internet limitation with the page ("the UCCs or
+    the price series"), and drop "but not sampling uncertainty" from their
+    uncertainty limitation, since the replicate receipt now estimates it;
+  - reword `ce_internet.py`'s 690116 note to "comes within 1% of";
+  - in `scripts/compare_ce_inkind_bls_shares.py`, note in `internet_record`'s
+    docstring that, under Other separate, each internet term takes the
+    tenure's broadband difference from the band mean;
+  - have `expenditures_with_internet` raise a clear `ValueError` when its CPI
+    series are `None` or lack CUUR0000SEEE03;
+  - have `unit_components` in `ce_bls_shares.py` handle or reject a frame that
+    carries `internet_quarterly`, and correct its docstring;
+  - rename the replicate receipt's
+    `checks.full_sample.out_of_pocket_matches_replication_receipt` for the run
+    with home internet;
+  - add `spm_calculator/published_thresholds.py`, which
+    `scripts/replicate_ce_inkind.py` imports, to that script's `CODE_PATHS`;
+  - have a script record the 690116 shares, the 690114 reporting shares and
+    the cost-flag shares the page cites, and give the 690116 range for the
+    replication's estimation sample beside the 2020–2025 comparison with
+    BLS's home internet.
+- In that regeneration's doc pass, we make round 3's remaining page edits:
+  - in `docs/ce-inkind-imputation.md`, named runs instead of "the stage",
+    "we estimate" on our benefit figures, and actors and real verbs for "Each
+    step's effect then reads off directly", "Ours is", "Home internet is" and
+    "The runs use";
+  - "move their in-band shelter and utilities" for both "move their mean";
+    "Without home internet or benefits" to open the FCSUti deflator bullet;
+    "the package CPI" without the "rule the composite already applies" gloss;
+    and "in the runs with home internet" for "in the runs on this page";
+  - cut the "within 3.2%" sentence, which repeats 0.99–1.03; write "The four
+    renter figures with imputed terms removed" before 0.57–0.64; and write
+    "of our band" in the standard-error paragraph's "less than a tenth";
+  - "the UCCs or the price series" in the 690116 paragraph, to match the
+    limitations;
+  - "exclude" for "still exclude" in `docs/methodology.md` and
+    `docs/bls-2026-correction.md`;
+  - notes on "a few dollars" and on the 11-month 2025 SEEE03 average.
 - The four questions to BLS and Census staff from #60 stay open.
 
 ---

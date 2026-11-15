@@ -810,6 +810,7 @@ def test_committed_receipt_comes_from_this_code():
         assert sha256(ROOT / name) == digest, name
     for source in receipt["inputs"].values():
         assert sha256(ROOT / source["path"]) == source["sha256"]
+    assert receipt["inputs"]["internet_cpi"]["series_id"] == "CUUR0000SEEE03"
 
 
 def test_receipt_matches_the_in_kind_replication():

@@ -44,6 +44,9 @@ from spm_calculator.ce_bls_shares import (
 )
 from spm_calculator.ce_decomposition import BLS_FCSUTI_INDEX, TENURES
 from spm_calculator.ce_inkind_stage import (
+    IN_KIND_OMITTED,
+    OMITTED_APPROXIMATION,
+    OutOfPocketRun,
     add_in_kind,
     prepare_out_of_pocket,
     replicate_with_in_kind,
@@ -434,6 +437,36 @@ def test_stage_replaces_each_omission_in_place():
         assert after == [replaced.get(item, item) for item in before]
 
 
+def test_stage_appends_the_omission_its_run_would_carry():
+    raw = with_internet(ce_frame(14), 14)
+    cpi = flat_with_internet()
+    run = prepare_out_of_pocket(raw, 2024, cpi_series=cpi)
+    expanded = add_home_internet(run, cpi)
+    appended = {
+        OMITTED_APPROXIMATION: (
+            "home internet omitted; in-kind benefits from the in-kind stage"
+        ),
+        IN_KIND_OMITTED: "in-kind benefits from the in-kind stage",
+    }
+    for base, expected in zip((run, expanded), appended.values()):
+        construction = base.result["construction"]
+        kept = [
+            item
+            for item in construction["approximations"]
+            if item not in appended
+        ]
+        bare = OutOfPocketRun(
+            result={
+                **base.result,
+                "construction": {**construction, "approximations": kept},
+            },
+            expenditures=base.expenditures,
+            median_share=base.median_share,
+        )
+        staged = replicate_with_in_kind(bare, zero_in_kind(raw["NEWID"]))
+        assert staged["construction"]["approximations"] == [*kept, expected]
+
+
 # Invariant 5
 
 
@@ -726,4 +759,9 @@ def test_components_receipt_keeps_internet_out_of_imputed_totals():
                     assert entry["bls_percent_of_threshold"] == pytest.approx(
                         100 * entry["bls_dollars"] / published[tenure],
                         rel=1e-12,
+                    )
+            for accounting in year["level_gap_percent_of_bls"].values():
+                for gap in accounting.values():
+                    assert gap["imputed"] == pytest.approx(
+                        sum(gap["terms"][c] for c in IMPUTED), rel=1e-12
                     )
