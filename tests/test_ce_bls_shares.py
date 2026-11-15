@@ -990,9 +990,10 @@ def test_receipt_bls_growth_follows_from_its_bands():
         )
         for accounting in ACCOUNTINGS:
             block = record[accounting]
-            assert block["imputed_term_dollars"]["2025"] == pytest.approx(
-                b.imputed_term(tenure, accounting)
-            )
+            for year, band in (("2022", a), ("2025", b)):
+                assert block["imputed_term_dollars"][year] == pytest.approx(
+                    band.imputed_term(tenure, accounting)
+                )
             assert block[
                 "imputed_share_of_growth_beyond_cpi_u_percent"
             ] == pytest.approx(

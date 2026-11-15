@@ -1561,7 +1561,8 @@ def impute_in_kind(
                 continue
             if first_year is not None and reference_year < first_year:
                 diagnostics[component][str(reference_year)] = {
-                    "status": "program_not_in_effect"
+                    "status": "before_first_reference_year",
+                    "first_reference_year": first_year,
                 }
                 continue
             amount = donors[amount_column].fillna(0).to_numpy(dtype=float)
