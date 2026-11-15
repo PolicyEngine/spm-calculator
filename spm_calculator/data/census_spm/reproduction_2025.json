@@ -2584,6 +2584,23 @@
     }
   },
   "credit_interaction": {
+    "ctc_parameters": {
+      "amount_per_child": 2200.0,
+      "amount_per_other_dependent": 500.0,
+      "phase_out_threshold_joint": 400000.0,
+      "phase_out_threshold_other": 200000.0,
+      "phase_out_amount": 50.0,
+      "phase_out_increment": 1000.0,
+      "refundable_max_per_child": 1700.0,
+      "phase_in_threshold": 2500.0,
+      "phase_in_rate": 0.15,
+      "min_children_for_payroll_alternative": 3
+    },
+    "fica_sample_bounds": [
+      1000.0,
+      150000.0
+    ],
+    "credit_tolerance": 1.0,
     "fica_shares": {
       "wages": 0.0765,
       "self_employment": 0.1413,
@@ -2602,7 +2619,7 @@
         "one_or_two_children": 3142,
         "three_or_more_children": 1305
       },
-      "units_without_credit_not_reproduced": 946,
+      "units_without_credit_not_reproduced": 1,
       "units_without_credit_not_reproduced_with_eitc": 0,
       "three_plus_above_earnings_branch": 55,
       "three_plus_above_earnings_branch_reproduced": 0,
@@ -2630,7 +2647,7 @@
         "one_or_two_children": 3222,
         "three_or_more_children": 1360
       },
-      "units_without_credit_not_reproduced": 946,
+      "units_without_credit_not_reproduced": 1,
       "units_without_credit_not_reproduced_with_eitc": 0,
       "three_plus_above_earnings_branch": 0,
       "three_plus_above_earnings_branch_reproduced": 0,

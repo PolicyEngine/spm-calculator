@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import math
 import re
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 BLOCK = re.compile(
     r"(<!-- BEGIN GENERATED: (?P<name>[a-z0-9_]+) -->\n)"
@@ -464,13 +464,18 @@ def _matched(check: dict) -> int:
     return sum(check["rule_matches"].values())
 
 
+def _dollars(x: float) -> str:
+    return f"${x:,.0f}"
+
+
 def _fica_sentences(ci: dict) -> str:
     shares = ci["fica_shares"]
+    low, high = (_dollars(x) for x in ci["fica_sample_bounds"])
     return (
-        "Among filers with $1,000 to $150,000 of wages and no other "
+        f"Among filers with {low} to {high} of wages and no other "
         f"earnings ({shares['wage_filers']:,} in the sample), the file's "
         f"`FICA` has a median of {100 * shares['wages']:.2f} percent of "
-        "wages. Among filers with $1,000 to $150,000 of self-employment "
+        f"wages. Among filers with {low} to {high} of self-employment "
         "income and no other earnings "
         f"({shares['self_employment_filers']:,}), its median is "
         f"{100 * shares['self_employment']:.2f} percent of that income, "
@@ -481,8 +486,10 @@ def _fica_sentences(ci: dict) -> str:
         "Security tax on wages up to the 2025 wage base of "
         f"${ci['social_security_wage_base']:,.0f}, plus "
         f"{100 * ci['employee_medicare_rate']:g} percent Medicare tax. For "
-        "everyone else, all of `FICA` is the employee's "
-        "tax. The rule counts half of the self-employment "
+        "everyone else, all of `FICA` is the employee's tax. The split "
+        "counts any additional Medicare tax or federal retirement "
+        "contribution in a self-employed person's `FICA` as "
+        "self-employment tax. The rule counts half of the self-employment "
         "tax as payroll tax (26 U.S.C. 24(d)(2)(A)) and takes the other "
         "half out of earnings, as section 32(c)(2)(A)(ii) does through the "
         "section 164(f) deduction. "
@@ -498,14 +505,16 @@ def _misses_sentences(ci: dict, total: int) -> str:
     reproduced = misses["reproduced_before_deduction"]
     if with_se == n == reproduced:
         lead = (
-            f"All {n:,} it misses have self-employment income, and each "
+            f"All {n:,} it misses have self-employment or farm income, "
+            "and each "
             "gets the credit the rule gives when earnings skip the section "
             "164(f) deduction. "
         )
     else:
         lead = (
             f"Of the {n:,} it misses, {with_se:,} have self-employment "
-            f"income, and {reproduced:,} get the credit the rule gives when "
+            f"or farm income, and {reproduced:,} get the credit the rule "
+            "gives when "
             "earnings skip the section 164(f) deduction. "
         )
     before = _matched(ci["before_deduction"])
@@ -522,40 +531,64 @@ def _uncredited_sentence(ci: dict) -> str:
             check["units_without_credit_not_reproduced_with_eitc"],
         )
 
-    def some(k: int) -> str:
-        return "none" if k == 0 else _words(k)
+    def units(n: int, with_eitc: int) -> str:
+        if n == 1:
+            has = "has an EITC" if with_eitc else "has no EITC"
+            return (
+                f"one tax unit that the file gives none, and that unit {has}"
+            )
+        some = "none" if with_eitc == 0 else _words(with_eitc)
+        return (
+            f"{n:,} tax units that the file gives none, {some} of them with "
+            "an EITC"
+        )
 
     statute, before = counts(ci["statute"]), counts(ci["before_deduction"])
     if statute == before:
-        return (
-            f"Both versions give a refundable credit to {statute[0]:,} tax "
-            f"units that the file gives none, {some(statute[1])} of them "
-            "with an EITC. "
-        )
+        if statute[0] == 0:
+            return (
+                "Neither version gives a refundable credit to a tax unit "
+                "that the file gives none. "
+            )
+        return f"Both versions give a refundable credit to {units(*statute)}. "
     return (
-        f"The rule gives a refundable credit to {statute[0]:,} tax units "
-        f"that the file gives none, {some(statute[1])} of them with an "
-        f"EITC; without the deduction, it gives one to {before[0]:,}, "
-        f"{some(before[1])} of them with an EITC. "
+        f"The rule gives a refundable credit to {units(*statute)}. Without "
+        f"the deduction, it gives one to {units(*before)}. "
     )
 
 
+def _children_groups(params: dict) -> Tuple[str, str]:
+    """'one or two' and 'three or more', from the payroll alternative's minimum."""
+    m = int(params["min_children_for_payroll_alternative"])
+    few = "one or two" if m == 3 else f"one to {_words(m - 1)}"
+    return few, f"{_words(m)} or more"
+
+
+def _within(ci: dict) -> str:
+    tolerance = ci["credit_tolerance"]
+    return "within a dollar" if tolerance == 1 else f"within ${tolerance:,g}"
+
+
 def _payroll_sentences(ci: dict, n3: int) -> str:
+    params = ci["ctc_parameters"]
+    _, many = _children_groups(params)
+    rate = f"{100 * params['phase_in_rate']:g} percent"
+    floor = _dollars(params["phase_in_threshold"])
     above = ci["statute"]["three_plus_above_earnings_branch"]
     reproduced = ci["statute"]["three_plus_above_earnings_branch_reproduced"]
     gross = ci["statute_above_branch_reproduced_before_deduction"]
     above_before = ci["before_deduction"]["three_plus_above_earnings_branch"]
     if above == 0 and above_before == 0:
         return (
-            "No unit with three or more qualifying children has an "
-            "`ACTC_CRD` above 15 percent of its earnings over $2,500, the "
+            f"No unit with {many} qualifying children has an "
+            f"`ACTC_CRD` above {rate} of its earnings over {floor}, the "
             "most the earnings branch allows, so the payroll tax "
             "alternative sets no credit in the file. "
         )
     text = (
-        f"Of the {n3:,} units with three or more qualifying children, "
-        f"{above:,} have an `ACTC_CRD` above 15 percent of their earned "
-        "income over $2,500, the most the earnings branch allows. "
+        f"Of the {n3:,} units with {many} qualifying children, "
+        f"{above:,} have an `ACTC_CRD` above {rate} of their earned "
+        f"income over {floor}, the most the earnings branch allows. "
     )
     if reproduced == 0 and gross == above and above_before == 0:
         return text + (
@@ -573,8 +606,23 @@ def _payroll_sentences(ci: dict, n3: int) -> str:
     )
 
 
+def _phase_out_sentences(params: dict) -> str:
+    step = _dollars(params["phase_out_increment"])
+    return (
+        f"The rule takes {_dollars(params['phase_out_amount'])} from the "
+        f"credit for each {step}, or part of {step}, of adjusted gross "
+        f"income above {_dollars(params['phase_out_threshold_joint'])} on "
+        "a joint return and "
+        f"{_dollars(params['phase_out_threshold_other'])} on any other. "
+        "The statute phases the credit out on modified adjusted gross "
+        "income, which adds excluded foreign and territorial income that "
+        "the file does not record. "
+    )
+
+
 def credit_interaction_block(results: dict) -> str:
     ci = results["credit_interaction"]
+    few, many = _children_groups(ci["ctc_parameters"])
     statute, before = ci["statute"], ci["before_deduction"]
     n12 = ci["units_with_credit"]["one_or_two_children"]
     n3 = ci["units_with_credit"]["three_or_more_children"]
@@ -586,10 +634,11 @@ def credit_interaction_block(results: dict) -> str:
     groups = "points for all people, under 18, 18 to 64 and 65 and older"
     text = (
         _fica_sentences(ci)
+        + _phase_out_sentences(ci["ctc_parameters"])
         + f"The rule gives {_of(m12 + m3, n12 + n3)} tax units with a "
-        "refundable credit their `ACTC_CRD` within a dollar: "
-        f"{m12:,} of {n12:,} with one or two qualifying children and "
-        f"{m3:,} of {n3:,} with three or more. "
+        f"refundable credit their `ACTC_CRD` {_within(ci)}: "
+        f"{m12:,} of {n12:,} with {few} qualifying children and "
+        f"{m3:,} of {n3:,} with {many}. "
         + _misses_sentences(ci, n12 + n3)
         + _uncredited_sentence(ci)
         + _payroll_sentences(ci, n3)

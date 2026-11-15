@@ -95,6 +95,8 @@ PERSON_COLUMNS: Tuple[str, ...] = (
     "EIT_CRED",
     "ACTC_CRD",
     "CTC_CRD",
+    "AGI",
+    "FILESTAT",
     "FEDTAX_BC",
     "FEDTAX_AC",
     "STATETAX_A",
@@ -1138,18 +1140,29 @@ ALTERNATIVE_TABLE4_ROWS: Tuple[Tuple[Table4Row, str], ...] = (
 
 #: The 2025 Child Tax Credit parameters, as PolicyEngine US 2.2.1 sets them
 #: under ``gov.irs.credits.ctc``: the credit per qualifying child
-#: (``amount.base``) and per other dependent (``amount.adult_dependent``),
-#: the refundable maximum per child (``refundable.individual_max``), and the
-#: phase-in threshold, rate and minimum number of children for the payroll
-#: tax alternative (``refundable.phase_in``).
+#: (``amount.base``) and per other dependent (``amount.adult_dependent``);
+#: the income phase-out's thresholds for joint returns and all others, and
+#: the amount it takes for each increment of income above them
+#: (``phase_out``); the refundable maximum per child
+#: (``refundable.individual_max``); and the phase-in threshold, rate and
+#: minimum number of children for the payroll tax alternative
+#: (``refundable.phase_in``). The 2025 Schedule 8812 prints the same
+#: values (lines 5, 7, 9 to 11, 16b, 19 and 20).
 CTC_2025: Dict[str, float] = {
     "amount_per_child": 2200.0,
     "amount_per_other_dependent": 500.0,
+    "phase_out_threshold_joint": 400_000.0,
+    "phase_out_threshold_other": 200_000.0,
+    "phase_out_amount": 50.0,
+    "phase_out_increment": 1000.0,
     "refundable_max_per_child": 1700.0,
     "phase_in_threshold": 2500.0,
     "phase_in_rate": 0.15,
     "min_children_for_payroll_alternative": 3,
 }
+#: ``FILESTAT`` codes for joint returns (both under 65, one 65 or older,
+#: both 65 or older).
+JOINT_FILESTAT = (1, 2, 3)
 #: Age below which a dependent counts as a qualifying child.
 CTC_CHILD_AGE_LIMIT = 17
 #: The employee's Social Security tax rate, the 2025 wage base it applies
@@ -1163,6 +1176,9 @@ EMPLOYEE_MEDICARE_RATE = 0.0145
 #: The share of self-employment tax that 26 U.S.C. 164(f) deducts
 #: (``gov.irs.ald.self_employment_tax.percent_deductible``).
 SELF_EMPLOYMENT_TAX_DEDUCTIBLE_SHARE = 0.5
+#: The earnings range of the filers :func:`fica_shares` covers: more than
+#: the first bound and less than the second, in dollars.
+FICA_SAMPLE_BOUNDS = (1000.0, 150_000.0)
 #: The file records credits in whole dollars, so comparisons allow a dollar.
 CREDIT_TOLERANCE = 1.0
 #: The tax-unit columns that hold earned income as 26 U.S.C. 32(c)(2)
@@ -1240,7 +1256,8 @@ def fica_shares(persons: pd.DataFrame) -> Dict[str, float]:
     filers' shares differ.
     """
     p = persons.loc[persons["DEP_STAT"] == 0]
-    in_range = lambda s: (s > 1000) & (s < 150_000)  # noqa: E731
+    low, high = FICA_SAMPLE_BOUNDS
+    in_range = lambda s: (s > low) & (s < high)  # noqa: E731
     wages = p.loc[
         in_range(p["WSAL_VAL"]) & (p["SEMP_VAL"] == 0) & (p["FRSE_VAL"] == 0)
     ]
@@ -1270,9 +1287,12 @@ def ctc_tax_units(persons: pd.DataFrame) -> pd.DataFrame:
     :data:`EARNINGS_BEFORE_DEDUCTION` skips the deduction. Both are
     floored at zero for the unit. Payroll tax is the filers'
     :func:`ctc_payroll_tax`, and ``self_employed_filers`` counts filers
-    whose self-employment and farm income sum above zero. The credits are
-    the file's own: ``EIT_CRED``, ``ACTC_CRD`` and ``CTC_CRD`` (the
-    nonrefundable credit for children and other dependents).
+    whose self-employment and farm income sum above zero. ``agi`` is the
+    filers' ``AGI`` (the file puts it on one filer), and ``joint`` marks
+    units whose filers' ``FILESTAT`` is a joint return
+    (:data:`JOINT_FILESTAT`). The credits are the file's own: ``EIT_CRED``,
+    ``ACTC_CRD`` and ``CTC_CRD`` (the nonrefundable credit for children and
+    other dependents).
     """
     p = persons
     dependent = p["DEP_STAT"].to_numpy() > 0
@@ -1295,6 +1315,10 @@ def ctc_tax_units(persons: pd.DataFrame) -> pd.DataFrame:
             "self_employed_filers": (filer & (self_employment > 0)).astype(
                 int
             ),
+            "agi": np.where(filer, p["AGI"].to_numpy(dtype=float), 0.0),
+            "joint": (
+                filer & np.isin(p["FILESTAT"].to_numpy(), JOINT_FILESTAT)
+            ).astype(int),
             "eitc": p["EIT_CRED"].to_numpy(dtype=float),
             "actc": p["ACTC_CRD"].to_numpy(dtype=float),
             "nonrefundable_ctc": p["CTC_CRD"].to_numpy(dtype=float),
@@ -1310,6 +1334,8 @@ def ctc_tax_units(persons: pd.DataFrame) -> pd.DataFrame:
         },
         payroll_tax=("payroll_tax", "sum"),
         self_employed_filers=("self_employed_filers", "sum"),
+        agi=("agi", "sum"),
+        joint=("joint", "max"),
         eitc=("eitc", "sum"),
         actc=("actc", "sum"),
         nonrefundable_ctc=("nonrefundable_ctc", "sum"),
@@ -1329,23 +1355,47 @@ def ctc_earnings_branch(
     return CTC_2025["phase_in_rate"] * np.maximum(excess, 0.0)
 
 
+def ctc_phase_out(units: pd.DataFrame) -> np.ndarray:
+    """How much the income phase-out takes from each tax unit's credit.
+
+    $50 for each $1,000, or part of $1,000, by which ``agi`` exceeds
+    $400,000 for a joint return or $200,000 for any other (26 U.S.C.
+    24(b); lines 9 to 11 of the 2025 Schedule 8812; ``ctc_phase_out`` in
+    PolicyEngine US 2.2.1). The statute phases the credit out on modified
+    adjusted gross income, which adds excluded foreign and territorial
+    income that the file does not record, so this reads ``AGI``, as
+    PolicyEngine US 2.2.1 does.
+    """
+    threshold = np.where(
+        units["joint"].to_numpy(dtype=bool),
+        CTC_2025["phase_out_threshold_joint"],
+        CTC_2025["phase_out_threshold_other"],
+    )
+    excess = np.maximum(units["agi"].to_numpy(dtype=float) - threshold, 0.0)
+    increments = np.ceil(excess / CTC_2025["phase_out_increment"])
+    return CTC_2025["phase_out_amount"] * increments
+
+
 def refundable_ctc_rule(
     units: pd.DataFrame, eitc, earnings: str = EARNINGS
 ) -> np.ndarray:
     """Each tax unit's refundable CTC under the 2025 rule, given its EITC.
 
     The credit is the smallest of the refundable maximum per child, the
-    credit left after the nonrefundable part (``CTC_CRD``), and the greater
-    of the earnings branch and, for units with at least three qualifying
-    children, payroll tax less the EITC (26 U.S.C. 24(d)(1)(B);
-    ``refundable_ctc`` and ``ctc_phase_in`` in PolicyEngine US 2.2.1).
+    credit left after the income phase-out (:func:`ctc_phase_out`) and the
+    nonrefundable part (``CTC_CRD``), and the greater of the earnings
+    branch and, for units with at least three qualifying children, payroll
+    tax less the EITC (26 U.S.C. 24(b) and (d)(1)(B); lines 12 to 27 of the
+    2025 Schedule 8812; ``ctc``, ``refundable_ctc`` and ``ctc_phase_in`` in
+    PolicyEngine US 2.2.1).
     ``eitc`` is an array aligned with ``units`` or a scalar, and
     ``earnings`` names the column the earnings branch reads.
     """
     children = units["children"].to_numpy(dtype=float)
-    total = CTC_2025["amount_per_child"] * children + CTC_2025[
+    maximum = CTC_2025["amount_per_child"] * children + CTC_2025[
         "amount_per_other_dependent"
     ] * units["other_dependents"].to_numpy(dtype=float)
+    total = np.maximum(maximum - ctc_phase_out(units), 0.0)
     cap = np.minimum(
         CTC_2025["refundable_max_per_child"] * children,
         np.maximum(total - units["nonrefundable_ctc"].to_numpy(float), 0.0),
@@ -1514,6 +1564,9 @@ def credit_interaction(
     missed = with_credit & ~statute_matches
     self_employed = units["self_employed_filers"].to_numpy() > 0
     return {
+        "ctc_parameters": dict(CTC_2025),
+        "fica_sample_bounds": list(FICA_SAMPLE_BOUNDS),
+        "credit_tolerance": CREDIT_TOLERANCE,
         "fica_shares": fica_shares(persons),
         "social_security_wage_base": SOCIAL_SECURITY_WAGE_BASE_2025,
         "employee_social_security_rate": EMPLOYEE_SOCIAL_SECURITY_RATE,

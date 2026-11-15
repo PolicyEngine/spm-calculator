@@ -351,6 +351,7 @@ def test_negative_state_tax_gives_a_negative_effect():
     assert effects["state_income_tax"]["moe"][0] == 0.0
 
 
+@PROPERTY_SETTINGS
 @given(
     st.dictionaries(
         st.sampled_from(
@@ -424,6 +425,12 @@ def credit_units(draw, max_units: int = 12):
             "eitc": rng.integers(0, 3, size=n) * rng.uniform(0, 4_000, size=n),
             "nonrefundable_ctc": rng.integers(0, 2, size=n)
             * rng.uniform(0, 5_000, size=n),
+            "agi": rng.choice(
+                [0.0, 50_000.0, 199_500.0, 250_000.0, 401_000.0, 3e6],
+                size=n,
+            )
+            * rng.uniform(0.9, 1.1, size=n),
+            "joint": rng.integers(0, 2, size=n),
         },
         index=pd.Index(np.arange(n) + 100, name="TAX_ID"),
     )
@@ -481,6 +488,8 @@ def test_refundable_ctc_rule_matches_hand_computed_units():
             "payroll_tax": [229.5, 229.5, 3_060.0],
             "eitc": [1_000.0, 1_000.0, 2_000.0],
             "nonrefundable_ctc": [0.0, 0.0, 1_000.0],
+            "agi": [3_000.0, 3_000.0, 40_000.0],
+            "joint": [0, 0, 1],
             "actc": [75.0, 75.0, 5_100.0],
         },
         index=pd.Index([10, 11, 12], name="TAX_ID"),
@@ -493,6 +502,96 @@ def test_refundable_ctc_rule_matches_hand_computed_units():
         [75.0, 75.0, 5_100.0],
     )
     np.testing.assert_allclose(c.ctc_response_to_eitc(units), [154.5, 0, 0])
+
+
+def test_ctc_phase_out_follows_schedule_8812_lines_9_to_11():
+    # $50 for each $1,000, or part of $1,000, above $400,000 on a joint
+    # return and $200,000 on any other.
+    units = pd.DataFrame(
+        {
+            "agi": [
+                400_000.0,
+                400_001.0,
+                401_000.0,
+                401_001.0,
+                200_500.0,
+                250_000.0,
+                3_266_881.0,
+            ],
+            "joint": [1, 1, 1, 1, 0, 1, 1],
+        }
+    )
+    np.testing.assert_allclose(
+        c.ctc_phase_out(units), [0, 50, 50, 100, 50, 0, 143_350]
+    )
+
+
+def test_ctc_phase_out_removes_the_credit_of_a_high_income_unit():
+    # A joint return with $3,266,881 of AGI and two children aged 16 and
+    # 14: the phase-out takes $143,350 from a $4,400 credit, so the unit
+    # gets no refundable credit, as in the file. Without the phase-out,
+    # the rule would give it $3,400.
+    head = {
+        **_ZERO_CREDIT_FIELDS,
+        "DEP_STAT": 0,
+        "A_AGE": 44,
+        "WSAL_VAL": 3_000_000.0,
+        "FICA": 30_000.0,
+        "AGI": 3_266_881.0,
+        "FILESTAT": 1,
+    }
+    spouse = {**_ZERO_CREDIT_FIELDS, "DEP_STAT": 0, "A_AGE": 40, "FILESTAT": 1}
+    children = [
+        {**_ZERO_CREDIT_FIELDS, "DEP_STAT": 1, "A_AGE": age}
+        for age in (16, 14)
+    ]
+    # A dependent who files their own return keeps their AGI out of the
+    # unit's.
+    filing_child = dict(children[0], AGI=12_000.0)
+    persons = pd.DataFrame([head, spouse, filing_child, children[1]]).assign(
+        SPM_ID=1, TAX_ID=6385701
+    )
+    units = c.ctc_tax_units(persons)
+    assert units.loc[6385701, "agi"] == pytest.approx(3_266_881.0)
+    assert units.loc[6385701, "joint"] == 1
+    assert c.refundable_ctc_rule(units, 0.0)[0] == 0.0
+    assert c.rule_reproduces_credit(units)[0]
+    no_phase_out = units.assign(agi=0.0)
+    assert c.refundable_ctc_rule(no_phase_out, 0.0)[0] == pytest.approx(3_400)
+
+
+def test_ctc_phase_out_limits_the_refundable_part_to_what_remains():
+    # Two children on a joint return with $450,000 of AGI: the phase-out
+    # takes $2,500 from $4,400, leaving $1,900. A unit that used none of it
+    # against tax gets $1,900 back; one that used it all gets nothing.
+    units = pd.DataFrame(
+        {
+            "SPM_ID": [1, 2],
+            "children": [2, 2],
+            "other_dependents": [0, 0],
+            "earnings": [450_000.0, 450_000.0],
+            "payroll_tax": [20_000.0, 20_000.0],
+            "eitc": [0.0, 0.0],
+            "nonrefundable_ctc": [0.0, 1_900.0],
+            "agi": [450_000.0, 450_000.0],
+            "joint": [1, 1],
+        },
+        index=pd.Index([1, 2], name="TAX_ID"),
+    )
+    np.testing.assert_allclose(c.refundable_ctc_rule(units, 0.0), [1_900, 0])
+
+
+@PROPERTY_SETTINGS
+@given(credit_units())
+def test_ctc_phase_out_never_raises_the_credit_and_spares_lower_incomes(
+    units,
+):
+    eitc = units["eitc"].to_numpy()
+    rule = c.refundable_ctc_rule(units, eitc)
+    without = c.refundable_ctc_rule(units.assign(agi=0.0), eitc)
+    assert (rule <= without + 1e-9).all()
+    spared = units["agi"].to_numpy() <= c.CTC_2025["phase_out_threshold_other"]
+    np.testing.assert_allclose(rule[spared], without[spared])
 
 
 def test_ctc_payroll_tax_counts_half_of_self_employment_tax():
@@ -578,6 +677,8 @@ def test_ctc_tax_units_take_half_of_self_employment_tax_out_of_earnings():
         "EIT_CRED": 0.0,
         "ACTC_CRD": 7_125.0,
         "CTC_CRD": 10_000.0,
+        "AGI": 46_467.5,
+        "FILESTAT": 4,
     }
     child = {**_ZERO_CREDIT_FIELDS, "DEP_STAT": 1, "A_AGE": 6}
     persons = pd.DataFrame([filer] + [child] * 8).assign(SPM_ID=1, TAX_ID=9)
@@ -601,6 +702,8 @@ _ZERO_CREDIT_FIELDS = {
     "EIT_CRED": 0.0,
     "ACTC_CRD": 0.0,
     "CTC_CRD": 0.0,
+    "AGI": 0.0,
+    "FILESTAT": 6,
 }
 
 
@@ -631,6 +734,10 @@ def credit_persons(draw, max_units: int = 6):
                     "WSAL_VAL": wages,
                     "SEMP_VAL": self_employment,
                     "FICA": 0.0765 * wages + 0.1413 * max(self_employment, 0),
+                    "AGI": float(
+                        rng.choice([wages + self_employment, 450_000.0])
+                    ),
+                    "FILESTAT": int(rng.choice([1, 4, 5])),
                     "EIT_CRED": float(
                         rng.integers(0, 2) * rng.integers(0, 7_000)
                     ),
@@ -1209,6 +1316,37 @@ def test_claim_each_credit_alone_exceeds_census_below_65(results):
 def test_claim_credit_fields_sum_to_spm_unit_fields(results):
     assert results["identities"]["spm_eitc_vs_eit_cred_max_gap"] == 0
     assert results["identities"]["spm_actc_vs_actc_crd_max_gap"] == 0
+
+
+def test_results_carry_the_parameters_the_note_prints(results):
+    ci = results["credit_interaction"]
+    assert ci["ctc_parameters"] == c.CTC_2025
+    assert tuple(ci["fica_sample_bounds"]) == c.FICA_SAMPLE_BOUNDS
+    assert ci["credit_tolerance"] == c.CREDIT_TOLERANCE
+    block = report.credit_interaction_block(results)
+    changed = json.loads(json.dumps(results))
+    params = changed["credit_interaction"]["ctc_parameters"]
+    params.update(
+        phase_in_rate=0.2,
+        phase_in_threshold=3_000.0,
+        phase_out_threshold_joint=500_000.0,
+        phase_out_threshold_other=250_000.0,
+    )
+    changed["credit_interaction"]["fica_sample_bounds"] = [2_000.0, 90_000.0]
+    changed["credit_interaction"]["credit_tolerance"] = 5.0
+    params["min_children_for_payroll_alternative"] = 4
+    rerendered = report.credit_interaction_block(changed)
+    for old, new in (
+        ("$1,000 to $150,000", "$2,000 to $90,000"),
+        ("above $400,000 on a joint return", "above $500,000 on a joint"),
+        ("and $200,000 on any other", "and $250,000 on any other"),
+        ("15 percent of their earned income over $2,500", "20 percent"),
+        ("`ACTC_CRD` within a dollar", "`ACTC_CRD` within $5"),
+        ("with three or more qualifying children", "with four or more"),
+        ("with one or two qualifying children", "with one to three"),
+    ):
+        assert old in block and old not in rerendered, old
+        assert new in rerendered, new
 
 
 def test_claim_fica_carries_the_whole_self_employment_tax(results):
