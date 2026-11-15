@@ -37,7 +37,7 @@
     "scripts/replicate_ce_inkind.py": "2fd128516cdd5fb7c211f271dcd55afc0423b90e46150de836cfeb81b28b0e4f",
     "spm_calculator/ce_bls_shares.py": "2f6af850afd809b4d6d5f6ea71546e54e238ce6fca9e7eaea08a8db6f602fea8",
     "spm_calculator/ce_decomposition.py": "39be6fc2ceef0764cbf1133a1f4ea39c67a4de6a4e781357f717a7a82d0e00c0",
-    "spm_calculator/ce_inkind.py": "54c590387834314f278c88bde3c9e2a6d4d78758819302e8bf4e9d13cfc78cfa",
+    "spm_calculator/ce_inkind.py": "97d0b6b76982bab9d9c7e9d15d5c1723f667adbbfe54432533eaf1ebf198bdd8",
     "spm_calculator/ce_inkind_stage.py": "9543b1ce76b6ce1974d1dcfc11e4840202633666da2684201836668f52210986",
     "spm_calculator/ce_replicates.py": "e4c49f836a4ebf3684dcc60d5b04741c84337249ac7076d3b34c4a42bcc543b6",
     "spm_calculator/ce_threshold.py": "4efbe2b03f6b1f4eb2911ab0f79f5151bd655cc1e5addf42f5c4540ace1f852f",
@@ -49,7 +49,7 @@
   "complete": true,
   "generated_by": "scripts/estimate_ce_replicate_uncertainty.py",
   "generated_on": "2026-11-15",
-  "git_head": "1db6dbad3f19a916a5b1a85cedfcf431bf5fc48d",
+  "git_head": "c60d0e0a42184d759f17ef0e44753219390ac3ad",
   "inputs": {
     "ce_bundles": {
       "intrvw14.zip": {
@@ -99,7 +99,7 @@
     },
     "components_receipt": {
       "path": "spm_calculator/data/current/ce_inkind_bls_components_2019_2025.json",
-      "sha256": "8799387ad3ed0e28fb776df90bf14fc7bc3cb51b94ade8f1737d9aeb60519a3d"
+      "sha256": "c1b873d40a43de2893acbd30a86b2fc46235bbfefedbb0690c633e56ed4d1e37"
     },
     "cpi": {
       "path": "spm_calculator/data/bls/cpi_annual.json",
@@ -252,7 +252,7 @@
     "imputation_seed": 20261105,
     "replication_receipt": {
       "path": "spm_calculator/data/current/ce_inkind_replication_2019_2025.json",
-      "sha256": "64619ba7a0bd75c0fc0612d704c41a44d9804cc53c6e1d587eda99a0a6a6d893"
+      "sha256": "9019c524abdbb4b2066dab78f41d7077d42f4df1bc912b0d748c6ad2247e7875"
     }
   },
   "limitations": [
@@ -5899,7 +5899,7 @@
     "python": "3.13.13",
     "scipy": "1.18.1"
   },
-  "runtime_seconds": 277,
+  "runtime_seconds": 294,
   "schema_version": 1,
   "targets": [2019, 2020, 2021, 2022, 2023, 2024, 2025]
 }
