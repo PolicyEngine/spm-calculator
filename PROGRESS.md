@@ -1,11 +1,43 @@
+# CE in-kind comparison with BLS components — November 6, 2026
+
+## State
+
+Draft PR [#56](https://github.com/PolicyEngine/spm-calculator/pull/56) on
+`max/ce-inkind-bls-shares-20261106`. The branch holds the module, script,
+receipt, tests and page section. A first-round audit and a rebuild from raw CE
+data found that the written-definition runs kept vacation-home utilities that
+Garner and Munoz (2021) leave out. The runs now remove them, and a second review
+round comes next.
+
+## Done
+
+- `ce_bls_shares.py` reads BLS's shares workbook and published tenure
+  distribution, checks the two identities they satisfy, and computes the same
+  in-band components for the replication.
+- `scripts/compare_ce_inkind_bls_shares.py` writes
+  `spm_calculator/data/current/ce_inkind_bls_components_2019_2025.json`, under
+  the package CPI and BLS's FCSUti index, with the replication's definitions and
+  with the shelter, utilities and food definitions in BLS's papers.
+- We estimate that, net of home internet, our shelter term exceeds BLS's in
+  every tenure and year, and that rental assistance adds to the renter gap.
+  Under BLS's written definitions, the with-stage gap spans −1.71 to +1.47%,
+  against +0.26 to +3.53% under the replication's. From 2022 to 2025, BLS's
+  in-band imputed benefits rise $401 and ours $146. Removing imputed terms from
+  both narrows the renter growth shortfall from −2.40 to −0.94 points.
+
+## Next
+
+- Decide whether the default replication should adopt BLS's written definitions.
+  `ce_threshold.py` stays byte-identical until a change there can regenerate the
+  sealed forecast identities, so that decision sits outside this PR.
+
+---
+
 # CE in-kind benefit imputation — November 5, 2026
 
 ## State
 
-Draft PR [#55](https://github.com/PolicyEngine/spm-calculator/pull/55) on
-`max/ce-inkind-imputation-20261105`. The branch holds the stage,
-imputation, tests, receipt and docs page. The first independent review
-asked for five fixes, now made; a second review and merge follow.
+Merged in [#55](https://github.com/PolicyEngine/spm-calculator/pull/55).
 
 ## Done
 
@@ -37,8 +69,6 @@ asked for five fixes, now made; a second review and merge follow.
 
 ## Next
 
-- Second GPT-6.1 Sol review, CI and merge.
-- A summary for John Creamer, held for Max's go.
 - Follow-ups: the stage in forecast windows (off by default) and home
   internet spending, which the replication still omits.
 

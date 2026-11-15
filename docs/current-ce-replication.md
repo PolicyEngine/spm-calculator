@@ -116,9 +116,9 @@ and the percentile convention remain separately unmeasured approximations.
 The youth result does not establish that these other approximations are
 negligible. No sampling or imputation uncertainty interval is estimated.
 
-A later research stage, documented in
-[CE in-kind benefit imputation](ce-inkind-imputation.md), measures the
-in-kind omission without changing this receipt.
+In [CE in-kind benefit imputation](ce-inkind-imputation.md), we measure the
+in-kind omission and the effect of the shelter, utilities and food definitions
+in BLS's papers, without changing this receipt.
 
 ## Archived projection evaluation
 
