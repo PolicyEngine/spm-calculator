@@ -1,6 +1,6 @@
 {
   "accountings": {
-    "other_separate": "0.2 FCSUti forms its own 'other' term, as in the 'Other Share' row of BLS's shares workbook, and broadband takes each tenure's own mean, so each term over the threshold gives the component's share as BLS publishes it",
+    "other_separate": "0.2 FCSUti forms its own 'other' term, as in the 'Other Share' row of BLS's shares workbook, and broadband takes each tenure's own mean, so each term over the threshold gives the component's share as BLS publishes it, except home internet, which matches the tenure-invariant internet row less broadband",
     "other_spread": "Each term carries its component's part of the 1.2 multiplier, spreading 0.2 FCSUti in proportion to size, so a term gives what the threshold would lose without the component, with the band held fixed"
   },
   "bls": {
@@ -743,11 +743,11 @@
   },
   "classification": "current_retrospective_research",
   "code_sha256": {
-    "scripts/compare_ce_inkind_bls_shares.py": "5de87707d0db345bfe106704ec6f07adf6c37c163c2f251d60540a8d3da9df22",
+    "scripts/compare_ce_inkind_bls_shares.py": "c9942a0a7a67e6fb4fa5df03645ba6b8672271a2847bc72a32dff782cd885cfc",
     "scripts/replicate_ce_inkind.py": "2fd128516cdd5fb7c211f271dcd55afc0423b90e46150de836cfeb81b28b0e4f",
-    "spm_calculator/ce_bls_shares.py": "44c9de8cbff5b323978cfbaabf95215e07dfdbc14924ffaee7a0b9c32c6ed938",
+    "spm_calculator/ce_bls_shares.py": "2f6af850afd809b4d6d5f6ea71546e54e238ce6fca9e7eaea08a8db6f602fea8",
     "spm_calculator/ce_decomposition.py": "39be6fc2ceef0764cbf1133a1f4ea39c67a4de6a4e781357f717a7a82d0e00c0",
-    "spm_calculator/ce_inkind.py": "25f93fb8b996b5e623ab564d70e2eedfbc4daa11ff96850f06e76ef229aef0b8",
+    "spm_calculator/ce_inkind.py": "54c590387834314f278c88bde3c9e2a6d4d78758819302e8bf4e9d13cfc78cfa",
     "spm_calculator/ce_inkind_stage.py": "9543b1ce76b6ce1974d1dcfc11e4840202633666da2684201836668f52210986",
     "spm_calculator/ce_threshold.py": "4efbe2b03f6b1f4eb2911ab0f79f5151bd655cc1e5addf42f5c4540ace1f852f",
     "spm_calculator/cps_asec.py": "ac4a1ae3b28d34fa3dfbbe5879c88d0274a0e6e46423694bb48808d4f7cf2cc8",
@@ -940,8 +940,8 @@
     }
   },
   "generated_by": "scripts/compare_ce_inkind_bls_shares.py",
-  "generated_on": "2026-11-14",
-  "git_head": "fce882190f0bfaa9720f30a57a86997ab276a67b",
+  "generated_on": "2026-11-15",
+  "git_head": "1db6dbad3f19a916a5b1a85cedfcf431bf5fc48d",
   "inputs": {
     "bls_shares_workbook": {
       "path": "spm_calculator/data/current/bls_spm_shares.xlsx",
@@ -955,7 +955,7 @@
     },
     "replication_receipt": {
       "path": "spm_calculator/data/current/ce_inkind_replication_2019_2025.json",
-      "sha256": "221e79fa439509a574a020ccc155a0971f74d230c686046a0de6f69b7d492173"
+      "sha256": "64619ba7a0bd75c0fc0612d704c41a44d9804cc53c6e1d587eda99a0a6a6d893"
     },
     "threshold_series": {
       "path": "spm_calculator/data/bls/threshold_series.json",
@@ -10725,6 +10725,6 @@
     "pandas": "3.0.0",
     "python": "3.13.13"
   },
-  "runtime_seconds": 96,
+  "runtime_seconds": 92,
   "schema_version": 2
 }
