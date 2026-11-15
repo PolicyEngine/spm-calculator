@@ -12,7 +12,9 @@ Invariants:
    two years.
 3. Internet's CPI weight is its spending share among units with children,
    as ``compute_fcsuti_weights_from_ce`` would give it.
-4. Internet enters FCSUti at four times its three-month cost and leaves
+4. Internet enters FCSUti at its three-month cost times the run's
+   annualization factor, as the FMLI ``*PQ`` + ``*CQ`` pairs do (4 under
+   the default ``quarter4``, 2 under the legacy ``pqcq2``), and leaves
    SU's spending alone.
 5. Unit costs equal the sum of their MTBI UCC 690114 records, in the same
    bundle and quarter as the FMLI file.
@@ -303,6 +305,21 @@ def test_no_internet_spending_keeps_the_weights():
     assert internet_cpi_weights(raw, weights) == weights
 
 
+def test_internet_weight_ignores_units_without_children():
+    raw = with_internet(ce_frame(6), 6, share=1.0)
+    raw.loc[raw.index[::4], "PERSLT18"] = 0
+    weights = compute_fcsuti_weights_from_ce(raw)
+    childless = raw["PERSLT18"] == 0
+    louder = raw.copy()
+    for column in (INTERNET_COLUMN, "TELEPHPQ", "TELEPHCQ"):
+        louder.loc[childless, column] = (
+            50 * louder.loc[childless, column] + 1_000
+        )
+    expected = internet_cpi_weights(raw, weights)
+    assert expected[INTERNET_COMPONENT] > 0
+    assert internet_cpi_weights(louder, weights) == expected
+
+
 # Invariant 4
 
 
@@ -368,6 +385,55 @@ def test_su_keeps_its_spending_at_the_new_price_factor(seed):
     pd.testing.assert_frame_equal(after[untouched], before[untouched])
 
 
+@pytest.mark.parametrize(
+    ("annualization", "factor"), [("quarter4", 4.0), ("pqcq2", 2.0)]
+)
+def test_internet_follows_the_runs_annualization(annualization, factor):
+    raw = with_internet(ce_frame(12, year=2021), 12)
+    cpi = flat_with_internet()
+    run = prepare_out_of_pocket(
+        raw, 2023, annualization=annualization, cpi_series=cpi
+    )
+    expanded = add_home_internet(run, cpi)
+    np.testing.assert_allclose(
+        expanded.expenditures["fcsuti"],
+        run.expenditures["fcsuti"]
+        + factor * run.expenditures[INTERNET_COLUMN],
+        rtol=1e-12,
+    )
+
+
+def test_home_internet_cannot_be_added_twice():
+    raw = with_internet(ce_frame(13), 13)
+    cpi = flat_with_internet()
+    expanded = add_home_internet(
+        prepare_out_of_pocket(raw, 2024, cpi_series=cpi), cpi
+    )
+    with pytest.raises(ValueError, match="does not omit home internet"):
+        add_home_internet(expanded, cpi)
+
+
+def test_stage_replaces_each_omission_in_place():
+    raw = with_internet(ce_frame(14), 14)
+    cpi = flat_with_internet()
+    run = prepare_out_of_pocket(raw, 2024, cpi_series=cpi)
+    expanded = add_home_internet(run, cpi)
+    replaced = {
+        "home internet and BLS in-kind benefit imputations omitted": (
+            "home internet omitted; in-kind benefits from the in-kind stage"
+        ),
+        "BLS in-kind benefit imputations omitted": (
+            "in-kind benefits from the in-kind stage"
+        ),
+    }
+    for base, omission in zip((run, expanded), replaced):
+        before = base.result["construction"]["approximations"]
+        assert omission in before
+        staged = replicate_with_in_kind(base, zero_in_kind(raw["NEWID"]))
+        after = staged["construction"]["approximations"]
+        assert after == [replaced.get(item, item) for item in before]
+
+
 # Invariant 5
 
 
@@ -412,6 +478,40 @@ def test_costs_reject_units_missing_from_fmli(tmp_path):
     }
     with pytest.raises(ValueError, match="not in fmli191x.csv"):
         read_internet_costs(fmli)
+
+
+def _costs_from(tmp_path, fmli: pd.DataFrame, mtbi: pd.DataFrame):
+    bundle = _write_bundle(
+        tmp_path / "c.zip", {"fmli192.csv": fmli, "mtbi192.csv": mtbi}
+    )
+    fmli.attrs["source"] = {
+        "bundle_path": str(bundle),
+        "member": "fmli192.csv",
+    }
+    return read_internet_costs(fmli)
+
+
+def test_costs_keep_negative_records(tmp_path):
+    fmli = pd.DataFrame({"NEWID": [101, 102]})
+    mtbi = pd.DataFrame(
+        {"NEWID": [101, 101, 102], "UCC": [690114] * 3, "COST": [50, -10, -5]}
+    )
+    assert _costs_from(tmp_path, fmli, mtbi).tolist() == [40.0, -5.0]
+
+
+def test_costs_reject_repeated_newids(tmp_path):
+    fmli = pd.DataFrame({"NEWID": [101, 101]})
+    mtbi = pd.DataFrame({"NEWID": [101], "UCC": [690114], "COST": [10.0]})
+    with pytest.raises(ValueError, match="NEWID repeats"):
+        _costs_from(tmp_path, fmli, mtbi)
+
+
+@pytest.mark.parametrize("bad", [np.inf, np.nan])
+def test_costs_reject_nonfinite_values(tmp_path, bad):
+    fmli = pd.DataFrame({"NEWID": [101]})
+    mtbi = pd.DataFrame({"NEWID": [101], "UCC": [690114], "COST": [bad]})
+    with pytest.raises(ValueError, match="must be finite"):
+        _costs_from(tmp_path, fmli, mtbi)
 
 
 def test_mtbi_member_sits_beside_fmli():
@@ -489,8 +589,11 @@ def test_replicates_add_internet_as_the_public_run_does(seed):
     ]
     rng = np.random.default_rng(seed)
     full = frame["FINLWT21"].to_numpy(dtype=float)
+    # Uneven factors, so each replicate's CPI shares differ from the full
+    # sample's and a replicate priced with full-sample weights fails.
+    keep = rng.integers(0, 2, (len(frame), 2)).astype(bool)
     weights = np.where(
-        rng.integers(0, 2, (len(frame), 2)).astype(bool), 2 * full[:, None], 0
+        keep, full[:, None] * rng.uniform(0.3, 1.9, (len(frame), 2)), 0
     )
     estimates = replicate_estimates(
         frame, 2024, tables, weights=weights, cpi_series=cpi

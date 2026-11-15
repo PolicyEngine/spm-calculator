@@ -491,6 +491,9 @@ def test_receipt_is_complete_and_current():
         REPLICATION_RECEIPT
     )
     assert inputs["components_receipt"]["sha256"] == sha256(COMPONENTS_RECEIPT)
+    for name in ("cpi", "internet_cpi"):
+        assert sha256(ROOT / inputs[name]["path"]) == inputs[name]["sha256"]
+    assert inputs["internet_cpi"]["series_id"] == "CUUR0000SEEE03"
     method = receipt["method"]
     assert (method["replicates"], method["fay_coefficient"]) == (44, 0.0)
     assert method["complete_data_df"] == STRATA

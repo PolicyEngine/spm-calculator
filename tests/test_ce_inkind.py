@@ -383,6 +383,13 @@ def test_committed_receipt_comes_from_this_code():
     assert receipt["in_kind_methodology"]["parameter_files_sha256"] == (
         ce_inkind._parameter_hashes()
     )
+    for record in (
+        receipt["cpi_input"],
+        receipt["home_internet"]["cpi_input"],
+    ):
+        assert sha256(ROOT / record["path"]) == record["sha256"], record[
+            "path"
+        ]
     archived = ROOT / receipt["archived_receipt_check"]["path"]
     assert sha256(archived) == receipt["archived_receipt_check"]["sha256"]
     assert receipt["archived_receipt_check"][

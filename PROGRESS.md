@@ -4,24 +4,27 @@
 
 Draft PR [#61](https://github.com/PolicyEngine/spm-calculator/pull/61) on
 `max/ce-inkind-internet-20261114`, stacked on #60. The branch adds home
-internet spending to the in-kind runs. An independent review comes next, and
-the PR moves to `main` once #57 and #60 merge.
+internet spending to the in-kind runs. Review round 2's doc and test fixes
+are made; its code and receipt-string fixes wait for the next receipt
+regeneration, listed under Next. Round 3 comes next, and the PR moves to
+`main` once #57 and #60 merge.
 
 ## Done
 
 - `ce_internet.py` adds each unit's three-month MTBI cost for UCC 690114,
   times four, to FCSUti (not SU) and prices it with CPI-U CUUR0000SEEE03,
   which `scripts/fetch_internet_cpi.py` pins with BLS's API responses. UCC
-  690116 stays out: BLS counts home internet, and 690114 alone comes within 1%
-  of BLS's 2019 in-band amount. `ce_threshold.py`, `fcsuti_cpi.py`,
+  690116 stays out because BLS counts home internet; it would add 0.4–1.2% to
+  690114 among units with children. `ce_threshold.py`, `fcsuti_cpi.py`,
   `cpi_annual.json` and the September 8 receipt stay byte-identical.
 - We count home internet as out-of-pocket spending in its own component, and
   no imputed total, share or contribution includes it. The comparison no
   longer nets BLS's internet against our shelter: each side carries its own.
-- We regenerated all three receipts at 8b0ddac. The replication and components
-  receipts record thresholds by tenure and year without home internet or
-  benefits (which the script checks against the September 8 replication
-  exactly), with home internet, and with both; the uncertainty receipt records
+- We regenerated the replication and components receipts at 8b0ddac and the
+  replicate receipt at 9235a51. The replication and components receipts record
+  thresholds by tenure and year without home internet or benefits (which the
+  script checks against the September 8 replication exactly), with home
+  internet, and with home internet and benefits; the replicate receipt records
   the last two.
 - With the package CPI, we estimate that home internet raises thresholds by
   1.5–2.4% for renters, 1.7–2.1% for owners with mortgages and 0.3–4.0% for
@@ -48,6 +51,15 @@ the PR moves to `main` once #57 and #60 merge.
   `spm_calculator/data/current/`, and the three
   `web/public/data/canonical/rolling-forecast-*.json` files), along with
   `ce_threshold.py`'s "BLS quarterly treatment".
+- At the next receipt regeneration, which the code changes below force:
+  align the receipts' home internet limitation with the page ("the UCCs or
+  the price series"), and drop "but not sampling uncertainty" from their
+  uncertainty limitation, since the replicate receipt now estimates it; reword
+  `ce_internet.py`'s 690116 note to "comes within 1% of"; note in
+  `internet_record`'s docstring that, under Other separate, each internet term
+  takes the tenure's broadband difference from the band mean; and have
+  `expenditures_with_internet` raise a clear `ValueError` when its CPI series
+  lack CUUR0000SEEE03.
 - The four questions to BLS and Census staff from #60 stay open.
 
 ---
