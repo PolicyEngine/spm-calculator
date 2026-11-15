@@ -92,11 +92,11 @@ a woman aged 15 or older. From the 2025 thresholds BLS drops the woman
 requirement for units with children under 5, so `for_target` applies the
 older rule to earlier targets. BLS adds WIC only "if a state has not fully
 implemented WIC via electronic benefit transfer"
-([SPM thresholds methods](https://www.bls.gov/pir/spmhome.htm)). The
-Healthy, Hunger-Free Kids Act of 2010 required each WIC state agency to
-implement EBT statewide by October 1, 2020, unless the Secretary of
-Agriculture granted an exemption ([42 U.S.C.
-1786(h)(12)(B)](https://www.law.cornell.edu/uscode/text/42/1786)). For
+([SPM thresholds methods](https://www.bls.gov/pir/spmhome.htm)). In the
+Healthy, Hunger-Free Kids Act of 2010, Congress required each WIC state
+agency to implement EBT statewide by October 1, 2020, unless the Secretary of
+Agriculture granted it an exemption ([42 U.S.C.
+1786(h)(12)(B)–(C)](https://www.law.cornell.edu/uscode/text/42/1786)). For
 reference years before 2020, we compare each state's statewide date, from
 FNS's December 2022 WIC EBT status report (in `data/inkind/`), with the
 middle of the unit's reference period. Where the CE withholds the state, we
@@ -108,11 +108,11 @@ period falls before the deadline. Six states finished during 2020 before
 October 1, from Hawaii in June to Illinois in September. FNS dates six other
 states and DC after the deadline, from Utah in November 2020 to Georgia in
 October 2022. In both groups, we would add WIC to some units if we applied
-BLS's rule strictly, state by state.
+BLS's rule state by state; we add none from reference year 2020 instead.
 With each state's own date in every year, we estimate that mean WIC per
 unit rises by \$1.94–\$3.21 for the 2021–2025 targets. Those thresholds move
-by −\$20 to +\$40 (−0.06% to +0.12%) as the added WIC reorders units in the
-band, and 2022–2025 growth changes by 0.03 points or less. For its 2025
+by −\$20 to +\$40 (−0.06% to +0.12%) as the added WIC moves units into and
+out of the band, and 2022–2025 growth changes by 0.03 points or less. For its 2025
 thresholds, BLS counts \$1.80 of WIC per unit in the band.
 
 BLS fits a limited dependent variable model that treats assisted renters'
@@ -266,7 +266,7 @@ imputed against CPS donors, by reference year:
 | Broadband (all) | — | — | — | 2.7% / 2.4% |
 
 The WIC row counts every unit the model assigns to WIC, including units that
-receive none because their interviews reference 2020 or later or their state
+receive none because their reference year is 2020 or later or their state
 had finished EBT.
 
 Rental assistance comes from the CE itself: 12.7% of CE renters report
@@ -520,17 +520,21 @@ published values satisfy both identities within \$0.00001 in every year from
 `spm_calculator/ce_bls_shares.py`, and they reproduce every threshold.
 
 We split each threshold into terms in two ways, and both sum to the
-threshold. For the accounting labelled Other spread, we give each component
-its part of the 1.2 multiplier: `0.82 × 1.2 × c` for a component every tenure
-shares, and `0.82 × (c_h + 0.2 × c)` for shelter, utilities, LIHEAP and rental
-assistance. Each term then gives what the threshold would lose without its
-component if the band stayed the same. For Other separate, we keep
-`0.82 × 0.2 × F` as its own term, as BLS's workbook does in its "Other Share"
-row, and enter each component at `0.82 × c`, or at `0.82 × c_h` for shelter,
-utilities, their benefits and broadband. Home internet takes the rest of the
-total it shares with broadband. Each separate term over its threshold then gives the
-component's share as BLS publishes it, and BLS's terms reproduce every
-published share within one billionth in every year from 2019 to 2025.
+threshold. Under Other spread, we give each component its part of the 1.2
+multiplier: `0.82 × 1.2 × c` for a component every tenure shares, and
+`0.82 × (c_h + 0.2 × c)` for shelter, utilities, rental assistance and LIHEAP.
+Each term then gives what the threshold would lose without its component if
+the band stayed the same. Under Other separate, we keep `0.82 × 0.2 × F` as
+its own term, as BLS's workbook does in its "Other Share" row, and enter each
+component at `0.82 × c`, or at `0.82 × c_h` for shelter, utilities, rental
+assistance, LIHEAP and broadband. Home internet takes the internet total less
+the tenure's broadband. Each separate term over its threshold then gives the
+component's share as BLS publishes it, except home internet in 2023 and 2024.
+In those years BLS's "OOP Internet" row already includes broadband, so BLS's
+component shares sum to one plus the broadband share. Within one billionth in
+every year from 2019 to 2025, BLS's terms reproduce every other published
+component share, and its 2023 and 2024 home internet terms match "OOP
+Internet" less broadband.
 Removing imputed terms from growth also removes their parts of `0.2 × F`, so
 the figures that remove those terms use Other spread.
 
@@ -605,8 +609,8 @@ spread and 1.54–2.12% with Other separate.
 With Other separate, the food, clothing, telephone, school lunch and WIC
 terms fall by a sixth, as does the sum of the home internet and broadband
 terms. The shelter, utilities, rental assistance and LIHEAP terms lose their
-parts of `0.2 × F`, and the Other term gathers all those parts, adding
-0.19–0.36 points to the gap:
+parts of `0.2 × F`. The Other term gathers every component's part of
+`0.2 × F` and adds 0.19–0.36 points to the gap:
 
 | Term | Renter | Owner with mortgage | Owner without mortgage |
 |---|---:|---:|---:|
@@ -712,9 +716,9 @@ BLS's threshold, with Other spread:
 | Clothing | −0.93 to −0.18 | −0.92 to −0.18 | −1.09 to −0.21 |
 | Telephone | −0.14 to +0.29 | −0.14 to +0.30 | −0.17 to +0.35 |
 
-When we adopt these definitions, we estimate 17–62% less in the shelter term,
-45% less on average, and what remains roughly offsets the omitted home internet
-term. Net of home internet, we estimate gaps of −1.06 to +0.13 points for
+Under these definitions, we estimate that the shelter term's part of the gap
+falls by 17–62%, 45% on average. The remaining shelter excess roughly offsets
+the omitted home internet term. Net of home internet, we estimate gaps of −1.06 to +0.13 points for
 renters, −0.75 to −0.05 for owners with mortgages and −0.47 to +2.30 for owners
 without mortgages. We have not traced the remaining shelter excess.
 

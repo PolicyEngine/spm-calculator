@@ -575,8 +575,9 @@ def test_universes(imputed):
 
 
 def test_reference_year_defaults():
-    """Broadband starts with 2022 data, as BLS's does; WIC stops with 2020
-    data, the year of the statutory EBT deadline."""
+    """Broadband starts with reference year 2022, the first year of the
+    broadband data behind BLS's 2023-2025 thresholds; from reference year
+    2020, the year of the statutory EBT deadline, no unit receives WIC."""
     config = InKindConfig()
     assert config.broadband_first_reference_year == 2022
     assert config.wic_ebt_all_states_from_reference_year == 2020

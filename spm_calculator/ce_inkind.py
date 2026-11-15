@@ -19,7 +19,9 @@ stage as an explicit, optional step:
     Participation from logistic regressions fit on pooled CPS ASEC
     households; amounts by predictive mean matching on the values CPS
     households report (LIHEAP) or Census assigns from FCC rules (EBB/ACP).
-    Broadband starts with reference year 2022, as BLS's does.
+    Broadband starts with reference year 2022, the first year of the
+    broadband data behind BLS's 2023-2025 thresholds (footnote 3 of its
+    thresholds workbook).
 ``nslp``
     Participation from a logistic regression on CPS households with a
     member aged 5-18 (the CE universe applies only that age rule). Values
