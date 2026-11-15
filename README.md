@@ -174,6 +174,11 @@ Run it locally from `web` with `bun install --frozen-lockfile` and
 - [2026 BLS correction and frozen experiments](https://github.com/PolicyEngine/spm-calculator/blob/main/docs/bls-2026-correction.md):
   historical publication vintages and the immutable 2025 forecast commitment.
 - [API reference](https://github.com/PolicyEngine/spm-calculator/blob/main/docs/api.md): current calculation and membership interfaces.
+- [Census SPM reproduction](https://github.com/PolicyEngine/spm-calculator/blob/main/docs/census-spm-reproduction.md):
+  Census's published 2025 SPM rates, element effects and margins of error,
+  rebuilt from the 2026 CPS ASEC public-use file, and the
+  [plan](https://github.com/PolicyEngine/spm-calculator/blob/main/docs/spm-evidence-series.md)
+  for comparing PolicyEngine's estimates with them step by step.
 - [Companion paper](https://spm-threshold-paper.vercel.app/): calculating and
   projecting Supplemental Poverty Measure thresholds.
 
