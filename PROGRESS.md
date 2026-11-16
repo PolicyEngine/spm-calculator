@@ -1,3 +1,34 @@
+# CE in-kind school lunch wording — November 16, 2026
+
+## State
+
+Branch `max/ce-inkind-pebt-wording-20261116` from `main` at #61's squash
+(2321f2f). It rewords two school lunch limitations in
+`docs/ce-inkind-imputation.md` and `scripts/replicate_ce_inkind.py` to what
+Census's SPM technical documentation (last updated September 15, 2026)
+says, and regenerates the in-kind receipts, which fingerprint the script.
+
+## Done
+
+- Census values summer EBT benefits only for respondents who report receiving
+  EBT but not SNAP, and it accounts for P-EBT in its 2020 and 2021 school
+  lunch values. The limitations now say so. They no longer say that for 2022
+  Census adds summer EBT benefits that states paid as P-EBT, or that Census
+  values P-EBT for households without free or reduced-price lunch; the
+  technical documentation supports neither.
+- The page no longer calls Census's universal-free-meal and summer EBT rules
+  "later": Census's 2020 and 2021 method already accounts for universal free
+  lunch, and it counts summer EBT as in previous years.
+- `ce_threshold.py`, `fcsuti_cpi.py`, `cpi_annual.json`, the September 8
+  receipt and `ce_forecast.py` stay byte-identical.
+
+## Next
+
+- The canonical forecast rebuild and the methods paper render listed under
+  November 14 still wait.
+
+---
+
 # CE in-kind replication with home internet — November 14, 2026
 
 ## State
