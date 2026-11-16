@@ -89,8 +89,8 @@ def _levels_table(receipt: dict, run: str) -> str:
 def _growth_table(receipt: dict) -> str:
     header = [
         "Tenure",
-        "Without the stage",
-        "With the stage",
+        "With home internet",
+        "With home internet and benefits",
         "Stage's change, points",
         "Degrees of freedom",
         "Imputed terms removed",

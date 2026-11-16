@@ -834,6 +834,12 @@ def test_committed_receipt_comes_from_this_code():
     for source in receipt["inputs"].values():
         assert sha256(ROOT / source["path"]) == source["sha256"]
     assert receipt["inputs"]["internet_cpi"]["series_id"] == "CUUR0000SEEE03"
+    for text in (
+        "the UCCs or the price series",
+        "We estimate imputation uncertainty from the implicate spread and "
+        "sampling uncertainty",
+    ):
+        assert any(text in s for s in receipt["limitations"]), text
 
 
 def test_receipt_matches_the_in_kind_replication():

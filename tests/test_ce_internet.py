@@ -36,6 +36,10 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
+from scripts import tabulate_ce_internet_uccs as tabulate
+from scripts.tabulate_ce_internet_uccs import (
+    CODE_PATHS as TABULATION_CODE_PATHS,
+)
 from scripts.tabulate_ce_internet_uccs import RECEIPT as TABULATIONS
 from scripts.tabulate_ce_internet_uccs import home_internet_against_bls
 from spm_calculator import ce_threshold
@@ -698,6 +702,18 @@ def test_unit_components_reject_internet_left_out_of_fcsuti():
     with pytest.raises(ValueError, match="leaves home internet out"):
         unit_components(run.expenditures)
     unit_components(run.expenditures.drop(columns=INTERNET_COLUMN))
+    zero = prepare_out_of_pocket(
+        with_internet(ce_frame(21, n=80, year=2021), 21, share=0.0),
+        2023,
+        cpi_series=cpi,
+    )
+    unit_components(zero.expenditures)
+    unit_components(add_home_internet(zero, cpi).expenditures)
+    pqcq2 = prepare_out_of_pocket(
+        frame, 2023, cpi_series=cpi, annualization="pqcq2"
+    )
+    with pytest.raises(ValueError, match="default annualization"):
+        unit_components(add_home_internet(pqcq2, cpi).expenditures)
 
 
 # Invariant 6: the committed receipts
@@ -802,17 +818,19 @@ def test_ucc_tabulations_come_from_this_code_and_receipt():
         return hashlib.sha256(path.read_bytes()).hexdigest()
 
     receipt = json.loads(TABULATIONS.read_text())
+    assert set(receipt["code_sha256"]) == set(TABULATION_CODE_PATHS)
     for name, digest in receipt["code_sha256"].items():
         assert sha256(ROOT / name) == digest, f"rerun the tabulation: {name}"
-    for name in ("cpi_input", "components_receipt"):
+    for name in ("cpi_input", "components_receipt", "replication_receipt"):
         record = receipt["inputs"][name]
         assert sha256(ROOT / record["path"]) == record["sha256"], name
     components = json.loads(COMPONENTS_RECEIPT.read_text())
     ratios = home_internet_against_bls(components)
     assert receipt["home_internet_against_bls"] == ratios
-    without = ratios["package"]["without_benefits"]
-    assert abs(without["2019"] - 1) < 1e-3
-    assert all(without[str(t)] > 1 for t in range(2020, 2026))
+    for run in ("package", "fcsuti"):
+        without = ratios[run]["without_benefits"]
+        assert abs(without["2019"] - 1) < 1e-3
+        assert all(without[str(t)] > 1 for t in range(2020, 2026))
     windows = receipt["windows"]
     assert sorted(windows) == [str(t) for t in range(2019, 2026)]
     quarters = set()
@@ -835,3 +853,187 @@ def test_ucc_tabulations_come_from_this_code_and_receipt():
             "ucc_270310_share_reporting",
         ):
             assert all(0 < share < 1 for share in record[key].values())
+
+
+def test_page_cites_the_ucc_tabulations():
+    """The page's UCC 690116 ranges and band comparison come from the
+    tabulation receipt."""
+    page = " ".join(
+        (ROOT / "docs/ce-inkind-imputation.md").read_text().split()
+    )
+    receipt = json.loads(TABULATIONS.read_text())
+    ranges = {}
+    for sample in ("fmli_units_with_children", "estimation_sample"):
+        values = [
+            window["ucc_690116_percent_of_690114"][sample]
+            for window in receipt["windows"].values()
+        ]
+        ranges[sample] = f"{min(values):.2f}–{max(values):.2f}"
+    assert (
+        f"would add {ranges['fmli_units_with_children']}% to 690114 spending "
+        "in each target year's window, and "
+        f"{ranges['estimation_sample']}% in the replication's estimation "
+        "sample"
+    ) in page
+    without = receipt["home_internet_against_bls"]["package"][
+        "without_benefits"
+    ]
+    later = [100 * (without[str(t)] - 1) for t in range(2020, 2026)]
+    assert (
+        f"exceeds it by {min(later):.1f}–{max(later):.1f}% for 2020–2025, so "
+        "adding 690116 would widen"
+    ) in page
+
+
+def test_ucc_tabulations_record_the_cached_bundles():
+    bundles = json.loads(TABULATIONS.read_text())["inputs"]["ce_bundles"]
+    cache = ce_threshold._default_cache_dir()
+    if not all((cache / name).exists() for name in bundles):
+        pytest.skip("CE bundles not cached")
+    for name, record in bundles.items():
+        digest = hashlib.sha256((cache / name).read_bytes()).hexdigest()
+        assert digest == record["sha256"], name
+
+
+@pytest.mark.parametrize(
+    ("year", "quarter"),
+    sorted({q for t in range(2019, 2026) for q in bls_quarter_window(t)}),
+)
+def test_ucc_tabulation_quarter_matches_the_mtbi_records(year, quarter):
+    """Each quarter's tabulated shares, means and percent follow from its
+    MTBI records, read independently of the tabulation script."""
+    cache = ce_threshold._default_cache_dir()
+    try:
+        fmli = ce_threshold.load_ce_quarter(
+            year, quarter, cache_dir=cache, allow_download=False
+        )
+    except FileNotFoundError:
+        pytest.skip("CE bundle not cached")
+    record = json.loads(TABULATIONS.read_text())["quarters"][
+        f"{year}Q{quarter}"
+    ]
+    source = fmli.attrs["source"]
+    mtbi = ce_threshold._read_bundle_member(
+        Path(source["bundle_path"]), mtbi_member(Path(source["member"]).name)
+    )
+    ucc = mtbi["UCC"].astype(str).str.strip()
+    units = fmli.set_index("NEWID")
+    weight = units["FINLWT21"].astype(float)
+    groups = {
+        "all_units": np.ones(len(units), bool),
+        "units_with_children": (
+            units["PERSLT18"].astype(float) > 0
+        ).to_numpy(),
+    }
+    cost = {}
+    for code in ("690114", "690116", "270310"):
+        rows = mtbi[ucc == code]
+        reports = weight.index.isin(rows["NEWID"])
+        cost[code] = (
+            rows.groupby("NEWID")["COST"]
+            .sum()
+            .reindex(weight.index, fill_value=0.0)
+        )
+        if code == "690116":
+            continue
+        for name, among in groups.items():
+            assert record[f"ucc_{code}_share_reporting"][
+                name
+            ] == pytest.approx(
+                weight[reports & among].sum() / weight[among].sum(),
+                rel=1e-12,
+            )
+            if code == "690114":
+                assert record["ucc_690114_mean_among_reporters"][
+                    name
+                ] == pytest.approx(
+                    np.average(
+                        cost[code][reports & among],
+                        weights=weight[reports & among],
+                    ),
+                    rel=1e-12,
+                )
+    home = mtbi[ucc == "690114"]
+    flag_column = next(c for c in home.columns if c.upper() == "COST_")
+    flag = home[flag_column].astype(str).str.strip()
+    assert record["ucc_690114_flag_share_of_records"] == pytest.approx(
+        flag.value_counts(normalize=True).to_dict(), rel=1e-12
+    )
+    row_weight = home["NEWID"].map(weight)
+    assert record["ucc_690114_flag_share_weighted"] == pytest.approx(
+        (
+            row_weight.groupby(flag.to_numpy()).sum() / row_weight.sum()
+        ).to_dict(),
+        rel=1e-12,
+    )
+    children = groups["units_with_children"]
+    assert record[
+        "ucc_690116_percent_of_690114_units_with_children"
+    ] == pytest.approx(
+        100
+        * (cost["690116"] * weight)[children].sum()
+        / (cost["690114"] * weight)[children].sum(),
+        rel=1e-12,
+    )
+
+
+@pytest.mark.parametrize("target", range(2019, 2026))
+def test_ucc_tabulation_window_is_the_replication_sample(target):
+    """Each window's sample gives the replication's thresholds without home
+    internet, and its tabulated percents follow from that sample."""
+    cache = ce_threshold._default_cache_dir()
+    frames = []
+    for year, quarter in bls_quarter_window(target):
+        try:
+            fmli = ce_threshold.load_ce_quarter(
+                year, quarter, cache_dir=cache, allow_download=False
+            )
+        except FileNotFoundError:
+            pytest.skip("CE bundle not cached")
+        records, _ = tabulate.read_ucc_records(fmli)
+        frame = fmli[[c for c in tabulate.KEEP if c in fmli.columns]].copy()
+        frame[INTERNET_COLUMN], _ = tabulate.unit_costs(
+            fmli, records, tabulate.HOME_INTERNET
+        )
+        frame[tabulate.AWAY_COLUMN], _ = tabulate.unit_costs(
+            fmli, records, tabulate.AWAY_INTERNET
+        )
+        frame.attrs = {}
+        frames.append(frame)
+    window = pd.concat(frames, ignore_index=True)
+    run = prepare_out_of_pocket(
+        window,
+        target,
+        youth_policy="exclude_unresolved",
+        cpi_series=pinned_cpi(),
+    )
+    replication = json.loads(REPLICATION_RECEIPT.read_text())["results"]
+    assert (
+        run.result["thresholds"]
+        == (replication[str(target)]["without_home_internet"])
+    )
+    sample = run.expenditures
+    recorded = json.loads(TABULATIONS.read_text())["windows"][str(target)]
+    weight = sample["ce_weight"].to_numpy(float)
+    assert recorded["estimation_sample_units"] == len(sample)
+    percents = recorded["ucc_690116_percent_of_690114"]
+    assert percents["estimation_sample"] == pytest.approx(
+        100
+        * np.sum(sample[tabulate.AWAY_COLUMN].to_numpy(float) * weight)
+        / np.sum(sample[INTERNET_COLUMN].to_numpy(float) * weight),
+        rel=1e-12,
+    )
+    children = window["PERSLT18"].to_numpy(float) > 0
+    unit_weight = window["FINLWT21"].to_numpy(float)
+    assert percents["fmli_units_with_children"] == pytest.approx(
+        100
+        * np.sum(
+            (window[tabulate.AWAY_COLUMN].to_numpy(float) * unit_weight)[
+                children
+            ]
+        )
+        / np.sum(
+            (window[INTERNET_COLUMN].to_numpy(float) * unit_weight)[children]
+        ),
+        rel=1e-12,
+    )

@@ -143,10 +143,10 @@ LIMITATIONS = [
     "BLS's written definitions come from Garner and Munoz (2021); BLS's current code may differ, and its thresholds also carry later refinements and corrections",
     "FMLI's vacation-home utility summaries leave out coal, wood and other fuels for vacation homes (UCCs 250913 and 250914), so the definition runs keep those fuels",
     "Removing imputed terms holds each band as it stands; the replication's own with-and-without runs show how far rank shifts move that",
-    "Home internet is CE UCC 690114 alone, priced with CPI-U CUUR0000SEEE03; BLS has not published the UCCs or the price series behind its home internet term",
-    "Home internet is out-of-pocket spending in its own component; no in-kind total, share or contribution includes it",
+    "We take home internet from CE UCC 690114 alone and price it with CPI-U CUUR0000SEEE03; BLS has not published the UCCs or the price series behind its home internet term",
+    "We count home internet as out-of-pocket spending in its own component, and no in-kind total, share or contribution includes it",
     "The archived replication excludes home internet, and the canonical forecast, nowcast and projections exclude it until the forecast is next rebuilt, which is a separate change",
-    "The runs estimate imputation uncertainty from the implicate spread; ce_replicate_uncertainty_2019_2025.json estimates sampling uncertainty",
+    "We estimate imputation uncertainty from the implicate spread and sampling uncertainty in ce_replicate_uncertainty_2019_2025.json",
 ]
 
 

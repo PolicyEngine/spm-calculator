@@ -9,7 +9,8 @@ that choice and the recording shifts it carries; this script records them:
   television services), and UCC 690114's mean among reporters;
 - by target year's collection window, UCC 690116 (internet services away
   from home) as a percent of UCC 690114, among all FMLI units with children
-  and in the replication's estimation sample;
+  and in the replication's estimation sample; the script stops unless that
+  sample gives the replication receipt's thresholds without home internet;
 - our in-band home internet over BLS's, from
   ``ce_inkind_bls_components_2019_2025.json``, in the bands without and with
   benefits.
@@ -46,6 +47,7 @@ ROOT = Path(__file__).resolve().parent.parent
 CURRENT = ROOT / "spm_calculator/data/current"
 RECEIPT = CURRENT / "ce_internet_ucc_tabulations_2019_2025.json"
 COMPONENTS_RECEIPT = CURRENT / "ce_inkind_bls_components_2019_2025.json"
+REPLICATION_RECEIPT = CURRENT / "ce_inkind_replication_2019_2025.json"
 CPI_INPUT = ROOT / "spm_calculator/data/bls/cpi_annual.json"
 TARGETS = range(2019, 2026)
 HOME_INTERNET = 690114
@@ -91,6 +93,9 @@ CODE_PATHS = (
     "spm_calculator/ce_internet.py",
     "spm_calculator/ce_inkind_stage.py",
     "spm_calculator/ce_threshold.py",
+    "spm_calculator/equivalence_scale.py",
+    "spm_calculator/fcsuti_cpi.py",
+    "spm_calculator/published_thresholds.py",
 )
 #: The components receipt's runs, by deflator.
 RUNS = ("package", "fcsuti")
@@ -272,6 +277,7 @@ def main():
         }
         print(f"{name} at {time.time() - started:.0f}s", flush=True)
 
+    replication = json.loads(REPLICATION_RECEIPT.read_text())["results"]
     windows = {}
     for target in TARGETS:
         window = bls_quarter_window(target)
@@ -287,6 +293,13 @@ def main():
             youth_policy="exclude_unresolved",
             cpi_series=cpi_series,
         )
+        if (
+            run.result["thresholds"]
+            != (replication[str(target)]["without_home_internet"])
+        ):
+            raise RuntimeError(
+                f"{target}: the sample is not the replication's"
+            )
         sample = run.expenditures
         weight = sample["ce_weight"].to_numpy(dtype=float)
         estimation = (
@@ -329,6 +342,10 @@ def main():
             "components_receipt": {
                 "path": str(COMPONENTS_RECEIPT.relative_to(ROOT)),
                 "sha256": sha256(COMPONENTS_RECEIPT),
+            },
+            "replication_receipt": {
+                "path": str(REPLICATION_RECEIPT.relative_to(ROOT)),
+                "sha256": sha256(REPLICATION_RECEIPT),
             },
         },
         "uccs": {

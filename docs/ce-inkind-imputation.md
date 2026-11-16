@@ -34,10 +34,10 @@ thresholds and on threshold growth.
   and utilities. We estimate that imputed benefits then change growth by −0.27,
   −0.17 and −1.63 points, each within one standard error of zero.
 - When we deflate with BLS's FCSUti index instead of the package's composite
-  CPI, we estimate that the replication without home internet lands within 0.7
-  points of BLS's 2022–2025 growth for every tenure. With home internet and
-  BLS's index, we estimate that renters' growth trails BLS's by 1.0 points and
-  that owners' runs 0.5 and 2.4 points ahead.
+  CPI, we estimate that the replication without home internet or benefits lands
+  within 0.7 points of BLS's 2022–2025 growth for every tenure. With home
+  internet and BLS's index, we estimate that renters' growth trails BLS's by
+  1.0 points and that owners' runs 0.5 and 2.4 points ahead.
 - We compute BLS's in-band dollars from its published shares. We estimate that
   our imputed total exceeds BLS's through 2024 and trails it in 2025. From 2022
   to 2025, BLS's imputed benefits rise \$401, and we estimate that ours rise
@@ -176,17 +176,15 @@ gap. BLS has not published the UCCs or the price series behind its home
 internet term. `scripts/tabulate_ce_internet_uccs.py` records these figures and
 the CE figures below in `ce_internet_ucc_tabulations_2019_2025.json`.
 
-We count home internet as out-of-pocket spending in its own component, and
-none of our imputed totals, imputed shares or imputed contributions includes
-it. We price it with CPI-U series CUUR0000SEEE03, "Internet
-services and electronic information providers", which
-`scripts/fetch_internet_cpi.py` pins with BLS's API responses in
-`spm_calculator/data/bls/cpi_internet_receipt.json`. The series joins the
-package's FCSUti composite at internet's spending share among units with
-children, the rule the composite already applies to its other components,
-and the other weights scale down in proportion. We recompute each unit's
-price factor from that composite and reprice its unchanged SU spending at
-the same factor.
+We count home internet as out-of-pocket spending in its own component, and none
+of our imputed totals, imputed shares or imputed contributions includes it. We
+price it with CPI-U series CUUR0000SEEE03, "Internet services and electronic
+information providers", which `scripts/fetch_internet_cpi.py` pins with BLS's
+API responses in `spm_calculator/data/bls/cpi_internet_receipt.json`. The
+series joins the package CPI at internet's spending share among units with
+children, as every other component does, and the other weights scale down in
+proportion. We recompute each unit's price factor from the package CPI and
+reprice its unchanged SU spending at the same factor.
 
 BLS's thresholds draw on the same Interview quarters as ours, so if its home
 internet term draws on UCC 690114, as the close match in every year suggests,
@@ -282,13 +280,13 @@ without mortgages by 1.25%.
     UCC 690114, and internet's CPI weight equals its spending share among
     units with children.
 
-`tests/test_ce_bls_shares.py` checks invariants 8–11, with Hypothesis
-property tests on synthetic data and direct checks on BLS's workbook, and
-fails when the comparison's receipt no longer matches its code or a table
-below no longer matches the receipt. On every real CE window, the comparison
-script stops unless in-band component means reproduce every threshold, with and
-without the stage. It also deflates every component with BLS's FCSUti index and
-stops unless each unit's shelter, utilities and food fall by the amounts the
+`tests/test_ce_bls_shares.py` checks invariants 8–11, with Hypothesis property
+tests on synthetic data and direct checks on BLS's workbook, and fails when the
+comparison's receipt no longer matches its code or a table below no longer
+matches the receipt. On every real CE window, the comparison script stops
+unless in-band component means reproduce every threshold, with and without
+benefits. It also deflates every component with BLS's FCSUti index and stops
+unless each unit's shelter, utilities and food fall by the amounts the
 definitions remove, to within a millionth of a dollar. Only the synthetic tests
 apply the definitions twice.
 
@@ -500,7 +498,7 @@ the thresholds with home internet, and that within the band that sets the
 thresholds they rose 14%. We estimate that real out-of-pocket spending in the
 CE, not in-kind benefits, carries the replication's growth beyond prices. With
 home internet, we estimate that renters' growth trails BLS's by 2.32 points and
-that the stage widens that shortfall to 2.59.
+that imputed benefits widen that shortfall to 2.59.
 
 We estimate that BLS's imputed amounts rise faster than ours and that, while we
 hold each band fixed, the difference accounts for 1.49 of the renter
@@ -565,8 +563,8 @@ renters and 1.0 for owners with mortgages and lowers it by 0.1 for owners
 without mortgages. We estimate that the replication's growth then trails BLS's
 by 1.03 points for renters and exceeds it by 0.51 for owners with mortgages and
 2.36 for owners without, and that it reproduces 91%, 104% and 122% of BLS's
-growth above CPI-U. With the stage, we estimate that renters fall 1.46 points
-short and that owners run 0.61 and 1.21 points ahead.
+growth above CPI-U. With home internet and benefits, we estimate that renters
+fall 1.46 points short and that owners run 0.61 and 1.21 points ahead.
 
 The stage's change in 2022–2025 growth with each deflator, in percentage
 points, with the between-implicate standard deviation:
@@ -599,9 +597,9 @@ home internet and benefits:
 | 2025 | −2.16 → −0.14 → +2.99 | −1.29 → +0.78 → +3.38 | +1.15 → +4.60 → +6.57 |
 
 With home internet, out-of-pocket levels move by −0.30% to +0.77% against the
-package-CPI run, and the stage carries every tenure above BLS in every year.
-The run shows how much the deflator matters, not how BLS deflates: it keeps the
-replication's annual price factors by collection year.
+package-CPI run, and imputed benefits carry every tenure above BLS in every
+year. The run shows how much the deflator matters, not how BLS deflates: it
+keeps the replication's annual price factors by collection year.
 
 ## Comparison with BLS components
 
@@ -626,22 +624,21 @@ published values satisfy both identities within \$0.00001 in every year from
 2019 to 2025. We compute the same means for the replication's band with
 `spm_calculator/ce_bls_shares.py`, and they reproduce every threshold.
 
-We split each threshold into terms in two ways, and both sum to the
-threshold. Under Other spread, we give each component its part of the 1.2
-multiplier: `0.82 × 1.2 × c` for a component every tenure shares, and
-`0.82 × (c_h + 0.2 × c)` for shelter, utilities, rental assistance and LIHEAP.
-Each term then gives what the threshold would lose without its component if
-the band stayed the same. Under Other separate, we keep `0.82 × 0.2 × F` as
-its own term, as BLS's workbook does in its "Other Share" row, and enter each
-component at `0.82 × c`, or at `0.82 × c_h` for shelter, utilities, rental
-assistance, LIHEAP and broadband. Home internet takes the internet total less
-the tenure's broadband. Each separate term over its threshold then gives the
-component's share as BLS publishes it, except home internet in 2023 and 2024.
-In those years BLS's "OOP Internet" row already includes broadband, so BLS's
-component shares sum to one plus the broadband share. Within one billionth in
-every year from 2019 to 2025, BLS's terms reproduce every other published
-component share, and its 2023 and 2024 home internet terms match "OOP
-Internet" less broadband.
+We split each threshold into terms in two ways, and both sum to the threshold.
+Under Other spread, we give each component its part of the 1.2 multiplier:
+`0.82 × 1.2 × c` for a component every tenure shares, and `0.82 × (c_h + 0.2 ×
+c)` for shelter, utilities, rental assistance and LIHEAP. Each term then gives
+what the threshold would lose without its component if the band stayed the
+same. Under Other separate, we keep `0.82 × 0.2 × F` as its own term, as BLS's
+workbook does in its "Other Share" row, and enter each component at `0.82 × c`,
+or at `0.82 × c_h` for shelter, utilities, rental assistance, LIHEAP and
+broadband. Home internet takes the internet total less the tenure's broadband.
+Each separate term over its threshold then gives the component's share as BLS
+publishes it, except home internet in 2023 and 2024. In those years BLS's
+component shares sum to one plus the broadband share, so we take its "OOP
+Internet" row to include broadband. Within one billionth in every year from
+2019 to 2025, BLS's terms reproduce every other published component share, and
+its 2023 and 2024 home internet terms match "OOP Internet" less broadband.
 Removing imputed terms from growth also removes their parts of `0.2 × F`, so
 the figures that remove those terms use Other spread.
 
@@ -715,10 +712,10 @@ the home internet term stays within 0.08 points of BLS's. Under Other separate,
 broadband takes each tenure's own mean, and each side's home internet term
 takes the tenure's broadband difference from the band mean, so the terms still
 sum to the threshold. That difference is zero through the 2022 thresholds and
-at most \$7.94 for BLS, for renters in 2025; we estimate that ours is at most
-\$5.14. Our home internet term supplies 1.78–2.44% of our thresholds with Other
-spread and 1.49–2.04% with Other separate; BLS's supplies 1.85–2.55% and
-1.54–2.12% of its thresholds.
+at most \$7.94 for BLS, for renters in 2025; we estimate that ours peaks at
+\$5.14, also for renters in 2025. Our home internet term supplies 1.78–2.44% of
+our thresholds with Other spread and 1.49–2.04% with Other separate; BLS's
+supplies 1.85–2.55% and 1.54–2.12% of its thresholds.
 
 With Other separate, the food, clothing, telephone, school lunch and WIC
 terms fall by a sixth, as does the sum of the home internet and broadband
@@ -860,8 +857,8 @@ In-band amounts, 2022 to 2025:
 | Ours, FCSUti index | \$1,020 → \$1,178 (+\$158) | \$1,347 → \$1,484 (+\$137) | \$411 → \$566 (+\$154) |
 
 BLS's imputed benefits rise \$401, and we estimate that ours rise \$143 with
-the package CPI and that all five of our implicates' rises fall short of BLS's
-with either deflator (\$24–\$312). We estimate that rental assistance across
+the package CPI and that all five of our implicates' rises, \$24–\$312, fall
+short of BLS's with either deflator. We estimate that rental assistance across
 all units in the band supplies \$175 of the difference and school lunch \$92.
 
 From the 2019 to the 2022 thresholds, BLS's rental assistance per renter rises
@@ -887,8 +884,8 @@ growth with and without those terms.
 | Ours, package CPI | 1.5 / 2.3 / 2.6 | 1.4 / 2.1 / 2.4 | −0.32 / +0.09 / +0.10 | 19.87 / 20.89 / 21.39 |
 | Ours, FCSUti index | 2.4 / 2.3 / 2.6 | 2.3 / 2.0 / 2.3 | −0.25 / +0.10 / +0.10 | 20.94 / 22.13 / 21.74 |
 
-Threshold growth with the stage less BLS's, in percentage points, with imputed
-terms kept → removed from both series:
+Threshold growth with home internet and benefits less BLS's, in percentage
+points, with imputed terms kept → removed from both series:
 
 | Tenure | Replication's definitions, package CPI | Replication's definitions, FCSUti index | BLS's written definitions, package CPI | BLS's written definitions, FCSUti index |
 |---|---:|---:|---:|---:|
@@ -899,19 +896,20 @@ terms kept → removed from both series:
 We estimate that removing imputed terms from both series narrows the renter
 shortfall from −2.59 to −1.10 points with the package CPI, closes it with BLS's
 index (−1.46 to −0.03) and moves owners' figures by 0.28–0.50 points. We
-estimate that those renter figures with imputed terms removed carry
+estimate that the four renter figures with imputed terms removed carry
 between-implicate standard deviations of 0.57–0.64 points. BLS's thresholds
 draw on many of the same CE interviews as ours, so the [standard errors of
 growth](#growth-from-2022-to-2025) do not measure how much of these gaps
 sampling could explain.
 
-Holding each band fixed leaves out rank shifts. The stage also reorders units,
-which we estimate moves the replication's 2022–2025 growth by a further +0.04
-points for renters, −0.27 for owners with mortgages and −1.72 for owners
-without mortgages. BLS publishes no unit-level values, so we can't measure its
-rank shifts.
+Holding each band fixed leaves out rank shifts. Imputed benefits also reorder
+units, and we estimate that the reordering moves the replication's 2022–2025
+growth by a further +0.04 points for renters, −0.27 for owners with mortgages
+and −1.72 for owners without mortgages. BLS publishes no unit-level values, so
+we can't measure its rank shifts.
 
-2022–2025 growth with the stage, under each definition and deflator:
+2022–2025 growth with home internet and benefits, under each definition and
+deflator:
 
 | Tenure | BLS corrected | Replication's definitions, package CPI | Replication's definitions, FCSUti index | BLS's written definitions, package CPI | BLS's written definitions, FCSUti index |
 |---|---:|---:|---:|---:|---:|
@@ -947,15 +945,15 @@ positive replicate weights and 22 blank ones, and
 `scripts/estimate_ce_replicate_uncertainty.py` stops if any record carries a
 different number of positive weights.
 
-We rerun the whole replication, home internet included, under each
-replicate's weights. Consumer units with a zero weight drop out, and we
-recompute the package CPI's component weights (internet's among them), the
-47th–53rd percentile band and the band means with the replicate's weights.
-Without the stage, each run includes home internet and no benefits; with it, we
+We rerun the whole replication, home internet included, under each replicate's
+weights. Consumer units with a zero weight drop out, and we recompute the
+package CPI's component weights (internet's among them), the 47th–53rd
+percentile band and the band means with the replicate's weights. The run with
+home internet adds no benefits; for the run with home internet and benefits, we
 add each implicate's imputed amounts to the same units before we select the
-band. Each record keeps its replicate weights in
-every window that holds it, so the standard errors of growth account for the
-quarters two windows share, eight between the 2022 and 2025 windows.
+band. Each record keeps its replicate weights in every window that holds it, so
+the standard errors of growth account for the quarters two windows share, eight
+between the 2022 and 2025 windows.
 
 We keep each implicate's imputed amounts from the full-sample run in every
 replicate. We fit the CPS ASEC participation and amount models and the CE rent
@@ -983,13 +981,14 @@ miss part of the correlation between those interviews. The 2019 window spans
 both changes, the 2020 and 2021 windows span the 2016Q4–2017Q1 change, and the
 2022–2025 windows span neither.
 
-With the stage, we combine the five implicates by Rubin's rules (Rubin 1987):
-the total variance adds the implicates' mean replicate variance to 1.2 times the
-variance of their full-sample estimates. Degrees of freedom follow
-Barnard and Rubin (1999), with the 43 strata as complete-data degrees of
-freedom, and figures without the stage keep 43. Each estimate below comes from
-the mean threshold across implicates, and each growth figure differs from
-Rubin's mean of the implicates' growth by at most 0.01 points.
+For the run with home internet and benefits, we combine the five implicates by
+Rubin's rules (Rubin 1987): the total variance adds the implicates' mean
+replicate variance to 1.2 times the variance of their full-sample estimates.
+Degrees of freedom follow Barnard and Rubin (1999), with the 43 strata as
+complete-data degrees of freedom, and figures for the run with home internet
+keep 43. Each estimate below comes from the mean threshold across implicates,
+and each growth figure differs from Rubin's mean of the implicates' growth by
+at most 0.01 points.
 
 `scripts/estimate_ce_replicate_uncertainty.py` reruns all 44 replicates for
 2019–2025 under both deflators and writes
@@ -999,8 +998,8 @@ reproduces the thresholds and band amounts above.
 
 ### Levels
 
-Standard errors of each threshold in dollars with the package CPI, without the
-stage / with the stage / BLS's published standard error:
+Standard errors of each threshold in dollars with the package CPI, with home
+internet / with home internet and benefits / BLS's published standard error:
 
 | Year | Renter | Owner with mortgage | Owner without mortgage |
 |---|---:|---:|---:|
@@ -1012,16 +1011,17 @@ stage / with the stage / BLS's published standard error:
 | 2024 | 221 / 245 / 325 | 347 / 348 / 303 | 820 / 694 / 682 |
 | 2025 | 379 / 299 / 393 | 414 / 418 / 327 | 519 / 796 / 560 |
 
-With the stage, we estimate that our standard errors run 0.67–1.18 times BLS's
-published ones for renters, 0.93–1.28 times for owners with mortgages and
-1.02–1.90 times for owners without mortgages. Deflating with BLS's index
-instead moves each end of those ranges by 0.06 or less. Our standard errors
-equal 0.60–0.99% of the threshold for renters and owners with mortgages and
-1.50–2.18% for owners without mortgages, who hold less than a tenth of our band
-by weight. Sampling supplies at least 80% of each level's variance, and the
-degrees of freedom range from 25 to 41. Garner (2010) computed the standard
-errors of BLS's 2006–2008 experimental thresholds by balanced repeated
-replication with the CE's 44 replicate weights, as we do ([BLS Working Paper
+With home internet and benefits, we estimate that our standard errors run
+0.67–1.18 times BLS's published ones for renters, 0.93–1.28 times for owners
+with mortgages and 1.02–1.90 times for owners without mortgages. Deflating with
+BLS's index instead moves each end of those ranges by 0.06 or less. Our
+standard errors equal 0.60–0.99% of the threshold for renters and owners with
+mortgages and 1.50–2.18% for owners without mortgages, who hold less than a
+tenth of our band by weight. Sampling supplies at least 80% of each level's
+variance, and the degrees of freedom range from 25 to 41. Garner (2010)
+computed the standard errors of BLS's 2006–2008 experimental thresholds by
+balanced repeated replication with the CE's 44 replicate weights, as we do
+([BLS Working Paper
 436](https://www.bls.gov/osmr/research-papers/2010/pdf/ec100040.pdf)). Garner
 and Gudrais (2018) base theirs on the same 44 replicates. BLS's methods page
 and workbooks do not say how its current replicates treat the percentile band
@@ -1036,7 +1036,7 @@ apply to the stage's change, and in the last column we remove the imputed terms
 from both thresholds, as in the
 [comparison with BLS components](#imputed-amounts-and-threshold-growth):
 
-| Tenure | Without the stage | With the stage | Stage's change, points | Degrees of freedom | Imputed terms removed |
+| Tenure | With home internet | With home internet and benefits | Stage's change, points | Degrees of freedom | Imputed terms removed |
 |---|---:|---:|---:|---:|---:|
 | Package composite CPI |  |  |  |  |  |
 | Renter | +19.82% (1.03) | +19.55% (1.02) | −0.27 (0.83) | 18 | +19.87% (1.30) |
@@ -1054,9 +1054,9 @@ With the package CPI, 95% intervals for the change run from −2.03 to +1.48
 points for renters, −1.59 to +1.24 for owners with mortgages and −8.15 to +4.89
 for owners without. With either deflator, the implicates' spread supplies 8–30%
 of each change's variance, and the degrees of freedom fall to 17–35. Across
-both deflators, we estimate that growth with and without the stage carries
-standard errors of 0.90–1.05 points for renters and owners with mortgages and
-2.71–3.15 for owners without mortgages.
+both deflators, we estimate that growth with home internet, with and without
+benefits, carries standard errors of 0.90–1.05 points for renters and owners
+with mortgages and 2.71–3.15 for owners without mortgages.
 
 ### Yearly growth
 
@@ -1075,11 +1075,11 @@ points, with standard errors:
 We estimate that no yearly change reaches two standard errors with either
 deflator: the largest, owners without mortgages' change from 2023 to 2024,
 reaches 1.56 with the package CPI and 1.52 with BLS's index. With the package
-CPI, we estimate that each year's growth with and without the stage carries
-standard errors of 0.38–0.70 points for renters and owners with mortgages and
-1.09–2.18 for owners without mortgages. For example, renter growth from 2024 to
-2025 runs 4.83% with the stage and 4.58% without it, with standard errors of
-0.55 and 0.67 points.
+CPI, we estimate that each year's growth with home internet, with and without
+benefits, carries standard errors of 0.38–0.70 points for renters and owners
+with mortgages and 1.09–2.18 for owners without mortgages. For example, renter
+growth from 2024 to 2025 runs 4.83% with home internet and benefits and 4.58%
+with home internet, with standard errors of 0.55 and 0.67 points.
 
 ### Rises in imputed amounts
 
@@ -1207,15 +1207,16 @@ result["without_home_internet"]["thresholds"]
 benefits, and `result["without_home_internet"]` the package's thresholds
 without home internet or benefits.
 
-`scripts/replicate_ce_inkind.py` builds `ce_units` and `cps_donors` from
-cached CE Interview bundles (2014–2024) and CPS ASEC public-use files
-(2015–2025), runs 2019–2025 with and without the stage, repeats both with
-BLS's FCSUti index as the deflator, and writes
-`spm_calculator/data/current/ce_inkind_replication_2019_2025.json`. It
-reads home internet from the MTBI files in the same bundles and makes no
-network requests. It stops with an error unless the out-of-pocket run without
-home internet matches the September 8 replication's archived receipt exactly
-and an all-zero in-kind table reproduces the run with home internet exactly.
+`scripts/replicate_ce_inkind.py` builds `ce_units` and `cps_donors` from cached
+CE Interview bundles (2014–2024) and CPS ASEC public-use files (2015–2025),
+runs 2019–2025 without home internet or benefits, with home internet, and with
+home internet and benefits, repeats all three with BLS's FCSUti index as the
+deflator, and writes
+`spm_calculator/data/current/ce_inkind_replication_2019_2025.json`. It reads
+home internet from the MTBI files in the same bundles and makes no network
+requests. It stops with an error unless the run without home internet or
+benefits matches the September 8 replication's archived receipt exactly and an
+all-zero in-kind table reproduces the run with home internet exactly.
 
 ### Receipt keys
 
@@ -1278,8 +1279,8 @@ equals minus BLS's whole home internet term. Under Other separate at schema
 version 2, our home internet term keeps the tenure's broadband difference from
 the band mean, which moves `terms.internet` by up to 0.012 points in 2023–2025.
 At schema version 1, `rank_shift_points` sits directly under each tenure.
-Replicate receipts at schema version 2 name the full-sample check against the
-replication receipt
+Replicate receipts at schema versions 1 and 2 name the full-sample check
+against the replication receipt
 `checks.full_sample.out_of_pocket_matches_replication_receipt`.
 
 ## Forecast windows: a proposed design

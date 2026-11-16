@@ -572,6 +572,10 @@ def test_receipt_is_complete_and_current():
     method = receipt["method"]
     assert (method["replicates"], method["fay_coefficient"]) == (44, 0.0)
     assert method["complete_data_df"] == STRATA
+    assert (
+        "ridge-penalized weighted information matrix"
+        in (method["held_fixed"][1])
+    )
 
 
 def test_receipt_checks_hold():

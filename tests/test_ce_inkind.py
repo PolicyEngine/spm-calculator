@@ -394,6 +394,14 @@ def test_committed_receipt_comes_from_this_code():
         ]
     assert "spm_calculator/published_thresholds.py" in receipt["code_sha256"]
     assert receipt["home_internet"]["cpi_series"] == "CUUR0000SEEE03"
+    limitations = receipt["limitations"]
+    for text in (
+        "for 2022 it adds summer EBT benefits",
+        "the UCCs or the price series",
+        "We estimate imputation uncertainty from the implicate spread and "
+        "sampling uncertainty",
+    ):
+        assert any(text in limitation for limitation in limitations), text
     archived = ROOT / receipt["archived_receipt_check"]["path"]
     assert sha256(archived) == receipt["archived_receipt_check"]["sha256"]
     assert receipt["archived_receipt_check"][
