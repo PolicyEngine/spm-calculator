@@ -3,7 +3,7 @@
   "generated_by": "scripts/tabulate_ce_internet_uccs.py",
   "generated_on": "2026-11-16",
   "classification": "current_retrospective_research",
-  "git_head": "cc4b6ace473bce2ff69e38f69a69c6eb7e30e61e",
+  "git_head": "44fdc4b2a599c81281bc8d947264bb8aa39fa959",
   "code_sha256": {
     "scripts/tabulate_ce_internet_uccs.py": "b0fe329372c5ec4f3ca0adfec13aeead065fb2f191d9552a53d7a75839a536be",
     "spm_calculator/ce_internet.py": "c0a1a928b708a418cacef585f07c53a5da84b551d6540733251d9c5ca0fc0f73",
@@ -71,11 +71,11 @@
     },
     "components_receipt": {
       "path": "spm_calculator/data/current/ce_inkind_bls_components_2019_2025.json",
-      "sha256": "4e2e274b45e9b4ae979400b1063199ff8533046ce53ea5eb360135c71b3bdd41"
+      "sha256": "40367e38000cb1cc53d4cba629c2aafee9c5d868a40d88a16633752b161fe98f"
     },
     "replication_receipt": {
       "path": "spm_calculator/data/current/ce_inkind_replication_2019_2025.json",
-      "sha256": "d1e83652e9857a881dcb6cf61505cc5af0e6b2549c9f6c7ac9220f202d34f29b"
+      "sha256": "9e19dd2a8c1394c5c85cf6a143f9da7ec6ccb2f80d526fecc3b4a85ece235c49"
     }
   },
   "uccs": {
