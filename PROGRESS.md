@@ -1,22 +1,93 @@
+# CE in-kind replication with home internet — November 14, 2026
+
+## State
+
+PR [#61](https://github.com/PolicyEngine/spm-calculator/pull/61) on
+`max/ce-inkind-internet-20261114`, which merges `main` at #60's squash
+(af53e7c) and targets `main`. The branch adds home internet spending to the
+in-kind runs. Review round 3 approved it with minor findings only. We made
+rounds 2 and 3's fixes, including those to files the receipts fingerprint,
+and regenerated the in-kind receipts. The rest wait for the next forecast
+rebuild or the next render of the methods paper, as listed under Next.
+
+## Done
+
+- `ce_internet.py` adds each unit's three-month MTBI cost for UCC 690114,
+  times four, to FCSUti (not SU) and prices it with CPI-U CUUR0000SEEE03,
+  which `scripts/fetch_internet_cpi.py` pins with BLS's API responses. UCC
+  690116 stays out because BLS counts home internet; among units with
+  children, it would add 0.45–1.24% to 690114 in each target year's window.
+  `ce_threshold.py`, `fcsuti_cpi.py`, `cpi_annual.json` and the September 8
+  receipt stay byte-identical.
+- We count home internet as out-of-pocket spending in its own component, and
+  no imputed total, share or contribution includes it. The comparison no
+  longer nets BLS's internet against our shelter: each side carries its own.
+- We regenerated the in-kind receipts at 876007b, with rounds 2 and 3's fixes
+  to the files they fingerprint; against e602bc7's receipts, no computed value
+  moved by more than \$3.3e-11 and no threshold by more than \$1.5e-11. The
+  replication and components receipts record thresholds by tenure and year
+  without home internet or benefits (which the script checks against the
+  September 8 replication exactly), with home internet, and with home internet
+  and benefits; the replicate receipt, now at schema version 3, records the
+  last two. `scripts/tabulate_ce_internet_uccs.py` records the CE UCC figures
+  the page cites in `ce_internet_ucc_tabulations_2019_2025.json`.
+- With the package CPI, we estimate that home internet raises thresholds by
+  1.5–2.4% for renters, 1.7–2.1% for owners with mortgages and 0.3–4.0% for
+  owners without, and benefits then add 0.5–3.5%, leaving every tenure
+  2.2–7.1% above BLS's corrected thresholds. We estimate that home internet
+  changes 2022–2025 growth by −0.54 points for renters, +0.01 for owners with
+  mortgages and +4.33 for owners without, and benefits by −0.27, −0.17 and
+  −1.63.
+- With sampling and imputation uncertainty combined, we estimate that each
+  benefit change in 2022–2025 growth lies within one standard error of zero
+  and that no benefit change in one-year growth reaches two.
+- BLS's methods page says BLS applies an annual-average FCSUti CPI-U to
+  quarterly CE data. The pages under `docs/` now say so and no longer
+  describe BLS's treatment as quarterly. The sealed module, `ce_forecast.py`,
+  `ce_rolling_forecast.json` and `rolling_forecast_2026_09_09.json` keep the
+  old wording until we next rebuild the canonical forecast, and the methods
+  paper until we render it after spm-threshold-paper #12 merges; the archived
+  receipt and the three content-addressed downloads in
+  `web/public/data/canonical/` never change.
+
+## Next
+
+- The canonical forecast, nowcast and projections exclude home internet until
+  we next rebuild the forecast, in a separate change.
+- In that rebuild we also reword "Annual instead of quarterly CPI by
+  collection year" in `spm_calculator/ce_forecast.py`,
+  `ce_rolling_forecast.json` and `rolling_forecast_2026_09_09.json`, and
+  publish a new content-addressed download; the three existing
+  `web/public/data/canonical/rolling-forecast-*.json` downloads keep the old
+  wording. We also reword `ce_threshold.py`'s "BLS quarterly treatment" and
+  the quarterly treatment its module and `calculate_base_thresholds`
+  docstrings ascribe to BLS.
+- Once spm-threshold-paper #12, which rewords "BLS adjusts them quarterly" in
+  `paper/index.qmd`, merges, we render the methods paper
+  (`web/public/paper/web/index.html` and `index.pdf`) again.
+- The four questions to BLS and Census staff from #60 stay open.
+
+---
+
 # CE in-kind alignment with BLS — November 13, 2026
 
 ## State
 
 PR [#60](https://github.com/PolicyEngine/spm-calculator/pull/60) on
-`max/ce-inkind-bls-alignment-20261114`, which merges `main` at #57's squash
-(bef772d) and targets `main`. The branch starts broadband with reference year
+`max/ce-inkind-bls-alignment-20261114`, squash-merged to `main` as af53e7c on
+November 15 (November 16 UTC). The branch starts broadband with reference year
 2022, adds no WIC from reference year 2020, the year of the statutory EBT
-deadline, and adds a second accounting to the BLS-components decomposition.
-The independent review's first round raised one P1, one P2 and several P3s.
-The P1 sits in the branch's history, not at head: a test docstring in
-4dd4353 and a clause in c1ce29e's message. We fixed the P2 and P3s, and a
-squash merge with a hand-written message keeps both off `main`. The second
-round, on 3c43971, found no P0 or P1 and raised two P2s and two P3s. c60d0e0
-records broadband's first reference year in the diagnostics of earlier years
-and checks the BLS block's stored 2022 dollars, 3b1c6c3 regenerates the
-receipts, and 408fce0 and the commit after it give our modeled figures on the
-page "we estimate". The commit after it also tests every run's stored
-imputed-term dollars and the replication receipt's published thresholds.
+deadline, and adds a second accounting to the BLS-components decomposition. The
+independent review's first round raised one P1, one P2 and several P3s. The P1
+sits in the branch's history, not at head: a test docstring in 4dd4353 and a
+clause in c1ce29e's message. We fixed the P2 and P3s, and a squash merge with a
+hand-written message keeps both off `main`. The second round, on 3c43971, found
+no P0 or P1 and raised two P2s and two P3s. c60d0e0 records broadband's first
+reference year in the diagnostics of earlier years and checks the BLS block's
+stored 2022 dollars, 3b1c6c3 regenerates the receipts, and 408fce0 and the
+commit after it give our modeled figures on the page "we estimate". The commit
+after it also tests every run's stored imputed-term dollars and the replication
+receipt's published thresholds.
 
 ## Done
 
@@ -46,9 +117,9 @@ imputed-term dollars and the replication receipt's published thresholds.
   published school lunch and WIC averages, a school lunch model screened on
   `HHOTLUN`, and whether to price each year with the collection year's index
   or the previous year's.
-- The replication receipt hashes neither `spm_calculator/published_thresholds.py`
-  nor the threshold series behind its published thresholds and gaps. #61, which
-  regenerates every receipt after #60 merges, adds both.
+- #61 (03d8491) adds `published_thresholds.py` to the replication receipt's
+  fingerprint and hashes `threshold_series.json` in the replication and
+  replicate receipts.
 
 ---
 
@@ -57,11 +128,11 @@ imputed-term dollars and the replication receipt's published thresholds.
 ## State
 
 PR [#57](https://github.com/PolicyEngine/spm-calculator/pull/57) on
-`max/ce-replicate-se-20261106`, based on `main` with #56, #58 and #59 merged
-in. The branch holds the module, script, receipt, table renderer, tests and the
-page's "Sampling uncertainty" section. The independent review's third round
-found no P0 or P1 issues; we fixed its P2 and the page's P3s and deferred the
-P3s that would change the receipts' code hashes.
+`max/ce-replicate-se-20261106`, squash-merged to `main` as bef772d. The branch
+holds the module, script, receipt, table renderer, tests and the page's
+"Sampling uncertainty" section. The independent review's third round found no
+P0 or P1 issues; we fixed its P2 and the page's P3s and deferred the P3s that
+would change the receipts' code hashes.
 
 ## Done
 
@@ -85,16 +156,10 @@ P3s that would change the receipts' code hashes.
 
 ## Next
 
-- We fix round 3's remaining P3s in #61, which regenerates these receipts
-  next:
-  - `scripts/replicate_ce_inkind.py`'s P-EBT limitation adds Census's 2022
-    summer EBT benefits, as the page now says. #60 starts broadband in
-    reference year 2022 and drops the broadband limitation, so its merge of
-    this branch keeps its own broadband sentences on the page.
-  - `ce_replicates.combine_implicates` returns `None` for `df_rubin` when
-    `(m - 1) / squared` overflows to infinity.
-  - `METHOD["held_fixed"]` in `scripts/estimate_ce_replicate_uncertainty.py`
-    names the inverse of the ridge-penalized weighted information matrix.
+- #61 (03d8491) fixed round 3's remaining P3s: the P-EBT limitation in
+  `scripts/replicate_ce_inkind.py`, `df_rubin` as `None` when
+  `(m - 1) / squared` overflows, and the ridge-penalized wording in
+  `METHOD["held_fixed"]`.
 
 ---
 
@@ -102,12 +167,12 @@ P3s that would change the receipts' code hashes.
 
 ## State
 
-Draft PR [#56](https://github.com/PolicyEngine/spm-calculator/pull/56) on
-`max/ce-inkind-bls-shares-20261106`. The branch holds the module, script,
-receipt, tests and page section. A first-round audit and a rebuild from raw CE
-data found that the written-definition runs kept vacation-home utilities that
-Garner and Munoz (2021) leave out. The runs now remove them, and a second review
-round comes next.
+PR [#56](https://github.com/PolicyEngine/spm-calculator/pull/56) on
+`max/ce-inkind-bls-shares-20261106`, squash-merged to `main` as 9d3aa12. The
+branch holds the module, script, receipt, tests and page section. A first-round
+audit and a rebuild from raw CE data found that the written-definition runs
+kept vacation-home utilities that Garner and Munoz (2021) leave out. The runs
+now remove them.
 
 ## Done
 
@@ -169,8 +234,8 @@ Merged in [#55](https://github.com/PolicyEngine/spm-calculator/pull/55).
 
 ## Next
 
-- Follow-ups: the stage in forecast windows (off by default) and home
-  internet spending, which the replication still omits.
+- Follow-up: the stage in forecast windows (off by default). #61 adds home
+  internet spending to the in-kind runs.
 
 ---
 

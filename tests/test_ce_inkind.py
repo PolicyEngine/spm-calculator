@@ -384,6 +384,29 @@ def test_committed_receipt_comes_from_this_code():
     assert receipt["in_kind_methodology"]["parameter_files_sha256"] == (
         ce_inkind._parameter_hashes()
     )
+    for record in (
+        receipt["cpi_input"],
+        receipt["threshold_series"],
+        receipt["home_internet"]["cpi_input"],
+    ):
+        assert sha256(ROOT / record["path"]) == record["sha256"], record[
+            "path"
+        ]
+    assert "spm_calculator/published_thresholds.py" in receipt["code_sha256"]
+    assert receipt["home_internet"]["cpi_series"] == "CUUR0000SEEE03"
+    limitations = receipt["limitations"]
+    for text in (
+        "for 2022 it adds summer EBT benefits",
+        "We take home internet from CE UCC 690114 alone and price it with "
+        "CPI-U CUUR0000SEEE03; BLS has not published the UCCs or the price "
+        "series",
+        "We count home internet as out-of-pocket spending in its own "
+        "component",
+        "we use the annual average of each interview's collection year",
+        "We estimate imputation uncertainty from the implicate spread and "
+        "sampling uncertainty",
+    ):
+        assert any(text in limitation for limitation in limitations), text
     archived = ROOT / receipt["archived_receipt_check"]["path"]
     assert sha256(archived) == receipt["archived_receipt_check"]["sha256"]
     assert receipt["archived_receipt_check"][

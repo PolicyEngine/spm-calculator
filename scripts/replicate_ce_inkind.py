@@ -1,13 +1,16 @@
 """Replicate 2019-2025 CE thresholds with and without the in-kind stage.
 
-Loads the cached CE Interview bundles (2014Q2-2025Q1) and the cached CPS
-ASEC public-use files (survey years 2015-2025), imputes BLS-style in-kind
+Loads the cached CE Interview bundles (2014Q2-2025Q1), with the MTBI file
+beside each FMLI file for home internet, and the cached CPS ASEC
+public-use files (survey years 2015-2025), imputes BLS-style in-kind
 benefits (``spm_calculator.ce_inkind``), and reports for each target year
 and tenure:
 
 - the out-of-pocket replication, which must equal the archived receipt
-  ``spm_calculator/data/current/ce_replication_2019_2025.json`` exactly,
-  and the same run with an all-zero in-kind table, which must too;
+  ``spm_calculator/data/current/ce_replication_2019_2025.json`` exactly;
+- that replication with home internet added (``spm_calculator.ce_internet``),
+  the run every in-kind run extends, and the same run with an all-zero
+  in-kind table, which must equal it exactly;
 - the replication with imputed in-kind benefits (mean and spread over
   implicates) and the share of the gap to BLS's corrected thresholds that
   the stage closes;
@@ -63,10 +66,18 @@ from spm_calculator.ce_inkind_stage import (
     replicate_with_in_kind,
     zero_in_kind,
 )
+from spm_calculator.ce_internet import (
+    INTERNET_COLUMN,
+    INTERNET_CPI_RECEIPT,
+    INTERNET_CPI_SERIES,
+    INTERNET_UCC,
+    add_home_internet,
+    read_internet_costs,
+    with_internet_cpi,
+)
 from spm_calculator.ce_threshold import (
     bls_quarter_window,
     load_ce_quarter,
-    replicate_thresholds,
 )
 from spm_calculator.cps_asec import load_household_donors
 from spm_calculator.fcsuti_cpi import CPI_SERIES
@@ -80,9 +91,13 @@ RECEIPT = (
     ROOT / "spm_calculator/data/current/ce_inkind_replication_2019_2025.json"
 )
 DEFAULT_DETAIL = ROOT / "benchmark_output/ce_inkind_2019_2025_detail.json"
+#: BLS's published thresholds, which the receipt compares against.
+THRESHOLD_SERIES = ROOT / "spm_calculator/data/bls/threshold_series.json"
 TARGETS = range(2019, 2026)
-#: Columns of the out-of-pocket replication (scripts/replicate_current_ce.py).
+#: Columns of the out-of-pocket replication (scripts/replicate_current_ce.py)
+#: and each unit's three-month home internet cost.
 KEEP = {
+    INTERNET_COLUMN,
     "NEWID",
     "AGE_REF",
     "PERSLT18",
@@ -139,10 +154,12 @@ CODE_PATHS = (
     "spm_calculator/ce_threshold.py",
     "spm_calculator/ce_inkind.py",
     "spm_calculator/ce_inkind_stage.py",
+    "spm_calculator/ce_internet.py",
     "spm_calculator/ce_decomposition.py",
     "spm_calculator/cps_asec.py",
     "spm_calculator/fcsuti_cpi.py",
     "spm_calculator/equivalence_scale.py",
+    "spm_calculator/published_thresholds.py",
     "scripts/replicate_ce_inkind.py",
 )
 
@@ -173,6 +190,14 @@ def spread(results: list[dict]) -> dict[str, float]:
     }
 
 
+def with_home_internet(frame: pd.DataFrame, target: int, options: dict):
+    """The out-of-pocket run and the same run with home internet added."""
+    out_of_pocket = prepare_out_of_pocket(frame, target, **options)
+    return out_of_pocket, add_home_internet(
+        out_of_pocket, options["cpi_series"]
+    )
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -199,10 +224,12 @@ def main():
     started = time.time()
     as_of = datetime.now(timezone.utc).date().isoformat()
     cpi_document = json.loads(args.cpi_input.read_text())
-    cpi_series = {
-        sid: pd.Series({int(y): v for y, v in values.items()})
-        for sid, values in cpi_document["series"].items()
-    }
+    cpi_series = with_internet_cpi(
+        {
+            sid: pd.Series({int(y): v for y, v in values.items()})
+            for sid, values in cpi_document["series"].items()
+        }
+    )
     archived = json.loads(ARCHIVED_RECEIPT.read_text())
 
     all_quarters = sorted({q for t in TARGETS for q in bls_quarter_window(t)})
@@ -218,6 +245,7 @@ def main():
         )
         columns = [c for c in frame.columns if c in KEEP | IN_KIND_COLUMNS]
         raw[quarter] = frame[columns].copy()
+        raw[quarter][INTERNET_COLUMN] = read_internet_costs(frame)
         raw[quarter].attrs = {}
     print(f"Loaded {len(raw)} CE quarters", flush=True)
     fmli = pd.concat(raw.values(), ignore_index=True)
@@ -248,12 +276,14 @@ def main():
 
     results, detail = {}, {}
     without, with_mean, with_by_implicate = {}, {}, {}
+    without_internet, deflated_without_internet = {}, {}
     prepared_by_target = {}
     for target in TARGETS:
         frame = window(target)
-        prepared = prepare_out_of_pocket(frame, target, **options)
+        out_of_pocket, prepared = with_home_internet(frame, target, options)
         prepared_by_target[target] = prepared
         base = prepared.result
+        oop = out_of_pocket.result
 
         def run(in_kind, prepared=prepared):
             return replicate_with_in_kind(prepared, in_kind)
@@ -261,9 +291,9 @@ def main():
         expected = archived["results"][str(target)]["variants"][
             "exclude_unresolved"
         ]
-        if base["thresholds"] != expected["thresholds"]:
+        if oop["thresholds"] != expected["thresholds"]:
             raise RuntimeError(f"{target}: out-of-pocket run != receipt")
-        if base["methodology_id"] != expected["methodology_id"]:
+        if oop["methodology_id"] != expected["methodology_id"]:
             raise RuntimeError(f"{target}: methodology id changed")
         zero = run(zero_in_kind(frame["NEWID"].unique()))
         if zero["thresholds"] != base["thresholds"]:
@@ -290,10 +320,37 @@ def main():
         ours0 = base["thresholds"]
         ours1 = mean_thresholds(implicate_runs)
         without[target], with_mean[target] = ours0, ours1
+        without_internet[target] = oop["thresholds"]
         with_by_implicate[target] = [r["thresholds"] for r in implicate_runs]
         stage = [r["construction"]["in_kind"] for r in implicate_runs]
         results[str(target)] = {
             "published": published,
+            # Three stages: out-of-pocket spending without home internet
+            # (the archived replication), with home internet, and with home
+            # internet plus in-kind benefits. Internet is out-of-pocket
+            # spending, never part of an in-kind figure.
+            "without_home_internet": oop["thresholds"],
+            "stage_effects": {
+                "home_internet_dollars": {
+                    t: ours0[t] - oop["thresholds"][t] for t in TENURES
+                },
+                "home_internet_percent": {
+                    t: 100 * (ours0[t] / oop["thresholds"][t] - 1)
+                    for t in TENURES
+                },
+                "in_kind_dollars": {t: ours1[t] - ours0[t] for t in TENURES},
+                "in_kind_percent": {
+                    t: 100 * (ours1[t] / ours0[t] - 1) for t in TENURES
+                },
+            },
+            "gap_percent_without_home_internet": {
+                t: 100 * (oop["thresholds"][t] / published[t] - 1)
+                for t in TENURES
+            },
+            "home_internet": base["construction"]["home_internet"],
+            "cpi_component_weights": base["construction"][
+                "cpi_component_weights"
+            ],
             "without_in_kind": ours0,
             "with_in_kind": ours1,
             "with_in_kind_by_implicate": [
@@ -331,6 +388,10 @@ def main():
                 np.mean([s["weighted_share_with_any"] for s in stage])
             ),
             "band": {
+                "without_home_internet": {
+                    k: oop["estimation"][k]
+                    for k in ("band_rows", "fcsuti_mean", "su_mean")
+                },
                 "without": {
                     k: base["estimation"][k]
                     for k in ("band_rows", "fcsuti_mean", "su_mean")
@@ -349,6 +410,7 @@ def main():
                     )
                 ),
             },
+            "methodology_id_without_home_internet": oop["methodology_id"],
             "methodology_id_without": base["methodology_id"],
             "methodology_ids_with": [
                 r["methodology_id"] for r in implicate_runs
@@ -371,20 +433,25 @@ def main():
             flush=True,
         )
 
-    # Price-index sensitivity: every CPI component series replaced by BLS's
-    # published FCSUti index, so each unit's price factor is I(T) / I(c).
+    # Price-index sensitivity: every CPI component series, internet
+    # included, replaced by BLS's published FCSUti index, so each unit's
+    # price factor is I(T) / I(c).
     fcsuti_series = pd.Series(
         {year: float(level) for year, level in BLS_FCSUTI_INDEX.items()}
     )
     fcsuti_options = {
         "youth_policy": "exclude_unresolved",
-        "cpi_series": {sid: fcsuti_series for sid in CPI_SERIES.values()},
+        "cpi_series": {
+            sid: fcsuti_series
+            for sid in (*CPI_SERIES.values(), INTERNET_CPI_SERIES)
+        },
     }
     deflated_without, deflated_with, deflated_by_implicate = {}, {}, {}
     for target in TARGETS:
-        prepared = prepare_out_of_pocket(
-            window(target), target, **fcsuti_options
+        out_of_pocket, prepared = with_home_internet(
+            window(target), target, fcsuti_options
         )
+        deflated_without_internet[target] = out_of_pocket.result["thresholds"]
         factors = prepared.result["construction"]["inflation_factors"]
         for year, factor in factors.items():
             expected = bls_fcsuti_index(target) / bls_fcsuti_index(year)
@@ -403,6 +470,11 @@ def main():
         deflated_without[target], deflated_with[target] = ours0, ours1
         deflated_by_implicate[target] = [r["thresholds"] for r in runs]
         results[str(target)]["fcsuti_deflated"] = {
+            "without_home_internet": deflated_without_internet[target],
+            "home_internet_percent": {
+                t: 100 * (ours0[t] / deflated_without_internet[target][t] - 1)
+                for t in TENURES
+            },
             "without_in_kind": ours0,
             "with_in_kind": ours1,
             "with_in_kind_by_implicate": deflated_by_implicate[target],
@@ -496,9 +568,9 @@ def main():
     pairs = [(2022, 2025)] + [(t - 1, t) for t in TARGETS if t > TARGETS[0]]
     decompositions = {}
     for base_year, target_year in pairs:
-        counterfactual = replicate_thresholds(
-            window(base_year), target_year, **options
-        )["thresholds"]
+        counterfactual = with_home_internet(
+            window(base_year), target_year, options
+        )[1].result["thresholds"]
         package_price = {
             t: counterfactual[t] / without[base_year][t] for t in TENURES
         }
@@ -540,6 +612,9 @@ def main():
             "counterfactual_base_window_in_target_prices": counterfactual,
             "bls_price_factor": bls_price,
             "published_growth_percent": published_growth,
+            "growth_percent_without_home_internet": growth_percent(
+                without_internet[base_year], without_internet[target_year]
+            ),
             "growth_percent_without": growth_percent(
                 without[base_year], without[target_year]
             ),
@@ -547,6 +622,10 @@ def main():
                 with_mean[base_year], with_mean[target_year]
             ),
             "fcsuti_deflated": {
+                "growth_percent_without_home_internet": growth_percent(
+                    deflated_without_internet[base_year],
+                    deflated_without_internet[target_year],
+                ),
                 "growth_percent_without": growth_percent(
                     deflated_without[base_year], deflated_without[target_year]
                 ),
@@ -564,7 +643,7 @@ def main():
         }
 
     receipt = {
-        "schema_version": 1,
+        "schema_version": 2,
         "generated_by": "scripts/replicate_ce_inkind.py",
         "generated_on": as_of,
         "classification": "current_retrospective_research",
@@ -582,6 +661,20 @@ def main():
         "cpi_input": {
             "path": "spm_calculator/data/bls/cpi_annual.json",
             "sha256": sha256(args.cpi_input),
+        },
+        "threshold_series": {
+            "path": str(THRESHOLD_SERIES.relative_to(ROOT)),
+            "sha256": sha256(THRESHOLD_SERIES),
+        },
+        "home_internet": {
+            "ucc": INTERNET_UCC,
+            "mtbi": "the MTBI file beside each FMLI file, same bundle and quarter",
+            "annualization": "three-month cost times four, with FMLI spending",
+            "cpi_series": INTERNET_CPI_SERIES,
+            "cpi_input": {
+                "path": "spm_calculator/data/bls/cpi_internet_receipt.json",
+                "sha256": sha256(INTERNET_CPI_RECEIPT),
+            },
         },
         "bls_fcsuti_index": {
             "levels_2013_100": {
@@ -607,12 +700,15 @@ def main():
             "School lunch donor values for reference years 2014-2017 come from the USDA formula; later years use Census SPM_SCHLUNCH values",
             "BLS says it assigns school lunch by the traditional method before and after the COVID-19 period; the stage uses Census SPM_SCHLUNCH values for every reference year from 2018, and from reference year 2023 Census estimates those values with its fall 2022 method",
             "The imputation assigns school lunch only to households it imputes as receiving free, reduced-price or universal-free lunch; Census also values paid lunches and, in some years, P-EBT or Summer EBT for other households",
-            "Census accounts for P-EBT in its school lunch values for reference years 2020 and 2021, and states paid P-EBT on EBT cards; BLS says it follows Census's COVID-era methods, but by its reasoning for leaving out SNAP, reported food spending may already include those benefits",
+            "Census accounts for P-EBT in its school lunch values for reference years 2020 and 2021, and for 2022 it adds summer EBT benefits, which states paid that summer as P-EBT; states paid both on EBT cards. BLS says it follows Census's COVID-era methods, so the stage does too, but by BLS's reasoning for leaving out SNAP, reported food spending may already include those benefits",
             "WIC uses USDA's national fiscal-year average food cost; Census has used state averages since its revised 2019 estimates",
             "Participation models share one covariate set across programs and years; CE and CPS income concepts differ",
-            "The replication omits home internet spending, which BLS's FCSUti includes",
+            "We take home internet from CE UCC 690114 alone and price it with CPI-U CUUR0000SEEE03; BLS has not published the UCCs or the price series behind its home internet term",
+            "We count home internet as out-of-pocket spending in its own component, and no in-kind total, share or contribution includes it",
+            "The archived replication excludes home internet, and the canonical forecast, nowcast and projections exclude it until the forecast is next rebuilt, which is a separate change",
+            "BLS applies an annual-average FCSUti CPI-U to quarterly CE data and does not say which year's average each quarter gets; we use the annual average of each interview's collection year",
             "The stage adds no WIC in any state from reference year 2020, the year of the statutory deadline for statewide WIC EBT, October 1, 2020 (42 U.S.C. 1786(h)(12)(B)(i)); the cutoff also drops WIC where the middle of the reference period falls before the deadline, including in six states that finished during 2020 before the deadline, and FNS dates six other states and DC after it, so the cutoff departs from a strict state-by-state reading of BLS's published rule, and wic_ebt_by_state_sensitivity uses each state's own date instead",
-            "The runs estimate imputation uncertainty (implicate spread) but not sampling uncertainty",
+            "We estimate imputation uncertainty from the implicate spread and sampling uncertainty in ce_replicate_uncertainty_2019_2025.json",
         ],
         "runtime_seconds": round(time.time() - started),
     }

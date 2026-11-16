@@ -3,8 +3,9 @@
 BLS publishes each threshold component's share of each threshold, by tenure
 and year, and the band's tenure distribution
 (``spm_calculator.ce_bls_shares`` shows how those give in-band dollars). This
-script computes the same components for the in-kind replication, with the
-package composite CPI and with BLS's FCSUti index, and records:
+script computes the same components for the in-kind replication, which
+includes home internet (``spm_calculator.ce_internet``), with the package
+composite CPI and with BLS's FCSUti index, and records:
 
 - in-band amounts of each imputed benefit, ours and BLS's;
 - each threshold term's part of the level gap to BLS;
@@ -86,6 +87,14 @@ from spm_calculator.ce_inkind_stage import (
     add_in_kind,
     prepare_out_of_pocket,
 )
+from spm_calculator.ce_internet import (
+    INTERNET_COLUMN,
+    INTERNET_CPI_RECEIPT,
+    INTERNET_CPI_SERIES,
+    add_home_internet,
+    read_internet_costs,
+    with_internet_cpi,
+)
 from spm_calculator.ce_threshold import (
     bls_quarter_window,
     estimate_thresholds,
@@ -134,8 +143,10 @@ LIMITATIONS = [
     "BLS's written definitions come from Garner and Munoz (2021); BLS's current code may differ, and its thresholds also carry later refinements and corrections",
     "FMLI's vacation-home utility summaries leave out coal, wood and other fuels for vacation homes (UCCs 250913 and 250914), so the definition runs keep those fuels",
     "Removing imputed terms holds each band as it stands; the replication's own with-and-without runs show how far rank shifts move that",
-    "The replication still omits home internet spending, which BLS's FCSUti includes",
-    "The runs estimate imputation uncertainty (implicate spread) but not sampling uncertainty",
+    "We take home internet from CE UCC 690114 alone and price it with CPI-U CUUR0000SEEE03; BLS has not published the UCCs or the price series behind its home internet term",
+    "We count home internet as out-of-pocket spending in its own component, and no in-kind total, share or contribution includes it",
+    "The archived replication excludes home internet, and the canonical forecast, nowcast and projections exclude it until the forecast is next rebuilt, which is a separate change",
+    "We estimate imputation uncertainty from the implicate spread and sampling uncertainty in ce_replicate_uncertainty_2019_2025.json",
 ]
 
 
@@ -171,12 +182,12 @@ def definition_check(window: pd.DataFrame, target: int, cpi: dict) -> dict:
 
     With one price index for every component, each unit keeps its price
     factor under both definitions, so its shelter, utilities and food must
-    fall by exactly the amounts the definitions remove.
+    fall by exactly the amounts the definitions remove, and its home
+    internet must not move.
     """
-    options = {"youth_policy": "exclude_unresolved", "cpi_series": cpi}
-    before = prepare_out_of_pocket(window, target, **options).expenditures
-    after = prepare_out_of_pocket(
-        apply_bls_paper_definition(window), target, **options
+    before = with_home_internet(window, target, cpi).expenditures
+    after = with_home_internet(
+        apply_bls_paper_definition(window), target, cpi
     ).expenditures
     if not before["NEWID"].equals(after["NEWID"]):
         raise RuntimeError(f"{target}: the definitions changed the sample")
@@ -213,6 +224,11 @@ def definition_check(window: pd.DataFrame, target: int, cpi: dict) -> dict:
                     units_before["utilities"] - units_after["utilities"]
                 ).to_numpy()
                 - expected_utilities
+            ).max()
+        ),
+        "internet": float(
+            np.abs(
+                (units_before["internet"] - units_after["internet"]).to_numpy()
             ).max()
         ),
     }
@@ -275,6 +291,47 @@ def share_record(
     }
 
 
+def with_home_internet(window: pd.DataFrame, target: int, cpi: dict):
+    """The replication with home internet, as scripts/replicate_ce_inkind.py
+    builds it."""
+    return add_home_internet(
+        prepare_out_of_pocket(
+            window, target, youth_policy="exclude_unresolved", cpi_series=cpi
+        ),
+        cpi,
+    )
+
+
+def internet_record(
+    band: BandComponents,
+    bls: BandComponents,
+    thresholds: dict,
+    published: dict,
+) -> dict:
+    """Our home internet term beside BLS's, under each accounting.
+
+    Ours is over our thresholds with home internet and benefits, BLS's over
+    its published thresholds; both bands include in-kind benefits. Under
+    Other separate, each internet term also carries the band's mean
+    broadband less the tenure's own, as
+    :meth:`~spm_calculator.ce_bls_shares.BandComponents.threshold_terms`
+    gives it.
+    """
+    out = {}
+    for accounting in ACCOUNTINGS:
+        out[accounting] = {}
+        for tenure in TENURES:
+            ours = band.threshold_terms(tenure, accounting)["internet"]
+            theirs = bls.threshold_terms(tenure, accounting)["internet"]
+            out[accounting][tenure] = {
+                "ours_dollars": ours,
+                "bls_dollars": theirs,
+                "ours_percent_of_threshold": 100 * ours / thresholds[tenure],
+                "bls_percent_of_threshold": 100 * theirs / published[tenure],
+            }
+    return out
+
+
 def year_record(
     window: pd.DataFrame,
     target: int,
@@ -285,9 +342,8 @@ def year_record(
     published: dict,
     expected: dict | None,
 ) -> tuple[dict, BandComponents, list[BandComponents]]:
-    prepared = prepare_out_of_pocket(
-        window, target, youth_policy="exclude_unresolved", cpi_series=cpi
-    )
+    prepared = with_home_internet(window, target, cpi)
+    without_internet = prepared.result["without_home_internet"]["thresholds"]
     without_thresholds = prepared.result["thresholds"]
     without = band_components(prepared.expenditures, prepared.median_share)
     largest_difference(
@@ -296,7 +352,10 @@ def year_record(
         f"{target} components without the stage",
         COMPONENT_TOLERANCE,
     )
-    if expected is not None and without_thresholds != expected["without"]:
+    if expected is not None and (
+        without_thresholds != expected["without"]
+        or without_internet != expected["without_home_internet"]
+    ):
         raise RuntimeError(f"{target}: out-of-pocket run != receipt")
     bands, thresholds, pieces = [], [], []
     from_receipt = 0.0
@@ -335,6 +394,14 @@ def year_record(
         for group in pieces[0]
     }
     record = {
+        # Out-of-pocket spending alone; home internet is the next stage.
+        "without_home_internet": {
+            "thresholds": without_internet,
+            "gap_percent": {
+                t: 100 * (without_internet[t] / published[t] - 1)
+                for t in TENURES
+            },
+        },
         "without_in_kind": {
             "thresholds": without_thresholds,
             "gap_percent": {
@@ -364,6 +431,9 @@ def year_record(
             "band_pieces": mean_pieces,
         },
         "level_gap_percent_of_bls": gap_record(mean, bls, published),
+        "home_internet": internet_record(
+            mean, bls, mean_thresholds, published
+        ),
         "shelter_excess_dollars": {
             t: mean.by_tenure[t]["shelter"] - bls.by_tenure[t]["shelter"]
             for t in TENURES
@@ -523,16 +593,21 @@ def main() -> None:
     args = parser.parse_args()
     started = time.time()
     cpi_document = json.loads(args.cpi_input.read_text())
-    cpi_series = {
-        sid: pd.Series({int(y): v for y, v in values.items()})
-        for sid, values in cpi_document["series"].items()
-    }
+    cpi_series = with_internet_cpi(
+        {
+            sid: pd.Series({int(y): v for y, v in values.items()})
+            for sid, values in cpi_document["series"].items()
+        }
+    )
     fcsuti_series = pd.Series(
         {year: float(level) for year, level in BLS_FCSUTI_INDEX.items()}
     )
     deflators = {
         "package": cpi_series,
-        "fcsuti": {sid: fcsuti_series for sid in CPI_SERIES.values()},
+        "fcsuti": {
+            sid: fcsuti_series
+            for sid in (*CPI_SERIES.values(), INTERNET_CPI_SERIES)
+        },
     }
     price_ratio = float(cpi_series[CPI_U][TARGET_YEAR]) / float(
         cpi_series[CPI_U][BASE_YEAR]
@@ -563,6 +638,7 @@ def main() -> None:
         if missing:
             raise RuntimeError(f"{quarter}: FMLI lacks {missing}")
         raw[quarter] = frame[[c for c in frame.columns if c in wanted]].copy()
+        raw[quarter][INTERNET_COLUMN] = read_internet_costs(frame)
         raw[quarter].attrs = {}
     print(f"Loaded {len(raw)} CE quarters", flush=True)
     fmli = pd.concat(raw.values(), ignore_index=True)
@@ -591,13 +667,16 @@ def main() -> None:
         result = replication["results"][str(target)]
         if run == "package":
             return {
+                "without_home_internet": result["without_home_internet"],
                 "without": result["without_in_kind"],
                 "with": result["with_in_kind_by_implicate"],
             }
         if run == "fcsuti":
+            deflated = result["fcsuti_deflated"]
             return {
-                "without": result["fcsuti_deflated"]["without_in_kind"],
-                "with": result["fcsuti_deflated"]["with_in_kind_by_implicate"],
+                "without_home_internet": deflated["without_home_internet"],
+                "without": deflated["without_in_kind"],
+                "with": deflated["with_in_kind_by_implicate"],
             }
         return None
 
@@ -637,7 +716,7 @@ def main() -> None:
     }
 
     receipt = {
-        "schema_version": 2,
+        "schema_version": 3,
         "generated_by": "scripts/compare_ce_inkind_bls_shares.py",
         "generated_on": datetime.now(timezone.utc).date().isoformat(),
         "classification": "current_retrospective_research",
@@ -668,6 +747,11 @@ def main() -> None:
                 "path": _recorded_path(args.cpi_input),
                 "sha256": sha256(args.cpi_input),
                 "cpi_u_ratio_2022_2025": price_ratio,
+            },
+            "internet_cpi": {
+                "path": str(INTERNET_CPI_RECEIPT.relative_to(ROOT)),
+                "sha256": sha256(INTERNET_CPI_RECEIPT),
+                "series_id": INTERNET_CPI_SERIES,
             },
         },
         "replication_receipt_check": {

@@ -18,7 +18,6 @@ from spm_calculator.ce_bls_shares import (
     ACCOUNTINGS,
     OTHER,
     TENURES,
-    BandComponents,
 )
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -88,15 +87,6 @@ def summarize(receipt: dict) -> dict:
             max(bls[y]["checks"]["other_separate_share_error"].values())
             for y in years
         ),
-        "bls_internet_percent_of_threshold": {
-            accounting: _range(
-                100
-                * _bls_term(receipt, y, t, "internet", accounting)
-                / bls[y]["published_thresholds"][t]
-                for y, t in [(y, t) for y in years for t in TENURES]
-            )
-            for accounting in ACCOUNTINGS
-        },
         "runs": {},
     }
     cells = [(y, t) for y in years for t in TENURES]
@@ -153,9 +143,30 @@ def summarize(receipt: dict) -> dict:
             "shelter_excess_dollars": _range(
                 data[y]["shelter_excess_dollars"][t] for y, t in cells
             ),
-            "shelter_excess_less_bls_internet_dollars": _range(
-                data[y]["shelter_excess_dollars"][t]
-                - bls[y]["band"]["pooled"]["internet"]
+            "home_internet_percent_of_threshold": {
+                accounting: {
+                    side: _range(
+                        data[y]["home_internet"][accounting][t][
+                            f"{side}_percent_of_threshold"
+                        ]
+                        for y, t in cells
+                    )
+                    for side in ("ours", "bls")
+                }
+                for accounting in ACCOUNTINGS
+            },
+            "home_internet_ratio_to_bls": _range(
+                data[y]["with_in_kind"]["band"]["pooled"]["internet"]
+                / bls[y]["band"]["pooled"]["internet"]
+                for y in years
+            ),
+            "home_internet_effect_percent": _range(
+                100
+                * (
+                    data[y]["without_in_kind"]["thresholds"][t]
+                    / data[y]["without_home_internet"]["thresholds"][t]
+                    - 1
+                )
                 for y, t in cells
             ),
             "meals_as_pay_dollars": _range(
@@ -205,16 +216,6 @@ def summarize(receipt: dict) -> dict:
     return summary
 
 
-def _bls_term(
-    receipt: dict, year: str, tenure: str, term: str, accounting: str
-) -> float:
-    """One of BLS's threshold terms, rebuilt from the receipt's band."""
-    band = receipt["bls"]["years"][year]["band"]
-    return BandComponents(
-        band["pooled"], band["by_tenure"], band["tenure_mix"]
-    ).threshold_terms(tenure, accounting)[term]
-
-
 def _level_gap_points(data: dict, years: list, accounting: str) -> dict:
     out = {}
     for t in TENURES:
@@ -226,9 +227,6 @@ def _level_gap_points(data: dict, years: list, accounting: str) -> dict:
             for term in records[0]["terms"]
         } | {
             "imputed": _range(r["imputed"] for r in records),
-            "shelter_plus_internet": _range(
-                r["terms"]["shelter"] + r["terms"]["internet"] for r in records
-            ),
         }
     return out
 
@@ -236,6 +234,44 @@ def _level_gap_points(data: dict, years: list, accounting: str) -> dict:
 def _dollars(value: float) -> str:
     # MyST reads paired dollar signs as math, so escape each one.
     return f"\\${value:,.0f}"
+
+
+def _effect(record: dict, before: str, after: str, tenure: str) -> float:
+    """Percent change in a tenure's threshold from one stage to the next."""
+    return 100 * (
+        record[after]["thresholds"][tenure]
+        / record[before]["thresholds"][tenure]
+        - 1
+    )
+
+
+def _stage_gaps(record: dict, tenure: str) -> str:
+    """Gap to BLS in percent at each stage: out-of-pocket spending, then
+    with home internet, then with home internet and in-kind benefits."""
+    return " → ".join(
+        _signed(record[stage]["gap_percent"][tenure])
+        for stage in (
+            "without_home_internet",
+            "without_in_kind",
+            "with_in_kind",
+        )
+    )
+
+
+def _stage_effects(record: dict, tenure: str) -> str:
+    """Home internet's and in-kind benefits' effects in percent, with the
+    between-implicate SD of the final threshold in percent of it."""
+    internet = _effect(
+        record, "without_home_internet", "without_in_kind", tenure
+    )
+    in_kind = _effect(record, "without_in_kind", "with_in_kind", tenure)
+    stage = record["with_in_kind"]
+    sd = (
+        100
+        * stage["between_implicate_sd"][tenure]
+        / stage["thresholds"][tenure]
+    )
+    return f"{_signed(internet)} / {_signed(in_kind)} ({_rate(sd, 2)})"
 
 
 def _signed_dollars(value: float) -> str:
@@ -346,8 +382,20 @@ def render_tables(receipt: dict) -> dict[str, str]:
         ],
     )
 
+    tables["stage_gaps"] = _table(
+        ["Target", *TENURE_NAMES.values()],
+        [[y, *(_stage_gaps(package[y], t) for t in TENURES)] for y in years],
+    )
+    tables["stages"] = _table(
+        ["Target", *TENURE_NAMES.values()],
+        [
+            [y, *(_stage_effects(package[y], t) for t in TENURES)]
+            for y in years
+        ],
+    )
+
     tables["shelter_excess"] = _table(
-        ["Target", *TENURE_NAMES.values(), "BLS home internet"],
+        ["Target", *TENURE_NAMES.values(), "Home internet, ours / BLS"],
         [
             [
                 y,
@@ -356,7 +404,8 @@ def render_tables(receipt: dict) -> dict[str, str]:
                     f"({_dollars(_outside_bls_shelter(package[y]['with_in_kind']['band_pieces'][t]))})"
                     for t in TENURES
                 ),
-                _dollars(bls[y]["band"]["pooled"]["internet"]),
+                f"{_dollars(package[y]['with_in_kind']['band']['pooled']['internet'])}"
+                f" / {_dollars(bls[y]['band']['pooled']['internet'])}",
             ]
             for y in years
         ],

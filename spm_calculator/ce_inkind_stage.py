@@ -18,8 +18,10 @@ utilities and shelter, so they also enter shelter and utilities (SU),
 which sets the tenure-specific part of each threshold. Amounts are annual
 dollars of the unit's reference period; the stage carries them to the
 threshold year with the price factor the replication applies to the
-unit's out-of-pocket spending. CPI component weights stay those of
-out-of-pocket spending.
+unit's out-of-pocket spending. CPI component weights stay those of the
+run it extends: out-of-pocket spending, or out-of-pocket spending plus home
+internet when :func:`spm_calculator.ce_internet.add_home_internet` built
+the run.
 
 Invariants, tested in ``tests/test_ce_inkind.py``:
 
@@ -61,8 +63,18 @@ IN_KIND_SHELTER_UTILITY_COMPONENTS = ("liheap", "rental_assistance")
 #: Prefix of methodology identifiers for runs with the stage switched on.
 METHODOLOGY_PREFIX = "ce-fmli-inkind-research-v1"
 
-_OMITTED = "home internet and BLS in-kind benefit imputations omitted"
-_REPLACED = "home internet omitted; in-kind benefits from the in-kind stage"
+#: The approximation the out-of-pocket replication records for what it omits.
+OMITTED_APPROXIMATION = (
+    "home internet and BLS in-kind benefit imputations omitted"
+)
+#: The same entry once :mod:`spm_calculator.ce_internet` adds home internet.
+IN_KIND_OMITTED = "BLS in-kind benefit imputations omitted"
+_REPLACEMENTS = {
+    OMITTED_APPROXIMATION: (
+        "home internet omitted; in-kind benefits from the in-kind stage"
+    ),
+    IN_KIND_OMITTED: "in-kind benefits from the in-kind stage",
+}
 _STAGE_INPUTS = (
     "NEWID",
     "inflation_factor",
@@ -278,12 +290,17 @@ def replicate_with_in_kind(run: OutOfPocketRun, in_kind: pd.DataFrame) -> dict:
             "settings_sha256": _digest(methodology),
         },
     }
-    approximations = list(run.result["construction"]["approximations"])
     approximations = [
-        _REPLACED if item == _OMITTED else item for item in approximations
+        _REPLACEMENTS.get(item, item)
+        for item in run.result["construction"]["approximations"]
     ]
-    if _REPLACED not in approximations:
-        approximations.append(_REPLACED)
+    if not set(_REPLACEMENTS.values()) & set(approximations):
+        omitted = (
+            IN_KIND_OMITTED
+            if "home_internet" in run.result["construction"]
+            else OMITTED_APPROXIMATION
+        )
+        approximations.append(_REPLACEMENTS[omitted])
     return {
         **run.result,
         "methodology_id": f"{METHODOLOGY_PREFIX}:{_digest(config)}",

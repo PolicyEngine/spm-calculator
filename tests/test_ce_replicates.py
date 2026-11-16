@@ -306,6 +306,12 @@ def test_rubin_degenerate_cases():
     assert 0 < tiny.fraction_missing < 1e-150
     assert tiny.df_rubin is None
     assert tiny.df == pytest.approx(NU_COM * (NU_COM + 1) / (NU_COM + 3))
+    # Here the square is positive but subnormal, so (m - 1) / squared
+    # overflows to inf; Rubin's df again cannot be held as a float.
+    overflow = combine_implicates([0.0, 1e-78], [1.0, 1.0])
+    assert 0 < overflow.fraction_missing**2 < 1e-300
+    assert overflow.df_rubin is None
+    assert overflow.df == pytest.approx(NU_COM * (NU_COM + 1) / (NU_COM + 3))
     with pytest.raises(ValueError, match="two or more"):
         combine_implicates([1.0], [1.0])
     with pytest.raises(ValueError, match="nonnegative"):
@@ -559,9 +565,17 @@ def test_receipt_is_complete_and_current():
         REPLICATION_RECEIPT
     )
     assert inputs["components_receipt"]["sha256"] == sha256(COMPONENTS_RECEIPT)
+    for name in ("cpi", "threshold_series", "internet_cpi"):
+        assert sha256(ROOT / inputs[name]["path"]) == inputs[name]["sha256"]
+    assert "spm_calculator/published_thresholds.py" in receipt["code_sha256"]
+    assert inputs["internet_cpi"]["series_id"] == "CUUR0000SEEE03"
     method = receipt["method"]
     assert (method["replicates"], method["fay_coefficient"]) == (44, 0.0)
     assert method["complete_data_df"] == STRATA
+    assert (
+        "ridge-penalized weighted information matrix"
+        in (method["held_fixed"][1])
+    )
 
 
 def test_receipt_checks_hold():
@@ -574,7 +588,7 @@ def test_receipt_checks_hold():
         == IDENTITY_TOLERANCE
     )
     full = checks["full_sample"]
-    assert full["out_of_pocket_matches_replication_receipt"] is True
+    assert full["with_home_internet_matches_replication_receipt"] is True
     assert (
         full["with_in_kind_largest_relative_gap"]
         <= full["with_in_kind_tolerance"]

@@ -45,7 +45,10 @@ in 2025 the reverse holds. Identity (2) balances with the row that holds
 equal dollars, and the leaf rows sum to one except in 2023 and 2024, when
 they exceed it by exactly the broadband row. So the tenure-invariant row
 already includes broadband, and :func:`bls_band_components` takes home
-internet spending as that row less the band's mean broadband subsidy.
+internet spending as that row less the band's mean broadband subsidy. On
+the replication's side, home internet is CE UCC 690114, which
+:func:`spm_calculator.ce_internet.add_home_internet` adds to FCSUti; a frame
+without that step has none.
 
 Invariants, tested in ``tests/test_ce_bls_shares.py``:
 
@@ -76,6 +79,7 @@ from typing import Mapping, Optional, Sequence
 import numpy as np
 import pandas as pd
 
+from spm_calculator.ce_internet import INTERNET_COLUMN
 from spm_calculator.ce_threshold import (
     MEDIAN_SHARE,
     _food_expenditure,
@@ -274,13 +278,20 @@ def unit_components(frame: pd.DataFrame) -> pd.DataFrame:
     Args:
         frame: Normalized expenditures from
             :func:`spm_calculator.ce_inkind_stage.prepare_out_of_pocket`,
-            built with its default principal and annualization options, or
+            built with its default principal and annualization options,
             that frame after
-            :func:`spm_calculator.ce_inkind_stage.add_in_kind`.
+            :func:`spm_calculator.ce_internet.add_home_internet`, or either
+            after :func:`spm_calculator.ce_inkind_stage.add_in_kind`. Home
+            internet comes from its three-month cost column, and is zero
+            when the frame has none. A frame that carries the column must
+            count home internet in FCSUti, as
+            :func:`~spm_calculator.ce_internet.add_home_internet` does.
 
     Raises:
         ValueError: If a component, ``fcsuti_2a2c`` or ``su_2a2c`` is not
-            finite, or the components do not sum to the last two.
+            finite, the frame carries the internet column while its FCSUti
+            leaves home internet out, or the components do not sum to the
+            last two.
     """
     quarterly = _quarterly_factor(frame)
     telephone = _sum_pair(frame, "TELEPHPQ", "TELEPHCQ").to_numpy(dtype=float)
@@ -297,7 +308,11 @@ def unit_components(frame: pd.DataFrame) -> pd.DataFrame:
             )
             * quarterly,
             "telephone": telephone * quarterly,
-            "internet": 0.0,
+            "internet": (
+                frame[INTERNET_COLUMN].to_numpy(dtype=float) * quarterly
+                if INTERNET_COLUMN in frame
+                else 0.0
+            ),
             "shelter": shelter * quarterly,
             "utilities": (utilities - telephone) * quarterly,
         },
@@ -324,6 +339,19 @@ def unit_components(frame: pd.DataFrame) -> pd.DataFrame:
         out[list(COMPONENTS)].sum(axis=1).to_numpy() - fcsuti
     )
     su_error = np.abs(out[list(SHELTER_UTILITIES)].sum(axis=1).to_numpy() - su)
+    if fcsuti_error.max() > 1e-6 and INTERNET_COLUMN in frame:
+        without_internet = np.abs(
+            out[[c for c in COMPONENTS if c != "internet"]]
+            .sum(axis=1)
+            .to_numpy()
+            - fcsuti
+        )
+        if without_internet.max() <= 1e-6:
+            raise ValueError(
+                f"The frame carries {INTERNET_COLUMN} but its FCSUti leaves "
+                "home internet out; add it with add_home_internet or drop "
+                "the column"
+            )
     if max(fcsuti_error.max(), su_error.max()) > 1e-6:
         raise ValueError(
             "Unit components do not sum to the frame's FCSUti and SU; "

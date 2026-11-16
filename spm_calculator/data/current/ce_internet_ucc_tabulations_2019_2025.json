@@ -1,0 +1,1697 @@
+{
+  "schema_version": 1,
+  "generated_by": "scripts/tabulate_ce_internet_uccs.py",
+  "generated_on": "2026-11-16",
+  "classification": "current_retrospective_research",
+  "git_head": "cc4b6ace473bce2ff69e38f69a69c6eb7e30e61e",
+  "code_sha256": {
+    "scripts/tabulate_ce_internet_uccs.py": "b0fe329372c5ec4f3ca0adfec13aeead065fb2f191d9552a53d7a75839a536be",
+    "spm_calculator/ce_internet.py": "c0a1a928b708a418cacef585f07c53a5da84b551d6540733251d9c5ca0fc0f73",
+    "spm_calculator/ce_inkind_stage.py": "68e881d04cfc8c35f5ca11fd7b6b60d88abfb0bc26921ad93f7ba8a390a8fd8c",
+    "spm_calculator/ce_threshold.py": "4efbe2b03f6b1f4eb2911ab0f79f5151bd655cc1e5addf42f5c4540ace1f852f",
+    "spm_calculator/equivalence_scale.py": "95c797adca4811b0a2c4202e8471f6cd46fcd259bf46b34da74588ab08b41326",
+    "spm_calculator/fcsuti_cpi.py": "cf8fbe9103846d83a280bcd4f13b9ddd91e8baa94e2668b9ef288c7cc980a5fc",
+    "spm_calculator/published_thresholds.py": "bbed3fb2c1658e86172917148f986383c86ba673be1055d9688e8a53600ae2ba"
+  },
+  "runtime": {
+    "python": "3.13.13",
+    "numpy": "2.4.1",
+    "pandas": "3.0.0"
+  },
+  "inputs": {
+    "ce_bundles": {
+      "intrvw14.zip": {
+        "sha256": "257d286fd74d6bd382c0cb5d739f1347dae225659b7f487ce68e7c53d286267e",
+        "url": "https://www.bls.gov/cex/pumd/data/comma/intrvw14.zip"
+      },
+      "intrvw15.zip": {
+        "sha256": "efd804b9c1042e88f3415a7d76bc64a1ec9f93f09af34db57474a21bd0eeedd3",
+        "url": "https://www.bls.gov/cex/pumd/data/comma/intrvw15.zip"
+      },
+      "intrvw16.zip": {
+        "sha256": "0cfdc3f63f7b6b3587e89a7774c103984abe35ddc65f4deac79e5a0902626b9b",
+        "url": "https://www.bls.gov/cex/pumd/data/comma/intrvw16.zip"
+      },
+      "intrvw17.zip": {
+        "sha256": "08ae279938a34f538731154c3163f5d4cad0b52b6dc9e64f8e9427c4d72d14f0",
+        "url": "https://www.bls.gov/cex/pumd/data/comma/intrvw17.zip"
+      },
+      "intrvw18.zip": {
+        "sha256": "c8a5a26776ac78e676a0bcdf18b036c80859e15c5e8cecf5a5cb2f2e55944a98",
+        "url": "https://www.bls.gov/cex/pumd/data/comma/intrvw18.zip"
+      },
+      "intrvw19.zip": {
+        "sha256": "fbdc4771cf2b32db495ddc550326d66ae6deae3f55d989efed1b70bccee7ed83",
+        "url": "https://www.bls.gov/cex/pumd/data/comma/intrvw19.zip"
+      },
+      "intrvw20.zip": {
+        "sha256": "de226eaf9b18eb4721e8aca385c94101b8061a74decc5b9f52667c29cf01ba8a",
+        "url": "https://www.bls.gov/cex/pumd/data/comma/intrvw20.zip"
+      },
+      "intrvw21.zip": {
+        "sha256": "9b449829fd10ee71227a3de044e6b6d67e568cc7c02a759dda14e4b0278697f0",
+        "url": "https://www.bls.gov/cex/pumd/data/comma/intrvw21.zip"
+      },
+      "intrvw22.zip": {
+        "sha256": "c99a2f47c0084b7a88812b34c56a1a288be2798ff010b2b59dcf87e072773e17",
+        "url": "https://www.bls.gov/cex/pumd/data/csv/intrvw22.zip"
+      },
+      "intrvw23.zip": {
+        "sha256": "97e9a17edeee28e77a3fd5a7d874e5f4b9034222be204e25b0d902f4c82235ac",
+        "url": "https://www.bls.gov/cex/pumd/data/csv/intrvw23.zip"
+      },
+      "intrvw24.zip": {
+        "sha256": "421ec90c2b8469c10f91eac27988f65f5d09fcfa9944e5069bb00b5460677f26",
+        "url": "https://www.bls.gov/cex/pumd/data/csv/intrvw24.zip"
+      }
+    },
+    "cpi_input": {
+      "path": "spm_calculator/data/bls/cpi_annual.json",
+      "sha256": "03f0214e6b8393292ad3c412651fd7df0d8a36aaf5125f77c0bb65b3f10ca104"
+    },
+    "components_receipt": {
+      "path": "spm_calculator/data/current/ce_inkind_bls_components_2019_2025.json",
+      "sha256": "4e2e274b45e9b4ae979400b1063199ff8533046ce53ea5eb360135c71b3bdd41"
+    },
+    "replication_receipt": {
+      "path": "spm_calculator/data/current/ce_inkind_replication_2019_2025.json",
+      "sha256": "d1e83652e9857a881dcb6cf61505cc5af0e6b2549c9f6c7ac9220f202d34f29b"
+    }
+  },
+  "uccs": {
+    "690114": "Computer information services",
+    "690116": "Internet services away from home",
+    "270310": "Cable and satellite television services"
+  },
+  "notes": [
+    "Shares reporting count units with at least one MTBI record for the UCC in the quarter, weighted by FINLWT21",
+    "Flag shares of records count UCC 690114 records; weighted flag shares weight each record by its unit's FINLWT21",
+    "Means among reporters are three-month dollars",
+    "The estimation sample is the out-of-pocket replication's, with youth_policy='exclude_unresolved', weighted by its ce_weight",
+    "home_internet_against_bls divides each band's pooled mean internet in the components receipt by BLS's"
+  ],
+  "quarters": {
+    "2014Q2": {
+      "fmli_member": "intrvw14/fmli142.csv",
+      "mtbi_member": "intrvw14/mtbi142.csv",
+      "units": 6489,
+      "ucc_690114_records": 13327,
+      "ucc_690114_flag_share_of_records": {
+        "D": 0.5464095445336535,
+        "E": 0.20799879942972913,
+        "F": 0.2357619869437983,
+        "G": 0.005177459293164253,
+        "T": 0.003676746454565919,
+        "V": 0.0009754633450889173
+      },
+      "ucc_690114_flag_share_weighted": {
+        "D": 0.5479491715018816,
+        "E": 0.2078390613627104,
+        "F": 0.23539363244855505,
+        "G": 0.0049127859236222215,
+        "T": 0.0030448966533836767,
+        "V": 0.0008604521098470043
+      },
+      "ucc_690114_share_reporting": {
+        "all_units": 0.6172136609945129,
+        "units_with_children": 0.6760440881051495
+      },
+      "ucc_270310_share_reporting": {
+        "all_units": 0.6986318249135443,
+        "units_with_children": 0.7079417695192184
+      },
+      "ucc_690114_mean_among_reporters": {
+        "all_units": 142.56030413184868,
+        "units_with_children": 150.10019610696324
+      },
+      "ucc_690116_percent_of_690114_units_with_children": 0.5552209390761537
+    },
+    "2014Q3": {
+      "fmli_member": "intrvw14/fmli143.csv",
+      "mtbi_member": "intrvw14/mtbi143.csv",
+      "units": 6466,
+      "ucc_690114_records": 13275,
+      "ucc_690114_flag_share_of_records": {
+        "D": 0.5350659133709981,
+        "E": 0.21423728813559323,
+        "F": 0.24293785310734464,
+        "G": 0.003615819209039548,
+        "T": 0.0038418079096045198,
+        "V": 0.00030131826741996233
+      },
+      "ucc_690114_flag_share_weighted": {
+        "D": 0.5409407224183871,
+        "E": 0.2109667688339955,
+        "F": 0.2419333328578071,
+        "G": 0.003216664784124907,
+        "T": 0.0027032746887668,
+        "V": 0.00023923641691879897
+      },
+      "ucc_690114_share_reporting": {
+        "all_units": 0.619141323325638,
+        "units_with_children": 0.6882321214169592
+      },
+      "ucc_270310_share_reporting": {
+        "all_units": 0.6970989597508784,
+        "units_with_children": 0.6958182421322874
+      },
+      "ucc_690114_mean_among_reporters": {
+        "all_units": 141.10663865879403,
+        "units_with_children": 148.71451577642222
+      },
+      "ucc_690116_percent_of_690114_units_with_children": 0.42781531987725063
+    },
+    "2014Q4": {
+      "fmli_member": "intrvw14/fmli144.csv",
+      "mtbi_member": "intrvw14/mtbi144.csv",
+      "units": 6470,
+      "ucc_690114_records": 13213,
+      "ucc_690114_flag_share_of_records": {
+        "D": 0.5256187088473473,
+        "E": 0.21622644365397714,
+        "F": 0.2483160523726633,
+        "G": 0.005297812760160448,
+        "T": 0.00363278589268145,
+        "U": 0.00022704911829259062,
+        "V": 0.0006811473548777719
+      },
+      "ucc_690114_flag_share_weighted": {
+        "D": 0.52873878950714,
+        "E": 0.21484669764952052,
+        "F": 0.24715577336664366,
+        "G": 0.00500555064900188,
+        "T": 0.0033876687532627433,
+        "U": 0.00022596556521660644,
+        "V": 0.000639554509214603
+      },
+      "ucc_690114_share_reporting": {
+        "all_units": 0.6152513269424214,
+        "units_with_children": 0.6794756533081499
+      },
+      "ucc_270310_share_reporting": {
+        "all_units": 0.6951546734740388,
+        "units_with_children": 0.7081038245996584
+      },
+      "ucc_690114_mean_among_reporters": {
+        "all_units": 146.43569933813092,
+        "units_with_children": 152.65585310140114
+      },
+      "ucc_690116_percent_of_690114_units_with_children": 1.2439616360809505
+    },
+    "2015Q1": {
+      "fmli_member": "intrvw14/fmli151.csv",
+      "mtbi_member": "intrvw14/mtbi151.csv",
+      "units": 6413,
+      "ucc_690114_records": 13552,
+      "ucc_690114_flag_share_of_records": {
+        "D": 0.36164403778040144,
+        "E": 0.21207201889020072,
+        "F": 0.4144775678866588,
+        "G": 0.005534238488783943,
+        "T": 0.003394332939787485,
+        "U": 0.00022136953955135774,
+        "V": 0.002656434474616293
+      },
+      "ucc_690114_flag_share_weighted": {
+        "D": 0.3697589664647128,
+        "E": 0.2087580513962027,
+        "F": 0.41113631654377114,
+        "G": 0.005134811330598365,
+        "T": 0.0021698949100421093,
+        "U": 0.0004468200468471011,
+        "V": 0.0025951393078258982
+      },
+      "ucc_690114_share_reporting": {
+        "all_units": 0.6291535997948446,
+        "units_with_children": 0.6954775965619387
+      },
+      "ucc_270310_share_reporting": {
+        "all_units": 0.7046847274282985,
+        "units_with_children": 0.7045335361635712
+      },
+      "ucc_690114_mean_among_reporters": {
+        "all_units": 151.8630830207248,
+        "units_with_children": 158.0573345021876
+      },
+      "ucc_690116_percent_of_690114_units_with_children": 1.2118464106720173
+    },
+    "2015Q2": {
+      "fmli_member": "intrvw15/fmli152.csv",
+      "mtbi_member": "intrvw15/mtbi152.csv",
+      "units": 6518,
+      "ucc_690114_records": 14327,
+      "ucc_690114_flag_share_of_records": {
+        "D": 0.2935715781391778,
+        "E": 0.22579744538284358,
+        "F": 0.46632232847071964,
+        "G": 0.007398617993997348,
+        "T": 0.0023731416207161305,
+        "U": 0.00041878969777343477,
+        "V": 0.0041180986947721085
+      },
+      "ucc_690114_flag_share_weighted": {
+        "D": 0.2917476895311819,
+        "E": 0.225321085947714,
+        "F": 0.46854708444440424,
+        "G": 0.0080606409851557,
+        "T": 0.002341001197951918,
+        "U": 0.00036141314305857485,
+        "V": 0.003621084750533903
+      },
+      "ucc_690114_share_reporting": {
+        "all_units": 0.6655883470358471,
+        "units_with_children": 0.7556536479435441
+      },
+      "ucc_270310_share_reporting": {
+        "all_units": 0.7074257971506381,
+        "units_with_children": 0.7262907396273651
+      },
+      "ucc_690114_mean_among_reporters": {
+        "all_units": 158.5195088819206,
+        "units_with_children": 165.7828545348719
+      },
+      "ucc_690116_percent_of_690114_units_with_children": 2.4150644638140153
+    },
+    "2015Q3": {
+      "fmli_member": "intrvw15/fmli153.csv",
+      "mtbi_member": "intrvw15/mtbi153.csv",
+      "units": 6481,
+      "ucc_690114_records": 14086,
+      "ucc_690114_flag_share_of_records": {
+        "D": 0.29270197359079936,
+        "E": 0.21496521368734914,
+        "F": 0.4802640920062473,
+        "G": 0.005750390458611387,
+        "T": 0.003336646315490558,
+        "U": 0.0008519096975720574,
+        "V": 0.0021297742439301435
+      },
+      "ucc_690114_flag_share_weighted": {
+        "D": 0.2905020406090174,
+        "E": 0.22032945849773025,
+        "F": 0.47805565855207033,
+        "G": 0.0058115611445498615,
+        "T": 0.002786947288659451,
+        "U": 0.00044304092083263796,
+        "V": 0.002071292987139971
+      },
+      "ucc_690114_share_reporting": {
+        "all_units": 0.6576677558325905,
+        "units_with_children": 0.7423516268444067
+      },
+      "ucc_270310_share_reporting": {
+        "all_units": 0.6995408588891757,
+        "units_with_children": 0.7259665234775813
+      },
+      "ucc_690114_mean_among_reporters": {
+        "all_units": 159.1483255669589,
+        "units_with_children": 162.06365604781922
+      },
+      "ucc_690116_percent_of_690114_units_with_children": 0.675992101010483
+    },
+    "2015Q4": {
+      "fmli_member": "intrvw15/fmli154.csv",
+      "mtbi_member": "intrvw15/mtbi154.csv",
+      "units": 6372,
+      "ucc_690114_records": 13769,
+      "ucc_690114_flag_share_of_records": {
+        "D": 0.29043503522405406,
+        "E": 0.22347301910087877,
+        "F": 0.47970077710799625,
+        "G": 0.003776599607814656,
+        "T": 0.0026145689592563005
+      },
+      "ucc_690114_flag_share_weighted": {
+        "D": 0.2910792706599325,
+        "E": 0.22366766619869213,
+        "F": 0.4793654026956542,
+        "G": 0.0035899941812565276,
+        "T": 0.0022976662644647403
+      },
+      "ucc_690114_share_reporting": {
+        "all_units": 0.6518697606085841,
+        "units_with_children": 0.7332500992320694
+      },
+      "ucc_270310_share_reporting": {
+        "all_units": 0.6950294804740922,
+        "units_with_children": 0.7072129681801053
+      },
+      "ucc_690114_mean_among_reporters": {
+        "all_units": 153.3721089131225,
+        "units_with_children": 158.85968087524424
+      },
+      "ucc_690116_percent_of_690114_units_with_children": 1.5934958786272162
+    },
+    "2016Q1": {
+      "fmli_member": "intrvw15/fmli161.csv",
+      "mtbi_member": "intrvw15/mtbi161.csv",
+      "units": 6426,
+      "ucc_690114_records": 13192,
+      "ucc_690114_flag_share_of_records": {
+        "D": 0.29851425106124924,
+        "E": 0.23544572468162522,
+        "F": 0.4531534263189812,
+        "G": 0.004775621588841723,
+        "T": 0.0031837477258944815,
+        "V": 0.004927228623408126
+      },
+      "ucc_690114_flag_share_weighted": {
+        "D": 0.2966425005172995,
+        "E": 0.23600325423252827,
+        "F": 0.45527861829379646,
+        "G": 0.005055636906300239,
+        "T": 0.002629308101753056,
+        "V": 0.004390681948322528
+      },
+      "ucc_690114_share_reporting": {
+        "all_units": 0.635512106168519,
+        "units_with_children": 0.720439115513321
+      },
+      "ucc_270310_share_reporting": {
+        "all_units": 0.6880874520206145,
+        "units_with_children": 0.7056145999696888
+      },
+      "ucc_690114_mean_among_reporters": {
+        "all_units": 164.40048349851773,
+        "units_with_children": 172.69788137167694
+      },
+      "ucc_690116_percent_of_690114_units_with_children": 2.3519872796614245
+    },
+    "2016Q2": {
+      "fmli_member": "intrvw16/fmli162.csv",
+      "mtbi_member": "intrvw16/mtbi162.csv",
+      "units": 6342,
+      "ucc_690114_records": 14067,
+      "ucc_690114_flag_share_of_records": {
+        "D": 0.2783109404990403,
+        "E": 0.2348048624440179,
+        "F": 0.47686073789720623,
+        "G": 0.007322101372005402,
+        "T": 0.0027013577877301486
+      },
+      "ucc_690114_flag_share_weighted": {
+        "D": 0.27973292723154897,
+        "E": 0.23928436357065228,
+        "F": 0.4715427663104147,
+        "G": 0.007093661634141861,
+        "T": 0.0023462812532421256
+      },
+      "ucc_690114_share_reporting": {
+        "all_units": 0.6585230043188787,
+        "units_with_children": 0.7426521691255377
+      },
+      "ucc_270310_share_reporting": {
+        "all_units": 0.6834306930473389,
+        "units_with_children": 0.6953019257184655
+      },
+      "ucc_690114_mean_among_reporters": {
+        "all_units": 170.17730492587452,
+        "units_with_children": 180.85863082094042
+      },
+      "ucc_690116_percent_of_690114_units_with_children": 1.704196235379589
+    },
+    "2016Q3": {
+      "fmli_member": "intrvw16/fmli163.csv",
+      "mtbi_member": "intrvw16/mtbi163.csv",
+      "units": 6372,
+      "ucc_690114_records": 13685,
+      "ucc_690114_flag_share_of_records": {
+        "D": 0.3122396784800877,
+        "E": 0.2578735842162952,
+        "F": 0.414760686883449,
+        "G": 0.007964925100474973,
+        "T": 0.003215199123127512,
+        "U": 0.00043843624406284253,
+        "V": 0.0035074899525027402
+      },
+      "ucc_690114_flag_share_weighted": {
+        "D": 0.31455906220851165,
+        "E": 0.2618377424252697,
+        "F": 0.4090564152601716,
+        "G": 0.007533421411090104,
+        "T": 0.0033621292042944903,
+        "U": 0.00043427406849101766,
+        "V": 0.0032169554221714533
+      },
+      "ucc_690114_share_reporting": {
+        "all_units": 0.6535920338225563,
+        "units_with_children": 0.7258510123643003
+      },
+      "ucc_270310_share_reporting": {
+        "all_units": 0.6781151873699228,
+        "units_with_children": 0.6874640839457753
+      },
+      "ucc_690114_mean_among_reporters": {
+        "all_units": 164.60500176957643,
+        "units_with_children": 171.27987342956868
+      },
+      "ucc_690116_percent_of_690114_units_with_children": 1.6606561458332962
+    },
+    "2016Q4": {
+      "fmli_member": "intrvw16/fmli164.csv",
+      "mtbi_member": "intrvw16/mtbi164.csv",
+      "units": 6301,
+      "ucc_690114_records": 13416,
+      "ucc_690114_flag_share_of_records": {
+        "D": 0.3258795468097794,
+        "E": 0.2597644603458557,
+        "F": 0.40079010137149673,
+        "G": 0.007081097197376267,
+        "T": 0.003205128205128205,
+        "U": 0.0004472271914132379,
+        "V": 0.002832438878950507
+      },
+      "ucc_690114_flag_share_weighted": {
+        "D": 0.3256644985556596,
+        "E": 0.26268928836279853,
+        "F": 0.39921700295315804,
+        "G": 0.006626593452330481,
+        "T": 0.0026945486978943584,
+        "U": 0.0004795892267794265,
+        "V": 0.0026284787513796933
+      },
+      "ucc_690114_share_reporting": {
+        "all_units": 0.6551453154067463,
+        "units_with_children": 0.7219865465498329
+      },
+      "ucc_270310_share_reporting": {
+        "all_units": 0.6823422453331769,
+        "units_with_children": 0.6853043111216589
+      },
+      "ucc_690114_mean_among_reporters": {
+        "all_units": 165.9920786026477,
+        "units_with_children": 171.4950511770469
+      },
+      "ucc_690116_percent_of_690114_units_with_children": 2.132136792407778
+    },
+    "2017Q1": {
+      "fmli_member": "intrvw16/fmli171.csv",
+      "mtbi_member": "intrvw16/mtbi171.csv",
+      "units": 6208,
+      "ucc_690114_records": 13789,
+      "ucc_690114_flag_share_of_records": {
+        "D": 0.3072013924142432,
+        "E": 0.24708100659946333,
+        "F": 0.4358546667633621,
+        "G": 0.0063818986148379145,
+        "T": 0.00326347088258757,
+        "U": 0.00021756472550583798
+      },
+      "ucc_690114_flag_share_weighted": {
+        "D": 0.30668736959025394,
+        "E": 0.24985730375047144,
+        "F": 0.43452852067695763,
+        "G": 0.0058994244228206885,
+        "T": 0.0027739850185103175,
+        "U": 0.0002533965409857458
+      },
+      "ucc_690114_share_reporting": {
+        "all_units": 0.669716712146809,
+        "units_with_children": 0.725743275609831
+      },
+      "ucc_270310_share_reporting": {
+        "all_units": 0.6689216401339939,
+        "units_with_children": 0.6724204459038685
+      },
+      "ucc_690114_mean_among_reporters": {
+        "all_units": 166.79458381931795,
+        "units_with_children": 174.33253621936777
+      },
+      "ucc_690116_percent_of_690114_units_with_children": 2.4553724913269557
+    },
+    "2017Q2": {
+      "fmli_member": "intrvw17/intrvw17/fmli172.csv",
+      "mtbi_member": "intrvw17/intrvw17/mtbi172.csv",
+      "units": 6177,
+      "ucc_690114_records": 12180,
+      "ucc_690114_flag_share_of_records": {
+        "D": 0.3321018062397373,
+        "E": 0.6499178981937602,
+        "G": 0.009113300492610837,
+        "T": 0.007307060755336618,
+        "U": 0.0013136288998357964,
+        "W": 0.0002463054187192118
+      },
+      "ucc_690114_flag_share_weighted": {
+        "D": 0.3295381799492079,
+        "E": 0.6530406369085194,
+        "G": 0.009590713805053358,
+        "T": 0.006284196081075014,
+        "U": 0.0013521495750921468,
+        "W": 0.0001941236810521347
+      },
+      "ucc_690114_share_reporting": {
+        "all_units": 0.6106365811750701,
+        "units_with_children": 0.6442783563083762
+      },
+      "ucc_270310_share_reporting": {
+        "all_units": 0.5084617622977965,
+        "units_with_children": 0.487488782040794
+      },
+      "ucc_690114_mean_among_reporters": {
+        "all_units": 187.65017849028797,
+        "units_with_children": 194.87500160937734
+      },
+      "ucc_690116_percent_of_690114_units_with_children": 1.51086118809414
+    },
+    "2017Q3": {
+      "fmli_member": "intrvw17/intrvw17/fmli173.csv",
+      "mtbi_member": "intrvw17/intrvw17/mtbi173.csv",
+      "units": 6090,
+      "ucc_690114_records": 13080,
+      "ucc_690114_flag_share_of_records": {
+        "D": 0.3499235474006116,
+        "E": 0.6364678899082569,
+        "G": 0.009097859327217125,
+        "T": 0.00382262996941896,
+        "U": 0.0006880733944954129
+      },
+      "ucc_690114_flag_share_weighted": {
+        "D": 0.35345835157723443,
+        "E": 0.6328093256959036,
+        "G": 0.009246148814089864,
+        "T": 0.0035298529740985267,
+        "U": 0.0009563209386735523
+      },
+      "ucc_690114_share_reporting": {
+        "all_units": 0.6701445638445572,
+        "units_with_children": 0.7174031335317448
+      },
+      "ucc_270310_share_reporting": {
+        "all_units": 0.5802243584049378,
+        "units_with_children": 0.5683439703862131
+      },
+      "ucc_690114_mean_among_reporters": {
+        "all_units": 182.37674692244056,
+        "units_with_children": 193.93212164994895
+      },
+      "ucc_690116_percent_of_690114_units_with_children": 0.9073191118947578
+    },
+    "2017Q4": {
+      "fmli_member": "intrvw17/intrvw17/fmli174.csv",
+      "mtbi_member": "intrvw17/intrvw17/mtbi174.csv",
+      "units": 6004,
+      "ucc_690114_records": 13006,
+      "ucc_690114_flag_share_of_records": {
+        "D": 0.3647547285868061,
+        "E": 0.619944640934953,
+        "F": 0.0004613255420575119,
+        "G": 0.011302475780409042,
+        "T": 0.003306166384745502,
+        "U": 0.00023066277102875595
+      },
+      "ucc_690114_flag_share_weighted": {
+        "D": 0.36737746097063667,
+        "E": 0.6175777035254739,
+        "F": 0.0004275387465774005,
+        "G": 0.011001426475446038,
+        "T": 0.0034225588329842697,
+        "U": 0.000193311448881772
+      },
+      "ucc_690114_share_reporting": {
+        "all_units": 0.6835192897799829,
+        "units_with_children": 0.7313583103096036
+      },
+      "ucc_270310_share_reporting": {
+        "all_units": 0.5978268852362018,
+        "units_with_children": 0.5635719265851683
+      },
+      "ucc_690114_mean_among_reporters": {
+        "all_units": 180.21240306117406,
+        "units_with_children": 191.08847928586465
+      },
+      "ucc_690116_percent_of_690114_units_with_children": 0.7890058275721338
+    },
+    "2018Q1": {
+      "fmli_member": "intrvw17/intrvw17/fmli181.csv",
+      "mtbi_member": "intrvw17/intrvw17/mtbi181.csv",
+      "units": 5916,
+      "ucc_690114_records": 13215,
+      "ucc_690114_flag_share_of_records": {
+        "D": 0.38085508891411274,
+        "E": 0.6062807415815361,
+        "G": 0.009307604994324632,
+        "T": 0.00340522133938706,
+        "U": 0.0001513431706394249
+      },
+      "ucc_690114_flag_share_weighted": {
+        "D": 0.3808659955131879,
+        "E": 0.6066427669091946,
+        "G": 0.009661116767898931,
+        "T": 0.0027465245398494123,
+        "U": 8.359626986910153e-05
+      },
+      "ucc_690114_share_reporting": {
+        "all_units": 0.7001313465344845,
+        "units_with_children": 0.7714626323486742
+      },
+      "ucc_270310_share_reporting": {
+        "all_units": 0.5979355097858992,
+        "units_with_children": 0.5704335032150682
+      },
+      "ucc_690114_mean_among_reporters": {
+        "all_units": 179.09260520818276,
+        "units_with_children": 184.93279440889745
+      },
+      "ucc_690116_percent_of_690114_units_with_children": 0.8977340595328277
+    },
+    "2018Q2": {
+      "fmli_member": "intrvw18/fmli182.csv",
+      "mtbi_member": "intrvw18/mtbi182.csv",
+      "units": 5899,
+      "ucc_690114_records": 13243,
+      "ucc_690114_flag_share_of_records": {
+        "D": 0.3868458808427094,
+        "E": 0.6022049384580533,
+        "G": 0.006418485237483954,
+        "T": 0.004153137506607264,
+        "U": 0.00030204636411689195,
+        "W": 7.551159102922299e-05
+      },
+      "ucc_690114_flag_share_weighted": {
+        "D": 0.3838649262951964,
+        "E": 0.6054387452020722,
+        "G": 0.006068941498458729,
+        "T": 0.004121645779087822,
+        "U": 0.00041569377633444933,
+        "W": 9.004744885044854e-05
+      },
+      "ucc_690114_share_reporting": {
+        "all_units": 0.7085620922051369,
+        "units_with_children": 0.7730982737060602
+      },
+      "ucc_270310_share_reporting": {
+        "all_units": 0.6052624624899057,
+        "units_with_children": 0.576249932286612
+      },
+      "ucc_690114_mean_among_reporters": {
+        "all_units": 180.38069982931785,
+        "units_with_children": 186.81620717952202
+      },
+      "ucc_690116_percent_of_690114_units_with_children": 0.4293840206149887
+    },
+    "2018Q3": {
+      "fmli_member": "intrvw18/fmli183.csv",
+      "mtbi_member": "intrvw18/mtbi183.csv",
+      "units": 5773,
+      "ucc_690114_records": 12866,
+      "ucc_690114_flag_share_of_records": {
+        "D": 0.3850458572983056,
+        "E": 0.601507850147676,
+        "G": 0.009404632364371212,
+        "T": 0.004041660189647132
+      },
+      "ucc_690114_flag_share_weighted": {
+        "D": 0.38742225817729886,
+        "E": 0.5977468792518061,
+        "G": 0.010123001885812555,
+        "T": 0.0047078606850823965
+      },
+      "ucc_690114_share_reporting": {
+        "all_units": 0.7078015426284201,
+        "units_with_children": 0.7761930933856919
+      },
+      "ucc_270310_share_reporting": {
+        "all_units": 0.6089689461160992,
+        "units_with_children": 0.6021399485707585
+      },
+      "ucc_690114_mean_among_reporters": {
+        "all_units": 183.49025862213514,
+        "units_with_children": 187.32453580763098
+      },
+      "ucc_690116_percent_of_690114_units_with_children": 0.6734025501925699
+    },
+    "2018Q4": {
+      "fmli_member": "intrvw18/fmli184.csv",
+      "mtbi_member": "intrvw18/mtbi184.csv",
+      "units": 5571,
+      "ucc_690114_records": 12364,
+      "ucc_690114_flag_share_of_records": {
+        "D": 0.3839372371400841,
+        "E": 0.6019087673891944,
+        "G": 0.007926237463604012,
+        "T": 0.005904238110643805,
+        "U": 0.00032351989647363315
+      },
+      "ucc_690114_flag_share_weighted": {
+        "D": 0.3830291036203758,
+        "E": 0.6025131985049283,
+        "G": 0.0083712379132802,
+        "T": 0.005820121039084996,
+        "U": 0.0002663389223306383
+      },
+      "ucc_690114_share_reporting": {
+        "all_units": 0.6978913291614847,
+        "units_with_children": 0.7717088426842784
+      },
+      "ucc_270310_share_reporting": {
+        "all_units": 0.5979663382617824,
+        "units_with_children": 0.5952600523132553
+      },
+      "ucc_690114_mean_among_reporters": {
+        "all_units": 184.91893208660557,
+        "units_with_children": 192.98898544621724
+      },
+      "ucc_690116_percent_of_690114_units_with_children": 0.89741930988779
+    },
+    "2019Q1": {
+      "fmli_member": "intrvw18/fmli191.csv",
+      "mtbi_member": "intrvw18/mtbi191.csv",
+      "units": 5623,
+      "ucc_690114_records": 12684,
+      "ucc_690114_flag_share_of_records": {
+        "D": 0.4053137811415957,
+        "E": 0.5808893093661306,
+        "G": 0.00914538000630716,
+        "T": 0.0037054556922106593,
+        "U": 0.000946073793755913
+      },
+      "ucc_690114_flag_share_weighted": {
+        "D": 0.40714306574403075,
+        "E": 0.5778790003538483,
+        "G": 0.01002038684387112,
+        "T": 0.0040361626895468045,
+        "U": 0.0009213843687029795
+      },
+      "ucc_690114_share_reporting": {
+        "all_units": 0.7132785411571679,
+        "units_with_children": 0.7847676273848834
+      },
+      "ucc_270310_share_reporting": {
+        "all_units": 0.5889817142393025,
+        "units_with_children": 0.5592172777719399
+      },
+      "ucc_690114_mean_among_reporters": {
+        "all_units": 191.26513977878145,
+        "units_with_children": 200.27048089977802
+      },
+      "ucc_690116_percent_of_690114_units_with_children": 0.558649610365894
+    },
+    "2019Q2": {
+      "fmli_member": "intrvw19/fmli192.csv",
+      "mtbi_member": "intrvw19/mtbi192.csv",
+      "units": 5493,
+      "ucc_690114_records": 12615,
+      "ucc_690114_flag_share_of_records": {
+        "D": 0.413713832738803,
+        "E": 0.5726516052318669,
+        "G": 0.009036860879904875,
+        "T": 0.004280618311533888,
+        "U": 0.0003170828378913991
+      },
+      "ucc_690114_flag_share_weighted": {
+        "D": 0.4179721537280394,
+        "E": 0.5687044970988384,
+        "G": 0.008089751089897115,
+        "T": 0.004880414536300457,
+        "U": 0.0003531835469248333
+      },
+      "ucc_690114_share_reporting": {
+        "all_units": 0.7234249952954063,
+        "units_with_children": 0.7957039936333868
+      },
+      "ucc_270310_share_reporting": {
+        "all_units": 0.5804328398937613,
+        "units_with_children": 0.5455759975941604
+      },
+      "ucc_690114_mean_among_reporters": {
+        "all_units": 187.75258526959533,
+        "units_with_children": 193.8994461679606
+      },
+      "ucc_690116_percent_of_690114_units_with_children": 0.48897342013196704
+    },
+    "2019Q3": {
+      "fmli_member": "intrvw19/fmli193.csv",
+      "mtbi_member": "intrvw19/mtbi193.csv",
+      "units": 5337,
+      "ucc_690114_records": 12312,
+      "ucc_690114_flag_share_of_records": {
+        "D": 0.4273066926575699,
+        "E": 0.5584795321637427,
+        "G": 0.009178037686809616,
+        "T": 0.004792072774528915,
+        "U": 0.00024366471734892786
+      },
+      "ucc_690114_flag_share_weighted": {
+        "D": 0.43191362171464265,
+        "E": 0.5547329723381851,
+        "G": 0.008568257341507022,
+        "T": 0.004519138628320891,
+        "U": 0.00026600997734429034
+      },
+      "ucc_690114_share_reporting": {
+        "all_units": 0.7302635473773903,
+        "units_with_children": 0.8070608825805344
+      },
+      "ucc_270310_share_reporting": {
+        "all_units": 0.5757554914248367,
+        "units_with_children": 0.5348339795580352
+      },
+      "ucc_690114_mean_among_reporters": {
+        "all_units": 189.93367432086714,
+        "units_with_children": 196.21158490866742
+      },
+      "ucc_690116_percent_of_690114_units_with_children": 0.6848288633915682
+    },
+    "2019Q4": {
+      "fmli_member": "intrvw19/fmli194.csv",
+      "mtbi_member": "intrvw19/mtbi194.csv",
+      "units": 5248,
+      "ucc_690114_records": 12026,
+      "ucc_690114_flag_share_of_records": {
+        "D": 0.4469482787294196,
+        "E": 0.5394146016963246,
+        "G": 0.009728920671877599,
+        "T": 0.0036587393979710626,
+        "U": 0.0002494595044071179
+      },
+      "ucc_690114_flag_share_weighted": {
+        "D": 0.4504611068772875,
+        "E": 0.5356392187643845,
+        "G": 0.009903617981634678,
+        "T": 0.0037571637786408475,
+        "U": 0.00023889259805249648
+      },
+      "ucc_690114_share_reporting": {
+        "all_units": 0.7282722648686573,
+        "units_with_children": 0.8070451614021698
+      },
+      "ucc_270310_share_reporting": {
+        "all_units": 0.5466331319171832,
+        "units_with_children": 0.5064016929400478
+      },
+      "ucc_690114_mean_among_reporters": {
+        "all_units": 192.34856561309087,
+        "units_with_children": 200.17647478304866
+      },
+      "ucc_690116_percent_of_690114_units_with_children": 0.5387665504420569
+    },
+    "2020Q1": {
+      "fmli_member": "intrvw19/fmli201.csv",
+      "mtbi_member": "intrvw19/mtbi201.csv",
+      "units": 5202,
+      "ucc_690114_records": 12163,
+      "ucc_690114_flag_share_of_records": {
+        "D": 0.43887198881854805,
+        "E": 0.5448491326153088,
+        "G": 0.010688152593932418,
+        "T": 0.00501521006330675,
+        "U": 0.0005755159089040532
+      },
+      "ucc_690114_flag_share_weighted": {
+        "D": 0.4492858656403522,
+        "E": 0.534084635441935,
+        "G": 0.010246247833712436,
+        "T": 0.005742523227628451,
+        "U": 0.000640727856371645
+      },
+      "ucc_690114_share_reporting": {
+        "all_units": 0.7339202596370705,
+        "units_with_children": 0.7940015997392746
+      },
+      "ucc_270310_share_reporting": {
+        "all_units": 0.5456307288135854,
+        "units_with_children": 0.5070455356500728
+      },
+      "ucc_690114_mean_among_reporters": {
+        "all_units": 193.57206495220777,
+        "units_with_children": 204.61334324361573
+      },
+      "ucc_690116_percent_of_690114_units_with_children": 0.6105995040693483
+    },
+    "2020Q2": {
+      "fmli_member": "intrvw20/fmli202.csv",
+      "mtbi_member": "intrvw20/mtbi202.csv",
+      "units": 4858,
+      "ucc_690114_records": 11709,
+      "ucc_690114_flag_share_of_records": {
+        "D": 0.42813220599538815,
+        "E": 0.5581176872491246,
+        "G": 0.009309078486634212,
+        "T": 0.004355623879067384,
+        "U": 8.540438978563499e-05
+      },
+      "ucc_690114_flag_share_weighted": {
+        "D": 0.44615756411983637,
+        "E": 0.5407944476531572,
+        "G": 0.008269795892867044,
+        "T": 0.004631184493574008,
+        "U": 0.000147007840565269
+      },
+      "ucc_690114_share_reporting": {
+        "all_units": 0.7503239136941456,
+        "units_with_children": 0.8018015446210437
+      },
+      "ucc_270310_share_reporting": {
+        "all_units": 0.5428265239131193,
+        "units_with_children": 0.5027482136145178
+      },
+      "ucc_690114_mean_among_reporters": {
+        "all_units": 193.99871234257324,
+        "units_with_children": 204.31884298015467
+      },
+      "ucc_690116_percent_of_690114_units_with_children": 0.4183879317981584
+    },
+    "2020Q3": {
+      "fmli_member": "intrvw20/fmli203.csv",
+      "mtbi_member": "intrvw20/mtbi203.csv",
+      "units": 4980,
+      "ucc_690114_records": 12087,
+      "ucc_690114_flag_share_of_records": {
+        "D": 0.44841565318110366,
+        "E": 0.5389261189707951,
+        "G": 0.007528749896583106,
+        "T": 0.00512947795151816
+      },
+      "ucc_690114_flag_share_weighted": {
+        "D": 0.4694989328954728,
+        "E": 0.5187240208535187,
+        "G": 0.006924946363670493,
+        "T": 0.00485209988733807
+      },
+      "ucc_690114_share_reporting": {
+        "all_units": 0.7641821076848435,
+        "units_with_children": 0.8392861703855945
+      },
+      "ucc_270310_share_reporting": {
+        "all_units": 0.529863997366361,
+        "units_with_children": 0.4846520116189285
+      },
+      "ucc_690114_mean_among_reporters": {
+        "all_units": 202.57235875890547,
+        "units_with_children": 209.5248467217504
+      },
+      "ucc_690116_percent_of_690114_units_with_children": 0.19782119513459384
+    },
+    "2020Q4": {
+      "fmli_member": "intrvw20/fmli204.csv",
+      "mtbi_member": "intrvw20/mtbi204.csv",
+      "units": 5205,
+      "ucc_690114_records": 12774,
+      "ucc_690114_flag_share_of_records": {
+        "D": 0.4716611867856584,
+        "E": 0.5151088147800219,
+        "G": 0.008532957570064193,
+        "T": 0.00407076874902145,
+        "U": 0.00039142007202129324,
+        "W": 0.00023485204321277596
+      },
+      "ucc_690114_flag_share_weighted": {
+        "D": 0.487293649175342,
+        "E": 0.49928967580458367,
+        "G": 0.008923190524341483,
+        "T": 0.0037293880636085665,
+        "U": 0.0004574071037029618,
+        "W": 0.0003066893284214632
+      },
+      "ucc_690114_share_reporting": {
+        "all_units": 0.7742320688870157,
+        "units_with_children": 0.8411123418749278
+      },
+      "ucc_270310_share_reporting": {
+        "all_units": 0.5099177422518942,
+        "units_with_children": 0.45013614816348996
+      },
+      "ucc_690114_mean_among_reporters": {
+        "all_units": 204.48526121996517,
+        "units_with_children": 210.87697970676984
+      },
+      "ucc_690116_percent_of_690114_units_with_children": 0.24129030944101174
+    },
+    "2021Q1": {
+      "fmli_member": "intrvw20/fmli211.csv",
+      "mtbi_member": "intrvw20/mtbi211.csv",
+      "units": 5115,
+      "ucc_690114_records": 12429,
+      "ucc_690114_flag_share_of_records": {
+        "D": 0.48153511947863864,
+        "E": 0.5040630782846568,
+        "G": 0.007643414594899026,
+        "T": 0.00627564566739078,
+        "U": 0.0004827419744146754
+      },
+      "ucc_690114_flag_share_weighted": {
+        "D": 0.4869053539757899,
+        "E": 0.4979257252666102,
+        "G": 0.008210622867132462,
+        "T": 0.006211094056503014,
+        "U": 0.0007472038339644799
+      },
+      "ucc_690114_share_reporting": {
+        "all_units": 0.77179973658708,
+        "units_with_children": 0.8460222260231719
+      },
+      "ucc_270310_share_reporting": {
+        "all_units": 0.5138062931355469,
+        "units_with_children": 0.449301662384633
+      },
+      "ucc_690114_mean_among_reporters": {
+        "all_units": 203.5553192945089,
+        "units_with_children": 218.39659916868615
+      },
+      "ucc_690116_percent_of_690114_units_with_children": 0.10198700794119528
+    },
+    "2021Q2": {
+      "fmli_member": "intrvw21/fmli212.csv",
+      "mtbi_member": "intrvw21/mtbi212.csv",
+      "units": 5196,
+      "ucc_690114_records": 12779,
+      "ucc_690114_flag_share_of_records": {
+        "D": 0.49370060255106035,
+        "E": 0.4925268017841772,
+        "G": 0.008138351983723296,
+        "T": 0.005399483527662572,
+        "U": 0.00023476015337663353
+      },
+      "ucc_690114_flag_share_weighted": {
+        "D": 0.4993478115197504,
+        "E": 0.4873880331645481,
+        "G": 0.008691694267883826,
+        "T": 0.00435186268563613,
+        "U": 0.00022059836218154478
+      },
+      "ucc_690114_share_reporting": {
+        "all_units": 0.7771084903662342,
+        "units_with_children": 0.8412431571054572
+      },
+      "ucc_270310_share_reporting": {
+        "all_units": 0.49696243837505927,
+        "units_with_children": 0.41661153624445013
+      },
+      "ucc_690114_mean_among_reporters": {
+        "all_units": 204.01629872468953,
+        "units_with_children": 215.08086217887953
+      },
+      "ucc_690116_percent_of_690114_units_with_children": 0.10465718041812921
+    },
+    "2021Q3": {
+      "fmli_member": "intrvw21/fmli213.csv",
+      "mtbi_member": "intrvw21/mtbi213.csv",
+      "units": 5121,
+      "ucc_690114_records": 12593,
+      "ucc_690114_flag_share_of_records": {
+        "D": 0.5024219804653379,
+        "E": 0.4817755896132772,
+        "G": 0.010879059795124275,
+        "T": 0.004764551735090924,
+        "U": 0.00015881839116969746
+      },
+      "ucc_690114_flag_share_weighted": {
+        "D": 0.5134116453715165,
+        "E": 0.47021800598421476,
+        "G": 0.0114546611588611,
+        "T": 0.004706126577886389,
+        "U": 0.00020956090752126153
+      },
+      "ucc_690114_share_reporting": {
+        "all_units": 0.774536204292342,
+        "units_with_children": 0.8412098890367002
+      },
+      "ucc_270310_share_reporting": {
+        "all_units": 0.4891364657038511,
+        "units_with_children": 0.3890445590891283
+      },
+      "ucc_690114_mean_among_reporters": {
+        "all_units": 209.95812874236427,
+        "units_with_children": 220.9364492453887
+      },
+      "ucc_690116_percent_of_690114_units_with_children": 0.24764858790450278
+    },
+    "2021Q4": {
+      "fmli_member": "intrvw21/fmli214.csv",
+      "mtbi_member": "intrvw21/mtbi214.csv",
+      "units": 4902,
+      "ucc_690114_records": 11870,
+      "ucc_690114_flag_share_of_records": {
+        "D": 0.5232518955349621,
+        "E": 0.46343723673125525,
+        "G": 0.006823925863521482,
+        "T": 0.006486941870261163
+      },
+      "ucc_690114_flag_share_weighted": {
+        "D": 0.5313130485995956,
+        "E": 0.45471475884759116,
+        "G": 0.006993245413351982,
+        "T": 0.006978947139461192
+      },
+      "ucc_690114_share_reporting": {
+        "all_units": 0.7595131544420494,
+        "units_with_children": 0.831446910788038
+      },
+      "ucc_270310_share_reporting": {
+        "all_units": 0.4642014985556476,
+        "units_with_children": 0.36178619818449703
+      },
+      "ucc_690114_mean_among_reporters": {
+        "all_units": 216.20662743689317,
+        "units_with_children": 229.32399539937416
+      },
+      "ucc_690116_percent_of_690114_units_with_children": 0.6354182916563331
+    },
+    "2022Q1": {
+      "fmli_member": "intrvw21/fmli221.csv",
+      "mtbi_member": "intrvw21/mtbi221.csv",
+      "units": 5187,
+      "ucc_690114_records": 12411,
+      "ucc_690114_flag_share_of_records": {
+        "D": 0.5288050922568689,
+        "E": 0.45765852872451857,
+        "G": 0.007009910563210055,
+        "T": 0.005962452662960277,
+        "U": 0.0005640157924421884
+      },
+      "ucc_690114_flag_share_weighted": {
+        "D": 0.5386824994748255,
+        "E": 0.44799540250843933,
+        "G": 0.006009801773363557,
+        "T": 0.006783829865362685,
+        "U": 0.0005284663780088913
+      },
+      "ucc_690114_share_reporting": {
+        "all_units": 0.7601803362138019,
+        "units_with_children": 0.8129193644209816
+      },
+      "ucc_270310_share_reporting": {
+        "all_units": 0.4380221130828434,
+        "units_with_children": 0.37767245555899764
+      },
+      "ucc_690114_mean_among_reporters": {
+        "all_units": 214.93419094069958,
+        "units_with_children": 227.26814350407415
+      },
+      "ucc_690116_percent_of_690114_units_with_children": 0.45291808360775077
+    },
+    "2022Q2": {
+      "fmli_member": "intrvw22/fmli222.csv",
+      "mtbi_member": "intrvw22/mtbi222.csv",
+      "units": 5177,
+      "ucc_690114_records": 12366,
+      "ucc_690114_flag_share_of_records": {
+        "D": 0.5511887433284813,
+        "E": 0.4360342875626718,
+        "G": 0.009137958919618308,
+        "T": 0.00363901018922853
+      },
+      "ucc_690114_flag_share_weighted": {
+        "D": 0.5613095332567187,
+        "E": 0.42682878149518066,
+        "G": 0.008048692199863431,
+        "T": 0.003812993048237196
+      },
+      "ucc_690114_share_reporting": {
+        "all_units": 0.7536309850732975,
+        "units_with_children": 0.810559891072919
+      },
+      "ucc_270310_share_reporting": {
+        "all_units": 0.4443645232364721,
+        "units_with_children": 0.39026159068163857
+      },
+      "ucc_690114_mean_among_reporters": {
+        "all_units": 219.49847871593775,
+        "units_with_children": 233.30080378551952
+      },
+      "ucc_690116_percent_of_690114_units_with_children": 0.2445665944598909
+    },
+    "2022Q3": {
+      "fmli_member": "intrvw22/fmli223.csv",
+      "mtbi_member": "intrvw22/mtbi223.csv",
+      "units": 4580,
+      "ucc_690114_records": 11301,
+      "ucc_690114_flag_share_of_records": {
+        "D": 0.551544111140607,
+        "E": 0.43704096982567914,
+        "G": 0.0061941421113175825,
+        "T": 0.005220776922396248
+      },
+      "ucc_690114_flag_share_weighted": {
+        "D": 0.5786052873107235,
+        "E": 0.4084093482093907,
+        "G": 0.006988972996248772,
+        "T": 0.005996391483636935
+      },
+      "ucc_690114_share_reporting": {
+        "all_units": 0.782074716757957,
+        "units_with_children": 0.8570525551385767
+      },
+      "ucc_270310_share_reporting": {
+        "all_units": 0.4307506984773538,
+        "units_with_children": 0.36152830946866266
+      },
+      "ucc_690114_mean_among_reporters": {
+        "all_units": 220.9702601805259,
+        "units_with_children": 235.90039871326331
+      },
+      "ucc_690116_percent_of_690114_units_with_children": 0.5399577031929345
+    },
+    "2022Q4": {
+      "fmli_member": "intrvw22/fmli224.csv",
+      "mtbi_member": "intrvw22/mtbi224.csv",
+      "units": 4617,
+      "ucc_690114_records": 11261,
+      "ucc_690114_flag_share_of_records": {
+        "D": 0.5675339667880295,
+        "E": 0.4218985880472427,
+        "G": 0.0083473936595329,
+        "T": 0.0022200515051949204
+      },
+      "ucc_690114_flag_share_weighted": {
+        "D": 0.5861935368540594,
+        "E": 0.40304370956439767,
+        "G": 0.008390235335499145,
+        "T": 0.00237251824604375
+      },
+      "ucc_690114_share_reporting": {
+        "all_units": 0.7730332764960082,
+        "units_with_children": 0.8465243450043608
+      },
+      "ucc_270310_share_reporting": {
+        "all_units": 0.4325397438573392,
+        "units_with_children": 0.3575313978632174
+      },
+      "ucc_690114_mean_among_reporters": {
+        "all_units": 218.49850068480848,
+        "units_with_children": 224.26349367903958
+      },
+      "ucc_690116_percent_of_690114_units_with_children": 0.5160639824930953
+    },
+    "2023Q1": {
+      "fmli_member": "intrvw22/fmli231.csv",
+      "mtbi_member": "intrvw22/mtbi231.csv",
+      "units": 4807,
+      "ucc_690114_records": 11783,
+      "ucc_690114_flag_share_of_records": {
+        "D": 0.5924637189170839,
+        "E": 0.39879487397097513,
+        "G": 0.0040736654502249005,
+        "T": 0.004413137571076975,
+        "U": 0.0002546040906390563
+      },
+      "ucc_690114_flag_share_weighted": {
+        "D": 0.6102354441707329,
+        "E": 0.3804916328007885,
+        "G": 0.004072783009964374,
+        "T": 0.004695148087463045,
+        "U": 0.000504991931051193
+      },
+      "ucc_690114_share_reporting": {
+        "all_units": 0.7753828323825621,
+        "units_with_children": 0.8435730590682686
+      },
+      "ucc_270310_share_reporting": {
+        "all_units": 0.41498081558350947,
+        "units_with_children": 0.31802080554122863
+      },
+      "ucc_690114_mean_among_reporters": {
+        "all_units": 226.26334008443763,
+        "units_with_children": 234.05139041213062
+      },
+      "ucc_690116_percent_of_690114_units_with_children": 0.5038751401566669
+    },
+    "2023Q2": {
+      "fmli_member": "intrvw23/fmli232.csv",
+      "mtbi_member": "intrvw23/mtbi232.csv",
+      "units": 4751,
+      "ucc_690114_records": 11622,
+      "ucc_690114_flag_share_of_records": {
+        "D": 0.594820168645672,
+        "E": 0.39881259679917397,
+        "G": 0.002581311306143521,
+        "T": 0.0036138358286009293,
+        "U": 0.00017208742040956807
+      },
+      "ucc_690114_flag_share_weighted": {
+        "D": 0.6086563747468173,
+        "E": 0.38435816213398094,
+        "G": 0.0026528498631405053,
+        "T": 0.004093697817962237,
+        "U": 0.0002389154380991451
+      },
+      "ucc_690114_share_reporting": {
+        "all_units": 0.7772506491628144,
+        "units_with_children": 0.837874155528765
+      },
+      "ucc_270310_share_reporting": {
+        "all_units": 0.40337025461139614,
+        "units_with_children": 0.31195657696492596
+      },
+      "ucc_690114_mean_among_reporters": {
+        "all_units": 229.7772147980264,
+        "units_with_children": 241.71035458788253
+      },
+      "ucc_690116_percent_of_690114_units_with_children": 0.3850529335249091
+    },
+    "2023Q3": {
+      "fmli_member": "intrvw23/fmli233.csv",
+      "mtbi_member": "intrvw23/mtbi233.csv",
+      "units": 4770,
+      "ucc_690114_records": 11581,
+      "ucc_690114_flag_share_of_records": {
+        "D": 0.5929539763405578,
+        "E": 0.39426647094378725,
+        "G": 0.0078576979535446,
+        "T": 0.004662809774630861,
+        "U": 0.00025904498747949227
+      },
+      "ucc_690114_flag_share_weighted": {
+        "D": 0.6099054967245817,
+        "E": 0.3766617224994133,
+        "G": 0.007891799266679439,
+        "T": 0.005247824833383745,
+        "U": 0.0002931566759416754
+      },
+      "ucc_690114_share_reporting": {
+        "all_units": 0.7697688995463647,
+        "units_with_children": 0.8395227065911453
+      },
+      "ucc_270310_share_reporting": {
+        "all_units": 0.38273943072871036,
+        "units_with_children": 0.3032358596555718
+      },
+      "ucc_690114_mean_among_reporters": {
+        "all_units": 232.956238507995,
+        "units_with_children": 246.15322242446723
+      },
+      "ucc_690116_percent_of_690114_units_with_children": 0.2424860002078477
+    },
+    "2023Q4": {
+      "fmli_member": "intrvw23/fmli234.csv",
+      "mtbi_member": "intrvw23/mtbi234.csv",
+      "units": 4662,
+      "ucc_690114_records": 11334,
+      "ucc_690114_flag_share_of_records": {
+        "D": 0.604111522851597,
+        "E": 0.38433033350979356,
+        "G": 0.008734780307040762,
+        "T": 0.0027351332274572083,
+        "U": 8.823010411152286e-05
+      },
+      "ucc_690114_flag_share_weighted": {
+        "D": 0.617624737986077,
+        "E": 0.3706559634855817,
+        "G": 0.009074804499207651,
+        "T": 0.002604128754905626,
+        "U": 4.0365274228067416e-05
+      },
+      "ucc_690114_share_reporting": {
+        "all_units": 0.772033628124664,
+        "units_with_children": 0.8339984422270615
+      },
+      "ucc_270310_share_reporting": {
+        "all_units": 0.3660279976518803,
+        "units_with_children": 0.26477627075342924
+      },
+      "ucc_690114_mean_among_reporters": {
+        "all_units": 221.17415972304732,
+        "units_with_children": 226.3612856164028
+      },
+      "ucc_690116_percent_of_690114_units_with_children": 1.477567713982439
+    },
+    "2024Q1": {
+      "fmli_member": "intrvw23/fmli241.csv",
+      "mtbi_member": "intrvw23/mtbi241.csv",
+      "units": 4688,
+      "ucc_690114_records": 11358,
+      "ucc_690114_flag_share_of_records": {
+        "D": 0.6107589364324705,
+        "E": 0.3781475611903504,
+        "G": 0.006427187885191055,
+        "T": 0.004578270822327875,
+        "U": 8.804366966015144e-05
+      },
+      "ucc_690114_flag_share_weighted": {
+        "D": 0.6251397313733111,
+        "E": 0.3634102783818237,
+        "G": 0.007249413002556075,
+        "T": 0.0041559034671773696,
+        "U": 4.467377513138253e-05
+      },
+      "ucc_690114_share_reporting": {
+        "all_units": 0.7711313736919808,
+        "units_with_children": 0.841996422961606
+      },
+      "ucc_270310_share_reporting": {
+        "all_units": 0.36628059912140526,
+        "units_with_children": 0.27648840910461836
+      },
+      "ucc_690114_mean_among_reporters": {
+        "all_units": 220.77785787057869,
+        "units_with_children": 236.89339820432278
+      },
+      "ucc_690116_percent_of_690114_units_with_children": 0.937156999644671
+    },
+    "2024Q2": {
+      "fmli_member": "intrvw24/fmli242.csv",
+      "mtbi_member": "intrvw24/mtbi242.csv",
+      "units": 4673,
+      "ucc_690114_records": 11012,
+      "ucc_690114_flag_share_of_records": {
+        "D": 0.5422266618234654,
+        "E": 0.43942971304031964,
+        "F": 0.006992371957864148,
+        "G": 0.008354522339266255,
+        "T": 0.002361060661096985,
+        "U": 0.0003632401017072285,
+        "V": 0.00027243007628042137
+      },
+      "ucc_690114_flag_share_weighted": {
+        "D": 0.5622459207653208,
+        "E": 0.41670304910497824,
+        "F": 0.0074195845897237715,
+        "G": 0.009913865236168178,
+        "T": 0.0031834025122749656,
+        "U": 0.00032516956433995404,
+        "V": 0.00020900822719405779
+      },
+      "ucc_690114_share_reporting": {
+        "all_units": 0.7631340452975734,
+        "units_with_children": 0.8270223908674932
+      },
+      "ucc_270310_share_reporting": {
+        "all_units": 0.334027414102833,
+        "units_with_children": 0.23412151443270315
+      },
+      "ucc_690114_mean_among_reporters": {
+        "all_units": 225.8221887415767,
+        "units_with_children": 235.07712024010291
+      },
+      "ucc_690116_percent_of_690114_units_with_children": 0.5745273041269318
+    },
+    "2024Q3": {
+      "fmli_member": "intrvw24/fmli243.csv",
+      "mtbi_member": "intrvw24/mtbi243.csv",
+      "units": 4612,
+      "ucc_690114_records": 10981,
+      "ucc_690114_flag_share_of_records": {
+        "D": 0.5567798925416628,
+        "E": 0.42673709133958654,
+        "F": 0.005099717694199071,
+        "G": 0.006192514342956015,
+        "T": 0.0037337218832528916,
+        "U": 0.0006374647117748838,
+        "V": 0.0008195974865677078
+      },
+      "ucc_690114_flag_share_weighted": {
+        "D": 0.5730376955709103,
+        "E": 0.410931424505716,
+        "F": 0.005539798394404037,
+        "G": 0.0055162980065823495,
+        "T": 0.003558482775981076,
+        "U": 0.0007645841903527363,
+        "V": 0.0006517165560535502
+      },
+      "ucc_690114_share_reporting": {
+        "all_units": 0.7799913048045192,
+        "units_with_children": 0.8391556922754
+      },
+      "ucc_270310_share_reporting": {
+        "all_units": 0.3278731561745633,
+        "units_with_children": 0.22439382316926298
+      },
+      "ucc_690114_mean_among_reporters": {
+        "all_units": 225.86571726438578,
+        "units_with_children": 235.305898079509
+      },
+      "ucc_690116_percent_of_690114_units_with_children": 0.7684188348300558
+    },
+    "2024Q4": {
+      "fmli_member": "intrvw24/fmli244.csv",
+      "mtbi_member": "intrvw24/mtbi244.csv",
+      "units": 4601,
+      "ucc_690114_records": 10985,
+      "ucc_690114_flag_share_of_records": {
+        "D": 0.5463814292216659,
+        "E": 0.4328629949931725,
+        "F": 0.006281292671825216,
+        "G": 0.008284023668639054,
+        "T": 0.005461993627674101,
+        "U": 0.0005461993627674101,
+        "V": 0.00018206645425580337
+      },
+      "ucc_690114_flag_share_weighted": {
+        "D": 0.5621320531955517,
+        "E": 0.41558809945930864,
+        "F": 0.0071766320910748894,
+        "G": 0.009117127828118288,
+        "T": 0.005022419603030162,
+        "U": 0.00023626876497717287,
+        "V": 0.0007273990579391553
+      },
+      "ucc_690114_share_reporting": {
+        "all_units": 0.776840848216336,
+        "units_with_children": 0.8510575882336082
+      },
+      "ucc_270310_share_reporting": {
+        "all_units": 0.32840652407335647,
+        "units_with_children": 0.2413481206345993
+      },
+      "ucc_690114_mean_among_reporters": {
+        "all_units": 225.51680021030964,
+        "units_with_children": 236.93828814213754
+      },
+      "ucc_690116_percent_of_690114_units_with_children": 0.34531863860912587
+    },
+    "2025Q1": {
+      "fmli_member": "intrvw24/fmli251.csv",
+      "mtbi_member": "intrvw24/mtbi251.csv",
+      "units": 4602,
+      "ucc_690114_records": 10940,
+      "ucc_690114_flag_share_of_records": {
+        "D": 0.5451553930530164,
+        "E": 0.43976234003656306,
+        "F": 0.003839122486288848,
+        "G": 0.007861060329067643,
+        "T": 0.002742230347349177,
+        "V": 0.000639853747714808
+      },
+      "ucc_690114_flag_share_weighted": {
+        "D": 0.5588834493992071,
+        "E": 0.4253768171655634,
+        "F": 0.0036182499292914693,
+        "G": 0.009014539109092192,
+        "T": 0.0022140477252582014,
+        "V": 0.0008928966715876777
+      },
+      "ucc_690114_share_reporting": {
+        "all_units": 0.7789279779849732,
+        "units_with_children": 0.844080391103498
+      },
+      "ucc_270310_share_reporting": {
+        "all_units": 0.33478825465599493,
+        "units_with_children": 0.24558388218322127
+      },
+      "ucc_690114_mean_among_reporters": {
+        "all_units": 223.13922275806445,
+        "units_with_children": 234.55821040828278
+      },
+      "ucc_690116_percent_of_690114_units_with_children": 0.5763834984141863
+    }
+  },
+  "windows": {
+    "2019": {
+      "first_quarter": "2014Q2",
+      "last_quarter": "2019Q1",
+      "ucc_690116_percent_of_690114": {
+        "fmli_units_with_children": 1.2422116971060841,
+        "estimation_sample": 1.2509575202267458
+      },
+      "estimation_sample_units": 36944
+    },
+    "2020": {
+      "first_quarter": "2015Q2",
+      "last_quarter": "2020Q1",
+      "ucc_690116_percent_of_690114": {
+        "fmli_units_with_children": 1.1481722396636291,
+        "estimation_sample": 1.155940239562233
+      },
+      "estimation_sample_units": 34840
+    },
+    "2021": {
+      "first_quarter": "2016Q2",
+      "last_quarter": "2021Q1",
+      "ucc_690116_percent_of_690114": {
+        "fmli_units_with_children": 0.8330158844274291,
+        "estimation_sample": 0.8386614002342136
+      },
+      "estimation_sample_units": 32541
+    },
+    "2022": {
+      "first_quarter": "2017Q2",
+      "last_quarter": "2022Q1",
+      "ucc_690116_percent_of_690114": {
+        "fmli_units_with_children": 0.5420783877057139,
+        "estimation_sample": 0.5417668800578666
+      },
+      "estimation_sample_units": 30497
+    },
+    "2023": {
+      "first_quarter": "2018Q2",
+      "last_quarter": "2023Q1",
+      "ucc_690116_percent_of_690114": {
+        "fmli_units_with_children": 0.44618122776848884,
+        "estimation_sample": 0.4456371815062852
+      },
+      "estimation_sample_units": 28307
+    },
+    "2024": {
+      "first_quarter": "2019Q2",
+      "last_quarter": "2024Q1",
+      "ucc_690116_percent_of_690114": {
+        "fmli_units_with_children": 0.4811632667286983,
+        "estimation_sample": 0.4838660164420356
+      },
+      "estimation_sample_units": 26719
+    },
+    "2025": {
+      "first_quarter": "2020Q2",
+      "last_quarter": "2025Q1",
+      "ucc_690116_percent_of_690114": {
+        "fmli_units_with_children": 0.48189225826560433,
+        "estimation_sample": 0.4846670320414332
+      },
+      "estimation_sample_units": 25459
+    }
+  },
+  "home_internet_against_bls": {
+    "package": {
+      "without_benefits": {
+        "2019": 0.9992645562347726,
+        "2020": 1.018594304446257,
+        "2021": 1.0163645943212465,
+        "2022": 1.0405337749245187,
+        "2023": 1.0372063792822797,
+        "2024": 1.0187604971407793,
+        "2025": 1.0086080615152966
+      },
+      "with_benefits": {
+        "2019": 0.9928119802382911,
+        "2020": 1.0234298778335178,
+        "2021": 0.9904494929876365,
+        "2022": 1.0278866886697104,
+        "2023": 1.0313271720810469,
+        "2024": 1.0068860336881946,
+        "2025": 0.9887888795118424
+      }
+    },
+    "fcsuti": {
+      "without_benefits": {
+        "2019": 0.9997282818605008,
+        "2020": 1.021701620254726,
+        "2021": 1.0087707075608394,
+        "2022": 1.0398423808906059,
+        "2023": 1.0360198620835341,
+        "2024": 1.0227971277599106,
+        "2025": 1.013774029733451
+      },
+      "with_benefits": {
+        "2019": 0.9971268009695743,
+        "2020": 1.0282442801227134,
+        "2021": 0.9958797576037618,
+        "2022": 1.028177073355891,
+        "2023": 1.0322009501195764,
+        "2024": 1.0138967081748023,
+        "2025": 0.9973726336397988
+      }
+    }
+  },
+  "runtime_seconds": 24
+}

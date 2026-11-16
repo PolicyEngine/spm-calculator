@@ -22,9 +22,10 @@ for the CE's Fay weights. The interview files the replication reads,
 :func:`replicate_estimates` reruns the whole threshold estimator under each
 replicate weight, with and without the in-kind stage: the sample (records
 whose replicate weight is zero drop out), the CPI component weights that
-the package deflator derives from CE spending, normalization, the
-47th-53rd percentile band and the band means. Each implicate's imputed
-amounts stay as the full-sample imputation drew them.
+the package deflator derives from CE spending (home internet's included,
+when the records carry its cost), normalization, the 47th-53rd percentile
+band and the band means. Each implicate's imputed amounts stay as the
+full-sample imputation drew them.
 
 :func:`combine_implicates` pools each implicate's replicate variance with
 the variance between implicates by Rubin's rules (Rubin 1987, Multiple
@@ -60,6 +61,10 @@ import pandas as pd
 
 from spm_calculator.ce_bls_shares import BandComponents, band_components
 from spm_calculator.ce_inkind_stage import add_in_kind
+from spm_calculator.ce_internet import (
+    INTERNET_COLUMN,
+    expenditures_with_internet,
+)
 from spm_calculator.ce_threshold import (
     MEDIAN_SHARE,
     TENURES,
@@ -277,13 +282,13 @@ def combine_implicates(
         complete_df * (complete_df + 1) * (1 - fraction) / (complete_df + 3)
     )
     squared = fraction**2
-    if squared == 0:
+    df_rubin = (m - 1) / squared if squared > 0 else math.inf
+    if not math.isfinite(df_rubin):
         # Rubin's df is infinite, or too large to hold, so Barnard and
         # Rubin's df reaches its limit.
         df_rubin = None
         df = nu_obs
     else:
-        df_rubin = (m - 1) / squared
         df = 0.0 if nu_obs == 0 else 1 / (1 / df_rubin + 1 / nu_obs)
     return Combined(
         estimate=q_bar,
@@ -383,6 +388,11 @@ def replicate_estimates(
             :func:`spm_calculator.ce_inkind_stage.prepare_out_of_pocket`,
             which this matches on the full sample. Principal and
             annualization keep their defaults, which the band means need.
+
+    When ``frame`` carries
+    :data:`spm_calculator.ce_internet.INTERNET_COLUMN`, each replicate adds
+    home internet as :func:`spm_calculator.ce_internet.add_home_internet`
+    does, so the full sample matches that run instead.
     """
     if weights is None:
         weights = replicate_weight_matrix(frame)
@@ -409,9 +419,13 @@ def replicate_estimates(
         normalized, _ = normalize_ce_sample(
             sample, youth_policy=youth_policy, tenure_policy=tenure_policy
         )
-        expenditures, _ = construct_normalized_expenditures(
+        expenditures, construction = construct_normalized_expenditures(
             normalized, target_year, cpi_series=cpi_series
         )
+        if INTERNET_COLUMN in expenditures:
+            expenditures, _, _ = expenditures_with_internet(
+                expenditures, construction, target_year, cpi_series
+            )
         thresholds, _ = estimate_thresholds(expenditures, median_share)
         identity_gap = max(
             identity_gap,
