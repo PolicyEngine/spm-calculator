@@ -3,9 +3,9 @@
   "generated_by": "scripts/tabulate_ce_internet_uccs.py",
   "generated_on": "2026-11-16",
   "classification": "current_retrospective_research",
-  "git_head": "876007bed02d9e29cc54511fa8af022f7f1c47bc",
+  "git_head": "cc4b6ace473bce2ff69e38f69a69c6eb7e30e61e",
   "code_sha256": {
-    "scripts/tabulate_ce_internet_uccs.py": "20c953e9bf861f2be025355a3ba7120cff0ae2ebdb11f49fd2254e1eba2acfea",
+    "scripts/tabulate_ce_internet_uccs.py": "b0fe329372c5ec4f3ca0adfec13aeead065fb2f191d9552a53d7a75839a536be",
     "spm_calculator/ce_internet.py": "c0a1a928b708a418cacef585f07c53a5da84b551d6540733251d9c5ca0fc0f73",
     "spm_calculator/ce_inkind_stage.py": "68e881d04cfc8c35f5ca11fd7b6b60d88abfb0bc26921ad93f7ba8a390a8fd8c",
     "spm_calculator/ce_threshold.py": "4efbe2b03f6b1f4eb2911ab0f79f5151bd655cc1e5addf42f5c4540ace1f852f",
@@ -1693,5 +1693,5 @@
       }
     }
   },
-  "runtime_seconds": 27
+  "runtime_seconds": 24
 }
