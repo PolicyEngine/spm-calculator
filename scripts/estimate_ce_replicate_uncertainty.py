@@ -645,7 +645,7 @@ def main() -> None:
         check=True,
     ).stdout.strip()
     receipt = {
-        "schema_version": 2,
+        "schema_version": 3,
         "classification": "current_retrospective_research",
         "generated_by": "scripts/estimate_ce_replicate_uncertainty.py",
         "generated_on": datetime.now(timezone.utc).date().isoformat(),
