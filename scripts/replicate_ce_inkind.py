@@ -91,6 +91,8 @@ RECEIPT = (
     ROOT / "spm_calculator/data/current/ce_inkind_replication_2019_2025.json"
 )
 DEFAULT_DETAIL = ROOT / "benchmark_output/ce_inkind_2019_2025_detail.json"
+#: BLS's published thresholds, which the receipt compares against.
+THRESHOLD_SERIES = ROOT / "spm_calculator/data/bls/threshold_series.json"
 TARGETS = range(2019, 2026)
 #: Columns of the out-of-pocket replication (scripts/replicate_current_ce.py)
 #: and each unit's three-month home internet cost.
@@ -157,6 +159,7 @@ CODE_PATHS = (
     "spm_calculator/cps_asec.py",
     "spm_calculator/fcsuti_cpi.py",
     "spm_calculator/equivalence_scale.py",
+    "spm_calculator/published_thresholds.py",
     "scripts/replicate_ce_inkind.py",
 )
 
@@ -659,6 +662,10 @@ def main():
             "path": "spm_calculator/data/bls/cpi_annual.json",
             "sha256": sha256(args.cpi_input),
         },
+        "threshold_series": {
+            "path": str(THRESHOLD_SERIES.relative_to(ROOT)),
+            "sha256": sha256(THRESHOLD_SERIES),
+        },
         "home_internet": {
             "ucc": INTERNET_UCC,
             "mtbi": "the MTBI file beside each FMLI file, same bundle and quarter",
@@ -693,15 +700,15 @@ def main():
             "School lunch donor values for reference years 2014-2017 come from the USDA formula; later years use Census SPM_SCHLUNCH values",
             "BLS says it assigns school lunch by the traditional method before and after the COVID-19 period; the stage uses Census SPM_SCHLUNCH values for every reference year from 2018, and from reference year 2023 Census estimates those values with its fall 2022 method",
             "The imputation assigns school lunch only to households it imputes as receiving free, reduced-price or universal-free lunch; Census also values paid lunches and, in some years, P-EBT or Summer EBT for other households",
-            "Census accounts for P-EBT in its school lunch values for reference years 2020 and 2021, and states paid P-EBT on EBT cards; BLS says it follows Census's COVID-era methods, but by its reasoning for leaving out SNAP, reported food spending may already include those benefits",
+            "Census accounts for P-EBT in its school lunch values for reference years 2020 and 2021, and for 2022 it adds summer EBT benefits, which states paid that summer as P-EBT; states paid both on EBT cards. BLS says it follows Census's COVID-era methods, so the stage does too, but by BLS's reasoning for leaving out SNAP, reported food spending may already include those benefits",
             "WIC uses USDA's national fiscal-year average food cost; Census has used state averages since its revised 2019 estimates",
             "Participation models share one covariate set across programs and years; CE and CPS income concepts differ",
-            "Home internet is CE UCC 690114 alone, priced with CPI-U CUUR0000SEEE03; BLS has not published the UCCs behind its home internet term",
+            "Home internet is CE UCC 690114 alone, priced with CPI-U CUUR0000SEEE03; BLS has not published the UCCs or the price series behind its home internet term",
             "Home internet is out-of-pocket spending in its own component; no in-kind total, share or contribution includes it",
             "The archived replication excludes home internet, and the canonical forecast, nowcast and projections exclude it until the forecast is next rebuilt, which is a separate change",
             "BLS applies an annual-average FCSUti CPI-U to quarterly CE data and does not say which year's average each quarter gets; the runs use the annual average of each interview's collection year",
             "The stage adds no WIC in any state from reference year 2020, the year of the statutory deadline for statewide WIC EBT, October 1, 2020 (42 U.S.C. 1786(h)(12)(B)(i)); the cutoff also drops WIC where the middle of the reference period falls before the deadline, including in six states that finished during 2020 before the deadline, and FNS dates six other states and DC after it, so the cutoff departs from a strict state-by-state reading of BLS's published rule, and wic_ebt_by_state_sensitivity uses each state's own date instead",
-            "The runs estimate imputation uncertainty (implicate spread) but not sampling uncertainty",
+            "The runs estimate imputation uncertainty from the implicate spread; ce_replicate_uncertainty_2019_2025.json estimates sampling uncertainty",
         ],
         "runtime_seconds": round(time.time() - started),
     }

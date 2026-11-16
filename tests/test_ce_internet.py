@@ -200,6 +200,17 @@ def test_expenditures_must_carry_internet():
         add_home_internet(run, cpi)
 
 
+@pytest.mark.parametrize("cpi", [None, "without_internet"])
+def test_home_internet_needs_the_internet_cpi(cpi):
+    """A missing internet series raises a ValueError that names it, not a
+    TypeError or KeyError from deep in the composite."""
+    raw = with_internet(ce_frame(5), 5)
+    run = prepare_out_of_pocket(raw, 2024, cpi_series=flat_cpi())
+    series = flat_cpi() if cpi == "without_internet" else None
+    with pytest.raises(ValueError, match=INTERNET_CPI_SERIES):
+        add_home_internet(run, series)
+
+
 # Invariant 2
 
 
@@ -671,6 +682,18 @@ def test_unit_components_carry_internet_at_four_times_its_cost(seed):
     )
     assert "internet" not in IMPUTED
     assert (components[list(IMPUTED)] == 0).all().all()
+
+
+def test_unit_components_reject_internet_left_out_of_fcsuti():
+    """An out-of-pocket frame carries the internet column, but its FCSUti
+    leaves home internet out; unit_components says so."""
+    frame = with_internet(ce_frame(21, n=80, year=2021), 21, share=1.0)
+    cpi = pinned_cpi()
+    run = prepare_out_of_pocket(frame, 2023, cpi_series=cpi)
+    assert (run.expenditures[INTERNET_COLUMN] > 0).any()
+    with pytest.raises(ValueError, match="leaves home internet out"):
+        unit_components(run.expenditures)
+    unit_components(run.expenditures.drop(columns=INTERNET_COLUMN))
 
 
 # Invariant 6: the committed receipts

@@ -86,6 +86,8 @@ CURRENT = ROOT / "spm_calculator/data/current"
 RECEIPT = CURRENT / "ce_replicate_uncertainty_2019_2025.json"
 REPLICATION_RECEIPT = CURRENT / "ce_inkind_replication_2019_2025.json"
 COMPONENTS_RECEIPT = CURRENT / "ce_inkind_bls_components_2019_2025.json"
+#: BLS's published thresholds and standard errors.
+THRESHOLD_SERIES = ROOT / "spm_calculator/data/bls/threshold_series.json"
 TARGETS = tuple(range(2019, 2026))
 #: 2022-2025, then every year over the year before.
 GROWTH_SPANS = ((2022, 2025),) + tuple((t - 1, t) for t in TARGETS[1:])
@@ -148,7 +150,7 @@ METHOD = {
     ],
     "held_fixed": [
         "each implicate's imputed in-kind amounts, as the full-sample imputation drew them",
-        "the CPS ASEC participation and amount models and the CE rent model, fit once with full-sample weights; each implicate draws their parameters from the inverse of the weighted information matrix, with weights scaled to mean one",
+        "the CPS ASEC participation and amount models and the CE rent model, fit once with full-sample weights; each implicate draws their parameters from the inverse of the ridge-penalized weighted information matrix, with weights scaled to mean one",
         "the CPI series and BLS's FCSUti index",
     ],
 }
@@ -659,6 +661,10 @@ def main() -> None:
                 "path": str(args.cpi_input.relative_to(ROOT)),
                 "sha256": sha256(args.cpi_input),
             },
+            "threshold_series": {
+                "path": str(THRESHOLD_SERIES.relative_to(ROOT)),
+                "sha256": sha256(THRESHOLD_SERIES),
+            },
             "internet_cpi": {
                 "path": str(INTERNET_CPI_RECEIPT.relative_to(ROOT)),
                 "sha256": sha256(INTERNET_CPI_RECEIPT),
@@ -687,7 +693,7 @@ def main() -> None:
                 pd.concat(patterns, ignore_index=True)
             ),
             "full_sample": {
-                "out_of_pocket_matches_replication_receipt": True,
+                "with_home_internet_matches_replication_receipt": True,
                 "with_in_kind_largest_relative_gap": full_sample["thresholds"],
                 "with_in_kind_tolerance": REPLICATION_TOLERANCE,
                 "amounts_largest_relative_gap": full_sample["amounts"],

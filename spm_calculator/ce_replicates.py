@@ -282,13 +282,13 @@ def combine_implicates(
         complete_df * (complete_df + 1) * (1 - fraction) / (complete_df + 3)
     )
     squared = fraction**2
-    if squared == 0:
+    df_rubin = (m - 1) / squared if squared > 0 else math.inf
+    if not math.isfinite(df_rubin):
         # Rubin's df is infinite, or too large to hold, so Barnard and
         # Rubin's df reaches its limit.
         df_rubin = None
         df = nu_obs
     else:
-        df_rubin = (m - 1) / squared
         df = 0.0 if nu_obs == 0 else 1 / (1 / df_rubin + 1 / nu_obs)
     return Combined(
         estimate=q_bar,

@@ -283,11 +283,15 @@ def unit_components(frame: pd.DataFrame) -> pd.DataFrame:
             :func:`spm_calculator.ce_internet.add_home_internet`, or either
             after :func:`spm_calculator.ce_inkind_stage.add_in_kind`. Home
             internet comes from its three-month cost column, and is zero
-            when the frame has none.
+            when the frame has none. A frame that carries the column must
+            count home internet in FCSUti, as
+            :func:`~spm_calculator.ce_internet.add_home_internet` does.
 
     Raises:
         ValueError: If a component, ``fcsuti_2a2c`` or ``su_2a2c`` is not
-            finite, or the components do not sum to the last two.
+            finite, the frame carries the internet column while its FCSUti
+            leaves home internet out, or the components do not sum to the
+            last two.
     """
     quarterly = _quarterly_factor(frame)
     telephone = _sum_pair(frame, "TELEPHPQ", "TELEPHCQ").to_numpy(dtype=float)
@@ -335,6 +339,19 @@ def unit_components(frame: pd.DataFrame) -> pd.DataFrame:
         out[list(COMPONENTS)].sum(axis=1).to_numpy() - fcsuti
     )
     su_error = np.abs(out[list(SHELTER_UTILITIES)].sum(axis=1).to_numpy() - su)
+    if fcsuti_error.max() > 1e-6 and INTERNET_COLUMN in frame:
+        without_internet = np.abs(
+            out[[c for c in COMPONENTS if c != "internet"]]
+            .sum(axis=1)
+            .to_numpy()
+            - fcsuti
+        )
+        if without_internet.max() <= 1e-6:
+            raise ValueError(
+                f"The frame carries {INTERNET_COLUMN} but its FCSUti leaves "
+                "home internet out; add it with add_home_internet or drop "
+                "the column"
+            )
     if max(fcsuti_error.max(), su_error.max()) > 1e-6:
         raise ValueError(
             "Unit components do not sum to the frame's FCSUti and SU; "

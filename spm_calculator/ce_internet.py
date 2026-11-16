@@ -18,9 +18,11 @@ sealed module.
   FMLI's summaries. That is a three-month figure, on the same footing as
   the FMLI ``*PQ`` + ``*CQ`` pairs, and is annualized the same way.
 - UCC 690116, "Internet services away from home", maps to the same ELI
-  but stays out: BLS's methods page counts home internet service, and
-  UCC 690114 alone reproduces BLS's in-band home internet for the 2019
-  thresholds.
+  but stays out: BLS's methods page counts home internet service. In the
+  band without benefits, UCC 690114 alone comes within 0.1% of BLS's
+  in-band home internet for the 2019 thresholds and exceeds it for
+  2020-2025, so adding UCC 690116 would widen that gap;
+  ``scripts/tabulate_ce_internet_uccs.py`` records both figures.
 - Prices: CPI-U series CUUR0000SEEE03, "Internet services and electronic
   information providers", joins the FCSUti composite with the weight
   :func:`spm_calculator.fcsuti_cpi.compute_fcsuti_weights_from_ce` would
@@ -273,7 +275,18 @@ def expenditures_with_internet(
     recomputed, FCSUti gains the annualized internet cost, and SU keeps its
     spending at the new price factor. Returns the frame, the CPI weights
     and the price factors by collection year.
+
+    Raises:
+        ValueError: If ``cpi_series`` is None or lacks
+            :data:`INTERNET_CPI_SERIES` (see :func:`with_internet_cpi`),
+            the frame lacks :data:`INTERNET_COLUMN`, or a cost is not
+            finite.
     """
+    if cpi_series is None or INTERNET_CPI_SERIES not in cpi_series:
+        raise ValueError(
+            f"CPI series must include {INTERNET_CPI_SERIES}; "
+            "add it with with_internet_cpi"
+        )
     annual = _ANNUALIZATION[construction["annualization"]]
     frame = expenditures.copy()
     if INTERNET_COLUMN not in frame:
