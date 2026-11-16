@@ -82,7 +82,7 @@
   },
   "classification": "current_retrospective_research",
   "code_sha256": {
-    "scripts/replicate_ce_inkind.py": "209d4380929086d9ff9bb06f1ba8eb57a59b871a3205541576963691fb589153",
+    "scripts/replicate_ce_inkind.py": "0c026f67c7d2ccabad9dd1c4f95210d2a031ef431b3e693c7dbcae905533a143",
     "spm_calculator/ce_decomposition.py": "39be6fc2ceef0764cbf1133a1f4ea39c67a4de6a4e781357f717a7a82d0e00c0",
     "spm_calculator/ce_inkind.py": "97d0b6b76982bab9d9c7e9d15d5c1723f667adbbfe54432533eaf1ebf198bdd8",
     "spm_calculator/ce_inkind_stage.py": "68e881d04cfc8c35f5ca11fd7b6b60d88abfb0bc26921ad93f7ba8a390a8fd8c",
@@ -2148,7 +2148,7 @@
   },
   "generated_by": "scripts/replicate_ce_inkind.py",
   "generated_on": "2026-11-16",
-  "git_head": "03d84918f579044a51f507be720cf3eae96d42e4",
+  "git_head": "876007bed02d9e29cc54511fa8af022f7f1c47bc",
   "home_internet": {
     "annualization": "three-month cost times four, with FMLI spending",
     "cpi_input": {
@@ -3628,12 +3628,12 @@
     "Census accounts for P-EBT in its school lunch values for reference years 2020 and 2021, and for 2022 it adds summer EBT benefits, which states paid that summer as P-EBT; states paid both on EBT cards. BLS says it follows Census's COVID-era methods, so the stage does too, but by BLS's reasoning for leaving out SNAP, reported food spending may already include those benefits",
     "WIC uses USDA's national fiscal-year average food cost; Census has used state averages since its revised 2019 estimates",
     "Participation models share one covariate set across programs and years; CE and CPS income concepts differ",
-    "Home internet is CE UCC 690114 alone, priced with CPI-U CUUR0000SEEE03; BLS has not published the UCCs or the price series behind its home internet term",
-    "Home internet is out-of-pocket spending in its own component; no in-kind total, share or contribution includes it",
+    "We take home internet from CE UCC 690114 alone and price it with CPI-U CUUR0000SEEE03; BLS has not published the UCCs or the price series behind its home internet term",
+    "We count home internet as out-of-pocket spending in its own component, and no in-kind total, share or contribution includes it",
     "The archived replication excludes home internet, and the canonical forecast, nowcast and projections exclude it until the forecast is next rebuilt, which is a separate change",
-    "BLS applies an annual-average FCSUti CPI-U to quarterly CE data and does not say which year's average each quarter gets; the runs use the annual average of each interview's collection year",
+    "BLS applies an annual-average FCSUti CPI-U to quarterly CE data and does not say which year's average each quarter gets; we use the annual average of each interview's collection year",
     "The stage adds no WIC in any state from reference year 2020, the year of the statutory deadline for statewide WIC EBT, October 1, 2020 (42 U.S.C. 1786(h)(12)(B)(i)); the cutoff also drops WIC where the middle of the reference period falls before the deadline, including in six states that finished during 2020 before the deadline, and FNS dates six other states and DC after it, so the cutoff departs from a strict state-by-state reading of BLS's published rule, and wic_ebt_by_state_sensitivity uses each state's own date instead",
-    "The runs estimate imputation uncertainty from the implicate spread; ce_replicate_uncertainty_2019_2025.json estimates sampling uncertainty"
+    "We estimate imputation uncertainty from the implicate spread and sampling uncertainty in ce_replicate_uncertainty_2019_2025.json"
   ],
   "results": {
     "2019": {
@@ -5428,7 +5428,7 @@
     "python": "3.14.7",
     "scipy": "1.18.1"
   },
-  "runtime_seconds": 53,
+  "runtime_seconds": 45,
   "schema_version": 2,
   "threshold_series": {
     "path": "spm_calculator/data/bls/threshold_series.json",

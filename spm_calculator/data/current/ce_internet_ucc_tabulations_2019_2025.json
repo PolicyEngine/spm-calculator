@@ -3,12 +3,15 @@
   "generated_by": "scripts/tabulate_ce_internet_uccs.py",
   "generated_on": "2026-11-16",
   "classification": "current_retrospective_research",
-  "git_head": "3b4f421a3dc59ad75c45eea0b1beec783fdcb636",
+  "git_head": "876007bed02d9e29cc54511fa8af022f7f1c47bc",
   "code_sha256": {
-    "scripts/tabulate_ce_internet_uccs.py": "5281ae5331f1f3860becee72da133581738b0ea8469a6ec76965d94008e0548c",
+    "scripts/tabulate_ce_internet_uccs.py": "20c953e9bf861f2be025355a3ba7120cff0ae2ebdb11f49fd2254e1eba2acfea",
     "spm_calculator/ce_internet.py": "c0a1a928b708a418cacef585f07c53a5da84b551d6540733251d9c5ca0fc0f73",
     "spm_calculator/ce_inkind_stage.py": "68e881d04cfc8c35f5ca11fd7b6b60d88abfb0bc26921ad93f7ba8a390a8fd8c",
-    "spm_calculator/ce_threshold.py": "4efbe2b03f6b1f4eb2911ab0f79f5151bd655cc1e5addf42f5c4540ace1f852f"
+    "spm_calculator/ce_threshold.py": "4efbe2b03f6b1f4eb2911ab0f79f5151bd655cc1e5addf42f5c4540ace1f852f",
+    "spm_calculator/equivalence_scale.py": "95c797adca4811b0a2c4202e8471f6cd46fcd259bf46b34da74588ab08b41326",
+    "spm_calculator/fcsuti_cpi.py": "cf8fbe9103846d83a280bcd4f13b9ddd91e8baa94e2668b9ef288c7cc980a5fc",
+    "spm_calculator/published_thresholds.py": "bbed3fb2c1658e86172917148f986383c86ba673be1055d9688e8a53600ae2ba"
   },
   "runtime": {
     "python": "3.13.13",
@@ -68,7 +71,11 @@
     },
     "components_receipt": {
       "path": "spm_calculator/data/current/ce_inkind_bls_components_2019_2025.json",
-      "sha256": "96bef82548f327bf89424d43bfa42fdfcb1c43c807d8a9b8a2368de42f0ac530"
+      "sha256": "4e2e274b45e9b4ae979400b1063199ff8533046ce53ea5eb360135c71b3bdd41"
+    },
+    "replication_receipt": {
+      "path": "spm_calculator/data/current/ce_inkind_replication_2019_2025.json",
+      "sha256": "d1e83652e9857a881dcb6cf61505cc5af0e6b2549c9f6c7ac9220f202d34f29b"
     }
   },
   "uccs": {
@@ -1686,5 +1693,5 @@
       }
     }
   },
-  "runtime_seconds": 26
+  "runtime_seconds": 27
 }
