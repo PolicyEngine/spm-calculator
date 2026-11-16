@@ -14,7 +14,12 @@ from pathlib import Path
 
 import numpy as np
 
-from spm_calculator.ce_bls_shares import COMPONENTS, TENURES
+from spm_calculator.ce_bls_shares import (
+    ACCOUNTINGS,
+    OTHER,
+    TENURES,
+    BandComponents,
+)
 
 ROOT = Path(__file__).resolve().parent.parent
 RECEIPT = (
@@ -41,6 +46,8 @@ GAP_ROWS = (
     ("clothing", "Clothing"),
     ("telephone", "Telephone"),
 )
+#: The extra row under the ``other_separate`` accounting.
+OTHER_ROW = (OTHER, "Other (0.2 × FCSUti)")
 
 
 def _range(values) -> dict[str, float]:
@@ -77,6 +84,19 @@ def summarize(receipt: dict) -> dict:
             max(bls[y]["checks"]["shared_component_spread_dollars"].values())
             for y in years
         ),
+        "bls_other_separate_largest_share_error": max(
+            max(bls[y]["checks"]["other_separate_share_error"].values())
+            for y in years
+        ),
+        "bls_internet_percent_of_threshold": {
+            accounting: _range(
+                100
+                * _bls_term(receipt, y, t, "internet", accounting)
+                / bls[y]["published_thresholds"][t]
+                for y, t in [(y, t) for y in years for t in TENURES]
+            )
+            for accounting in ACCOUNTINGS
+        },
         "runs": {},
     }
     cells = [(y, t) for y in years for t in TENURES]
@@ -145,32 +165,12 @@ def summarize(receipt: dict) -> dict:
                 for y in years
             ),
             "level_gap_points": {
-                t: {
-                    term: _range(
-                        data[y]["level_gap_percent_of_bls"][t]["terms"][term]
-                        for y in years
-                    )
-                    for term in COMPONENTS
-                }
-                | {
-                    "imputed": _range(
-                        data[y]["level_gap_percent_of_bls"][t]["imputed"]
-                        for y in years
-                    ),
-                    "shelter_plus_internet": _range(
-                        data[y]["level_gap_percent_of_bls"][t]["terms"][
-                            "shelter"
-                        ]
-                        + data[y]["level_gap_percent_of_bls"][t]["terms"][
-                            "internet"
-                        ]
-                        for y in years
-                    ),
-                }
-                for t in TENURES
+                accounting: _level_gap_points(data, years, accounting)
+                for accounting in ACCOUNTINGS
             },
             "rank_shift_points": {
-                t: growth[t]["rank_shift_points"] for t in TENURES
+                t: growth[t]["other_spread"]["rank_shift_points"]
+                for t in TENURES
             },
         }
         if not record["bls_written_definitions"]:
@@ -205,6 +205,34 @@ def summarize(receipt: dict) -> dict:
     return summary
 
 
+def _bls_term(
+    receipt: dict, year: str, tenure: str, term: str, accounting: str
+) -> float:
+    """One of BLS's threshold terms, rebuilt from the receipt's band."""
+    band = receipt["bls"]["years"][year]["band"]
+    return BandComponents(
+        band["pooled"], band["by_tenure"], band["tenure_mix"]
+    ).threshold_terms(tenure, accounting)[term]
+
+
+def _level_gap_points(data: dict, years: list, accounting: str) -> dict:
+    out = {}
+    for t in TENURES:
+        records = [
+            data[y]["level_gap_percent_of_bls"][accounting][t] for y in years
+        ]
+        out[t] = {
+            term: _range(r["terms"][term] for r in records)
+            for term in records[0]["terms"]
+        } | {
+            "imputed": _range(r["imputed"] for r in records),
+            "shelter_plus_internet": _range(
+                r["terms"]["shelter"] + r["terms"]["internet"] for r in records
+            ),
+        }
+    return out
+
+
 def _dollars(value: float) -> str:
     # MyST reads paired dollar signs as math, so escape each one.
     return f"\\${value:,.0f}"
@@ -231,8 +259,9 @@ def _table(header, rows) -> str:
     return "\n".join([_row(header), rule, *(_row(r) for r in rows)])
 
 
-def _level_gap_table(receipt: dict, run: str) -> str:
-    gaps = summarize(receipt)["runs"][run]["level_gap_points"]
+def _level_gap_table(receipt: dict, run: str, accounting: str) -> str:
+    gaps = summarize(receipt)["runs"][run]["level_gap_points"][accounting]
+    rows = GAP_ROWS + ((OTHER_ROW,) if accounting == "other_separate" else ())
     return _table(
         ["Term", *TENURE_NAMES.values()],
         [
@@ -244,7 +273,7 @@ def _level_gap_table(receipt: dict, run: str) -> str:
                     for t in TENURES
                 ),
             ]
-            for key, label in GAP_ROWS
+            for key, label in rows
         ],
     )
 
@@ -333,9 +362,15 @@ def render_tables(receipt: dict) -> dict[str, str]:
         ],
     )
 
-    tables["level_gap"] = _level_gap_table(receipt, "package")
+    tables["level_gap"] = _level_gap_table(receipt, "package", "other_spread")
+    tables["level_gap_other_separate"] = _level_gap_table(
+        receipt, "package", "other_separate"
+    )
     tables["level_gap_bls_definitions"] = _level_gap_table(
-        receipt, "package_bls_definition"
+        receipt, "package_bls_definition", "other_spread"
+    )
+    tables["level_gap_bls_definitions_other_separate"] = _level_gap_table(
+        receipt, "package_bls_definition", "other_separate"
     )
     tables["gap_bls_definitions_package"] = _gap_table(
         receipt, "package_bls_definition"
@@ -417,27 +452,31 @@ def render_tables(receipt: dict) -> dict[str, str]:
         ],
     )
 
-    def triple(block: dict, key: str, render) -> str:
-        return " / ".join(render(block["by_tenure"][t][key]) for t in TENURES)
+    def triple(block: dict, accounting: str, key: str, render) -> str:
+        return " / ".join(
+            render(block["by_tenure"][t][accounting][key]) for t in TENURES
+        )
 
+    share = "imputed_share_of_growth_beyond_cpi_u_percent"
     tables["imputed_part_of_growth"] = _table(
         [
             "Series",
-            "Share of growth beyond CPI-U, %",
-            "Points of growth",
-            "Growth without imputed terms, %",
+            "Share of growth beyond CPI-U, Other spread, %",
+            "Share of growth beyond CPI-U, Other separate, %",
+            "Points of growth, Other spread",
+            "Growth without imputed terms, Other spread, %",
         ],
         [
             [
                 label,
+                triple(block, "other_spread", share, _rate),
+                triple(block, "other_separate", share, _rate),
                 triple(
-                    block,
-                    "imputed_share_of_growth_beyond_cpi_u_percent",
-                    _rate,
+                    block, "other_spread", "band_fixed_effect_points", _signed
                 ),
-                triple(block, "band_fixed_effect_points", _signed),
                 triple(
                     block,
+                    "other_spread",
                     "growth_without_imputed_terms",
                     lambda v: _rate(v, 2),
                 ),
@@ -477,7 +516,7 @@ def _shortfall(run: dict, tenure: str) -> str:
     growth = run["growth_2022_2025"]["by_tenure"][tenure]
     return (
         f"{_signed(growth['growth_less_bls_points'])} → "
-        f"{_signed(growth['growth_without_imputed_terms_less_bls_points'])}"
+        f"{_signed(growth['other_spread']['growth_without_imputed_terms_less_bls_points'])}"
     )
 
 
