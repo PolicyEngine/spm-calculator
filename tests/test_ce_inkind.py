@@ -397,7 +397,12 @@ def test_committed_receipt_comes_from_this_code():
     limitations = receipt["limitations"]
     for text in (
         "for 2022 it adds summer EBT benefits",
-        "the UCCs or the price series",
+        "We take home internet from CE UCC 690114 alone and price it with "
+        "CPI-U CUUR0000SEEE03; BLS has not published the UCCs or the price "
+        "series",
+        "We count home internet as out-of-pocket spending in its own "
+        "component",
+        "we use the annual average of each interview's collection year",
         "We estimate imputation uncertainty from the implicate spread and "
         "sampling uncertainty",
     ):

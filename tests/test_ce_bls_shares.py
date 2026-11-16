@@ -835,7 +835,11 @@ def test_committed_receipt_comes_from_this_code():
         assert sha256(ROOT / source["path"]) == source["sha256"]
     assert receipt["inputs"]["internet_cpi"]["series_id"] == "CUUR0000SEEE03"
     for text in (
-        "the UCCs or the price series",
+        "We take home internet from CE UCC 690114 alone and price it with "
+        "CPI-U CUUR0000SEEE03; BLS has not published the UCCs or the price "
+        "series",
+        "We count home internet as out-of-pocket spending in its own "
+        "component",
         "We estimate imputation uncertainty from the implicate spread and "
         "sampling uncertainty",
     ):

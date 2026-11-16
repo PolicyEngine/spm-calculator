@@ -34,12 +34,13 @@ rebuild or the next render of the methods paper, as listed under Next.
 - With the package CPI, we estimate that home internet raises thresholds by
   1.5–2.4% for renters, 1.7–2.1% for owners with mortgages and 0.3–4.0% for
   owners without, and benefits then add 0.5–3.5%, leaving every tenure
-  2.2–7.1% above BLS's corrected thresholds. Home internet changes 2022–2025
-  growth by −0.54 points for renters, +0.01 for owners with mortgages and
-  +4.33 for owners without, and benefits by −0.27, −0.17 and −1.63.
-- With sampling and imputation uncertainty combined, each benefit change in
-  2022–2025 growth lies within one standard error of zero, and no benefit
-  change in one-year growth reaches two.
+  2.2–7.1% above BLS's corrected thresholds. We estimate that home internet
+  changes 2022–2025 growth by −0.54 points for renters, +0.01 for owners with
+  mortgages and +4.33 for owners without, and benefits by −0.27, −0.17 and
+  −1.63.
+- With sampling and imputation uncertainty combined, we estimate that each
+  benefit change in 2022–2025 growth lies within one standard error of zero
+  and that no benefit change in one-year growth reaches two.
 - BLS's methods page says BLS applies an annual-average FCSUti CPI-U to
   quarterly CE data. The pages under `docs/` now say so and no longer
   describe BLS's treatment as quarterly. The sealed module, `ce_forecast.py`,
@@ -155,7 +156,7 @@ would change the receipts' code hashes.
 
 ## Next
 
-- #61 (03d8491) made round 3's remaining P3s: the P-EBT limitation in
+- #61 (03d8491) fixed round 3's remaining P3s: the P-EBT limitation in
   `scripts/replicate_ce_inkind.py`, `df_rubin` as `None` when
   `(m - 1) / squared` overflows, and the ridge-penalized wording in
   `METHOD["held_fixed"]`.

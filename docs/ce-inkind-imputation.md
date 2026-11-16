@@ -250,8 +250,9 @@ without mortgages by 1.25%.
    the additive contributions sum to total growth.
 7. Every predictive mean matching pool holds min(k, n) distinct donors,
    the k nearest to the target by predicted value.
-8. In-band component means reproduce every threshold, with and without the
-   stage, and a mean over implicates reproduces the mean threshold.
+8. In-band component means reproduce every threshold with home internet,
+   with and without benefits, and a mean over implicates reproduces the mean
+   threshold.
 9. BLS's published shares, thresholds and tenure distribution satisfy
    both identities in the [comparison with BLS components](#comparison-with-bls-components)
    in every year from 2019 to 2025.
@@ -268,8 +269,8 @@ without mortgages by 1.25%.
     degrees of freedom never exceed the complete-data value.
 14. With every replicate weight set to the full-sample weight, each replicate
     reproduces the full-sample thresholds exactly.
-15. Band means reproduce every replicate's thresholds, with and without the
-    stage.
+15. Band means reproduce every replicate's thresholds with home internet,
+    with and without benefits.
 16. Replicate estimates repeat exactly.
 17. Zero home internet spending reproduces the package's out-of-pocket run
     exactly, and with no internet weight the composite price factor equals
@@ -284,11 +285,11 @@ without mortgages by 1.25%.
 tests on synthetic data and direct checks on BLS's workbook, and fails when the
 comparison's receipt no longer matches its code or a table below no longer
 matches the receipt. On every real CE window, the comparison script stops
-unless in-band component means reproduce every threshold, with and without
-benefits. It also deflates every component with BLS's FCSUti index and stops
-unless each unit's shelter, utilities and food fall by the amounts the
-definitions remove, to within a millionth of a dollar. Only the synthetic tests
-apply the definitions twice.
+unless in-band component means reproduce every threshold with home internet,
+with and without benefits. It also deflates every component with BLS's FCSUti
+index and stops unless each unit's shelter, utilities and food fall by the
+amounts the definitions remove, to within a millionth of a dollar. Only the
+synthetic tests apply the definitions twice.
 
 `tests/test_ce_inkind.py` checks invariants 1–7 on synthetic CE and CPS data:
 Hypothesis property tests cover invariants 1, 2, 3, 6 and 7 (the last
@@ -596,9 +597,9 @@ home internet and benefits:
 | 2024 | −0.96 → +1.19 → +4.06 | −1.99 → +0.20 → +3.23 | +1.29 → +5.18 → +5.60 |
 | 2025 | −2.16 → −0.14 → +2.99 | −1.29 → +0.78 → +3.38 | +1.15 → +4.60 → +6.57 |
 
-With home internet, out-of-pocket levels move by −0.30% to +0.77% against the
-package-CPI run, and imputed benefits carry every tenure above BLS in every
-year. The run shows how much the deflator matters, not how BLS deflates: it
+With home internet, we estimate that out-of-pocket levels move by −0.30% to
++0.77% against the package-CPI run and that imputed benefits carry every
+tenure above BLS in every year. The run shows how much the deflator matters, not how BLS deflates: it
 keeps the replication's annual price factors by collection year.
 
 ## Comparison with BLS components

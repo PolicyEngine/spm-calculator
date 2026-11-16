@@ -10,7 +10,8 @@ that choice and the recording shifts it carries; this script records them:
 - by target year's collection window, UCC 690116 (internet services away
   from home) as a percent of UCC 690114, among all FMLI units with children
   and in the replication's estimation sample; the script stops unless that
-  sample gives the replication receipt's thresholds without home internet;
+  sample gives the replication receipt's thresholds without home internet or
+  benefits;
 - our in-band home internet over BLS's, from
   ``ce_inkind_bls_components_2019_2025.json``, in the bands without and with
   benefits.

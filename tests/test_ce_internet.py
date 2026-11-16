@@ -27,6 +27,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+import subprocess
+import sys
 import zipfile
 from pathlib import Path
 
@@ -855,6 +857,36 @@ def test_ucc_tabulations_come_from_this_code_and_receipt():
             assert all(0 < share < 1 for share in record[key].values())
 
 
+def test_tabulation_fingerprints_every_module_it_loads():
+    """CODE_PATHS names every module under scripts/ and spm_calculator/
+    that the tabulation script loads, besides the package's lazy
+    ``__init__``."""
+    probe = (
+        "import json, sys\n"
+        f"sys.path.insert(0, {str(ROOT)!r})\n"
+        "import scripts.tabulate_ce_internet_uccs\n"
+        "print(json.dumps([getattr(m, '__file__', None) or ''"
+        " for m in list(sys.modules.values())]))"
+    )
+    loaded = json.loads(
+        subprocess.run(
+            [sys.executable, "-c", probe],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout
+    )
+    packages = (ROOT / "scripts", ROOT / "spm_calculator")
+    repo = {
+        Path(name).resolve().relative_to(ROOT).as_posix()
+        for name in loaded
+        if name
+        and any(Path(name).resolve().is_relative_to(p) for p in packages)
+    }
+    assert repo - {"spm_calculator/__init__.py"} == set(TABULATION_CODE_PATHS)
+
+
 def test_page_cites_the_ucc_tabulations():
     """The page's UCC 690116 ranges and band comparison come from the
     tabulation receipt."""
@@ -882,6 +914,44 @@ def test_page_cites_the_ucc_tabulations():
     assert (
         f"exceeds it by {min(later):.1f}–{max(later):.1f}% for 2020–2025, so "
         "adding 690116 would widen"
+    ) in page
+
+
+def test_page_cites_the_ucc_690114_recording_shifts():
+    """The page's UCC 690114 flag and reporting shares come from the
+    tabulation receipt."""
+    page = " ".join(
+        (ROOT / "docs/ce-inkind-imputation.md").read_text().split()
+    )
+    quarters = json.loads(TABULATIONS.read_text())["quarters"]
+
+    def flag(quarter, code):
+        shares = quarters[quarter]["ucc_690114_flag_share_of_records"]
+        return f"{100 * shares.get(code, 0):.0f}%"
+
+    def reporting(first, last):
+        order = sorted(quarters, key=lambda q: (int(q[:4]), int(q[-1])))
+        span = order[order.index(first) : order.index(last) + 1]
+        shares = [
+            100
+            * quarters[q]["ucc_690114_share_reporting"]["units_with_children"]
+            for q in span
+        ]
+        return f"{min(shares):.0f}–{max(shares):.0f}%"
+
+    assert (
+        f"rises from {flag('2014Q4', 'F')} in 2014Q4 to "
+        f"{flag('2015Q1', 'F')} in 2015Q1"
+    ) in page
+    assert (
+        f"rises from {reporting('2014Q2', '2015Q1')} in 2014Q2–2015Q1 "
+        f"to {reporting('2015Q2', '2017Q1')} from 2015Q2 through 2017Q1"
+    ) in page
+    assert "F" not in quarters["2017Q2"]["ucc_690114_flag_share_of_records"]
+    assert (
+        f"the share with flag F falls from {flag('2017Q1', 'F')} in 2017Q1 "
+        'to none, and the share with flag E, "allocated", rises from '
+        f"{flag('2017Q1', 'E')} to {flag('2017Q2', 'E')}"
     ) in page
 
 
@@ -918,6 +988,8 @@ def test_ucc_tabulation_quarter_matches_the_mtbi_records(year, quarter):
     )
     ucc = mtbi["UCC"].astype(str).str.strip()
     units = fmli.set_index("NEWID")
+    assert record["units"] == len(units)
+    assert record["ucc_690114_records"] == int((ucc == "690114").sum())
     weight = units["FINLWT21"].astype(float)
     groups = {
         "all_units": np.ones(len(units), bool),
@@ -980,7 +1052,8 @@ def test_ucc_tabulation_quarter_matches_the_mtbi_records(year, quarter):
 @pytest.mark.parametrize("target", range(2019, 2026))
 def test_ucc_tabulation_window_is_the_replication_sample(target):
     """Each window's sample gives the replication's thresholds without home
-    internet, and its tabulated percents follow from that sample."""
+    internet or benefits, and its tabulated percents follow from that
+    sample."""
     cache = ce_threshold._default_cache_dir()
     frames = []
     for year, quarter in bls_quarter_window(target):
