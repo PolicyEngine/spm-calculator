@@ -2,33 +2,35 @@
 
 ## State
 
-Draft PR [#61](https://github.com/PolicyEngine/spm-calculator/pull/61) on
-`max/ce-inkind-internet-20261114`, stacked on #60. The branch adds home
-internet spending to the in-kind runs. Review round 3 approved it with
-minor findings only. We made round 2's doc and test fixes, and round 3's
-fixes to the receipt-keys note, the UCC 690114 recording shifts, the list of
-files with the old CPI wording, this file's deferral notes and the tests. The
-rest wait for the next receipt regeneration and its doc pass, the next
-forecast rebuild or the next render of the methods paper, as listed under
-Next. The PR moves to `main` once #57 and #60 merge.
+PR [#61](https://github.com/PolicyEngine/spm-calculator/pull/61) on
+`max/ce-inkind-internet-20261114`, which merges `main` at #60's squash
+(af53e7c) and targets `main`. The branch adds home internet spending to the
+in-kind runs. Review round 3 approved it with minor findings only. We made
+rounds 2 and 3's fixes, including those to files the receipts fingerprint,
+and regenerated the in-kind receipts. The rest wait for the next forecast
+rebuild or the next render of the methods paper, as listed under Next.
 
 ## Done
 
 - `ce_internet.py` adds each unit's three-month MTBI cost for UCC 690114,
   times four, to FCSUti (not SU) and prices it with CPI-U CUUR0000SEEE03,
   which `scripts/fetch_internet_cpi.py` pins with BLS's API responses. UCC
-  690116 stays out because BLS counts home internet; it would add 0.4–1.2% to
-  690114 among units with children. `ce_threshold.py`, `fcsuti_cpi.py`,
-  `cpi_annual.json` and the September 8 receipt stay byte-identical.
+  690116 stays out because BLS counts home internet; among units with
+  children, it would add 0.45–1.24% to 690114 in each target year's window.
+  `ce_threshold.py`, `fcsuti_cpi.py`, `cpi_annual.json` and the September 8
+  receipt stay byte-identical.
 - We count home internet as out-of-pocket spending in its own component, and
   no imputed total, share or contribution includes it. The comparison no
   longer nets BLS's internet against our shelter: each side carries its own.
-- We regenerated the replication and components receipts at 8b0ddac and the
-  replicate receipt at 9235a51. The replication and components receipts record
-  thresholds by tenure and year without home internet or benefits (which the
-  script checks against the September 8 replication exactly), with home
-  internet, and with home internet and benefits; the replicate receipt records
-  the last two.
+- We regenerated the replication receipt at 03d8491 and the components and
+  replicate receipts at 3b4f421, with rounds 2 and 3's fixes to the files they
+  fingerprint; no computed value moved by more than \$7.3e-12. The replication
+  and components receipts record thresholds by tenure and year without home
+  internet or benefits (which the script checks against the September 8
+  replication exactly), with home internet, and with home internet and
+  benefits; the replicate receipt, now at schema version 3, records the last
+  two. `scripts/tabulate_ce_internet_uccs.py` records the CE UCC figures the
+  page cites in `ce_internet_ucc_tabulations_2019_2025.json`.
 - With the package CPI, we estimate that home internet raises thresholds by
   1.5–2.4% for renters, 1.7–2.1% for owners with mortgages and 0.3–4.0% for
   owners without, and benefits then add 0.5–3.5%, leaving every tenure
@@ -62,47 +64,6 @@ Next. The PR moves to `main` once #57 and #60 merge.
 - Once spm-threshold-paper #12, which rewords "BLS adjusts them quarterly" in
   `paper/index.qmd`, merges, we render the methods paper
   (`web/public/paper/web/index.html` and `index.pdf`) again.
-- At the next receipt regeneration, we land #60's pending fix to its "every
-  published share" claim, which changes `ce_bls_shares.py` and
-  `scripts/compare_ce_inkind_bls_shares.py`, and make these changes from this
-  PR's reviews, which also change files the receipts fingerprint:
-  - align the receipts' home internet limitation with the page ("the UCCs or
-    the price series"), and drop "but not sampling uncertainty" from their
-    uncertainty limitation, since the replicate receipt now estimates it;
-  - reword `ce_internet.py`'s 690116 note to "comes within 1% of";
-  - in `scripts/compare_ce_inkind_bls_shares.py`, note in `internet_record`'s
-    docstring that, under Other separate, each internet term takes the
-    tenure's broadband difference from the band mean;
-  - have `expenditures_with_internet` raise a clear `ValueError` when its CPI
-    series are `None` or lack CUUR0000SEEE03;
-  - have `unit_components` in `ce_bls_shares.py` handle or reject a frame that
-    carries `internet_quarterly`, and correct its docstring;
-  - rename the replicate receipt's
-    `checks.full_sample.out_of_pocket_matches_replication_receipt` for the run
-    with home internet;
-  - add `spm_calculator/published_thresholds.py`, which
-    `scripts/replicate_ce_inkind.py` imports, to that script's `CODE_PATHS`;
-  - have a script record the 690116 shares, the 690114 reporting shares and
-    the cost-flag shares the page cites, and give the 690116 range for the
-    replication's estimation sample beside the 2020–2025 comparison with
-    BLS's home internet.
-- In that regeneration's doc pass, we make round 3's remaining page edits:
-  - in `docs/ce-inkind-imputation.md`, named runs instead of "the stage",
-    "we estimate" on our benefit figures, and actors and real verbs for "Each
-    step's effect then reads off directly", "Ours is", "Home internet is" and
-    "The runs use";
-  - "move their in-band shelter and utilities" for both "move their mean";
-    "Without home internet or benefits" to open the FCSUti deflator bullet;
-    "the package CPI" without the "rule the composite already applies" gloss;
-    and "in the runs with home internet" for "in the runs on this page";
-  - cut the "within 3.2%" sentence, which repeats 0.99–1.03; write "The four
-    renter figures with imputed terms removed" before 0.57–0.64; and write
-    "of our band" in the standard-error paragraph's "less than a tenth";
-  - "the UCCs or the price series" in the 690116 paragraph, to match the
-    limitations;
-  - "exclude" for "still exclude" in `docs/methodology.md` and
-    `docs/bls-2026-correction.md`;
-  - notes on "a few dollars" and on the 11-month 2025 SEEE03 average.
 - The four questions to BLS and Census staff from #60 stay open.
 
 ---
@@ -112,8 +73,8 @@ Next. The PR moves to `main` once #57 and #60 merge.
 ## State
 
 PR [#60](https://github.com/PolicyEngine/spm-calculator/pull/60) on
-`max/ce-inkind-bls-alignment-20261114`, which merges `main` at #57's squash
-(bef772d) and targets `main`. The branch starts broadband with reference year
+`max/ce-inkind-bls-alignment-20261114`, squash-merged to `main` as af53e7c
+on November 16. The branch starts broadband with reference year
 2022, adds no WIC from reference year 2020, the year of the statutory EBT
 deadline, and adds a second accounting to the BLS-components decomposition.
 The independent review's first round raised one P1, one P2 and several P3s.

@@ -25,6 +25,7 @@ Invariants:
 
 from __future__ import annotations
 
+import hashlib
 import json
 import zipfile
 from pathlib import Path
@@ -35,6 +36,8 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
+from scripts.tabulate_ce_internet_uccs import RECEIPT as TABULATIONS
+from scripts.tabulate_ce_internet_uccs import home_internet_against_bls
 from spm_calculator import ce_threshold
 from spm_calculator.ce_bls_shares import (
     ACCOUNTINGS,
@@ -72,6 +75,7 @@ from spm_calculator.ce_replicates import (
     replicate_estimates,
     reweight,
 )
+from spm_calculator.ce_threshold import bls_quarter_window
 from spm_calculator.fcsuti_cpi import (
     CPI_SERIES,
     FCSUTI_WEIGHTS,
@@ -788,3 +792,46 @@ def test_components_receipt_keeps_internet_out_of_imputed_totals():
                     assert gap["imputed"] == pytest.approx(
                         sum(gap["terms"][c] for c in IMPUTED), rel=1e-12
                     )
+
+
+def test_ucc_tabulations_come_from_this_code_and_receipt():
+    """The UCC tabulations match the code here and the components receipt,
+    and support the module's reason for leaving UCC 690116 out."""
+
+    def sha256(path):
+        return hashlib.sha256(path.read_bytes()).hexdigest()
+
+    receipt = json.loads(TABULATIONS.read_text())
+    for name, digest in receipt["code_sha256"].items():
+        assert sha256(ROOT / name) == digest, f"rerun the tabulation: {name}"
+    for name in ("cpi_input", "components_receipt"):
+        record = receipt["inputs"][name]
+        assert sha256(ROOT / record["path"]) == record["sha256"], name
+    components = json.loads(COMPONENTS_RECEIPT.read_text())
+    ratios = home_internet_against_bls(components)
+    assert receipt["home_internet_against_bls"] == ratios
+    without = ratios["package"]["without_benefits"]
+    assert abs(without["2019"] - 1) < 1e-3
+    assert all(without[str(t)] > 1 for t in range(2020, 2026))
+    windows = receipt["windows"]
+    assert sorted(windows) == [str(t) for t in range(2019, 2026)]
+    quarters = set()
+    for target, window in windows.items():
+        span = bls_quarter_window(int(target))
+        quarters |= {f"{y}Q{q}" for y, q in span}
+        assert window["first_quarter"] == "{}Q{}".format(*span[0])
+        assert window["last_quarter"] == "{}Q{}".format(*span[-1])
+        for percent in window["ucc_690116_percent_of_690114"].values():
+            assert 0 < percent < 5
+    assert set(receipt["quarters"]) == quarters
+    for record in receipt["quarters"].values():
+        for key in (
+            "ucc_690114_flag_share_of_records",
+            "ucc_690114_flag_share_weighted",
+        ):
+            assert sum(record[key].values()) == pytest.approx(1, abs=1e-12)
+        for key in (
+            "ucc_690114_share_reporting",
+            "ucc_270310_share_reporting",
+        ):
+            assert all(0 < share < 1 for share in record[key].values())

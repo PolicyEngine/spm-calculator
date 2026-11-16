@@ -140,7 +140,7 @@ so the estimator omits home internet, and it omits BLS in-kind benefit
 imputations by default. The [in-kind research runs](ce-inkind-imputation.md)
 add both: home internet from the MTBI file (UCC 690114, priced with CPI-U
 series CUUR0000SEEE03) and imputed benefits from an optional in-kind stage.
-The canonical forecast, nowcast and projections still exclude home internet
+The canonical forecast, nowcast and projections exclude home internet
 until we next rebuild the forecast.
 
 The pipeline annualizes each quarterly recall window by four, converts to
