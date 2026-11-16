@@ -1,3 +1,60 @@
+# CE in-kind school lunch wording — November 16, 2026
+
+## State
+
+Branch `max/ce-inkind-pebt-wording-20261116` from `main` at #61's squash
+(2321f2f). It cites the Census sources behind the school lunch P-EBT
+limitation in `docs/ce-inkind-imputation.md` and
+`scripts/replicate_ce_inkind.py`, and regenerates the in-kind receipts, which
+fingerprint the script.
+
+## Done
+
+- The P-EBT limitation now says that Census accounts for P-EBT in its 2020 and
+  2021 school lunch values and, for 2022, counts summer P-EBT, which its
+  technical documentation calls summer EBT, but not school-year P-EBT. It
+  cites the technical documentation (last updated September 15, 2026) and
+  Shrider (2023), the working paper the documentation cites for the 2022
+  method. The caveat still covers both forms of P-EBT: states paid them on EBT
+  cards, and households may already include them in reported food spending.
+- The page no longer calls Census's universal-free-meal and summer EBT rules
+  "later": Census's 2020 and 2021 method already accounts for universal free
+  lunch.
+- The limitation before it, on paid lunches and P-EBT or summer EBT for
+  households without free or reduced-price lunch, keeps its wording; Shrider
+  (2023) gives respondents who report P-EBT but not SNAP the summer P-EBT
+  value whatever lunch they report.
+- `ce_threshold.py`, `fcsuti_cpi.py`, `cpi_annual.json`, the September 8
+  receipt and `ce_forecast.py` stay byte-identical.
+- The independent review (Subfleet, hard tier) checked the wording against
+  both Census documents and approved it with four P3 findings and none above.
+  We applied its PROGRESS.md and PR-body voice fixes.
+
+## Next
+
+- One batched follow-up at the next permitted update of
+  `spm_calculator/ce_inkind.py` takes the review's other three P3s. Each
+  changes the pinned module, a fingerprinted script or a receipt, so making
+  it now would force another regeneration and paper repin:
+  - The module docstring says school lunch values "follow the Census method
+    that BLS says it uses" without naming years. The review reads BLS as
+    using the traditional method before and after the COVID-19 period, while
+    Census keeps its fall 2022 method from 2023 on; check both sources before
+    rewording.
+  - Split the P-EBT limitation into one thought per sentence, identically on
+    the page and in `scripts/replicate_ce_inkind.py`. The review proposes:
+    "Census accounts for P-EBT in its school lunch values for reference years
+    2020 and 2021. For 2022, it counts summer P-EBT (summer EBT in its
+    technical documentation) and excludes school-year P-EBT. States paid both
+    forms on EBT cards."
+  - Write "summer EBT", as the page does, in the limitation before it in
+    `scripts/replicate_ce_inkind.py` (the replication receipt's
+    `limitations[4]`) and in `ce_inkind.py`.
+- We still need to rebuild the canonical forecast and render the methods
+  paper, as listed under November 14.
+
+---
+
 # CE in-kind replication with home internet — November 14, 2026
 
 ## State

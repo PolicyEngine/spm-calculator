@@ -79,8 +79,8 @@ these models omit. A CE unit receives SNAP when it reports an amount
 (`JFS_AMT`), CE completes one (`JFS_AMTM`) or it reports months of
 receipt (`FS_MTHI`). Census's school lunch values carry its COVID-era
 methods for virtual schooling and P-EBT (Shrider 2021, 2022, 2023), which
-BLS also says it follows, and its later universal-free-meal and Summer
-EBT rules.
+BLS also says it follows, and its universal-free-meal and summer EBT
+rules.
 
 Predictive mean matching fits a weighted regression of log amount on
 CPS recipients, then gives each imputed CE recipient the amount of one
@@ -1121,14 +1121,18 @@ implicates' spread supplies 46–55% of each rise's variance.
   documentation).
 - The imputation assigns school lunch only to households it imputes as
   receiving free, reduced-price or universal-free lunch. Census also
-  values paid lunches and, in some years, P-EBT or Summer EBT for
+  values paid lunches and, in some years, P-EBT or summer EBT for
   households without free or reduced-price lunch.
-- Census accounts for P-EBT in its school lunch values for reference years
-  2020 and 2021, and for 2022 it adds summer EBT benefits, which states paid
-  that summer as P-EBT. States paid both on EBT cards. BLS says it
-  follows Census's COVID-era methods, so the stage does too, but by BLS's
-  reasoning for leaving out SNAP, reported food spending may already include
-  those benefits.
+- Census accounts for P-EBT in its school lunch values for reference years 2020
+  and 2021, and for 2022 it counts summer P-EBT, which its technical
+  documentation calls summer EBT, but not school-year P-EBT; states paid both
+  on EBT cards ([Census SPM technical
+  documentation](https://www2.census.gov/programs-surveys/supplemental-poverty-measure/datasets/spm/spm_techdoc.pdf),
+  last updated September 15, 2026; [Shrider
+  2023](https://www.census.gov/content/dam/Census/library/working-papers/2023/demo/SEHSD-WP-2023-20.pdf)).
+  BLS says it follows Census's COVID-era methods, so the stage does too, but by
+  BLS's reasoning for leaving out SNAP, reported food spending may already
+  include those benefits.
 - WIC uses USDA's national fiscal-year average food cost; Census has used
   state averages since its revised 2019 estimates.
 - All participation models share one covariate set across programs and
