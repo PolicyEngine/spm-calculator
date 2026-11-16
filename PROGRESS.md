@@ -3,27 +3,35 @@
 ## State
 
 Branch `max/ce-inkind-pebt-wording-20261116` from `main` at #61's squash
-(2321f2f). It rewords two school lunch limitations in
-`docs/ce-inkind-imputation.md` and `scripts/replicate_ce_inkind.py` to what
-Census's SPM technical documentation (last updated September 15, 2026)
-says, and regenerates the in-kind receipts, which fingerprint the script.
+(2321f2f). It cites the Census sources behind the school lunch P-EBT
+limitation in `docs/ce-inkind-imputation.md` and
+`scripts/replicate_ce_inkind.py`, and regenerates the in-kind receipts, which
+fingerprint the script.
 
 ## Done
 
-- Census values summer EBT benefits only for respondents who report receiving
-  EBT but not SNAP, and it accounts for P-EBT in its 2020 and 2021 school
-  lunch values. The limitations now say so. They no longer say that for 2022
-  Census adds summer EBT benefits that states paid as P-EBT, or that Census
-  values P-EBT for households without free or reduced-price lunch; the
-  technical documentation supports neither.
+- The P-EBT limitation now says that Census accounts for P-EBT in its 2020 and
+  2021 school lunch values and, for 2022, counts summer P-EBT, which its
+  technical documentation calls summer EBT, but not school-year P-EBT. It
+  cites the technical documentation (last updated September 15, 2026) and
+  Shrider (2023), the working paper the documentation cites for the 2022
+  method. The caveat that reported food spending may already include benefits
+  paid on EBT cards still covers both.
 - The page no longer calls Census's universal-free-meal and summer EBT rules
   "later": Census's 2020 and 2021 method already accounts for universal free
-  lunch, and it counts summer EBT as in previous years.
+  lunch.
+- The limitation before it, on paid lunches and P-EBT or summer EBT for
+  households without free or reduced-price lunch, keeps its wording; Shrider
+  (2023) gives respondents who report P-EBT but not SNAP the summer P-EBT
+  value whatever lunch they report.
 - `ce_threshold.py`, `fcsuti_cpi.py`, `cpi_annual.json`, the September 8
   receipt and `ce_forecast.py` stay byte-identical.
 
 ## Next
 
+- `spm_calculator/ce_inkind.py` and the replication receipt still write
+  "Summer EBT" where the page writes "summer EBT"; we change them when a
+  change to `ce_inkind.py` next repins the methods paper.
 - The canonical forecast rebuild and the methods paper render listed under
   November 14 still wait.
 

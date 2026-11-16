@@ -396,10 +396,8 @@ def test_committed_receipt_comes_from_this_code():
     assert receipt["home_internet"]["cpi_series"] == "CUUR0000SEEE03"
     limitations = receipt["limitations"]
     for text in (
-        "Census also values paid lunches and, for respondents who report "
-        "receiving EBT but not SNAP, summer EBT benefits",
-        "Census accounts for P-EBT in its school lunch values for reference "
-        "years 2020 and 2021, and states paid P-EBT on EBT cards",
+        "for 2022 it counts summer P-EBT, which its technical documentation "
+        "calls summer EBT, but not school-year P-EBT",
         "We take home internet from CE UCC 690114 alone and price it with "
         "CPI-U CUUR0000SEEE03; BLS has not published the UCCs or the price "
         "series",
