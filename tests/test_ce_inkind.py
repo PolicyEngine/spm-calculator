@@ -61,6 +61,7 @@ from spm_calculator.ce_threshold import (
     replicate_thresholds,
 )
 from spm_calculator.fcsuti_cpi import CPI_SERIES
+from spm_calculator.published_thresholds import get_published_thresholds
 
 ROOT = Path(ce_inkind.__file__).parent.parent
 DATA = Path(ce_inkind.__file__).parent / "data" / "inkind"
@@ -407,12 +408,30 @@ def test_committed_receipt_comes_from_this_code():
             )
 
 
+def test_receipt_published_fields_follow_the_module():
+    """The receipt's published thresholds match the package's, and each gap
+    follows from them."""
+    receipt = json.loads(RECEIPT.read_text())
+    for year, result in receipt["results"].items():
+        published = get_published_thresholds(int(year))
+        assert result["published"] == published, year
+        for record in (result, result["fcsuti_deflated"]):
+            for stage, key in (
+                ("without_in_kind", "gap_percent_without"),
+                ("with_in_kind", "gap_percent_with"),
+            ):
+                for tenure, value in published.items():
+                    assert record[key][tenure] == pytest.approx(
+                        100 * (record[stage][tenure] / value - 1), rel=1e-12
+                    )
+
+
 def test_receipt_wic_sensitivity_follows_the_main_run():
     """The WIC sensitivity gives each state its own statewide EBT date in
-    every reference year. The 2019 and 2020 windows end with 2020Q1
-    interviews, whose reference year is 2019, so their thresholds match the
-    main run's; later windows hold more WIC, and each change follows from
-    the recorded thresholds."""
+    every reference year. The 2019 and 2020 windows end with 2019Q1 and
+    2020Q1 interviews, whose reference years are 2018 and 2019, so their
+    thresholds match the main run's; later windows hold more WIC, and each
+    change follows from the recorded thresholds."""
     receipt = json.loads(RECEIPT.read_text())
     block = receipt["wic_ebt_by_state_sensitivity"]
     assert block["wic_ebt_all_states_from_reference_year"] is None
@@ -583,8 +602,9 @@ def test_universes(imputed):
 
 
 def test_reference_year_defaults():
-    """Broadband starts with 2022 data, as BLS's does; WIC stops with 2020
-    data, the year of the statutory EBT deadline."""
+    """Broadband starts with reference year 2022, the first year of the
+    broadband data behind BLS's 2023-2025 thresholds; from reference year
+    2020, the year of the statutory EBT deadline, no unit receives WIC."""
     config = InKindConfig()
     assert config.broadband_first_reference_year == 2022
     assert config.wic_ebt_all_states_from_reference_year == 2020
@@ -652,6 +672,28 @@ def test_broadband_start_changes_only_earlier_broadband():
     pd.testing.assert_frame_equal(
         ours.drop(columns="broadband"), earlier.drop(columns="broadband")
     )
+
+
+@pytest.mark.parametrize("first_year", [2022, 2023])
+def test_broadband_diagnostics_name_the_first_reference_year(first_year):
+    """Every reference year before broadband's first records the configured
+    first year, since EBB already paid subsidies in 2021."""
+    years = (2020, 2021, 2022, 2023)
+    units = ce_units(23, years, n=300)
+    donors = cps_donors(23, years, n=800)
+    diagnostics = impute_in_kind(
+        units,
+        donors,
+        InKindConfig(implicates=1, broadband_first_reference_year=first_year),
+    ).diagnostics["broadband"]
+    for year in years:
+        if year < first_year:
+            assert diagnostics[str(year)] == {
+                "status": "before_first_reference_year",
+                "first_reference_year": first_year,
+            }
+        else:
+            assert "status" not in diagnostics[str(year)]
 
 
 def test_wic_cutoff_changes_only_later_wic():

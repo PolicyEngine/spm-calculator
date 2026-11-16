@@ -34,8 +34,10 @@ A threshold's terms can treat ``0.2 F`` in two ways (:data:`ACCOUNTINGS`).
 a component's term is what the threshold would lose without it, with the
 band held fixed. ``"other_separate"`` keeps ``0.2 F`` as an ``"other"`` term
 of its own, as BLS's workbook does in its "Other Share" row, so each
-component's term is its share of the threshold as BLS publishes it. Both
-sum to the threshold.
+component's term is its share of the threshold as BLS publishes it, except
+home internet, whose term matches the tenure-invariant internet row less
+broadband.
+Both sum to the threshold.
 
 The internet term needs care. Through 2024 the workbook's "OOP Internet"
 row holds equal dollars across tenures and "Total Internet Share" does not;
@@ -59,7 +61,8 @@ Invariants, tested in ``tests/test_ce_bls_shares.py``:
 - under either accounting, a threshold's terms sum to the threshold, and
   :func:`level_gap`'s terms sum to the difference between two thresholds;
 - under ``"other_separate"``, BLS's terms over its thresholds reproduce its
-  published shares (:func:`separate_share_errors`);
+  published shares, with home internet taken as the tenure-invariant internet
+  row less broadband (:func:`separate_share_errors`);
 - imputed and non-imputed shares of growth beyond inflation sum to one;
 - :func:`apply_bls_paper_definition` lowers each unit's FCSUti by exactly
   the amounts it removes, and a second application changes nothing.
@@ -486,8 +489,9 @@ def bls_band_components(
         ValueError: If components every tenure shares differ by more than
             ``tolerance`` dollars across tenures, either identity in this
             module's docstring misses by more than that, or the
-            ``"other_separate"`` terms miss a published share by more than
-            that many dollars of in-band value.
+            ``"other_separate"`` terms miss a published share, with home
+            internet taken as the tenure-invariant internet row less
+            broadband, by more than that many dollars of in-band value.
     """
 
     def dollars(tenure: str, row: str) -> float:

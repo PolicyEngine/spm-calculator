@@ -31,6 +31,7 @@ import pytest
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
+import spm_calculator.ce_replicates as ce_replicates
 from scripts import render_ce_replicate_tables as render
 from spm_calculator.ce_bls_shares import band_components
 from spm_calculator.ce_inkind_stage import (
@@ -46,6 +47,7 @@ from spm_calculator.ce_replicates import (
     REPLICATES,
     STRATA,
     Combined,
+    _largest_identity_gap,
     check_standard_brr,
     combine_implicates,
     combine_replicated,
@@ -55,6 +57,7 @@ from spm_calculator.ce_replicates import (
     reweight,
 )
 from spm_calculator.ce_threshold import TENURES
+from spm_calculator.fcsuti_cpi import CPI_SERIES
 from spm_calculator.published_thresholds import (
     get_published_thresholds,
     get_standard_errors,
@@ -92,11 +95,30 @@ variances = st.floats(0, 1e8, allow_nan=False, allow_infinity=False)
 
 
 def half_sample_weights(frame: pd.DataFrame, seed: int, replicates: int):
-    """Random half samples at twice the full-sample weight, BRR style."""
+    """Random half samples at about twice the full-sample weight.
+
+    Each kept unit's factor varies, as the CE's adjusted replicate weights
+    do, so a stage that read ``FINLWT21`` instead of the replicate weight
+    would change the result.
+    """
     rng = np.random.default_rng(seed)
     full = frame["FINLWT21"].to_numpy(dtype=float)
     halves = rng.integers(0, 2, (len(frame), replicates)).astype(bool)
-    return np.where(halves, 2 * full[:, None], 0.0)
+    factors = rng.uniform(1.5, 2.5, (len(frame), replicates))
+    return np.where(halves, factors * full[:, None], 0.0)
+
+
+def trending_cpi():
+    """CPI series that rise at different rates, so component weights matter."""
+    return {
+        sid: pd.Series(
+            {
+                year: 100.0 * (1 + 0.01 * (k + 1)) ** (year - 2014)
+                for year in range(2014, 2027)
+            }
+        )
+        for k, sid in enumerate(CPI_SERIES.values())
+    }
 
 
 def in_kind_tables(frame: pd.DataFrame, seed: int, implicates: int = 2):
@@ -402,8 +424,9 @@ def test_replicates_match_the_public_stage_functions(seed):
     frame = ce_frame(seed, n=120)
     tables = in_kind_tables(frame, seed)
     weights = half_sample_weights(frame, seed, 3)
+    cpi = trending_cpi()
     estimates = replicate_estimates(
-        frame, 2024, tables, weights=weights, cpi_series=flat_cpi()
+        frame, 2024, tables, weights=weights, cpi_series=cpi
     )
     assert estimates.replicates == (1, 2, 3)
     assert estimates.identity_gap <= IDENTITY_TOLERANCE
@@ -413,7 +436,7 @@ def test_replicates_match_the_public_stage_functions(seed):
             if position == 0
             else reweight(frame, weights[:, position - 1])
         )
-        run = prepare_out_of_pocket(sample, 2024, cpi_series=flat_cpi())
+        run = prepare_out_of_pocket(sample, 2024, cpi_series=cpi)
         assert estimates.without[position] == run.result["thresholds"]
         for implicate, table in enumerate(tables):
             staged = replicate_with_in_kind(run, table)["thresholds"]
@@ -425,6 +448,51 @@ def test_replicates_match_the_public_stage_functions(seed):
                 assert band.threshold(tenure) == pytest.approx(
                     staged[tenure], rel=IDENTITY_TOLERANCE
                 )
+
+
+def test_identity_guard_rejects_band_means_off_the_thresholds():
+    frame = ce_frame(13, n=120)
+    run = prepare_out_of_pocket(frame, 2024, cpi_series=flat_cpi())
+    band = band_components(run.expenditures)
+    thresholds = run.result["thresholds"]
+    assert _largest_identity_gap(band, thresholds) <= IDENTITY_TOLERANCE
+    for tenure in TENURES:
+        shifted = {**thresholds, tenure: thresholds[tenure] * (1 + 1e-6)}
+        with pytest.raises(RuntimeError, match=tenure):
+            _largest_identity_gap(band, shifted)
+
+
+@pytest.mark.parametrize("shifted_call", [1, 2])
+def test_replicate_estimates_guard_both_runs(monkeypatch, shifted_call):
+    """Thresholds off the band means raise, without the stage and with it.
+
+    The full sample's first threshold call runs without the stage and its
+    second with it.
+    """
+    estimate = ce_replicates.estimate_thresholds
+    calls = []
+
+    def off_the_band(expenditures, median_share):
+        thresholds, diagnostics = estimate(expenditures, median_share)
+        calls.append(len(calls) + 1)
+        if calls[-1] == shifted_call:
+            thresholds = {
+                **thresholds,
+                **{t: thresholds[t] * (1 + 1e-6) for t in TENURES},
+            }
+        return thresholds, diagnostics
+
+    monkeypatch.setattr(ce_replicates, "estimate_thresholds", off_the_band)
+    frame = ce_frame(13, n=120)
+    with pytest.raises(RuntimeError, match="Band means give"):
+        replicate_estimates(
+            frame,
+            2024,
+            in_kind_tables(frame, 13, implicates=1),
+            weights=half_sample_weights(frame, 13, 1),
+            cpi_series=flat_cpi(),
+        )
+    assert calls[-1] == shifted_call
 
 
 def test_replicate_estimates_are_deterministic():

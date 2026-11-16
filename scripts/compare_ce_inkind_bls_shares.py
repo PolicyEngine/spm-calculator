@@ -129,7 +129,7 @@ REPLICATION_TOLERANCE = 1e-12
 #: What each accounting key in the receipt means.
 ACCOUNTING_NOTES = {
     "other_spread": "Each term carries its component's part of the 1.2 multiplier, spreading 0.2 FCSUti in proportion to size, so a term gives what the threshold would lose without the component, with the band held fixed",
-    "other_separate": "0.2 FCSUti forms its own 'other' term, as in the 'Other Share' row of BLS's shares workbook, and broadband takes each tenure's own mean, so each term over the threshold gives the component's share as BLS publishes it",
+    "other_separate": "0.2 FCSUti forms its own 'other' term, as in the 'Other Share' row of BLS's shares workbook, and broadband takes each tenure's own mean, so each term over the threshold gives the component's share as BLS publishes it, except home internet, which matches the tenure-invariant internet row less broadband",
 }
 #: Run name -> (deflator, BLS's written definitions applied).
 RUNS = {

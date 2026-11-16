@@ -12,7 +12,8 @@ Invariants (stated in the PR and docs/ce-inkind-imputation.md):
 5. Under either accounting, a threshold's terms sum to the threshold and
    ``level_gap`` terms sum to the difference between two thresholds. Under
    ``"other_separate"``, BLS's terms over its thresholds reproduce its
-   published shares.
+   published shares, with home internet taken as the tenure-invariant
+   internet row less broadband.
 6. Under either accounting, imputed and non-imputed shares of growth beyond
    inflation sum to one.
 7. ``apply_bls_paper_definition`` lowers each unit's FCSUti by exactly the
@@ -460,7 +461,8 @@ def test_bls_components_reject_shares_that_differ_across_tenures():
 @pytest.mark.parametrize("year", YEARS)
 def test_separate_terms_reproduce_published_shares(year):
     """Invariant 5: BLS's ``"other_separate"`` terms over its thresholds
-    give the shares it publishes, including the "Other Share" row."""
+    give the shares it publishes, including the "Other Share" row, with home
+    internet taken as the tenure-invariant internet row less broadband."""
     _, checks = bls_band_components(
         read_threshold_shares()[year],
         get_published_thresholds(year),
@@ -495,6 +497,27 @@ def test_separate_check_catches_pooled_broadband():
     # below is 10,000 times the test above's.
     assert errors["broadband"] > 1e-5
     assert errors["internet"] > 1e-5
+
+
+def test_band_components_refuse_separate_terms_that_miss(monkeypatch):
+    """A dollar added to one Other-separate term makes bls_band_components
+    raise, so the share check guards the separate branch itself."""
+    real = BandComponents.threshold_terms
+
+    def a_dollar_off(self, tenure, accounting="other_spread"):
+        terms = real(self, tenure, accounting)
+        if accounting == "other_separate":
+            terms["broadband"] += 1.0
+        return terms
+
+    monkeypatch.setattr(BandComponents, "threshold_terms", a_dollar_off)
+    year = 2023
+    with pytest.raises(ValueError, match="other_separate terms miss"):
+        bls_band_components(
+            read_threshold_shares()[year],
+            get_published_thresholds(year),
+            get_tenure_shares(year),
+        )
 
 
 def test_threshold_terms_reject_an_unknown_accounting():
@@ -938,6 +961,10 @@ def test_receipt_growth_follows_from_its_bands(run):
             growth_without_imputed(a, b, tenure)
         )
         for accounting in ACCOUNTINGS:
+            for year, band in (("2022", a), ("2025", b)):
+                assert record[accounting]["imputed_term_dollars"][
+                    year
+                ] == pytest.approx(band.imputed_term(tenure, accounting))
             assert record[accounting][
                 "imputed_share_of_growth_beyond_cpi_u_percent"
             ] == pytest.approx(
@@ -968,9 +995,10 @@ def test_receipt_bls_growth_follows_from_its_bands():
         )
         for accounting in ACCOUNTINGS:
             block = record[accounting]
-            assert block["imputed_term_dollars"]["2025"] == pytest.approx(
-                b.imputed_term(tenure, accounting)
-            )
+            for year, band in (("2022", a), ("2025", b)):
+                assert block["imputed_term_dollars"][year] == pytest.approx(
+                    band.imputed_term(tenure, accounting)
+                )
             assert block[
                 "imputed_share_of_growth_beyond_cpi_u_percent"
             ] == pytest.approx(

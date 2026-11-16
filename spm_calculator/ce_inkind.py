@@ -19,7 +19,9 @@ stage as an explicit, optional step:
     Participation from logistic regressions fit on pooled CPS ASEC
     households; amounts by predictive mean matching on the values CPS
     households report (LIHEAP) or Census assigns from FCC rules (EBB/ACP).
-    Broadband starts with reference year 2022, as BLS's does.
+    Broadband starts with reference year 2022, the first year of the
+    broadband data behind BLS's 2023-2025 thresholds (footnote 3 of its
+    thresholds workbook).
 ``nslp``
     Participation from a logistic regression on CPS households with a
     member aged 5-18 (the CE universe applies only that age rule). Values
@@ -1559,7 +1561,8 @@ def impute_in_kind(
                 continue
             if first_year is not None and reference_year < first_year:
                 diagnostics[component][str(reference_year)] = {
-                    "status": "program_not_in_effect"
+                    "status": "before_first_reference_year",
+                    "first_reference_year": first_year,
                 }
                 continue
             amount = donors[amount_column].fillna(0).to_numpy(dtype=float)

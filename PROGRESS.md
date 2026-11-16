@@ -111,17 +111,27 @@ Next. The PR moves to `main` once #57 and #60 merge.
 
 ## State
 
-Draft PR [#60](https://github.com/PolicyEngine/spm-calculator/pull/60) on
-`max/ce-inkind-bls-alignment-20261114`, stacked on #57. The branch starts
-broadband with BLS's first year, adds no WIC from reference year 2020, the
-year of the statutory EBT deadline, and adds a second accounting to the
-BLS-components decomposition. An independent
-review comes next, and the PR moves to `main` once #57 merges.
+PR [#60](https://github.com/PolicyEngine/spm-calculator/pull/60) on
+`max/ce-inkind-bls-alignment-20261114`, which merges `main` at #57's squash
+(bef772d) and targets `main`. The branch starts broadband with reference year
+2022, adds no WIC from reference year 2020, the year of the statutory EBT
+deadline, and adds a second accounting to the BLS-components decomposition.
+The independent review's first round raised one P1, one P2 and several P3s.
+The P1 sits in the branch's history, not at head: a test docstring in
+4dd4353 and a clause in c1ce29e's message. We fixed the P2 and P3s, and a
+squash merge with a hand-written message keeps both off `main`. The second
+round, on 3c43971, found no P0 or P1 and raised two P2s and two P3s. c60d0e0
+records broadband's first reference year in the diagnostics of earlier years
+and checks the BLS block's stored 2022 dollars, 3b1c6c3 regenerates the
+receipts, and 408fce0 and the commit after it give our modeled figures on the
+page "we estimate". The commit after it also tests every run's stored
+imputed-term dollars and the replication receipt's published thresholds.
 
 ## Done
 
-- `ce_inkind.py` imputes broadband subsidies from reference year 2022, as BLS
-  does (footnote 3 of its thresholds workbook). From reference year 2020 it
+- `ce_inkind.py` imputes broadband subsidies from reference year 2022, the
+  first year of the broadband data behind BLS's 2023–2025 thresholds
+  (footnote 3 of its thresholds workbook). From reference year 2020 it
   adds no WIC in any state, even where the middle of a unit's reference
   period falls before the October 1, 2020 deadline for statewide WIC EBT
   (42 U.S.C. 1786(h)(12)(B)(i)). Before 2020, a unit still
@@ -131,8 +141,10 @@ review comes next, and the PR moves to `main` once #57 merges.
 - `ce_bls_shares.py` and `scripts/compare_ce_inkind_bls_shares.py` split each
   threshold two ways. Other spread gives each term its part of `0.2 × F`, and
   Other separate keeps `0.82 × 0.2 × F` as its own term, as BLS's shares
-  workbook does, so BLS's separate terms reproduce its published shares. The
-  receipt and the page label each figure with its accounting.
+  workbook does, so BLS's separate terms reproduce its published shares, with
+  home internet taken as the tenure-invariant internet row less broadband. A test makes
+  `bls_band_components` raise when a separate term misses. The receipt and the
+  page label each figure with its accounting.
 - All three receipts regenerate. We estimate that the stage lifts thresholds
   0.9–3.8% and changes 2022–2025 growth by −0.63, +0.06 and +1.04 points with
   the package CPI, each within one standard error of zero.
@@ -143,6 +155,9 @@ review comes next, and the PR moves to `main` once #57 merges.
   published school lunch and WIC averages, a school lunch model screened on
   `HHOTLUN`, and whether to price each year with the collection year's index
   or the previous year's.
+- The replication receipt hashes neither `spm_calculator/published_thresholds.py`
+  nor the threshold series behind its published thresholds and gaps. #61, which
+  regenerates every receipt after #60 merges, adds both.
 
 ---
 
@@ -150,11 +165,12 @@ review comes next, and the PR moves to `main` once #57 merges.
 
 ## State
 
-Draft PR [#57](https://github.com/PolicyEngine/spm-calculator/pull/57) on
-`max/ce-replicate-se-20261106`, stacked on #56. The branch holds the module,
-script, receipt, table renderer, tests and the page's "Sampling uncertainty"
-section. An independent review comes next, and the PR moves to `main` once #56
-merges.
+PR [#57](https://github.com/PolicyEngine/spm-calculator/pull/57) on
+`max/ce-replicate-se-20261106`, based on `main` with #56, #58 and #59 merged
+in. The branch holds the module, script, receipt, table renderer, tests and the
+page's "Sampling uncertainty" section. The independent review's third round
+found no P0 or P1 issues; we fixed its P2 and the page's P3s and deferred the
+P3s that would change the receipts' code hashes.
 
 ## Done
 
@@ -171,11 +187,23 @@ merges.
   of zero in every tenure with either deflator, at most 0.70 standard errors,
   and no yearly change reaches two. With the stage and the package CPI, our
   level standard errors run 0.68–1.80 times BLS's published ones.
+- `tests/test_ce_replicates.py` checks the replicate runs against the public
+  stage functions under CPI series that rise at different rates and random
+  half samples whose factors vary by unit. It also checks that the identity
+  guard rejects band means off the thresholds, with and without the stage.
 
 ## Next
 
-- mystmd reads paired dollar signs such as `$626.35/$554.75` in the page's
-  earlier sections as inline math. Escape them with #56's review fixes.
+- We fix round 3's remaining P3s in #61, which regenerates these receipts
+  next:
+  - `scripts/replicate_ce_inkind.py`'s P-EBT limitation adds Census's 2022
+    summer EBT benefits, as the page now says. #60 starts broadband in
+    reference year 2022 and drops the broadband limitation, so its merge of
+    this branch keeps its own broadband sentences on the page.
+  - `ce_replicates.combine_implicates` returns `None` for `df_rubin` when
+    `(m - 1) / squared` overflows to infinity.
+  - `METHOD["held_fixed"]` in `scripts/estimate_ce_replicate_uncertainty.py`
+    names the inverse of the ridge-penalized weighted information matrix.
 
 ---
 

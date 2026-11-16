@@ -1,0 +1,29 @@
+{
+  "source": "U.S. Census Bureau, Poverty in the United States: 2025 (P60-290), September 2026",
+  "report_url": "https://www.census.gov/library/publications/2026/demo/p60-290.html",
+  "accessed": "2026-11-05",
+  "tables": {
+    "table_4": {
+      "title": "Number and Percentage of People in Poverty Using the Supplemental Poverty Measure: 2024 and 2025",
+      "url": "https://www2.census.gov/programs-surveys/demo/tables/p60/290/table_4_spm_person.xlsx",
+      "file": "table_4_spm_person.xlsx",
+      "bytes": 16739,
+      "sha256": "1ad73ba7a35e9d113d7eae0612b1ca23bc90eac2412fa215833c68a67b2620fe"
+    },
+    "table_5": {
+      "title": "Effect of Individual Elements on Supplemental Poverty Measure Rates: 2024 and 2025",
+      "url": "https://www2.census.gov/programs-surveys/demo/tables/p60/290/table_5_spm_program_effect_rates.xlsx",
+      "file": "table_5_spm_program_effect_rates.xlsx",
+      "bytes": 14143,
+      "sha256": "e8cc547cf980f277e9143389447223cc7139509922bd5ad924ee304c9b32ea7a"
+    }
+  },
+  "microdata": {
+    "title": "2026 CPS ASEC public-use CSV files",
+    "url": "https://www2.census.gov/programs-surveys/cps/datasets/2026/march/asecpub26csv.zip",
+    "file": "asecpub26csv.zip",
+    "bytes": 139103894,
+    "sha256": "fe819d0d2fc4470c282e76c247b8aa8b6054811619730307e9f2fe6186707d93",
+    "data_dictionary": "https://www2.census.gov/programs-surveys/cps/datasets/2026/march/asec2026_ddl_pub_full.pdf"
+  }
+}
