@@ -15,6 +15,7 @@ chapters:
   - file: spm-releases
   - file: current-ce-replication
   - file: ce-inkind-imputation
+  - file: ce-inkind-export
   - file: rolling-forecasts
   - file: policyengine-release-integration
   - file: microcosm-integration

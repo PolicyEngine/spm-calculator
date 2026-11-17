@@ -9,6 +9,9 @@ on:
 
 jobs:
   test:
+    # Data releases (tags ce-inkind-*) carry files, not a package; skipping
+    # this job also skips publish, which needs it.
+    if: github.event_name != 'release' || !startsWith(github.event.release.tag_name, 'ce-inkind-')
     runs-on: ubuntu-latest
     strategy:
       matrix:
