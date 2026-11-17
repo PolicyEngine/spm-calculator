@@ -598,8 +598,8 @@ points, with the between-implicate standard deviation:
 | Owner with mortgage | −0.19 (0.28) | +0.09 (0.34) |
 | Owner without mortgage | −1.62 (1.12) | −1.16 (0.80) |
 
-We estimate that owners without mortgages' change reaches 1.4 times the
-implicates' spread with either deflator and that renters' reaches 1.1 times
+We estimate that owners without mortgages' change reaches 1.4–1.5 times the
+implicates' spread across the two deflators and that renters' reaches 1.1 times
 with BLS's index; the other changes stay within it. With sampling and
 imputation uncertainty combined, we estimate that all six lie within one
 standard error of zero ([standard errors of
