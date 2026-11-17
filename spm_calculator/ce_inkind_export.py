@@ -102,6 +102,12 @@ def _amount(component: str, rule: str) -> Column:
     return Column(f"{component}_amount", "dollars", rule)
 
 
+#: Credit for the state WIC food costs, which the WIC amounts carry.
+WIC_ATTRIBUTION = (
+    "U.S. Census Bureau SPM team, compiled from USDA FNS WIC program data "
+    "(personal communication, November 16, 2026)"
+)
+
 DICTIONARY: tuple[Column, ...] = (
     Column(
         "NEWID",
@@ -171,7 +177,7 @@ DICTIONARY: tuple[Column, ...] = (
         "weighted mean for known-state units in the unit's region and "
         "quarter whose state had not finished WIC EBT. Zero where the state "
         "had finished statewide WIC EBT and in every reference year from "
-        "2020.",
+        f"2020. State food costs: {WIC_ATTRIBUTION}.",
     ),
     _participant(
         "liheap",

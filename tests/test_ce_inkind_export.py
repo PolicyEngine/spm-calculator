@@ -39,6 +39,7 @@ from spm_calculator.ce_inkind_export import (
     DICTIONARY,
     FMLI_COLUMNS,
     MODELED_COMPONENTS,
+    WIC_ATTRIBUTION,
     WIC_EXPORT_TARGET,
     diagnostics_difference,
     dictionary_csv,
@@ -290,6 +291,8 @@ def test_dictionary_describes_every_column_once():
     assert rows[0] == ["column", "type", "description"]
     assert [row[0] for row in rows[1:]] == names
     assert all(column.description for column in DICTIONARY)
+    wic_amount = next(c for c in DICTIONARY if c.name == "wic_amount")
+    assert WIC_ATTRIBUTION in wic_amount.description
 
 
 def test_docs_carry_the_dictionary_table():

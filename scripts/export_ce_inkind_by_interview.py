@@ -50,6 +50,7 @@ from spm_calculator.ce_inkind import (
 from spm_calculator.ce_inkind_export import (
     COLUMNS,
     FMLI_COLUMNS,
+    WIC_ATTRIBUTION,
     WIC_EXPORT_TARGET,
     diagnostics_difference,
     dictionary_csv,
@@ -70,10 +71,6 @@ STEM = "ce_inkind_by_interview"
 #: diagnostics and the receipt's. Runs in the receipt's environment match
 #: exactly; other builds of numpy or BLAS differ in the last bits.
 DIAGNOSTICS_RTOL = 1e-9
-WIC_ATTRIBUTION = (
-    "U.S. Census Bureau SPM team, compiled from USDA FNS WIC program data "
-    "(personal communication, November 16, 2026)"
-)
 CODE_PATHS = (
     "spm_calculator/ce_threshold.py",
     "spm_calculator/ce_inkind.py",
