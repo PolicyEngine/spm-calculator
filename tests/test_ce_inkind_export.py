@@ -39,11 +39,13 @@ from spm_calculator.ce_inkind_export import (
     FMLI_COLUMNS,
     MODELED_COMPONENTS,
     WIC_EXPORT_TARGET,
+    diagnostics_difference,
     dictionary_csv,
     dictionary_markdown,
     export_frames,
     observe_participation,
     read_csv_gz,
+    verify_written,
     write_csv_gz,
 )
 from tests.test_ce_inkind import ce_units, cps_donors
@@ -291,3 +293,119 @@ def test_publish_workflow_skips_export_releases():
     ) in test_job
     publish_job = PUBLISH.read_text().split("\n  publish:\n", 1)[1]
     assert "needs: test" in publish_job
+
+
+def test_verify_written_accepts_the_file(observed, frames, tmp_path):
+    units, _, config, imputation, _ = observed
+    path = tmp_path / "export.csv.gz"
+    write_csv_gz(frames, path)
+    checks = verify_written(
+        path, frames, units, imputation.diagnostics, config
+    )
+    assert checks["read_back_rows"] == sum(len(f) for f in frames)
+    assert checks["max_mean_gap_vs_diagnostics_dollars"] <= 0.005
+
+
+def _corrupt(table: pd.DataFrame, how: str) -> pd.DataFrame:
+    table = table.copy()
+    positive = table.index[table["liheap_amount"] > 0][0]
+    if how == "blank_amount":
+        table["nslp_amount"] = table["nslp_amount"].astype(float)
+        table.loc[0, "nslp_amount"] = np.nan
+    elif how == "blank_and_wrong_amounts":
+        table["nslp_amount"] = table["nslp_amount"].astype(float)
+        table.loc[0, "nslp_amount"] = np.nan
+        table.loc[positive, "liheap_amount"] += 500.0
+    elif how == "wrong_amount":
+        table.loc[positive, "liheap_amount"] += 0.02
+    elif how == "infinite_amount":
+        table.loc[positive, "liheap_amount"] = np.inf
+    elif how == "fractional_flag":
+        table["liheap_participant"] = table["liheap_participant"].astype(float)
+        table.loc[positive, "liheap_participant"] = 0.5
+    elif how == "flag_two":
+        table.loc[positive, "rental_assistance_participant"] = 2
+    elif how == "blank_flag":
+        table["nslp_participant"] = table["nslp_participant"].astype(float)
+        table.loc[0, "nslp_participant"] = np.nan
+    elif how == "broadband_filled":
+        early = table.index[table["broadband_participant"].isna()][0]
+        table.loc[early, "broadband_participant"] = 0
+    elif how == "broadband_blanked":
+        late = table.index[table["broadband_participant"].notna()][0]
+        table.loc[late, "broadband_participant"] = np.nan
+    elif how == "dropped_row":
+        table = table.drop(index=positive)
+    elif how == "duplicated_row":
+        table = pd.concat([table, table.iloc[[0]]], ignore_index=True)
+    elif how == "swapped_rows":
+        table.iloc[[0, 1]] = table.iloc[[1, 0]].to_numpy()
+    elif how == "text_amount":
+        table["nslp_amount"] = table["nslp_amount"].astype(object)
+        table.loc[0, "nslp_amount"] = "n/a"
+    return table
+
+
+@pytest.mark.parametrize(
+    "how",
+    [
+        "blank_amount",
+        "blank_and_wrong_amounts",
+        "wrong_amount",
+        "infinite_amount",
+        "fractional_flag",
+        "flag_two",
+        "blank_flag",
+        "broadband_filled",
+        "broadband_blanked",
+        "dropped_row",
+        "duplicated_row",
+        "swapped_rows",
+        "text_amount",
+    ],
+)
+def test_verify_written_rejects_a_corrupted_file(
+    observed, frames, tmp_path, how
+):
+    units, _, config, imputation, _ = observed
+    path = tmp_path / "export.csv.gz"
+    write_csv_gz(frames, path)
+    corrupted = _corrupt(read_csv_gz(path), how)
+    bad = tmp_path / "bad.csv.gz"
+    corrupted.to_csv(bad, index=False, compression="gzip")
+    with pytest.raises(RuntimeError):
+        verify_written(bad, frames, units, imputation.diagnostics, config)
+
+
+def test_diagnostics_difference_measures_relative_gaps():
+    ours = {"a": {"units": 2, "mean": [1.0, 2.0]}, "b": "x", "c": None}
+    theirs = {
+        "a": {"units": 2, "mean": [1.0, 2.0 * (1 + 1e-12)]},
+        "b": "x",
+        "c": None,
+    }
+    assert diagnostics_difference(ours, ours) == 0.0
+    assert 0 < diagnostics_difference(ours, theirs) < 1e-11
+
+
+@pytest.mark.parametrize(
+    "ours, theirs",
+    [
+        ({"units": 2, "mean": float("nan")}, {"units": 2, "mean": 1.0}),
+        ({"units": 2, "mean": 1.0}, {"units": 2, "mean": float("nan")}),
+        (
+            {"units": 2, "mean": float("nan")},
+            {"units": 2, "mean": float("nan")},
+        ),
+        ({"x": [1.0, float("inf")]}, {"x": [1.0, float("inf")]}),
+        ({"x": [5.0, 1.0]}, {"x": [5.0, float("-inf")]}),
+        ({"x": 1.0}, {"y": 1.0}),
+        ({"x": [1.0]}, {"x": [1.0, 2.0]}),
+        ({"x": "a"}, {"x": "b"}),
+        ({"x": True}, {"x": 1}),
+        ({"x": None}, {"x": 0.0}),
+    ],
+)
+def test_diagnostics_difference_rejects_mismatches(ours, theirs):
+    with pytest.raises(RuntimeError):
+        diagnostics_difference(ours, theirs)

@@ -49,10 +49,11 @@ from spm_calculator.ce_inkind_export import (
     COLUMNS,
     FMLI_COLUMNS,
     WIC_EXPORT_TARGET,
+    diagnostics_difference,
     dictionary_csv,
     export_frames,
     observe_participation,
-    read_csv_gz,
+    verify_written,
     write_csv_gz,
 )
 from spm_calculator.ce_threshold import bls_quarter_window, load_ce_quarter
@@ -88,137 +89,8 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def compare(ours, theirs, path=""):
-    """Largest relative difference between two JSON trees.
-
-    Raises if their structure, keys or non-numeric values differ.
-    """
-    if isinstance(ours, dict) and isinstance(theirs, dict):
-        if set(ours) != set(theirs):
-            raise RuntimeError(f"Diagnostics keys differ at {path or '/'}")
-        return max(
-            [compare(ours[k], theirs[k], f"{path}/{k}") for k in ours],
-            default=0.0,
-        )
-    if isinstance(ours, list) and isinstance(theirs, list):
-        if len(ours) != len(theirs):
-            raise RuntimeError(f"Diagnostics lengths differ at {path}")
-        return max(
-            [
-                compare(a, b, f"{path}[{i}]")
-                for i, (a, b) in enumerate(zip(ours, theirs))
-            ],
-            default=0.0,
-        )
-    numeric = (int, float)
-    if (
-        isinstance(ours, numeric)
-        and isinstance(theirs, numeric)
-        and not isinstance(ours, bool)
-        and not isinstance(theirs, bool)
-    ):
-        if ours == theirs:
-            return 0.0
-        scale = max(abs(float(ours)), abs(float(theirs)))
-        return abs(float(ours) - float(theirs)) / scale
-    if ours != theirs:
-        raise RuntimeError(
-            f"Diagnostics differ at {path}: {ours!r} != {theirs!r}"
-        )
-    return 0.0
-
-
 def quarter_label(quarter) -> str:
     return f"{quarter[0]}Q{quarter[1]}"
-
-
-def verify_artifact(path, frames, ce_units, imputation, config) -> dict:
-    """Read the written file back and check it against the imputation."""
-    table = read_csv_gz(path)
-    if tuple(table.columns) != COLUMNS:
-        raise RuntimeError("Written columns differ from the dictionary")
-    if len(table) != sum(len(f) for f in frames):
-        raise RuntimeError("Written row count differs")
-    if not pd.api.types.is_integer_dtype(table["NEWID"]):
-        raise RuntimeError("NEWID does not read back as an integer")
-    if table.duplicated(["NEWID", "implicate"]).any():
-        raise RuntimeError("NEWID x implicate is not unique")
-    keys = np.sort(ce_units["key"].to_numpy(dtype="int64"))
-    first_year = config.broadband_first_reference_year
-    for m, frame in enumerate(frames):
-        rows = table.loc[table["implicate"] == m + 1].sort_values("NEWID")
-        if not np.array_equal(rows["NEWID"].to_numpy(dtype="int64"), keys):
-            raise RuntimeError(
-                f"Implicate {m + 1} does not cover every interview once"
-            )
-        expected = frame.sort_values("NEWID")
-        for column in COLUMNS:
-            got = rows[column].to_numpy()
-            want = expected[column].to_numpy()
-            if column.endswith("_amount"):
-                if (
-                    np.abs(got.astype(float) - want.astype(float)).max()
-                    > 0.005 + 1e-9
-                ):
-                    raise RuntimeError(
-                        f"{column} differs by more than rounding"
-                    )
-            elif column == "broadband_participant":
-                missing = pd.isna(got)
-                if not np.array_equal(
-                    missing, rows["reference_year"].to_numpy() < first_year
-                ):
-                    raise RuntimeError(
-                        "broadband_participant missing in the wrong rows"
-                    )
-                if not np.array_equal(
-                    got[~missing].astype(int), want[~missing].astype(int)
-                ):
-                    raise RuntimeError("broadband_participant differs")
-            else:
-                if pd.isna(got).any() or not np.array_equal(
-                    got.astype("int64"), want.astype("int64")
-                ):
-                    raise RuntimeError(f"{column} differs")
-    # Per-year weighted means of the written amounts against the receipt's
-    # diagnostics. WIC is left out: the diagnostics value the broad universe.
-    weight = pd.Series(
-        ce_units["weight"].to_numpy(dtype=float),
-        index=ce_units["key"].to_numpy(dtype="int64"),
-    )
-    worst = 0.0
-    for component in IN_KIND_COMPONENTS:
-        if component == "wic":
-            continue
-        for year, recorded in imputation.diagnostics[component].items():
-            if "ce_mean_amount_per_unit" not in recorded:
-                continue
-            means = []
-            for m in range(config.implicates):
-                rows = table.loc[
-                    (table["implicate"] == m + 1)
-                    & (table["reference_year"] == int(year))
-                ]
-                w = weight.loc[rows["NEWID"].to_numpy()].to_numpy()
-                means.append(
-                    float(
-                        np.sum(rows[f"{component}_amount"].to_numpy() * w)
-                        / w.sum()
-                    )
-                )
-            gap = abs(
-                float(np.mean(means)) - recorded["ce_mean_amount_per_unit"]
-            )
-            worst = max(worst, gap)
-            if gap > 0.005 + 1e-9:
-                raise RuntimeError(
-                    f"Written {component} mean for {year} differs from the receipt"
-                )
-    return {
-        "read_back_rows": int(len(table)),
-        "newid_dtype": str(table["NEWID"].dtype),
-        "max_mean_gap_vs_receipt_dollars": worst,
-    }
 
 
 def participation_summary(frames) -> dict:
@@ -366,7 +238,7 @@ def main():
     if methodology != receipt["in_kind_methodology"]:
         raise RuntimeError("Imputation settings differ from the receipt's")
     ours = json.loads(json.dumps(imputation.diagnostics, default=float))
-    worst = compare(ours, receipt["imputation_diagnostics"])
+    worst = diagnostics_difference(ours, receipt["imputation_diagnostics"])
     if not worst <= DIAGNOSTICS_RTOL:
         raise RuntimeError(
             f"Diagnostics differ from the receipt's (relative {worst:.3g})"
@@ -376,7 +248,9 @@ def main():
     coverage = (quarter_label(quarters[0]), quarter_label(quarters[-1]))
     name = f"{STEM}_{coverage[0].lower()}_{coverage[1].lower()}.csv.gz"
     written = write_csv_gz(frames, out / name)
-    checks = verify_artifact(out / name, frames, ce_units, imputation, config)
+    checks = verify_written(
+        out / name, frames, ce_units, imputation.diagnostics, config
+    )
     print(f"Wrote and checked {name}: {written['rows']:,} rows", flush=True)
 
     dictionary = out / f"{STEM}_dictionary.csv"

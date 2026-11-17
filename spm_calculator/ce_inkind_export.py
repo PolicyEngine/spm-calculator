@@ -155,12 +155,17 @@ DICTIONARY: tuple[Column, ...] = (
     _participant(
         "nslp",
         "1 if modeled as receiving free, reduced-price or universal-free "
-        "school lunch. Only units with a member aged 5-18 can be 1.",
+        "school lunch. Only units with a member aged 5-18 can be 1; units "
+        "with only paid lunches are not participants.",
     ),
     _amount(
         "nslp",
-        "Annual value of those school lunches, in nominal dollars of the "
-        "reference year. Paid lunches are not valued.",
+        "Annual school lunch value, in nominal dollars of the reference "
+        "year: a matched CPS ASEC household's value, scaled to the unit's "
+        "children aged 5-18. For 2014-2017 the donor value covers free and "
+        "reduced-price lunches; from 2018 it is Census's whole household "
+        "value, which can include paid lunches for the donor's other "
+        "children.",
     ),
     _participant(
         "wic",
@@ -433,6 +438,168 @@ def write_csv_gz(frames: list[pd.DataFrame], path: Path) -> dict:
 def read_csv_gz(path: Path) -> pd.DataFrame:
     """Read the export back as a user would, with pandas defaults."""
     return pd.read_csv(path)
+
+
+#: Largest gap allowed between a written amount and the imputation's: half
+#: a cent of rounding, plus float noise.
+CENT_TOLERANCE = 0.005 + 1e-9
+
+
+def _leaf_number(value) -> bool:
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
+def diagnostics_difference(ours, theirs, path: str = "") -> float:
+    """Largest relative difference between two diagnostics trees.
+
+    Raises:
+        RuntimeError: If the trees differ in structure, keys or any
+            non-numeric value, or if either holds a NaN or infinity.
+    """
+    if isinstance(ours, dict) and isinstance(theirs, dict):
+        if set(ours) != set(theirs):
+            raise RuntimeError(f"Diagnostics keys differ at {path or '/'}")
+        children = [(ours[k], theirs[k], f"{path}/{k}") for k in ours]
+    elif isinstance(ours, list) and isinstance(theirs, list):
+        if len(ours) != len(theirs):
+            raise RuntimeError(f"Diagnostics lengths differ at {path}")
+        children = [
+            (a, b, f"{path}[{i}]")
+            for i, (a, b) in enumerate(zip(ours, theirs))
+        ]
+    elif _leaf_number(ours) and _leaf_number(theirs):
+        a, b = float(ours), float(theirs)
+        if not (np.isfinite(a) and np.isfinite(b)):
+            raise RuntimeError(
+                f"Diagnostics hold a non-finite value at {path}"
+            )
+        if a == b:
+            return 0.0
+        return abs(a - b) / max(abs(a), abs(b))
+    else:
+        if _leaf_number(ours) or _leaf_number(theirs) or ours != theirs:
+            raise RuntimeError(
+                f"Diagnostics differ at {path}: {ours!r} != {theirs!r}"
+            )
+        return 0.0
+    worst = 0.0
+    for a, b, where in children:
+        worst = max(worst, diagnostics_difference(a, b, where))
+    return worst
+
+
+def _flag_values(column: pd.Series, name: str) -> np.ndarray:
+    values = column.to_numpy(dtype=float)
+    if not np.isin(values, (0.0, 1.0)).all():
+        raise RuntimeError(f"{name} holds values other than 0 and 1")
+    return values
+
+
+def verify_written(
+    path: Path,
+    frames: list[pd.DataFrame],
+    ce_units: pd.DataFrame,
+    diagnostics: dict,
+    config: InKindConfig,
+) -> dict:
+    """Read the written file back and check it against the frames.
+
+    Every column must read back with pandas defaults to the frames' values:
+    keys and flags exactly, as integers, and amounts finite and within half
+    a cent. Each implicate must cover every unit once, in implicate and
+    ``NEWID`` order. Per-year weighted mean amounts must match the
+    diagnostics' ``ce_mean_amount_per_unit`` within half a cent, except
+    WIC, whose diagnostics value the broad universe.
+
+    Raises:
+        RuntimeError: On any difference.
+    """
+    table = read_csv_gz(path)
+    if tuple(table.columns) != COLUMNS:
+        raise RuntimeError("Written columns differ from the dictionary")
+    expected = (
+        pd.concat(frames, ignore_index=True)
+        .sort_values(["implicate", "NEWID"], kind="stable")
+        .reset_index(drop=True)
+    )
+    if len(table) != len(expected):
+        raise RuntimeError("Written row count differs")
+    first_year = config.broadband_first_reference_year
+    for name in COLUMNS:
+        got, want = table[name], expected[name]
+        if name.endswith("_amount"):
+            if not pd.api.types.is_numeric_dtype(got):
+                raise RuntimeError(f"{name} does not read back as numbers")
+            values = got.to_numpy(dtype=float)
+            if not np.isfinite(values).all():
+                raise RuntimeError(
+                    f"{name} holds a missing or non-finite value"
+                )
+            gap = np.abs(values - want.to_numpy(dtype=float)).max()
+            if not gap <= CENT_TOLERANCE:
+                raise RuntimeError(f"{name} differs by more than rounding")
+        elif name == "broadband_participant":
+            missing = got.isna().to_numpy()
+            if not np.array_equal(
+                missing, table["reference_year"].to_numpy() < first_year
+            ) or not np.array_equal(missing, want.isna().to_numpy()):
+                raise RuntimeError(f"{name} is missing in the wrong rows")
+            values = _flag_values(got[~missing], name)
+            if not np.array_equal(
+                values, want[~missing].to_numpy(dtype=float)
+            ):
+                raise RuntimeError(f"{name} differs")
+        else:
+            if not pd.api.types.is_integer_dtype(got):
+                raise RuntimeError(f"{name} does not read back as integers")
+            if name.endswith("_participant") or name == (
+                "wic_broad_universe_only"
+            ):
+                _flag_values(got, name)
+            if not np.array_equal(
+                got.to_numpy(dtype="int64"), want.to_numpy(dtype="int64")
+            ):
+                raise RuntimeError(f"{name} differs")
+    keys = np.sort(ce_units["key"].to_numpy(dtype="int64"))
+    for m in range(config.implicates):
+        rows = table.loc[table["implicate"] == m + 1, "NEWID"].to_numpy()
+        if not np.array_equal(rows, keys):
+            raise RuntimeError(
+                f"Implicate {m + 1} does not cover every unit once, in order"
+            )
+    weight = pd.Series(
+        ce_units["weight"].to_numpy(dtype=float),
+        index=ce_units["key"].to_numpy(dtype="int64"),
+    )
+    table_weight = weight.loc[table["NEWID"].to_numpy()].to_numpy()
+    worst = 0.0
+    for component in IN_KIND_COMPONENTS:
+        if component == "wic":
+            continue
+        for year, recorded in diagnostics[component].items():
+            if "ce_mean_amount_per_unit" not in recorded:
+                continue
+            in_year = table["reference_year"].to_numpy() == int(year)
+            means = []
+            for m in range(config.implicates):
+                rows = in_year & (table["implicate"].to_numpy() == m + 1)
+                w = table_weight[rows]
+                amount = table[f"{component}_amount"].to_numpy(dtype=float)
+                means.append(float(np.sum(amount[rows] * w) / w.sum()))
+            gap = abs(
+                float(np.mean(means)) - recorded["ce_mean_amount_per_unit"]
+            )
+            if not gap <= CENT_TOLERANCE:
+                raise RuntimeError(
+                    f"Written {component} mean for {year} differs from the "
+                    "diagnostics"
+                )
+            worst = max(worst, gap)
+    return {
+        "read_back_rows": int(len(table)),
+        "newid_dtype": str(table["NEWID"].dtype),
+        "max_mean_gap_vs_diagnostics_dollars": worst,
+    }
 
 
 def dictionary_csv() -> str:

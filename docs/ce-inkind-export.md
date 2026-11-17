@@ -64,8 +64,8 @@ WIC program data (personal communication, November 16, 2026).
 | `ce_quarter` | integer | Collection quarter of the interview, 1 to 4: the PUMD file's quarter. |
 | `reference_year` | integer | Year whose program rules, CPS ASEC donors and dollars the values use: ce_year for quarters 2-4 and ce_year - 1 for quarter 1. |
 | `wic_broad_universe_only` | 0/1 | 1 if the unit has a child under 5 but no woman aged 15 or older. BLS's WIC universe adds these units from the 2025 thresholds; the WIC columns here leave them out. |
-| `nslp_participant` | 0/1 | 1 if modeled as receiving free, reduced-price or universal-free school lunch. Only units with a member aged 5-18 can be 1. |
-| `nslp_amount` | dollars | Annual value of those school lunches, in nominal dollars of the reference year. Paid lunches are not valued. |
+| `nslp_participant` | 0/1 | 1 if modeled as receiving free, reduced-price or universal-free school lunch. Only units with a member aged 5-18 can be 1; units with only paid lunches are not participants. |
+| `nslp_amount` | dollars | Annual school lunch value, in nominal dollars of the reference year: a matched CPS ASEC household's value, scaled to the unit's children aged 5-18. For 2014-2017 the donor value covers free and reduced-price lunches; from 2018 it is Census's whole household value, which can include paid lunches for the donor's other children. |
 | `wic_participant` | 0/1 | 1 if modeled as receiving WIC. Only units with a woman aged 15-45, or with a child under 5 and a woman aged 15 or older, can be 1. |
 | `wic_amount` | dollars | Annual WIC food value, in nominal dollars of the reference year: participants x 12 x the state's average monthly food cost. Zero where the state had finished statewide WIC EBT and in every reference year from 2020. |
 | `liheap_participant` | 0/1 | 1 if modeled as receiving energy assistance. Any unit can be 1. |
@@ -103,18 +103,21 @@ a quarter 1 interview the year before, so a March interview carries the
 previous reference year. Program rules, CPS ASEC donors, WIC food costs and
 school lunch values all follow the reference year.
 
-**School lunch** covers free, reduced-price and universal-free lunch only:
-the donors are CPS households reporting free or reduced-price lunch
-(`HFLUNCH`), and paid lunches are not valued. Any unit with a member aged
-5–18 can participate; there is no enrollment test. A participating unit takes a
-matched CPS household's value, scaled to the unit's number of children aged
-5–18. Values for reference years 2014–2017 come from the USDA formula. From
-2018 we use Census's `SPM_SCHLUNCH`, which carries Census's COVID-era
-methods, P-EBT, universal free meal and summer EBT rules, and its fall 2022
-method from reference year 2023; BLS says it uses the traditional method
-before and after the COVID-19 period. In reference year 2020, some
-participating CPS households carry a zero Census value, so 528–557
-units a year modeled as participants get \$0 in each implicate.
+**School lunch.** Participation means free, reduced-price or universal-free
+lunch: the donors are CPS households reporting free or reduced-price lunch
+(`HFLUNCH`), so a unit whose children eat only paid lunches never
+participates. Any unit with a member aged 5–18 can participate; there is no
+enrollment test. A participating unit takes a matched CPS household's
+value, scaled to the unit's number of children aged 5–18. For reference
+years 2014–2017 that value comes from the USDA formula and covers free and
+reduced-price lunches only. From 2018 we use Census's whole household value,
+`SPM_SCHLUNCH`, which can include paid lunches for the donor's other
+children. It also carries Census's COVID-era methods, P-EBT, universal free
+meal and summer EBT rules, and its fall 2022 method from reference year
+2023; BLS says it uses the traditional method before and after the COVID-19
+period. In reference year 2020, some participating CPS households carry a
+zero Census value, so 528–557 units a year modeled as participants get \$0
+in each implicate.
 
 **WIC.** BLS adds WIC only where a state had not fully implemented WIC EBT.
 For reference years before 2020, a unit gets WIC only if its state's
@@ -202,8 +205,10 @@ unless:
 - the recorded participation draws give the imputation's own participation
   rates, every positive amount has a participant, and LIHEAP and broadband
   participation equals a positive amount;
-- the written file, read back with pandas defaults, matches the imputation
-  to the cent and covers every interview once per implicate.
+- the written file, read back with pandas defaults, has every key and flag
+  as an integer equal to the imputation's, every flag 0 or 1, every amount
+  finite and within half a cent of the imputation's, and every interview
+  once per implicate.
 
 Rerunning with the same inputs, code and Python environment gives the same
 CSV byte for byte, and the manifest records its hash. Other builds of NumPy
