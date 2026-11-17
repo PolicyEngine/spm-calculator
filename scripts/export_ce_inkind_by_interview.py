@@ -13,7 +13,9 @@ writes to ``--out``:
 - ``ce_inkind_by_interview_dictionary.csv``: the data dictionary;
 - ``ce_inkind_by_interview_manifest.json``: counts, sources, settings,
   checks and hashes;
-- ``SHA256SUMS``.
+- ``README.md``: a short description that points to
+  ``docs/ce-inkind-export.md``;
+- ``SHA256SUMS``: SHA-256 hashes of the other files.
 
 After writing, the script reads the file back with pandas defaults and
 checks it against the imputation. No network requests are made.
@@ -124,15 +126,20 @@ def readme_text(name, coverage, counts) -> str:
 
 `{name}` holds the in-kind benefit imputations from the PolicyEngine SPM
 calculator (https://github.com/PolicyEngine/spm-calculator), one row per CE
-Interview record (FMLI `NEWID`) per implicate, for every interview collected
-from {coverage[0]} to {coverage[1]}: {counts["interviews"]:,} interviews x
-{counts["implicates"]} implicates = {counts["rows"]:,} rows.
+Interview record (FMLI `NEWID`) per implicate, for every record in the
+public-use FMLI files the export reads, one per quarter from {coverage[0]}
+to {coverage[1]}: {counts["interviews"]:,} interviews x
+{counts["implicates"]} implicates = {counts["rows"]:,} rows. Each quarter 1
+file comes from the previous year's release, never from an overlap file
+(`fmliYY1x.csv`).
 
 Each row carries the participation flag and annual dollar amount of five
-components: free or reduced-price school lunch, WIC, LIHEAP, broadband
-subsidies and rental assistance. The values follow the threshold rules the
-calculator's replication of BLS's Supplemental Poverty Measure thresholds
-uses, not actual receipt.
+components: school lunch, WIC, LIHEAP, broadband subsidies and rental
+assistance. The values are modeled under the rules the calculator's
+replication of BLS's Supplemental Poverty Measure thresholds uses; they are
+not what each unit received. The one exception is rental assistance
+participation, which is the CE unit's own report of subsidized or public
+housing.
 
 Read https://github.com/PolicyEngine/spm-calculator/blob/main/docs/ce-inkind-export.md
 before using the file. It explains each column, where the values follow
@@ -144,11 +151,12 @@ Files:
 - `{name}`: the export (gzipped CSV)
 - `{STEM}_dictionary.csv`: column, type and description
 - `{STEM}_manifest.json`: counts, source files, settings, checks and hashes
-- `SHA256SUMS`
+- `README.md`: this file
+- `SHA256SUMS`: SHA-256 hashes of the other files
 
 Sources: BLS Consumer Expenditure Survey Interview public-use microdata;
-Census Bureau CPS ASEC public-use files; USDA FNS school lunch rates and WIC
-EBT dates; WIC state food costs from the {WIC_ATTRIBUTION}.
+Census Bureau CPS ASEC public-use files and official poverty thresholds;
+USDA FNS school lunch rates and WIC EBT dates; WIC state food costs from the {WIC_ATTRIBUTION}.
 
 License: CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Credit
 "PolicyEngine SPM calculator".

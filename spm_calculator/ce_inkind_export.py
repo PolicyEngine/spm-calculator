@@ -82,15 +82,6 @@ WIC_EXPORT_TARGET = WIC_BROAD_UNIVERSE_FIRST_TARGET - 1
 
 KEY_COLUMNS = ("NEWID", "implicate", "ce_year", "ce_quarter", "reference_year")
 
-#: Plain-language names for the docs and the dictionary.
-COMPONENT_LABELS = {
-    "nslp": "free, reduced-price or universal-free school lunch",
-    "wic": "WIC",
-    "liheap": "LIHEAP and other energy assistance",
-    "broadband": "broadband subsidy (EBB and ACP)",
-    "rental_assistance": "rental assistance",
-}
-
 
 @dataclass(frozen=True)
 class Column:
@@ -125,19 +116,20 @@ DICTIONARY: tuple[Column, ...] = (
         "integer",
         "Implicate number, 1 to 5 (the receipts' index plus 1). Analyze each "
         "implicate separately and combine estimates with Rubin's rules. Do "
-        "not pair implicate m with the CE income imputation FINCBTXm: every "
-        "model used their mean, FINCBTXM.",
+        "not pair implicate m with the CE income imputation FINCBTXm: each CE "
+        "unit's poverty ratio uses FINCBTXM, the mean of the five.",
     ),
     Column(
         "ce_year",
         "integer",
-        "Collection year of the interview: the PUMD file's year.",
+        "Collection year of the interview: the year in the FMLI file name "
+        "(fmliYYq.csv). Quarter 1 files ship in the previous year's release.",
     ),
     Column(
         "ce_quarter",
         "integer",
-        "Collection quarter of the interview, 1 to 4: the PUMD file's "
-        "quarter.",
+        "Collection quarter of the interview, 1 to 4: the quarter in the "
+        "FMLI file name.",
     ),
     Column(
         "reference_year",
@@ -154,18 +146,19 @@ DICTIONARY: tuple[Column, ...] = (
     ),
     _participant(
         "nslp",
-        "1 if modeled as receiving free, reduced-price or universal-free "
-        "school lunch. Only units with a member aged 5-18 can be 1; units "
-        "with only paid lunches are not participants.",
+        "1 if modeled as receiving free or reduced-price school lunch, as "
+        "CPS ASEC households report it (HFLUNCH). Only units with a member "
+        "aged 5-18 can be 1; units with only paid lunches are not "
+        "participants.",
     ),
     _amount(
         "nslp",
         "Annual school lunch value, in nominal dollars of the reference "
         "year: a matched CPS ASEC household's value, scaled to the unit's "
         "children aged 5-18. For 2014-2017 the donor value covers free and "
-        "reduced-price lunches; from 2018 it is Census's whole household "
-        "value, which can include paid lunches for the donor's other "
-        "children.",
+        "reduced-price lunches; from 2018 it is Census's SPM_SCHLUNCH summed "
+        "over the donor household's SPM units, which can include paid "
+        "lunches for the donor's other children.",
     ),
     _participant(
         "wic",
@@ -175,9 +168,12 @@ DICTIONARY: tuple[Column, ...] = (
     _amount(
         "wic",
         "Annual WIC food value, in nominal dollars of the reference year: "
-        "participants x 12 x the state's average monthly food cost. Zero "
-        "where the state had finished statewide WIC EBT and in every "
-        "reference year from 2020.",
+        "Census's participant count x 12 x the state's average monthly food "
+        "cost per person. Where the CE withholds the state, the cost is the "
+        "weighted mean for known-state units in the unit's region and "
+        "quarter whose state had not finished WIC EBT. Zero where the state "
+        "had finished statewide WIC EBT and in every reference year from "
+        "2020.",
     ),
     _participant(
         "liheap",
