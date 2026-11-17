@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "generated_by": "scripts/tabulate_ce_internet_uccs.py",
-  "generated_on": "2026-11-16",
+  "generated_on": "2026-11-17",
   "classification": "current_retrospective_research",
-  "git_head": "d97169d79f4bb7afabb06dc0bdaeba07332628db",
+  "git_head": "46ec2692e2ec3d3c5fec125d29c17101ec9706d2",
   "code_sha256": {
     "scripts/tabulate_ce_internet_uccs.py": "b0fe329372c5ec4f3ca0adfec13aeead065fb2f191d9552a53d7a75839a536be",
     "spm_calculator/ce_internet.py": "c0a1a928b708a418cacef585f07c53a5da84b551d6540733251d9c5ca0fc0f73",
@@ -71,11 +71,11 @@
     },
     "components_receipt": {
       "path": "spm_calculator/data/current/ce_inkind_bls_components_2019_2025.json",
-      "sha256": "b2ed9f5d026be6a6b5cd6508fc7e8ad6be2ec32ed0711107b9f80e1830b535c3"
+      "sha256": "e70acb195f8e45458f73d01deeea5f800b0192b12542b8a0d218e5d7c4c68c8a"
     },
     "replication_receipt": {
       "path": "spm_calculator/data/current/ce_inkind_replication_2019_2025.json",
-      "sha256": "d2e5748d9c42ea79c313144773663787e3f22320e2f6903cbd6e9e368ef34ccb"
+      "sha256": "ea463f56f96ae5425d31ef5e58ed58d20be8759a5a07f91e811b6fa233c1c7d3"
     }
   },
   "uccs": {
@@ -1663,12 +1663,12 @@
         "2025": 1.0086080615152966
       },
       "with_benefits": {
-        "2019": 0.9928119802382911,
-        "2020": 1.0234298778335178,
-        "2021": 0.9904494929876365,
-        "2022": 1.0278866886697104,
-        "2023": 1.0313271720810469,
-        "2024": 1.0068860336881946,
+        "2019": 0.9935779209829756,
+        "2020": 1.0222369594306704,
+        "2021": 0.9909656038632937,
+        "2022": 1.0277647270914498,
+        "2023": 1.0315694177532866,
+        "2024": 1.0065201137023099,
         "2025": 0.9887888795118424
       }
     },
@@ -1683,15 +1683,15 @@
         "2025": 1.013774029733451
       },
       "with_benefits": {
-        "2019": 0.9971268009695743,
-        "2020": 1.0282442801227134,
-        "2021": 0.9958797576037618,
-        "2022": 1.028177073355891,
-        "2023": 1.0322009501195764,
-        "2024": 1.0138967081748023,
+        "2019": 0.997009275815386,
+        "2020": 1.0282306665753742,
+        "2021": 0.9952285962223606,
+        "2022": 1.0265754100758235,
+        "2023": 1.0323147288949783,
+        "2024": 1.0137162892885265,
         "2025": 0.9973726336397988
       }
     }
   },
-  "runtime_seconds": 24
+  "runtime_seconds": 39
 }
