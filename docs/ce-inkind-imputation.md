@@ -1124,9 +1124,9 @@ implicates' spread supplies 46–55% of each rise's variance.
   values paid lunches and, in some years, P-EBT or summer EBT for
   households without free or reduced-price lunch.
 - Census accounts for P-EBT in its school lunch values for reference years 2020
-  and 2021, and for 2022 it counts summer P-EBT, which its technical
-  documentation calls summer EBT, but not school-year P-EBT; states paid both
-  on EBT cards ([Census SPM technical
+  and 2021. For 2022, it counts summer P-EBT (summer EBT in its technical
+  documentation) and excludes school-year P-EBT. States paid both forms on EBT
+  cards ([Census SPM technical
   documentation](https://www2.census.gov/programs-surveys/supplemental-poverty-measure/datasets/spm/spm_techdoc.pdf),
   last updated September 15, 2026; [Shrider
   2023](https://www.census.gov/content/dam/Census/library/working-papers/2023/demo/SEHSD-WP-2023-20.pdf)).

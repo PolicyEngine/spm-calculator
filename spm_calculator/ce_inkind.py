@@ -24,13 +24,15 @@ stage as an explicit, optional step:
     thresholds workbook).
 ``nslp``
     Participation from a logistic regression on CPS households with a
-    member aged 5-18 (the CE universe applies only that age rule). Values
-    follow the Census method that BLS says it uses. Reference years with
-    Census values in the public-use files (2018 onward) hot-deck the
+    member aged 5-18 (the CE universe applies only that age rule). BLS
+    says it values school lunch by the traditional method before and after
+    the COVID-19 period and by Census's methods during it. Reference years
+    with Census values in the public-use files (2018 onward) hot-deck the
     household value from participating CPS households in the same state,
     SNAP and free-lunch cell, which carries Census's COVID-era, P-EBT,
-    Summer EBT and universal-free-meal rules. Earlier years apply the
-    traditional formula: USDA reimbursement plus donated-food value per
+    summer EBT and universal-free-meal rules; from reference year 2023
+    Census estimates those values with its fall 2022 method. Earlier years
+    apply the traditional formula: USDA reimbursement plus donated-food value per
     lunch, 5/9 spring and 4/9 fall school year, times 179 days; free below
     150 percent of the official poverty line, otherwise free or reduced
     with equal probability.

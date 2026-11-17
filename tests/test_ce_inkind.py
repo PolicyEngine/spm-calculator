@@ -396,8 +396,8 @@ def test_committed_receipt_comes_from_this_code():
     assert receipt["home_internet"]["cpi_series"] == "CUUR0000SEEE03"
     limitations = receipt["limitations"]
     for text in (
-        "for 2022 it counts summer P-EBT, which its technical documentation "
-        "calls summer EBT, but not school-year P-EBT",
+        "For 2022, it counts summer P-EBT (summer EBT in its technical "
+        "documentation) and excludes school-year P-EBT",
         "We take home internet from CE UCC 690114 alone and price it with "
         "CPI-U CUUR0000SEEE03; BLS has not published the UCCs or the price "
         "series",
