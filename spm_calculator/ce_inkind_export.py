@@ -123,8 +123,10 @@ DICTIONARY: tuple[Column, ...] = (
     Column(
         "implicate",
         "integer",
-        "Implicate number, 1 to 5. Analyze each implicate separately and "
-        "combine estimates with Rubin's rules.",
+        "Implicate number, 1 to 5 (the receipts' index plus 1). Analyze each "
+        "implicate separately and combine estimates with Rubin's rules. Do "
+        "not pair implicate m with the CE income imputation FINCBTXm: every "
+        "model used their mean, FINCBTXM.",
     ),
     Column(
         "ce_year",

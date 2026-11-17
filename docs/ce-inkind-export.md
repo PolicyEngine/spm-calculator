@@ -59,7 +59,7 @@ WIC program data (personal communication, November 16, 2026).
 | Column | Type | Description |
 |---|---|---|
 | `NEWID` | integer | CE Interview FMLI record id. Unique across every row of one implicate; join on it as a number. |
-| `implicate` | integer | Implicate number, 1 to 5. Analyze each implicate separately and combine estimates with Rubin's rules. |
+| `implicate` | integer | Implicate number, 1 to 5 (the receipts' index plus 1). Analyze each implicate separately and combine estimates with Rubin's rules. Do not pair implicate m with the CE income imputation FINCBTXm: every model used their mean, FINCBTXM. |
 | `ce_year` | integer | Collection year of the interview: the PUMD file's year. |
 | `ce_quarter` | integer | Collection quarter of the interview, 1 to 4: the PUMD file's quarter. |
 | `reference_year` | integer | Year whose program rules, CPS ASEC donors and dollars the values use: ce_year for quarters 2-4 and ce_year - 1 for quarter 1. |
@@ -105,13 +105,13 @@ school lunch values all follow the reference year.
 
 **School lunch** covers free, reduced-price and universal-free lunch only:
 the donors are CPS households reporting free or reduced-price lunch
-(`HFLUNCH`), and paid lunches are not valued. Any unit with a member aged 5–18 can
-participate; there is no enrollment test. A participating unit takes a
+(`HFLUNCH`), and paid lunches are not valued. Any unit with a member aged
+5–18 can participate; there is no enrollment test. A participating unit takes a
 matched CPS household's value, scaled to the unit's number of children aged
-5–18. Values for reference years 2014–2017 come from the USDA formula, and
-from 2018 from Census's `SPM_SCHLUNCH`, which carries Census's COVID-era
+5–18. Values for reference years 2014–2017 come from the USDA formula. From
+2018 we use Census's `SPM_SCHLUNCH`, which carries Census's COVID-era
 methods, P-EBT, universal free meal and summer EBT rules, and its fall 2022
-method from reference year 2023. BLS says it uses the traditional method
+method from reference year 2023; BLS says it uses the traditional method
 before and after the COVID-19 period. In reference year 2020, some
 participating CPS households carry a zero Census value, so 528–557
 units a year modeled as participants get \$0 in each implicate.
@@ -178,8 +178,12 @@ pools' sampling error.
 
 ## Regenerate
 
-With the CE Interview bundles for 2014–2024 and the CPS ASEC files for
-2015–2025 in the package's caches:
+The script reads only cached files. Fetch the CE Interview bundles for
+2014–2024 with `spm_calculator.ce_threshold.download_ce_bundle(year)`, and
+put the CPS ASEC files that `spm_calculator.cps_asec.source_files(year)` lists
+for survey years 2015–2025, from `cps_asec.source_url(year, name)`, in the
+CPS cache (`~/.cache/spm-calculator/cps-asec`). The manifest lists every
+file's URL and SHA-256. Then run:
 
 ```bash
 uv run --no-sync python scripts/export_ce_inkind_by_interview.py --out <directory>
@@ -199,8 +203,14 @@ unless:
 - the written file, read back with pandas defaults, matches the imputation
   to the cent and covers every interview once per implicate.
 
-The CSV inside the gzip file is the same, byte for byte, whenever the inputs
-and code are the same; the manifest records its hash.
+Rerunning with the same inputs, code and Python environment gives the same
+CSV byte for byte, and the manifest records its hash. Other builds of NumPy
+or SciPy can move rental assistance values in their last bits, which
+rounding to cents almost always hides, so compare a rerun with the published
+file by value, to the cent, rather than by hash. Impute every quarter in one
+call, as the script does: the WIC fallback for withheld states and the rent
+model draw on all the interviews of a quarter or reference year, so imputing
+a subset changes some values.
 
 `spm_calculator.ce_inkind.impute_in_kind` returns amounts, not participation.
 `spm_calculator.ce_inkind_export.observe_participation` records the draws
