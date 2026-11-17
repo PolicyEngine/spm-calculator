@@ -2,7 +2,10 @@
 
 Two inputs are converted here; the USDA tables in
 ``spm_calculator/data/inkind/usda_*.csv`` are committed transcriptions
-with a source URL on every row and are read directly by the package.
+with a source URL on every row and are read directly by the package, and
+``census_wic_state_monthly_cost.csv`` is the U.S. Census Bureau SPM team's
+state WIC food cost table, committed as received (see
+``spm_calculator.ce_inkind.wic_state_monthly_food_cost``).
 
 1. Official poverty thresholds, 2014-2024, from the Census Bureau's
    ``threshYY.xlsx`` tables:

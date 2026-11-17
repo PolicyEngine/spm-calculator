@@ -61,7 +61,7 @@ for reference year r draws donors from the CPS ASEC of survey year r + 1.
 | Component | Participation | Value | Enters |
 |---|---|---|---|
 | School lunch (NSLP) | Logit on CPS households with a member aged 5–18 (`HFLUNCH`). The CE universe applies only the age rule, as BLS does. | Hot deck from participating CPS households in the same state, SNAP, below-150%-of-poverty and child-count cell (when a cell has fewer than five donors or the CE withholds the unit's state, widening from state to region, then across numbers of children, then across regions, and last to all donors), scaled to the CE unit's children aged 5–18. Donor values: Census's `SPM_SCHLUNCH` for reference years 2018 onward; for earlier years, the traditional formula (USDA reimbursement plus donated-food value per lunch, weighted 5/9 spring and 4/9 fall school year, times 179 days, for each child receiving lunch; free below 150% of the official poverty line, otherwise free or reduced with equal probability). | FCSUti |
-| WIC | Logit on CPS households in the WIC universe | Census's participant rule (all children under 5, plus the mother of a child aged 0–1 when the unit includes a woman 15 or older, otherwise one pregnant woman) × 12 × USDA's national fiscal-year average monthly food cost. Zero from reference year 2020, and earlier where the state finished WIC EBT before the middle of the reference period. | FCSUti |
+| WIC | Logit on CPS households in the WIC universe | Census's participant rule (all children under 5, plus the mother of a child aged 0–1 when the unit includes a woman 15 or older, otherwise one pregnant woman) × 12 × the state's fiscal-year average monthly food cost per person from the Census SPM team (where the CE withholds the state, the weighted mean for states in the unit's region and quarter that had not finished WIC EBT). Zero from reference year 2020, and earlier where the state finished WIC EBT before the middle of the reference period. | FCSUti |
 | LIHEAP | Logit on all CPS households | Predictive mean matching on household-reported `HENGVAL` | FCSUti and SU |
 | Broadband (EBB, ACP) | Logit on all CPS households, reference years 2022 onward | Predictive mean matching on Census's assigned `SPM_BBSUBVAL` | FCSUti |
 | Rental assistance | CE renters reporting `GOVTCOST` or `PUBLHOUS` in the rent file | Weighted Tobit of log monthly rent paid on unit characteristics, with assisted units censored from above at their rent paid. Benefit = 12 × (imputed market rent − rent paid). | FCSUti and SU |
@@ -115,7 +115,8 @@ FNS's December 2022 WIC EBT status report (in `data/inkind/`), with the
 middle of the unit's reference period. Where the CE withholds the state, we
 count the unit's state as finished with probability equal to the weighted
 share of known-state units in its region and collection quarter whose state
-had finished. From reference year 2020, the year of the statutory deadline,
+had finished. A unit whose region the CE also withholds shares its cell with
+no known-state unit, so we count it as finished. From reference year 2020, the year of the statutory deadline,
 we add no WIC in any state, even where the middle of a unit's reference
 period falls before the deadline. Six states finished during 2020 before
 October 1, from Hawaii in June to Illinois in September. FNS dates six other
@@ -127,6 +128,20 @@ by \$1.94–\$3.20 for the 2021–2025 targets. We estimate that those threshold
 move by −\$5 to +\$18 (−0.01% to +0.05%) as the added WIC moves units into and
 out of the band, and that 2022–2025 growth changes by 0.03 points or less. For
 its 2025 thresholds, BLS counts \$1.80 of WIC per unit in the band.
+
+We value WIC with each state's average monthly food cost per person in the
+fiscal year that shares the reference year's number. The U.S. Census Bureau
+SPM team compiled these state averages from USDA FNS WIC program data and
+shared them with us (personal communication, November 16, 2026);
+`data/inkind/census_wic_state_monthly_cost.csv` holds the table as received.
+Census values WIC with state-level averages from USDA ([Census SPM technical
+documentation](https://www2.census.gov/programs-surveys/supplemental-poverty-measure/datasets/spm/spm_techdoc.pdf)),
+and BLS says the WIC values it assigns are those it receives from Census
+staff. We apply the state averages to every reference year in which we
+assign WIC. Where the CE withholds the state, the unit takes the weighted
+mean value of the known-state units in its region and collection quarter
+whose state had not finished WIC EBT: the units whose weight sets its chance
+of not having finished.
 
 BLS fits a limited dependent variable model that treats assisted renters'
 rents as censored from above, and values the benefit as imputed market rent
@@ -1133,8 +1148,12 @@ implicates' spread supplies 46–55% of each rise's variance.
   BLS says it follows Census's COVID-era methods, so the stage does too, but by
   BLS's reasoning for leaving out SNAP, reported food spending may already
   include those benefits.
-- WIC uses USDA's national fiscal-year average food cost; Census has used
-  state averages since its revised 2019 estimates.
+- WIC applies the Census SPM team's state averages to every reference year
+  we assign WIC; Census has used state averages since its revised 2019
+  estimates. Where the CE withholds the state, the unit takes the weighted
+  mean value of known-state units in its region and collection quarter whose
+  state had not finished WIC EBT. Where it also withholds the region, the
+  unit counts as having finished WIC EBT and gets no WIC.
 - All participation models share one covariate set across programs and
   years, and the CE and CPS income concepts differ.
 - We take home internet from UCC 690114 alone and price it with CUUR0000SEEE03,
@@ -1330,8 +1349,10 @@ and price it with CUUR0000SEEE03.
   BLS's published FCSUti levels, 2002–2025.
 - `spm_calculator/cps_asec.py`: CPS ASEC household donors.
 - `spm_calculator/data/inkind/`: USDA lunch rates and donated-food values,
-  WIC food costs and EBT dates, official poverty thresholds, and the
-  Census lunch values the differential test checks, each with its source.
+  USDA's national WIC food costs and WIC EBT dates, official poverty
+  thresholds, and the Census lunch values the differential test checks, each
+  with its source, and the Census SPM team's state WIC food costs as
+  received.
 - `scripts/build_inkind_parameters.py`: rebuilds the poverty-threshold
   and observed-lunch files.
 - `scripts/replicate_ce_inkind.py` and
