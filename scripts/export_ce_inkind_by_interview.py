@@ -121,7 +121,7 @@ def participation_summary(frames) -> dict:
     return summary
 
 
-def readme_text(name, coverage, counts) -> str:
+def readme_text(name, coverage, counts, commit) -> str:
     return f"""# CE in-kind imputations by interview
 
 `{name}` holds the in-kind benefit imputations from the PolicyEngine SPM
@@ -141,7 +141,7 @@ not what each unit received. The one exception is rental assistance
 participation, which is the CE unit's own report of subsidized or public
 housing.
 
-Read https://github.com/PolicyEngine/spm-calculator/blob/main/docs/ce-inkind-export.md
+Read https://github.com/PolicyEngine/spm-calculator/blob/{commit}/docs/ce-inkind-export.md
 before using the file. It explains each column, where the values follow
 those rules rather than receipt, how to merge with the CE public-use
 microdata, and how to combine implicates.
@@ -161,8 +161,8 @@ USDA FNS school lunch rates and WIC EBT dates; WIC state food costs from the {WI
 License: CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Credit
 "PolicyEngine SPM calculator".
 
-Regenerate with `scripts/export_ce_inkind_by_interview.py` at the commit the
-manifest names.
+Regenerate with `scripts/export_ce_inkind_by_interview.py` at commit
+{commit}, which the manifest also names.
 """
 
 
@@ -268,8 +268,6 @@ def main():
         "interviews": int(len(ce_units)),
         "implicates": config.implicates,
     }
-    readme = out / "README.md"
-    readme.write_text(readme_text(name, coverage, counts))
     head = subprocess.check_output(
         ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True
     ).strip()
@@ -278,6 +276,8 @@ def main():
             ["git", "status", "--porcelain"], cwd=ROOT, text=True
         ).strip()
     )
+    readme = out / "README.md"
+    readme.write_text(readme_text(name, coverage, counts, head))
     manifest = {
         "schema_version": 1,
         "generated_by": "scripts/export_ce_inkind_by_interview.py",

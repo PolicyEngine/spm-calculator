@@ -82,7 +82,7 @@ WIC program data (personal communication, November 16, 2026).
 | `ce_quarter` | integer | Collection quarter of the interview, 1 to 4: the quarter in the FMLI file name. |
 | `reference_year` | integer | Year whose program rules, CPS ASEC donors and dollars the values use: ce_year for quarters 2-4 and ce_year - 1 for quarter 1. |
 | `wic_broad_universe_only` | 0/1 | 1 if the unit has a child under 5 but no woman aged 15 or older. BLS's WIC universe adds these units from the 2025 thresholds; the WIC columns here leave them out. |
-| `nslp_participant` | 0/1 | 1 if modeled as receiving free or reduced-price school lunch, as CPS ASEC households report it (HFLUNCH). Only units with a member aged 5-18 can be 1; units with only paid lunches are not participants. |
+| `nslp_participant` | 0/1 | 1 if the imputation assigns free or reduced-price school lunch, the outcome CPS ASEC households report in HFLUNCH. Paid lunches never count as participation. Only units with a member aged 5-18 can be 1. |
 | `nslp_amount` | dollars | Annual school lunch value, in nominal dollars of the reference year: a matched CPS ASEC household's value, scaled to the unit's children aged 5-18. For 2014-2017 the donor value covers free and reduced-price lunches; from 2018 it is Census's SPM_SCHLUNCH summed over the donor household's SPM units, which can include paid lunches for the donor's other children. |
 | `wic_participant` | 0/1 | 1 if modeled as receiving WIC. Only units with a woman aged 15-45, or with a child under 5 and a woman aged 15 or older, can be 1. |
 | `wic_amount` | dollars | Annual WIC food value, in nominal dollars of the reference year: Census's participant count x 12 x the state's average monthly food cost per person. Where the CE withholds the state, the cost is the weighted mean for known-state units in the unit's region and quarter whose state had not finished WIC EBT. Zero where the state had finished statewide WIC EBT and in every reference year from 2020. |
@@ -125,10 +125,12 @@ reference year 2020, we test each state's WIC EBT date against the middle of
 the three months the interview covers, which for a March interview is
 mid-January, after its reference year ends.
 
-**School lunch.** Participation follows CPS households that report free or
-reduced-price lunch (`HFLUNCH`), so a unit whose children eat only paid
-lunches never participates, and a universal free lunch counts only where
-CPS respondents report it under that question. Any unit with a member aged 5–18 can participate; there is no
+**School lunch.** The imputation assigns free or reduced-price lunch, the
+outcome CPS households report in `HFLUNCH`. Paid lunches never count as
+participation, and a universal free lunch counts only where CPS respondents
+report it under that question. Census's `SPM_SCHLUNCH` also values lunches
+for CPS households that report no free or reduced-price lunch; the
+imputation leaves those households out. Any unit with a member aged 5–18 can participate; there is no
 enrollment test. A participating unit takes a matched CPS household's
 value, scaled to the unit's number of children aged 5–18. For reference
 years 2014–2017 that value comes from the USDA formula and covers free and
@@ -185,7 +187,9 @@ file records government-subsidized rent (`GOVTCOST`) or public housing
 (`PUBLHOUS`). It is the same in every implicate, and owners and units outside
 the rent file get zero. The amount is 12 × (a draw of market rent above the
 rent paid − the rent paid), from a Tobit fit on that reference year's CE
-renters.
+renters. The draw has no cap, so a few amounts are large: in each implicate,
+37–57 of the 11,357 participating interviews get more than \$50,000 a year,
+and the largest amount is about \$114,000.
 
 **Every interview, not only the threshold sample.** The file covers every
 interview in the files it reads, including the units the threshold replication
@@ -225,17 +229,18 @@ unless:
 
 - every quarter comes from the release the receipt used, never an overlap
   file, and every bundle and CPS ASEC file matches the receipt's hash;
-- the imputation's settings equal the receipt's and its diagnostics match
-  the receipt's to a relative 10⁻⁹;
+- the imputation's settings equal the receipt's, it imputes every
+  component, and its diagnostics match the receipt's, counts exactly and
+  other values to a relative 10⁻⁹;
 - the recorded participation draws give the imputation's own participation
   rates, every positive amount has a participant, and LIHEAP and broadband
   participation equals a positive amount;
 - the written file, read back with pandas defaults, has every key and flag
   equal to the imputation's, as integers, except `broadband_participant`,
   which reads back as floats and is empty exactly where the reference year
-  is before 2022; every flag 0 or 1 where present, every amount finite and
-  within half a cent of the imputation's, and every interview once per
-  implicate.
+  is before 2022; every flag 0 or 1 where present, every amount finite, in
+  whole cents and within half a cent of the imputation's, and every
+  interview once per implicate.
 
 Rerunning with the same inputs, code and Python environment gives the same
 CSV byte for byte, and the manifest records its hash. Other builds of NumPy
@@ -258,7 +263,8 @@ it.
 
 Interviews collected from 2025Q2 on are not in the file. Adding them needs
 the 2025 CE release, the 2026 CPS ASEC (the donor households for reference
-year 2025), and two parameter updates the imputation stops without: the 2025
-official poverty thresholds and the 2025–26 school lunch rates. The export
+year 2025), and at least two parameter updates the imputation stops
+without: the 2025 official poverty thresholds and the 2025–26 school lunch
+rates. The export
 script reads only the replication receipt's quarters and stops unless its
 run matches that receipt, so it would also need a new receipt.

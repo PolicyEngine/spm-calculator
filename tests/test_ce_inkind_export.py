@@ -15,6 +15,7 @@ Invariants (stated in docs/ce-inkind-export.md):
 """
 
 import csv
+import dataclasses
 import gzip
 import inspect
 import io
@@ -90,6 +91,27 @@ def test_observer_restores_the_function_even_after_an_error():
             assert ce_inkind._participation is not original
             1 / 0
     assert ce_inkind._participation is original
+
+
+def test_observer_refuses_to_nest():
+    original = ce_inkind._participation
+    with observe_participation():
+        with pytest.raises(RuntimeError, match="already being observed"):
+            with observe_participation():
+                pass
+    assert ce_inkind._participation is original
+
+
+def test_export_needs_every_component(observed):
+    units, _, config, imputation, draws = observed
+    partial = dataclasses.replace(
+        config,
+        components=tuple(
+            c for c in config.components if c != "rental_assistance"
+        ),
+    )
+    with pytest.raises(RuntimeError, match="every in-kind component"):
+        export_frames(units, imputation, draws, partial)
 
 
 def test_observer_rejects_a_second_imputation():
@@ -342,30 +364,44 @@ def _corrupt(table: pd.DataFrame, how: str) -> pd.DataFrame:
         table.iloc[[0, 1]] = table.iloc[[1, 0]].to_numpy()
     elif how == "text_amount":
         table["nslp_amount"] = table["nslp_amount"].astype(object)
-        table.loc[0, "nslp_amount"] = "n/a"
+        table.loc[0, "nslp_amount"] = "unknown"
+    elif how == "unrounded_amount":
+        table.loc[positive, "liheap_amount"] += 0.001
+    elif how in ("broadband_half", "broadband_two"):
+        late = table.index[table["broadband_participant"].notna()][0]
+        value = 0.5 if how == "broadband_half" else 2
+        table.loc[late, "broadband_participant"] = value
+    elif how == "broadband_text":
+        table["broadband_participant"] = table["broadband_participant"].map(
+            lambda v: v if pd.isna(v) else ("yes" if v else "no")
+        )
     return table
 
 
 @pytest.mark.parametrize(
-    "how",
+    "how, message",
     [
-        "blank_amount",
-        "blank_and_wrong_amounts",
-        "wrong_amount",
-        "infinite_amount",
-        "fractional_flag",
-        "flag_two",
-        "blank_flag",
-        "broadband_filled",
-        "broadband_blanked",
-        "dropped_row",
-        "duplicated_row",
-        "swapped_rows",
-        "text_amount",
+        ("blank_amount", "nslp_amount holds a missing"),
+        ("blank_and_wrong_amounts", "nslp_amount holds a missing"),
+        ("wrong_amount", "liheap_amount differs by more than rounding"),
+        ("unrounded_amount", "liheap_amount is not rounded to cents"),
+        ("infinite_amount", "liheap_amount holds a missing or non-finite"),
+        ("text_amount", "nslp_amount does not read back as numbers"),
+        ("fractional_flag", "liheap_participant does not read back as int"),
+        ("flag_two", "rental_assistance_participant holds values other"),
+        ("blank_flag", "nslp_participant does not read back as integers"),
+        ("broadband_filled", "broadband_participant is missing in the wrong"),
+        ("broadband_blanked", "broadband_participant is missing in the wrong"),
+        ("broadband_half", "broadband_participant holds values other"),
+        ("broadband_two", "broadband_participant holds values other"),
+        ("broadband_text", "broadband_participant does not read back as num"),
+        ("dropped_row", "Written row count differs"),
+        ("duplicated_row", "Written row count differs"),
+        ("swapped_rows", "NEWID differs"),
     ],
 )
 def test_verify_written_rejects_a_corrupted_file(
-    observed, frames, tmp_path, how
+    observed, frames, tmp_path, how, message
 ):
     units, _, config, imputation, _ = observed
     path = tmp_path / "export.csv.gz"
@@ -373,7 +409,7 @@ def test_verify_written_rejects_a_corrupted_file(
     corrupted = _corrupt(read_csv_gz(path), how)
     bad = tmp_path / "bad.csv.gz"
     corrupted.to_csv(bad, index=False, compression="gzip")
-    with pytest.raises(RuntimeError):
+    with pytest.raises(RuntimeError, match=message):
         verify_written(bad, frames, units, imputation.diagnostics, config)
 
 
@@ -386,6 +422,8 @@ def test_diagnostics_difference_measures_relative_gaps():
     }
     assert diagnostics_difference(ours, ours) == 0.0
     assert 0 < diagnostics_difference(ours, theirs) < 1e-11
+    numpy_leaves = {"units": np.int64(2), "mean": np.float32(1.5)}
+    assert diagnostics_difference(numpy_leaves, {"units": 2, "mean": 1.5}) == 0
 
 
 @pytest.mark.parametrize(
@@ -403,7 +441,11 @@ def test_diagnostics_difference_measures_relative_gaps():
         ({"x": [1.0]}, {"x": [1.0, 2.0]}),
         ({"x": "a"}, {"x": "b"}),
         ({"x": True}, {"x": 1}),
+        ({"x": np.bool_(True)}, {"x": 1}),
         ({"x": None}, {"x": 0.0}),
+        ({"units": 2}, {"units": 3}),
+        ({"units": 2**53}, {"units": 2**53 + 1}),
+        ({"units": np.int64(7)}, {"units": 8}),
     ],
 )
 def test_diagnostics_difference_rejects_mismatches(ours, theirs):

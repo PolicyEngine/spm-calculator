@@ -80,8 +80,6 @@ MODELED_COMPONENTS = ("nslp", "wic", "liheap", "broadband")
 #: ones every target used.
 WIC_EXPORT_TARGET = WIC_BROAD_UNIVERSE_FIRST_TARGET - 1
 
-KEY_COLUMNS = ("NEWID", "implicate", "ce_year", "ce_quarter", "reference_year")
-
 
 @dataclass(frozen=True)
 class Column:
@@ -146,10 +144,10 @@ DICTIONARY: tuple[Column, ...] = (
     ),
     _participant(
         "nslp",
-        "1 if modeled as receiving free or reduced-price school lunch, as "
-        "CPS ASEC households report it (HFLUNCH). Only units with a member "
-        "aged 5-18 can be 1; units with only paid lunches are not "
-        "participants.",
+        "1 if the imputation assigns free or reduced-price school lunch, "
+        "the outcome CPS ASEC households report in HFLUNCH. Paid lunches "
+        "never count as participation. Only units with a member aged 5-18 "
+        "can be 1.",
     ),
     _amount(
         "nslp",
@@ -218,8 +216,13 @@ def observe_participation():
     ``(keys, takes)``: the CE unit keys passed to the draw, in the order
     used, and one boolean array per implicate. A second draw for the same
     key raises, so the block should hold one :func:`impute_in_kind` call.
+
+    Raises:
+        RuntimeError: If another observer is already recording.
     """
     original = ce_inkind._participation
+    if getattr(original, "_records_participation", False):
+        raise RuntimeError("Participation draws are already being observed")
     signature = inspect.signature(original)
     records: dict = {}
 
@@ -235,6 +238,7 @@ def observe_participation():
         )
         return takes
 
+    recording._records_participation = True
     ce_inkind._participation = recording
     try:
         yield records
@@ -282,9 +286,14 @@ def export_frames(
         ``config.broadband_first_reference_year``.
 
     Raises:
-        RuntimeError: If the recorded draws are not exactly the ones the
-            imputation used.
+        RuntimeError: If the imputation left out a component, or if the
+            recorded draws are not exactly the ones the imputation used.
     """
+    if set(config.components) != set(IN_KIND_COMPONENTS):
+        raise RuntimeError(
+            "The export needs every in-kind component imputed, not "
+            f"{sorted(config.components)}"
+        )
     ce = ce_units.reset_index(drop=True)
     keys = ce["key"].to_numpy(dtype="int64")
     reference_year = ce["reference_year"].to_numpy(dtype=int)
@@ -440,17 +449,32 @@ def read_csv_gz(path: Path) -> pd.DataFrame:
 #: a cent of rounding, plus float noise.
 CENT_TOLERANCE = 0.005 + 1e-9
 
+#: Largest distance, in cents, between a read-back amount and a whole number
+#: of cents: parsing noise only.
+CENT_GRID_TOLERANCE = 1e-6
+
+
+def _leaf_integer(value) -> bool:
+    return isinstance(value, (int, np.integer)) and not isinstance(
+        value, (bool, np.bool_)
+    )
+
 
 def _leaf_number(value) -> bool:
-    return isinstance(value, (int, float)) and not isinstance(value, bool)
+    return isinstance(
+        value, (int, float, np.integer, np.floating)
+    ) and not isinstance(value, (bool, np.bool_))
 
 
 def diagnostics_difference(ours, theirs, path: str = "") -> float:
     """Largest relative difference between two diagnostics trees.
 
+    Integer leaves, such as unit counts, must be equal. Other numbers are
+    compared by relative difference.
+
     Raises:
-        RuntimeError: If the trees differ in structure, keys or any
-            non-numeric value, or if either holds a NaN or infinity.
+        RuntimeError: If the trees differ in structure, keys, any integer
+            or any non-numeric value, or if either holds a NaN or infinity.
     """
     if isinstance(ours, dict) and isinstance(theirs, dict):
         if set(ours) != set(theirs):
@@ -463,6 +487,12 @@ def diagnostics_difference(ours, theirs, path: str = "") -> float:
             (a, b, f"{path}[{i}]")
             for i, (a, b) in enumerate(zip(ours, theirs))
         ]
+    elif _leaf_integer(ours) and _leaf_integer(theirs):
+        if int(ours) != int(theirs):
+            raise RuntimeError(
+                f"Diagnostics differ at {path}: {ours!r} != {theirs!r}"
+            )
+        return 0.0
     elif _leaf_number(ours) and _leaf_number(theirs):
         a, b = float(ours), float(theirs)
         if not (np.isfinite(a) and np.isfinite(b)):
@@ -501,8 +531,9 @@ def verify_written(
     """Read the written file back and check it against the frames.
 
     Every column must read back with pandas defaults to the frames' values:
-    keys and flags exactly, as integers, and amounts finite and within half
-    a cent. Each implicate must cover every unit once, in implicate and
+    keys and flags exactly, as integers (broadband's flag as numbers that
+    are missing exactly before its first year), and amounts finite, in whole
+    cents and within half a cent. Each implicate must cover every unit once, in implicate and
     ``NEWID`` order. Per-year weighted mean amounts must match the
     diagnostics' ``ce_mean_amount_per_unit`` within half a cent, except
     WIC, whose diagnostics value the broad universe.
@@ -531,10 +562,20 @@ def verify_written(
                 raise RuntimeError(
                     f"{name} holds a missing or non-finite value"
                 )
+            cents = values * 100
+            if not (
+                np.abs(cents - np.round(cents)) <= CENT_GRID_TOLERANCE
+            ).all():
+                raise RuntimeError(f"{name} is not rounded to cents")
             gap = np.abs(values - want.to_numpy(dtype=float)).max()
             if not gap <= CENT_TOLERANCE:
                 raise RuntimeError(f"{name} differs by more than rounding")
         elif name == "broadband_participant":
+            if not (
+                pd.api.types.is_float_dtype(got)
+                or pd.api.types.is_integer_dtype(got)
+            ):
+                raise RuntimeError(f"{name} does not read back as numbers")
             missing = got.isna().to_numpy()
             if not np.array_equal(
                 missing, table["reference_year"].to_numpy() < first_year
