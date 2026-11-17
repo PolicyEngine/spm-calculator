@@ -136,9 +136,9 @@ year numbered like the reference year.
 before 2025 used: a woman aged 15–45, or a child under 5 with a woman aged 15
 or older. From the 2025 thresholds BLS adds units whose only WIC-eligible
 member is a child under 5; those units carry `wic_broad_universe_only` = 1
-and zero WIC here. The 2025 thresholds draw on reference years 2020–2024,
-where no unit gets WIC, so the WIC amounts in the file are the ones every
-threshold used.
+and zero WIC here. Thresholds from 2025 on draw only on reference years
+2020 and later, where no unit gets WIC, so the WIC amounts in the file are
+the ones every threshold used.
 
 **Broadband.** BLS adds broadband subsidies from the 2023 thresholds, with
 data from 2022, so we impute them from reference year 2022. Before that,
