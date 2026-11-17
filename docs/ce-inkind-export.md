@@ -122,10 +122,12 @@ statewide EBT date falls after the middle of the unit's reference period;
 from reference year 2020 we add no WIC in any state. So `wic_amount` is zero
 from 2020, and earlier once the unit's state had finished, even when
 `wic_participant` is 1. In each implicate, 220–335 participants a year get
-\$0 in 2014–2019, and every participant, 319–424 a year, from 2020. Where the CE withholds the state, a draw sets
-whether the state had finished, from the share of known-state units in the
-same region and quarter whose state had, and a unit that has not finished
-takes the weighted mean food cost of those units whose state had not. A unit
+\$0 in 2014–2019, and every participant, 319–424 a year, from 2020.
+
+Where the CE withholds the state, a draw sets whether the state had
+finished, from the share of known-state units in the same region and quarter
+whose state had. A unit drawn as not finished takes the weighted mean food
+cost of the known-state units in that cell whose state had not finished. A unit
 whose region is also withheld gets no WIC. The value is food cost only:
 Census's participant count (every child under 5, plus the mother of a child
 aged 0–1 when the unit has a woman aged 15 or older, otherwise one pregnant
