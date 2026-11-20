@@ -156,10 +156,13 @@ Census Bureau CPS ASEC public-use files and official poverty thresholds;
 USDA FNS school lunch rates and WIC EBT dates; WIC state food costs from the {WIC_ATTRIBUTION}.
 
 License: CC0 1.0 (https://creativecommons.org/publicdomain/zero/1.0/). To
-the extent the law allows, PolicyEngine waives all copyright and related
-rights in these files. If you use them, please cite "PolicyEngine SPM
-calculator, CE in-kind imputations by interview, v1"; CC0 does not require
-it. The MIT license covers the calculator's code.
+the extent the law allows, PolicyEngine waives its copyright and related
+rights in these files; where the waiver cannot take effect, CC0 grants an
+unconditional license instead. You can copy, modify and redistribute the
+files without permission from or credit to PolicyEngine. If you use them,
+please cite "PolicyEngine SPM calculator, CE in-kind imputations by
+interview, v1"; CC0 does not require it. The MIT license covers the
+calculator's code.
 
 Regenerate with `scripts/export_ce_inkind_by_interview.py` at commit
 {commit}, which the manifest also names.

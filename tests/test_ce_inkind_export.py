@@ -473,7 +473,7 @@ def test_release_files_carry_cc0():
     for text in (readme, DOC.read_text()):
         assert "CC0 1.0" in text
         assert "creativecommons.org/publicdomain/zero/1.0/" in text
-        assert "CC BY" not in text
+        assert not re.search(r"\bcc[\s-]+by\b", text, re.IGNORECASE)
         assert citation in " ".join(text.split())
     assert WIC_ATTRIBUTION in readme
     assert "blob/abc123/docs/ce-inkind-export.md" in readme

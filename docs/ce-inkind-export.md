@@ -39,11 +39,13 @@ The manifest's `git_head` names the commit that built them.
 
 We dedicate the release's files to the public domain under
 [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/): to the extent
-the law allows, we waive all copyright and related rights in them. You can
-copy, modify and redistribute them, including inside other data files,
-without asking permission or giving credit. If you use them, we ask that you
-cite "PolicyEngine SPM calculator, CE in-kind imputations by interview, v1";
-CC0 does not require it. The MIT license covers the calculator's code.
+the law allows, PolicyEngine waives its copyright and related rights in them,
+and where the waiver cannot take effect, CC0 grants an unconditional license
+instead. You can copy, modify and redistribute the files, including inside
+other data files, without permission from or credit to PolicyEngine. If you
+use them, we ask that you cite "PolicyEngine SPM calculator, CE in-kind
+imputations by interview, v1"; CC0 does not require it. The MIT license
+covers the calculator's code.
 
 The files use the BLS Consumer Expenditure Survey Interview public-use
 microdata, the Census Bureau's CPS ASEC public-use files and official
