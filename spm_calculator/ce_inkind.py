@@ -24,13 +24,15 @@ stage as an explicit, optional step:
     thresholds workbook).
 ``nslp``
     Participation from a logistic regression on CPS households with a
-    member aged 5-18 (the CE universe applies only that age rule). Values
-    follow the Census method that BLS says it uses. Reference years with
-    Census values in the public-use files (2018 onward) hot-deck the
+    member aged 5-18 (the CE universe applies only that age rule). BLS
+    says it values school lunch by the traditional method before and after
+    the COVID-19 period and by Census's methods during it. Reference years
+    with Census values in the public-use files (2018 onward) hot-deck the
     household value from participating CPS households in the same state,
     SNAP and free-lunch cell, which carries Census's COVID-era, P-EBT,
-    Summer EBT and universal-free-meal rules. Earlier years apply the
-    traditional formula: USDA reimbursement plus donated-food value per
+    summer EBT and universal-free-meal rules; from reference year 2023
+    Census estimates those values with its fall 2022 method. Earlier years
+    apply the traditional formula: USDA reimbursement plus donated-food value per
     lunch, 5/9 spring and 4/9 fall school year, times 179 days; free below
     150 percent of the official poverty line, otherwise free or reduced
     with equal probability.
@@ -38,7 +40,11 @@ stage as an explicit, optional step:
     Participation from a logistic regression on CPS households in the
     WIC universe. Census's participant rule (all children under 5, the
     mother of a child aged 0-1, otherwise one pregnant woman) times 12
-    times the USDA fiscal-year average monthly food cost. BLS adds WIC
+    times the fiscal-year average monthly food cost per person in the
+    unit's state, from the table the Census Bureau's SPM team compiled from
+    USDA FNS WIC data. Where the CE withholds the state, the unit takes the
+    weighted mean value of known-state units in its region and collection
+    quarter whose state had not finished WIC EBT. BLS adds WIC
     only where the state had not finished WIC EBT, so units in states
     whose statewide EBT date precedes the middle of the reference period
     receive none. From reference year 2020, the year of the statutory
@@ -89,6 +95,10 @@ __all__ = [
 ]
 
 DATA_DIR = Path(__file__).parent / "data" / "inkind"
+
+#: Census SPM team's state WIC food costs (see
+#: :func:`wic_state_monthly_food_cost`).
+WIC_STATE_COST_FILE = "census_wic_state_monthly_cost.csv"
 
 #: Census traditional school lunch year and calendar weighting
 #: (Shrider 2023, SEHSD-WP-2023-20, p. 2).
@@ -340,7 +350,12 @@ def nslp_formula_values(reference_year: int) -> dict[str, float]:
 
 @lru_cache(maxsize=None)
 def wic_monthly_food_cost() -> dict[int, float]:
-    """USDA national average monthly WIC food cost per person, by FY."""
+    """USDA national average monthly WIC food cost per person, by FY.
+
+    The stage values WIC with state averages
+    (:func:`wic_state_monthly_food_cost`); its diagnostics report this
+    national figure beside them.
+    """
     table = pd.read_csv(DATA_DIR / "usda_wic_monthly_cost.csv")
     return {
         int(row.fiscal_year): float(
@@ -376,6 +391,36 @@ def wic_ebt_statewide_dates() -> dict[int, date]:
     if len(dates) != 51:
         raise ValueError(f"Expected 51 WIC EBT dates, found {len(dates)}")
     return dates
+
+
+@lru_cache(maxsize=None)
+def wic_state_monthly_food_cost() -> dict[tuple[int, int], float]:
+    """Average monthly WIC food cost per person by state FIPS code and FY.
+
+    The U.S. Census Bureau SPM team compiled the table from USDA FNS WIC
+    program data and shared it on November 16, 2026; the package commits it
+    as received. It covers the 50 states and DC for fiscal years 2014-2025.
+    Rows are keyed on ``gestfips``: the 2021 rows give three states the
+    wrong postal abbreviation.
+    """
+    table = pd.read_csv(DATA_DIR / WIC_STATE_COST_FILE, encoding="utf-8-sig")
+    columns = ["state", "year", "gestfips", "stwicval"]
+    if list(table.columns) != columns:
+        raise ValueError(f"Unexpected WIC cost columns {list(table.columns)}")
+    if table[columns[1:]].isna().any().any():
+        raise ValueError("The WIC cost table has missing values")
+    if table.duplicated(["gestfips", "year"]).any():
+        raise ValueError("The WIC cost table repeats a state and year")
+    if not (table["stwicval"] > 0).all():
+        raise ValueError("The WIC cost table has a nonpositive value")
+    states = set(wic_ebt_statewide_dates())
+    for year, group in table.groupby("year"):
+        if set(group["gestfips"].astype(int)) != states:
+            raise ValueError(f"The WIC cost table lacks states for FY{year}")
+    return {
+        (int(row.gestfips), int(row.year)): float(row.stwicval)
+        for row in table.itertuples()
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -1001,13 +1046,20 @@ def _wic_participants(ce: pd.DataFrame) -> np.ndarray:
     return np.where(young > 0, young + mother.astype(int), 1).astype(float)
 
 
-def _wic_ebt_complete(ce: pd.DataFrame, config: InKindConfig) -> np.ndarray:
-    """Whether the unit counts as having finished WIC EBT.
+def _wic_cells(ce: pd.DataFrame) -> list:
+    """Region, CE year and collection quarter of each unit (missing: -1)."""
+    cells = ce[["region", "ce_year", "ce_quarter"]].fillna(-1)
+    return list(cells.itertuples(index=False, name=None))
 
-    Before ``config.wic_ebt_all_states_from_reference_year``, a unit counts
-    when its state had finished before the midpoint of its reference period
-    (1.5 months before the interview month). From that reference year on,
-    every unit counts.
+
+def _wic_known_state_complete(
+    ce: pd.DataFrame,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Known-state mask, and whether a known state had finished WIC EBT.
+
+    A known state counts as finished when its statewide date precedes the
+    midpoint of the unit's reference period (1.5 months before the
+    interview month). Units with suppressed state are never finished here.
     """
     dates = wic_ebt_statewide_dates()
     year = ce["interview_year"].fillna(ce["ce_year"]).to_numpy(dtype=float)
@@ -1033,15 +1085,26 @@ def _wic_ebt_complete(ce: pd.DataFrame, config: InKindConfig) -> np.ndarray:
         ]
     )
     complete[known] = ordinal[known] <= midpoint[known]
+    return known, complete
+
+
+def _wic_ebt_complete(ce: pd.DataFrame, config: InKindConfig) -> np.ndarray:
+    """Whether the unit counts as having finished WIC EBT.
+
+    Before ``config.wic_ebt_all_states_from_reference_year``, a unit counts
+    when its state had finished before the midpoint of its reference period
+    (1.5 months before the interview month). From that reference year on,
+    every unit counts.
+    """
+    known, complete = _wic_known_state_complete(ce)
     # Units with suppressed state: probability of EBT completion is the
     # weighted share of known-state units in the same region and quarter.
     unknown = ~known
     if unknown.any():
-        cells = ce[["region", "ce_year", "ce_quarter"]].fillna(-1)
         weight = ce["weight"].to_numpy(dtype=float)
         frame = pd.DataFrame(
             {
-                "cell": list(cells.itertuples(index=False, name=None)),
+                "cell": _wic_cells(ce),
                 "w": weight * known,
                 "wc": weight * (known & complete),
             }
@@ -1063,6 +1126,66 @@ def _wic_ebt_complete(ce: pd.DataFrame, config: InKindConfig) -> np.ndarray:
     if cutoff is not None:
         complete |= ce["reference_year"].to_numpy(dtype=float) >= cutoff
     return complete
+
+
+def _wic_monthly_cost(ce: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
+    """Monthly WIC food cost per person for each unit, and the fill mask.
+
+    A unit with a known state takes its state's value for its reference
+    year. Where the CE withholds the state, the unit takes the weighted mean
+    value, at its own reference year, of the known-state units in its
+    region and collection quarter whose state had not finished WIC EBT.
+    :func:`_wic_ebt_complete` counts a suppressed-state unit as not
+    finished only when its cell has such units, so every unit that can get
+    WIC has a value; the value stays NaN only where it cannot.
+    """
+    cost = wic_state_monthly_food_cost()
+    known, complete = _wic_known_state_complete(ce)
+    state = ce["state"].to_numpy()
+    year = ce["reference_year"].to_numpy(dtype=float)
+
+    def lookup(fips: int, fiscal_year: int) -> float:
+        if (fips, fiscal_year) not in cost:
+            raise ValueError(
+                f"No WIC food cost for state {fips} in FY{fiscal_year}"
+            )
+        return cost[(fips, fiscal_year)]
+
+    value = np.full(len(ce), np.nan)
+    for i in np.flatnonzero(known):
+        value[i] = lookup(int(state[i]), int(year[i]))
+    unknown = ~known
+    if unknown.any():
+        codes, _ = pd.factorize(pd.Series(_wic_cells(ce)))
+        donor = known & ~complete
+        weight = ce["weight"].to_numpy(dtype=float)
+        sums = (
+            pd.DataFrame(
+                {
+                    "cell": codes[donor],
+                    "state": state[donor].astype(int),
+                    "w": weight[donor],
+                }
+            )
+            .groupby(["cell", "state"])["w"]
+            .sum()
+        )
+        donors = {
+            int(cell): (
+                group.index.get_level_values("state"),
+                group.to_numpy(),
+            )
+            for cell, group in sums.groupby(level="cell")
+        }
+        for i in np.flatnonzero(unknown):
+            if int(codes[i]) not in donors:
+                continue
+            states, w = donors[int(codes[i])]
+            if w.sum() <= 0:
+                continue
+            values = np.array([lookup(int(s), int(year[i])) for s in states])
+            value[i] = float(np.dot(w, values) / w.sum())
+    return value, unknown
 
 
 def _rent_design(frame: pd.DataFrame, states: Sequence[int]) -> np.ndarray:
@@ -1364,6 +1487,11 @@ def impute_in_kind(
         if "wic" in config.components
         else np.zeros(len(ce), dtype=bool)
     )
+    wic_cost, wic_state_withheld = (
+        _wic_monthly_cost(ce)
+        if "wic" in config.components
+        else (np.zeros(len(ce)), np.zeros(len(ce), dtype=bool))
+    )
     for reference_year in sorted(ce["reference_year"].unique()):
         reference_year = int(reference_year)
         in_year = (ce["reference_year"] == reference_year).to_numpy()
@@ -1514,17 +1642,25 @@ def impute_in_kind(
                 config,
                 info,
             )
-            cost = wic_monthly_food_cost()
-            if reference_year not in cost:
-                raise ValueError(f"No WIC food cost for FY{reference_year}")
-            per_unit = _wic_participants(ce_year) * 12.0 * cost[reference_year]
+            monthly = wic_cost[positions]
+            withheld = wic_state_withheld[positions]
+            per_unit = _wic_participants(ce_year) * 12.0 * monthly
             ebt = wic_ebt_complete[positions]
+            if not np.isfinite(per_unit[broad & ~ebt]).all():
+                raise ValueError(
+                    f"A WIC unit without EBT lacks a food cost in "
+                    f"{reference_year}"
+                )
             values, takes = [], []
             for chosen_take in take:
                 full_take = np.zeros(len(ce_year), dtype=bool)
                 full_take[broad] = chosen_take
                 takes.append(full_take)
-                values.append(np.where(full_take & ~ebt, per_unit, 0.0))
+                values.append(
+                    np.where(full_take & ~ebt, np.nan_to_num(per_unit), 0.0)
+                )
+            eligible = broad & ~ebt
+            national = wic_monthly_food_cost()
             record(
                 "wic",
                 broad,
@@ -1535,7 +1671,19 @@ def impute_in_kind(
                         donors.loc[cps_narrow, "wic"],
                         donors.loc[cps_narrow, "weight"],
                     ),
-                    "monthly_food_cost": cost[reference_year],
+                    "monthly_food_cost_national": national.get(reference_year),
+                    "monthly_food_cost_mean_without_ebt": _weighted_mean(
+                        monthly[eligible], weight[eligible]
+                    )
+                    if eligible.any()
+                    else None,
+                    "units_state_withheld": int((broad & withheld).sum()),
+                    "units_state_withheld_without_ebt": int(
+                        (eligible & withheld).sum()
+                    ),
+                    "units_with_wic_on_cell_mean_by_implicate": [
+                        int((t & ~ebt & withheld).sum()) for t in takes
+                    ],
                     "ce_weighted_share_ebt_complete": _weighted_mean(
                         ebt[broad], weight[broad]
                     )

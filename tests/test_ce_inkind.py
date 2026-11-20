@@ -47,6 +47,8 @@ from spm_calculator.ce_inkind import (
     nslp_formula_values,
     opm_threshold,
     wic_ebt_statewide_dates,
+    wic_monthly_food_cost,
+    wic_state_monthly_food_cost,
 )
 from spm_calculator.ce_inkind_stage import (
     METHODOLOGY_PREFIX,
@@ -396,8 +398,8 @@ def test_committed_receipt_comes_from_this_code():
     assert receipt["home_internet"]["cpi_series"] == "CUUR0000SEEE03"
     limitations = receipt["limitations"]
     for text in (
-        "for 2022 it counts summer P-EBT, which its technical documentation "
-        "calls summer EBT, but not school-year P-EBT",
+        "For 2022, it counts summer P-EBT (summer EBT in its technical "
+        "documentation) and excludes school-year P-EBT",
         "We take home internet from CE UCC 690114 alone and price it with "
         "CPI-U CUUR0000SEEE03; BLS has not published the UCCs or the price "
         "series",
@@ -794,6 +796,117 @@ def test_wic_ebt_dates():
     assert dates[13].isoformat() == "2022-10-26"  # Georgia
     assert dates[11].isoformat() == "2022-04-27"  # District of Columbia
     assert max(dates.values()).isoformat() == "2022-10-26"
+
+
+def test_wic_state_food_costs_are_the_census_table_as_received():
+    """The Census SPM team's table, byte for byte, keyed on FIPS codes."""
+    path = DATA / ce_inkind.WIC_STATE_COST_FILE
+    assert sha256(path) == (
+        "1fc672d44ffbd6b7b58c26d1d1a44c884a07c85ef1786962b0b23b7812a3c704"
+    )
+    costs = wic_state_monthly_food_cost()
+    assert len(costs) == 51 * 12
+    assert {state for state, _ in costs} == set(FIPS)
+    assert {year for _, year in costs} == set(range(2014, 2026))
+    assert all(value > 0 for value in costs.values())
+    # The 2021 rows label Connecticut "CO"; the FIPS code still keys it.
+    assert costs[(9, 2021)] == pytest.approx(43.9113)
+    assert costs[(8, 2021)] != costs[(9, 2021)]
+
+
+def wic_cost_frame(rows) -> pd.DataFrame:
+    """CE units for the WIC cost rule: (state, region, weight) in 2019 Q2."""
+    frame = pd.DataFrame(rows, columns=["state", "region", "weight"])
+    frame["key"] = np.arange(len(frame))
+    frame["ce_year"] = 2019
+    frame["ce_quarter"] = 2
+    frame["reference_year"] = 2019
+    frame["interview_year"] = 2019
+    frame["interview_month"] = 5
+    return frame
+
+
+def test_withheld_state_takes_the_mean_of_states_without_ebt():
+    """A unit whose state the CE withholds takes the weighted mean value of
+    known-state units in its region and quarter whose state had not
+    finished WIC EBT; where no such unit exists, it has no value and
+    counts as finished."""
+    finished, dc, georgia = 56.0, 11.0, 13.0  # Wyoming finished in 2002.
+    frame = wic_cost_frame(
+        [
+            (georgia, 1.0, 1.0),
+            (dc, 1.0, 3.0),
+            (finished, 1.0, 100.0),
+            (np.nan, 1.0, 5.0),
+            (finished, 2.0, 7.0),
+            (np.nan, 2.0, 5.0),
+            (np.nan, np.nan, 5.0),
+        ]
+    )
+    cost = wic_state_monthly_food_cost()
+    value, withheld = ce_inkind._wic_monthly_cost(frame)
+    np.testing.assert_array_equal(withheld, frame["state"].isna())
+    for i in (0, 1, 2, 4):
+        assert value[i] == cost[(int(frame["state"][i]), 2019)]
+    expected = (cost[(13, 2019)] * 1.0 + cost[(11, 2019)] * 3.0) / 4.0
+    assert value[3] == pytest.approx(expected, rel=1e-12)
+    assert np.isnan(value[5]) and np.isnan(value[6])
+    complete = ce_inkind._wic_ebt_complete(frame, InKindConfig())
+    assert complete[[2, 4, 5, 6]].all()
+    assert not complete[[0, 1]].any()
+
+
+def test_wic_values_use_the_unit_state_cost():
+    """Units in Georgia, which finished WIC EBT in October 2022, get
+    participants x 12 x Georgia's 2019 monthly food cost."""
+    units = ce_units(31, (2019,), n=300)
+    units["state"] = 13.0
+    donors = cps_donors(31, (2019,), n=800)
+    result = impute_in_kind(units, donors, InKindConfig(implicates=1))
+    frame = result.implicates[0].set_index("NEWID")
+    unit = units.set_index("key").loc[frame.index]
+    expected = (
+        ce_inkind._wic_participants(unit)
+        * 12.0
+        * wic_state_monthly_food_cost()[(13, 2019)]
+    )
+    wic = frame["wic"].to_numpy()
+    assert (wic > 0).any()
+    np.testing.assert_allclose(wic[wic > 0], expected[wic > 0], rtol=1e-12)
+    info = result.diagnostics["wic"]["2019"]
+    assert info["monthly_food_cost_national"] == wic_monthly_food_cost()[2019]
+    assert info["units_state_withheld"] == 0
+
+
+def test_national_costs_in_every_state_give_the_national_values(
+    monkeypatch,
+):
+    """With every state at the national figure, including the cell means
+    for withheld states, each WIC amount is participants x 12 x the
+    national cost: the state table changes only the cost."""
+    national = wic_monthly_food_cost()
+    flat = {
+        (state, year): national[year]
+        for state in FIPS
+        for year in range(2014, 2026)
+    }
+    monkeypatch.setattr(ce_inkind, "wic_state_monthly_food_cost", lambda: flat)
+    units = ce_units(37, (2017, 2019), n=400)
+    donors = cps_donors(37, (2017, 2019), n=1000)
+    result = impute_in_kind(units, donors, InKindConfig(implicates=2))
+    unit = units.set_index("key")
+    for frame in result.implicates:
+        frame = frame.set_index("NEWID")
+        rows = unit.loc[frame.index]
+        expected = (
+            ce_inkind._wic_participants(rows)
+            * 12.0
+            * rows["reference_year"].map(national).to_numpy()
+        )
+        wic = frame["wic"].to_numpy()
+        withheld = rows["state"].isna().to_numpy()
+        assert (wic[withheld] > 0).any()
+        np.testing.assert_allclose(wic[wic > 0], expected[wic > 0], rtol=1e-12)
 
 
 def test_logit_recovers_coefficients():

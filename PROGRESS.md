@@ -1,3 +1,60 @@
+# CE in-kind WIC with state food costs — November 17, 2026
+
+## State
+
+Branch `max/ce-inkind-wic-state-20261116` from `main` at #62's squash
+(948c6e1). It values WIC with each state's average monthly food cost per
+person, from a table the U.S. Census Bureau SPM team compiled from USDA FNS
+WIC program data (personal communication, November 16, 2026), instead of
+USDA's national average. It also takes #62's three deferred wording fixes and
+regenerates the in-kind receipts.
+
+## Done
+
+- `spm_calculator/data/inkind/census_wic_state_monthly_cost.csv` holds the
+  table as received (sha256 `1fc672d4…`; 50 states and DC, fiscal years
+  2014–2025; `.gitattributes` keeps its CRLF line endings). The loader keys
+  on FIPS code, because three 2021 rows carry the wrong state abbreviation.
+- A unit with a known state takes its state's cost for the fiscal year that
+  shares its reference year's number. Where the CE withholds the state, the
+  unit takes the weighted mean cost of known-state units in its region and
+  collection quarter whose state had not finished WIC EBT, the same units
+  whose weight sets its EBT draw, so no new random stream enters. In
+  reference years 2014–2019, the CE withholds the state of 181–888
+  WIC-universe units a year that count as not having finished EBT, and 8–103
+  of them get WIC in each implicate. Units that lack a region as well still
+  count as finished and get no WIC; the page now says so.
+- WIC rises: across the units whose state had not finished WIC EBT, the
+  CE-weighted state cost averages above the national figure (\$44.52–\$45.55
+  against \$40.90–\$43.64 a month in reference years 2014–2019), with New
+  Jersey, New York and Illinois among the highest. Mean WIC
+  per unit rises 5–10% for the 2019–2024 targets, WIC per unit in the
+  47th–53rd percentile band rises 2–14% (package run: \$49.57 → \$53.64 for
+  2019, \$19.49 → \$22.16 for 2022, \$5.20 → \$5.30 for 2024), and thresholds
+  with benefits move by −\$8.34 to +\$13.16 (−0.03% to +0.04%). Target 2025
+  with benefits and every threshold without benefits are unchanged.
+- #62's follow-ups: the module docstring now says BLS uses the traditional
+  school lunch method before and after the COVID-19 period and Census's
+  methods during it, the P-EBT limitation is split into one thought per
+  sentence, and `limitations[4]` and `ce_inkind.py` say "summer EBT".
+- `ce_threshold.py`, `fcsuti_cpi.py`, `cpi_annual.json` and the September 8
+  receipt stay byte-identical to 28740b5, and `ce_forecast.py` is untouched.
+
+## Next
+
+- Census's state values stay off GitHub until 2026-11-19 01:00Z, unless
+  Census objects first; the branch is local until then.
+- The methods paper pins the receipts and the module hash; a follow-up paper
+  PR after d2968 and d2984 picks up the new tags.
+- Units without a region get no WIC. If they took the national known-state
+  EBT share for their collection quarter instead, the weighted share of the
+  WIC universe not yet on EBT would rise by 0.2–2.6 points in reference years
+  2014–2019; with take-up and value per unit unchanged, we infer, without
+  simulating it, that WIC dollars in 2015–2019 would rise about 3–4%. A
+  follow-up could give them a value.
+
+---
+
 # CE in-kind school lunch wording — November 16, 2026
 
 ## State
