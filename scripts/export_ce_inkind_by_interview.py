@@ -155,8 +155,11 @@ Sources: BLS Consumer Expenditure Survey Interview public-use microdata;
 Census Bureau CPS ASEC public-use files and official poverty thresholds;
 USDA FNS school lunch rates and WIC EBT dates; WIC state food costs from the {WIC_ATTRIBUTION}.
 
-License: CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Credit
-"PolicyEngine SPM calculator".
+License: CC0 1.0 (https://creativecommons.org/publicdomain/zero/1.0/). To
+the extent the law allows, PolicyEngine waives all copyright and related
+rights in these files. If you use them, please cite "PolicyEngine SPM
+calculator, CE in-kind imputations by interview, v1"; CC0 does not require
+it. The MIT license covers the calculator's code.
 
 Regenerate with `scripts/export_ce_inkind_by_interview.py` at commit
 {commit}, which the manifest also names.

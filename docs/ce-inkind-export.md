@@ -25,8 +25,8 @@ before using them.
 ## Download
 
 We publish the files below as assets of the GitHub release
-[`ce-inkind-by-interview-v1`](https://github.com/PolicyEngine/spm-calculator/releases/tag/ce-inkind-by-interview-v1),
-built from the commit that adds this page to `main`.
+[`ce-inkind-by-interview-v1`](https://github.com/PolicyEngine/spm-calculator/releases/tag/ce-inkind-by-interview-v1).
+The manifest's `git_head` names the commit that built them.
 [Regenerate](#regenerate) describes how to build them yourself.
 
 | File | Contents |
@@ -37,10 +37,17 @@ built from the commit that adds this page to `main`.
 | `README.md` | A short description that points here |
 | `SHA256SUMS` | SHA-256 hashes of the other files |
 
-The release is licensed CC BY 4.0. It uses the BLS Consumer Expenditure
-Survey Interview public-use microdata, the Census Bureau's CPS ASEC
-public-use files and official poverty thresholds, USDA FNS school lunch
-rates and WIC EBT dates, and WIC
+We dedicate the release's files to the public domain under
+[CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/): to the extent
+the law allows, we waive all copyright and related rights in them. You can
+copy, modify and redistribute them, including inside other data files,
+without asking permission or giving credit. If you use them, we ask that you
+cite "PolicyEngine SPM calculator, CE in-kind imputations by interview, v1";
+CC0 does not require it. The MIT license covers the calculator's code.
+
+The files use the BLS Consumer Expenditure Survey Interview public-use
+microdata, the Census Bureau's CPS ASEC public-use files and official
+poverty thresholds, USDA FNS school lunch rates and WIC EBT dates, and WIC
 state food costs from the U.S. Census Bureau SPM team, compiled from USDA FNS
 WIC program data (personal communication, November 16, 2026).
 
