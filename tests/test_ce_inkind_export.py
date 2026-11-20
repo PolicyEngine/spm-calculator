@@ -17,6 +17,7 @@ Invariants (stated in docs/ce-inkind-export.md):
 import csv
 import dataclasses
 import gzip
+import importlib.util
 import inspect
 import io
 import json
@@ -55,6 +56,7 @@ from tests.test_ce_inkind import ce_units, cps_donors
 ROOT = Path(__file__).resolve().parent.parent
 DOC = ROOT / "docs/ce-inkind-export.md"
 PUBLISH = ROOT / ".github/workflows/publish.yaml"
+SCRIPT = ROOT / "scripts/export_ce_inkind_by_interview.py"
 #: A school lunch formula year, a year with WIC and a year with broadband.
 YEARS = (2017, 2019, 2022)
 
@@ -454,3 +456,24 @@ def test_diagnostics_difference_measures_relative_gaps():
 def test_diagnostics_difference_rejects_mismatches(ours, theirs):
     with pytest.raises(RuntimeError):
         diagnostics_difference(ours, theirs)
+
+
+def test_release_files_carry_cc0():
+    spec = importlib.util.spec_from_file_location("export_script", SCRIPT)
+    script = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(script)
+    counts = {"interviews": 2, "implicates": 5, "rows": 10}
+    readme = script.readme_text(
+        "x.csv.gz", ("2014Q2", "2025Q1"), counts, "abc123"
+    )
+    citation = (
+        'cite "PolicyEngine SPM calculator, CE in-kind imputations by '
+        'interview, v1"; CC0 does not require it.'
+    )
+    for text in (readme, DOC.read_text()):
+        assert "CC0 1.0" in text
+        assert "creativecommons.org/publicdomain/zero/1.0/" in text
+        assert not re.search(r"\bcc[\s-]+by\b", text, re.IGNORECASE)
+        assert citation in " ".join(text.split())
+    assert WIC_ATTRIBUTION in readme
+    assert "blob/abc123/docs/ce-inkind-export.md" in readme
