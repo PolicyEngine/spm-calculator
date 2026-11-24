@@ -31,8 +31,8 @@ const allLinks = () => Array.from(document.querySelectorAll("a"));
 describe("paper version constant", () => {
   it("is a single seven-hex-digit revision and date, shared by every reference", () => {
     expect(PAPER_VERSION).toMatch(/^[0-9a-f]{7}-\d{8}$/);
-    expect(PAPER_REVISION).toBe("6937830");
-    expect(PAPER_REVISION_DATE).toBe("2026-09-14");
+    expect(PAPER_REVISION).toBe("db25f11");
+    expect(PAPER_REVISION_DATE).toBe("2026-11-24");
     expect(PAPER_VERSION).toBe(
       `${PAPER_REVISION}-${PAPER_REVISION_DATE.replaceAll("-", "")}`,
     );
