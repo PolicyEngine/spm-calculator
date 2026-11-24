@@ -6,8 +6,8 @@
 // browser or CDN cannot serve a stale manuscript behind a fresh wrapper.
 // Re-render, re-copy and bump both constants together.
 
-export const PAPER_REVISION = "6937830";
-export const PAPER_REVISION_DATE = "2026-09-14";
+export const PAPER_REVISION = "db25f11";
+export const PAPER_REVISION_DATE = "2026-11-24";
 
 export const PAPER_VERSION = `${PAPER_REVISION}-${PAPER_REVISION_DATE.replaceAll("-", "")}`;
 
